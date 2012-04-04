@@ -8,6 +8,6 @@ public class Cell {
         if(f) c1 = o; else c2 = o;
     }
     public Object get(){
-        return f ? c1 : c2;
+        return f ? c1 : Test.testField;
     }
 }
