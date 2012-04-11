@@ -15,6 +15,7 @@ import b2bpl.bytecode.TroubleMessage;
 import b2bpl.bytecode.TroublePosition;
 import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.analysis.SemanticAnalyzer;
+import b2bpl.translation.CodeGenerator;
 import b2bpl.translation.Translator;
 
 
@@ -28,6 +29,7 @@ public class Main implements ITroubleReporter {
 
   public Main(Project project) {
     Main.project = project;
+    CodeGenerator.setProject(project);
   }
 
   public static void main(String[] args) {
@@ -134,7 +136,7 @@ public class Main implements ITroubleReporter {
     }
   }
   
-  public static Project getProject() {
-    return Main.project;
-  }
+//  public static Project getProject() {
+//    return Main.project;
+//  }
 }

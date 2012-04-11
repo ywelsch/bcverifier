@@ -941,7 +941,7 @@ public class MethodTranslator implements ITranslationConstants {
     }
 
     // Remove redundant (empty) clauses
-    if (Main.getProject().simplifyLogicalExpressions()) {
+    if (project.simplifyLogicalExpressions()) {
       for (int i = ensuresClauses.size() - 1; i >= 0; i--) {
         if (ensuresClauses.get(i).getExpression() == BPLBoolLiteral.TRUE) {
           ensuresClauses.remove(i);

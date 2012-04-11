@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import b2bpl.Main;
+import b2bpl.Project;
 import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
 import b2bpl.bpl.ast.BPLBinaryLogicalExpression;
 import b2bpl.bpl.ast.BPLBoolLiteral;
@@ -56,7 +57,12 @@ import b2bpl.bytecode.JType;
  * @author Ovidio Mallo
  */
 public final class CodeGenerator implements ITranslationConstants {
-
+    private static Project project;
+    
+    public static void setProject(Project project){
+        CodeGenerator.project = project;
+    }
+    
   //@ requires name != null;
   //@ ensures \result == name;
   public static String quantVarName(String name) {
@@ -594,7 +600,7 @@ public final class CodeGenerator implements ITranslationConstants {
     // Filter all expressions that are not of type BPLBoolLiteral.TRUE 
     List<BPLExpression> ops = new ArrayList<BPLExpression>();
     
-    if (Main.getProject().simplifyLogicalExpressions()) {
+    if (project.simplifyLogicalExpressions()) {
       // Simplify logical expression (ignore "true" expressions)
       for (BPLExpression expr : operands) {
         if (expr != BPLBoolLiteral.TRUE) {
@@ -628,7 +634,7 @@ public final class CodeGenerator implements ITranslationConstants {
     // Filter all expressions that are not of type BPLBoolLiteral.FALSE 
     List<BPLExpression> ops = new ArrayList<BPLExpression>();
     
-    if (Main.getProject().simplifyLogicalExpressions()) {
+    if (project.simplifyLogicalExpressions()) {
       for (BPLExpression expr : operands) {
         if (expr != BPLBoolLiteral.FALSE) {
           ops.add(expr);
@@ -661,7 +667,7 @@ public final class CodeGenerator implements ITranslationConstants {
   public static BPLExpression implies(BPLExpression left, BPLExpression right) {
     
     // Simplify expression if flag it set
-    if (Main.getProject().simplifyLogicalExpressions()) {
+    if (project.simplifyLogicalExpressions()) {
       if (left == BPLBoolLiteral.TRUE) {
         if (right == BPLBoolLiteral.TRUE) {
           return BPLBoolLiteral.TRUE;
@@ -868,7 +874,7 @@ public final class CodeGenerator implements ITranslationConstants {
 
   //@ requires expressions != null;
   public static BPLTrigger trigger(BPLExpression... expressions) {
-    if (Main.getProject().useTriggers()) {
+    if (project.useTriggers()) {
       return new BPLTrigger(expressions);
     } else {
       return null;
