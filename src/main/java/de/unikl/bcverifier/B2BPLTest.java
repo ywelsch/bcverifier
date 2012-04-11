@@ -3,18 +3,13 @@ package de.unikl.bcverifier;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
 import b2bpl.CompilationAbortedException;
 import b2bpl.Project;
-import b2bpl.bpl.ast.BPLDeclaration;
-import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
-import b2bpl.bytecode.BCMethod;
 import b2bpl.bytecode.ITroubleReporter;
 import b2bpl.bytecode.JClassType;
 import b2bpl.bytecode.TroubleDescription;
@@ -23,7 +18,7 @@ import b2bpl.bytecode.TroublePosition;
 import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.analysis.SemanticAnalyzer;
 import b2bpl.translation.CodeGenerator;
-import b2bpl.translation.MethodTranslator;
+import b2bpl.translation.Translator;
 
 public class B2BPLTest implements ITroubleReporter{
     private File libraryDir;
@@ -48,12 +43,6 @@ public class B2BPLTest implements ITroubleReporter{
 //            oldFileNames[i] = file.getPath();
             i++;
         }
-        
-        System.out.println("Parameters:");
-        for(String s : oldFileNames){
-            System.out.println(s);
-        }
-        
         
         Collection<File> newClassFiles = FileUtils.listFiles(newLibraryDir, new String[]{"class"}, true);
         String[] newFileNames = new String[newClassFiles.size()+2];
@@ -80,20 +69,19 @@ public class B2BPLTest implements ITroubleReporter{
           projectTypes[j] = TypeLoader.getClassType(projectTypeNames[j]);
         }
         
-        List<BPLProcedure> procedures = new Translator(project).translateMethods(projectTypes);
+        BPLProgram program = new Translator(project).translate(projectTypes);
         
-        for(BPLProcedure proc : procedures){
-            System.out.println(proc);
-        }
+        System.out.println(program);
         
 //        program.accept(new BPLPrinter(new PrintWriter(System.out)));
     }
     
     public static void main(String[] args) throws IOException {
-        System.out.println("Working Directory = " +
-                System.getProperty("user.dir"));
         
-        File libraryDir = new File("libraries/cell");
+        String libraryPath = args[0];
+        System.out.println("Working Directory = " + libraryPath);
+        
+        File libraryDir = new File(libraryPath);
         B2BPLTest test = new B2BPLTest(libraryDir);
         test.parse();
     }
