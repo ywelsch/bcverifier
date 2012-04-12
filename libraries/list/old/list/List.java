@@ -2,10 +2,10 @@ package list;
 
 public class List {
   private Node fst;
-  // returns i-th observer, or null, otherwise
-  public Observer get(int i) {
+  // returns i-th object, or null, otherwise
+  public Object get(int i) {
     int c = 0;
-    Observer result = null;
+    Object result = null;
     Node n = this.fst;
     while(c < i) {
       if (n != null) {
@@ -22,7 +22,7 @@ public class List {
 
     return result;
   }
-  public void add(Observer ob) {
+  public void add(Object ob) {
     //...
   }
 }

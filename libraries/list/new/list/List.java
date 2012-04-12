@@ -1,11 +1,11 @@
 package list;
 
-public class LinkedList {
+public class List {
   private Node snt = new Node();
-  // returns i-th observer, or null, otherwise
-  public Observer get(int i) {
+  // returns i-th object, or null, otherwise
+  public Object get(int i) {
     int c = 0;
-    Observer result = null;
+    Object result = null;
     Node n = this.snt;
     n = n.next;
     while(c < i) {
@@ -24,7 +24,7 @@ public class LinkedList {
     return result;
   }
 
-  public void add(Observer ob) {
+  public void add(Object ob) {
     //...
   }
 }

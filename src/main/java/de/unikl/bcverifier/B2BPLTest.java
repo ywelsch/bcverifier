@@ -7,6 +7,9 @@ import java.io.PrintWriter;
 import java.util.Collection;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.commons.io.filefilter.FalseFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
@@ -96,13 +99,26 @@ public class B2BPLTest implements ITroubleReporter{
     
     public static void main(String[] args) throws IOException {
         PropertyConfigurator.configure("log4j.properties");
-        
-        String libraryPath = args[0];
-        log.debug("Working Directory = " + libraryPath);
-        
-        File libraryDir = new File(libraryPath);
-        B2BPLTest test = new B2BPLTest(libraryDir);
-        test.parse();
+        if(args.length == 0 || args.length > 2){
+            System.out.println("Wrong usage. 'Library-dir' or '-a root-dir' as parameter.");
+        } else {
+            if(args[0].equals("-a")){
+                File rootDir = new File(args[1]);
+                log.debug("Parsing all libraries in "+rootDir);
+                for(String path : rootDir.list(DirectoryFileFilter.DIRECTORY)){
+                    log.debug("Parsing library in "+path);
+                    B2BPLTest test = new B2BPLTest(new File(rootDir, path));
+                    test.parse();
+                }
+            } else {
+                String libraryPath = args[0];
+                log.debug("Working Directory = " + libraryPath);
+
+                File libraryDir = new File(libraryPath);
+                B2BPLTest test = new B2BPLTest(libraryDir);
+                test.parse();
+            }
+        }
     }
 
     /*
