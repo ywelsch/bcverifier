@@ -13,6 +13,9 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
+
 import b2bpl.CompilationAbortedException;
 import b2bpl.Project;
 import b2bpl.bpl.BPLPrinter;
@@ -28,6 +31,8 @@ import b2bpl.translation.CodeGenerator;
 import b2bpl.translation.Translator;
 
 public class B2BPLTest implements ITroubleReporter{
+    private static final boolean debug = true;
+    
     private static final Logger log = Logger.getLogger(B2BPLTest.class);
     
     private File libraryDir;
@@ -69,7 +74,33 @@ public class B2BPLTest implements ITroubleReporter{
         File oldSpecification = new File(bplDir, "old.bpl");
         File newSpecification = new File(bplDir, "new.bpl");
         compileSpecification(oldFileNames, oldSpecification);
+        if(debug){
+            BoogieRunner.setVerify(false);
+            try {
+                System.out.println(BoogieRunner.runBoogie(oldSpecification));
+                if(BoogieRunner.getLastReturn()){
+                    System.out.println("Success");
+                } else {
+                    System.out.println("Error");
+                }
+            } catch (BoogieRunException e) {
+                e.printStackTrace();
+            }
+        }
         compileSpecification(newFileNames, newSpecification);
+        if(debug){
+            BoogieRunner.setVerify(false);
+            try {
+                System.out.println(BoogieRunner.runBoogie(newSpecification));
+                if(BoogieRunner.getLastReturn()){
+                    System.out.println("Success");
+                } else {
+                    System.out.println("Error");
+                }
+            } catch (BoogieRunException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void compileSpecification(String[] fileNames, File outFile)
