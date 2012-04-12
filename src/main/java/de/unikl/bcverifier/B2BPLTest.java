@@ -64,9 +64,10 @@ public class B2BPLTest implements ITroubleReporter{
             i++;
         }
         
-
-        File oldSpecification = new File(libraryDir, "old.bpl");
-        File newSpecification = new File(libraryDir, "new.bpl");
+        File bplDir = new File(libraryDir, "bpl");
+        bplDir.mkdir();
+        File oldSpecification = new File(bplDir, "old.bpl");
+        File newSpecification = new File(bplDir, "new.bpl");
         compileSpecification(oldFileNames, oldSpecification);
         compileSpecification(newFileNames, newSpecification);
     }

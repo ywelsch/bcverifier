@@ -820,6 +820,12 @@ public class Translator implements ITranslationConstants {
    * Adds the heap axiomatization to the background theory.
    */
   private void axiomatizeHeap() {
+    addTypes("ref");
+    addTypes("any");
+    addTypes("name");
+    addConstants(new BPLVariable("null", new BPLTypeName("ref")));
+//    addDeclaration(new BPLVariableDeclaration(new BPLVariable[] { new BPLVariable("null", new BPLTypeName("ref")) } ));
+      
     //
     // Muller/Poetzsch Heffter BoogiePL store axiomatization
     //
@@ -1839,7 +1845,9 @@ public class Translator implements ITranslationConstants {
       BPLVariable normal = new BPLVariable(n, returnState);
       BPLVariable exceptional = new BPLVariable(ex, returnState);
       BPLVariable sVar = new BPLVariable(s, returnState);
-      addConstants(normal, exceptional);
+      //TODO does not work when adding as addConstants(normal, exceptional);
+      addConstants(normal);
+      addConstants(exceptional);
       
       addFunction(IS_NORMAL_RETURN_STATE_FUNC, returnState, BPLBuiltInType.BOOL);
       addFunction(IS_EXCEPTIONAL_RETURN_STATE_FUNC, returnState, BPLBuiltInType.BOOL);
