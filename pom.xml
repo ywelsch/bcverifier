@@ -13,22 +13,13 @@
 			<version>2.1</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.google.code.javaparser</groupId>
-			<artifactId>javaparser</artifactId>
-			<version>1.0.8</version>
-		</dependency>
-		
-		<!-- 
-		<dependency>
-			<groupId>sable</groupId>
-			<artifactId>soot</artifactId>
-			<version>2.5.0</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/lib/soot-2.5.0.jar</systemPath>
-		</dependency>
-		 -->
-		 
+		<!-- <dependency> <groupId>com.google.code.javaparser</groupId> <artifactId>javaparser</artifactId> 
+			<version>1.0.8</version> </dependency> -->
+
+		<!-- <dependency> <groupId>sable</groupId> <artifactId>soot</artifactId> 
+			<version>2.5.0</version> <scope>system</scope> <systemPath>${basedir}/lib/soot-2.5.0.jar</systemPath> 
+			</dependency> -->
+
 		<dependency>
 			<groupId>asm</groupId>
 			<artifactId>asm</artifactId>
@@ -49,5 +40,12 @@
 			<artifactId>asm-analysis</artifactId>
 			<version>3.3.1</version>
 		</dependency>
+
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.16</version>
+		</dependency>
+
 	</dependencies>
 </project>

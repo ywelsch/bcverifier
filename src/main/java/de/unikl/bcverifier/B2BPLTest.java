@@ -1,14 +1,18 @@
 package de.unikl.bcverifier;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import b2bpl.CompilationAbortedException;
 import b2bpl.Project;
+import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bytecode.ITroubleReporter;
 import b2bpl.bytecode.JClassType;
@@ -21,13 +25,15 @@ import b2bpl.translation.CodeGenerator;
 import b2bpl.translation.Translator;
 
 public class B2BPLTest implements ITroubleReporter{
+    private static final Logger log = Logger.getLogger(B2BPLTest.class);
+    
     private File libraryDir;
     
     public B2BPLTest(File libraryDir) {
         this.libraryDir = libraryDir;
     }
     
-    public void parse(){
+    public void parse() throws FileNotFoundException{
         File oldLibraryDir = new File(libraryDir, "old");
         assert oldLibraryDir.exists() && oldLibraryDir.isDirectory();
         File newLibraryDir = new File(libraryDir, "new");
@@ -50,11 +56,21 @@ public class B2BPLTest implements ITroubleReporter{
         newFileNames[1] = newLibraryDir.getAbsolutePath();
         i = 2;
         for(File file : newClassFiles){
-            newFileNames[i] = file.getPath();
+            newFileNames[i] = newLibraryDir.toURI().relativize(file.toURI()).getPath();
+//            newFileNames[i] = file.getPath();
             i++;
         }
         
-        Project project = Project.fromCommandLine(oldFileNames, new PrintWriter(System.out));
+
+        File oldSpecification = new File(libraryDir, "old.bpl");
+        File newSpecification = new File(libraryDir, "new.bpl");
+        compileSpecification(oldFileNames, oldSpecification);
+        compileSpecification(newFileNames, newSpecification);
+    }
+
+    private void compileSpecification(String[] fileNames, File outFile)
+            throws FileNotFoundException {
+        Project project = Project.fromCommandLine(fileNames, new PrintWriter(System.out));
         CodeGenerator.setProject(project);
         
         TypeLoader.setProject(project);
@@ -71,15 +87,18 @@ public class B2BPLTest implements ITroubleReporter{
         
         BPLProgram program = new Translator(project).translate(projectTypes);
         
-        System.out.println(program);
-        
-//        program.accept(new BPLPrinter(new PrintWriter(System.out)));
+//        System.out.println(program);
+        log.debug("Writing specification to file "+outFile);
+        PrintWriter writer = new PrintWriter(outFile);
+        program.accept(new BPLPrinter(writer));
+        writer.close();
     }
     
     public static void main(String[] args) throws IOException {
+        PropertyConfigurator.configure("log4j.properties");
         
         String libraryPath = args[0];
-        System.out.println("Working Directory = " + libraryPath);
+        log.debug("Working Directory = " + libraryPath);
         
         File libraryDir = new File(libraryPath);
         B2BPLTest test = new B2BPLTest(libraryDir);
@@ -121,7 +140,7 @@ public class B2BPLTest implements ITroubleReporter{
 
         msg += message.getDescriptionString();
 
-        System.err.println(msg);
+        log.error(msg);
 
         if (message.getDescription().getKind() == TroubleDescription.Kind.ERROR) {
           throw new CompilationAbortedException();
