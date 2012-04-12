@@ -7,8 +7,11 @@ import java.io.PrintWriter;
 import java.util.Collection;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.AndFileFilter;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.FalseFileFilter;
+import org.apache.commons.io.filefilter.HiddenFileFilter;
+import org.apache.commons.io.filefilter.NotFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -137,7 +140,7 @@ public class B2BPLTest implements ITroubleReporter{
             if(args[0].equals("-a")){
                 File rootDir = new File(args[1]);
                 log.debug("Parsing all libraries in "+rootDir);
-                for(String path : rootDir.list(DirectoryFileFilter.DIRECTORY)){
+                for(String path : rootDir.list(new AndFileFilter(DirectoryFileFilter.DIRECTORY, new NotFileFilter(HiddenFileFilter.HIDDEN)))){
                     log.debug("Parsing library in "+path);
                     B2BPLTest test = new B2BPLTest(new File(rootDir, path));
                     test.parse();
