@@ -6,8 +6,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 
 public class BoogieRunner {
+    private static final Logger log = Logger.getLogger(BoogieRunner.class);
+    
     public static class BoogieRunException extends Exception{
         private static final long serialVersionUID = 6094316736644132810L;
 
@@ -19,10 +22,16 @@ public class BoogieRunner {
     public static String BOOGIE_COMMAND = "boogie";
     static {
         try{
-            Process p = Runtime.getRuntime().exec(new String[]{"/bin/bash", "-l",  "-c", "which boogie"});
-            BOOGIE_COMMAND = IOUtils.toString(p.getInputStream()).trim();
-            System.out.println(BOOGIE_COMMAND);
-            System.out.println(IOUtils.toString(p.getErrorStream()));
+            BOOGIE_COMMAND = System.getenv("BOOGIE_CMD");
+            if(BOOGIE_COMMAND == null || BOOGIE_COMMAND.equals("")){
+                log.debug("Could not get boogie cmd from environment");
+                Process p = Runtime.getRuntime().exec(new String[]{"/bin/bash", "-l",  "-c", "which boogie"});
+                BOOGIE_COMMAND = IOUtils.toString(p.getInputStream()).trim();
+                log.debug("Which returned "+BOOGIE_COMMAND);
+                log.debug(IOUtils.toString(p.getErrorStream()));   
+            } else {
+                log.debug("Got boogie cmd from environment: "+BOOGIE_COMMAND);
+            }
         } catch (IOException e){
             e.printStackTrace();
         }

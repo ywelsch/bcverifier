@@ -16,6 +16,7 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 
@@ -35,6 +36,7 @@ import b2bpl.translation.Translator;
 
 public class B2BPLTest implements ITroubleReporter{
     private static final boolean debug = true;
+    private static final boolean compileFirst = true;
     
     private static final Logger log = Logger.getLogger(B2BPLTest.class);
     
@@ -42,6 +44,13 @@ public class B2BPLTest implements ITroubleReporter{
     
     public B2BPLTest(File libraryDir) {
         this.libraryDir = libraryDir;
+        if(compileFirst){
+            try {
+                LibraryCompiler.compile(libraryDir);
+            } catch (CompileException e) {
+                e.printStackTrace();
+            }
+        }
     }
     
     public void parse() throws FileNotFoundException{
