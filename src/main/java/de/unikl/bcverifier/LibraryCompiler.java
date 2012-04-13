@@ -16,21 +16,12 @@ public class LibraryCompiler {
             super(msg);
         }
     }
-    
-    public static void compile(File library) throws CompileException{
-        File oldLibraryVersion = new File(library, "old");
-        File newLibraryVersion = new File(library, "new");
-
-        compileLibraryVersion(oldLibraryVersion);
-        compileLibraryVersion(newLibraryVersion);
-    }
 
     @SuppressWarnings("restriction")
-    private static void compileLibraryVersion(File libraryVersion)
-            throws CompileException {
+    public static void compile(File libraryPath) throws CompileException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(null, null, null);
-        Collection<File> javaFiles = FileUtils.listFiles(libraryVersion, new String[]{"java"}, true);
+        Collection<File> javaFiles = FileUtils.listFiles(libraryPath, new String[]{"java"}, true);
         Iterable<? extends JavaFileObject> javaFileObjectsFromFiles = standardFileManager.getJavaFileObjectsFromFiles(javaFiles);
         CompilationTask compilationTask = compiler.getTask(null, standardFileManager, null, null, null, javaFileObjectsFromFiles);
         if(!compilationTask.call()){
