@@ -9,12 +9,6 @@ public class BPLBuiltInType extends BPLType {
 
   public static final BPLBuiltInType INT = new BPLBuiltInType("int");
 
-  public static final BPLBuiltInType REF = new BPLBuiltInType("ref");
-
-  public static final BPLBuiltInType NAME = new BPLBuiltInType("name");
-
-  public static final BPLBuiltInType ANY = new BPLBuiltInType("any");
-
   private final String name;
 
   private BPLBuiltInType(String name) {

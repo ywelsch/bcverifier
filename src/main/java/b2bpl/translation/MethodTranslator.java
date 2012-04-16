@@ -341,7 +341,7 @@ public class MethodTranslator implements ITranslationConstants {
 
     // The local variables.
     for (int i = 0; i < method.getMaxLocals(); i++) {
-      BPLVariable regr = new BPLVariable(refLocalVar(i), BPLBuiltInType.REF);
+      BPLVariable regr = new BPLVariable(refLocalVar(i), new BPLTypeName(REF_TYPE));
       BPLVariable regi = new BPLVariable(intLocalVar(i), BPLBuiltInType.INT);
       
       // vars.add(new BPLVariableDeclaration(regr, regi));
@@ -350,7 +350,7 @@ public class MethodTranslator implements ITranslationConstants {
 
     // The stack variables.
     for (int i = 0; i < method.getMaxStack(); i++) {
-      BPLVariable stackr = new BPLVariable(refStackVar(i), BPLBuiltInType.REF);
+      BPLVariable stackr = new BPLVariable(refStackVar(i), new BPLTypeName(REF_TYPE));
       BPLVariable stacki = new BPLVariable(intStackVar(i), BPLBuiltInType.INT);
       
       // vars.add(new BPLVariableDeclaration(stackr, stacki));
@@ -360,9 +360,9 @@ public class MethodTranslator implements ITranslationConstants {
     // Return variables for method calls
     for (int i = 0; i < callStatements; i++) {
       BPLVariable rs = new BPLVariable(returnStateVar(i), new BPLTypeName(RETURN_STATE_TYPE));
-      BPLVariable rvr = new BPLVariable(refReturnValueVar(i), BPLBuiltInType.REF);
+      BPLVariable rvr = new BPLVariable(refReturnValueVar(i), new BPLTypeName(REF_TYPE));
       BPLVariable rvi = new BPLVariable(intReturnValueVar(i), BPLBuiltInType.INT);
-      BPLVariable exr = new BPLVariable(exceptionVar(i), BPLBuiltInType.REF);
+      BPLVariable exr = new BPLVariable(exceptionVar(i), new BPLTypeName(REF_TYPE));
       
       vars.add(filterVariableDeclarations(blocks, rs, rvr, rvi, exr));
     }
@@ -377,7 +377,7 @@ public class MethodTranslator implements ITranslationConstants {
     */
 
     // Helper variables for swapping two values.
-    BPLVariable swapr = new BPLVariable(REF_SWAP_VAR, BPLBuiltInType.REF);
+    BPLVariable swapr = new BPLVariable(REF_SWAP_VAR, new BPLTypeName(REF_TYPE));
     BPLVariable swapi = new BPLVariable(INT_SWAP_VAR, BPLBuiltInType.INT);
     
     // vars.add(new BPLVariableDeclaration(swapr, swapi));
@@ -428,7 +428,7 @@ public class MethodTranslator implements ITranslationConstants {
     BPLVariable[] inParams = new BPLVariable[paramTypes.length];
     //@deprecated inParams[0] = new BPLVariable(PRE_HEAP_VAR, new BPLTypeName(HEAP_TYPE));
     for (int i = 0; i < inParams.length; i++) {
-      BPLBuiltInType bplType = type(paramTypes[i]);
+      BPLType bplType = type(paramTypes[i]);
       inParams[i] = new BPLVariable(paramVar(i), bplType);
     }
 
@@ -439,12 +439,12 @@ public class MethodTranslator implements ITranslationConstants {
     outParams.add(new BPLVariable(RETURN_STATE_PARAM, new BPLTypeName(RETURN_STATE_TYPE)));
     if (provideReturnValue) {
       if (method.isConstructor()) {
-        outParams.add(new BPLVariable(RESULT_PARAM, BPLBuiltInType.REF));
+        outParams.add(new BPLVariable(RESULT_PARAM, new BPLTypeName(REF_TYPE)));
       } else {
         outParams.add(new BPLVariable(RESULT_PARAM, type(method.getReturnType())));
       }
     }
-    outParams.add(new BPLVariable(EXCEPTION_PARAM, BPLBuiltInType.REF));
+    outParams.add(new BPLVariable(EXCEPTION_PARAM, new BPLTypeName(REF_TYPE)));
 
     BPLImplementation implementation = new BPLImplementation(
         name,
@@ -623,10 +623,10 @@ public class MethodTranslator implements ITranslationConstants {
     // return BPLBoolLiteral.TRUE;
     
     String o = quantVarName("o");
-    BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
+    BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
 
     String t = quantVarName("t");
-    BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+    BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
 
     // return forall(oVar, tVar, implies(notEqual(var(o), var(thisVar())), inv(var(t), var(o), var(HEAP_VAR))));
     if (project.performInvariantChecks()) {    
@@ -653,10 +653,10 @@ public class MethodTranslator implements ITranslationConstants {
    */
   private BPLExpression getInvariantUponEnteringMethod() {
     String o = quantVarName("o");
-    BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
+    BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
 
     String t = quantVarName("t");
-    BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+    BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
 
     if (project.performInvariantChecks()) {
       return forall(
@@ -703,10 +703,10 @@ public class MethodTranslator implements ITranslationConstants {
 //    }
     
     String o = quantVarName("o");
-    BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
+    BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
 
     String t = quantVarName("t");
-    BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+    BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
     
     BPLExpression isUnmodifiedVar = BPLBoolLiteral.TRUE;
     
@@ -1337,8 +1337,8 @@ public class MethodTranslator implements ITranslationConstants {
     // TODO
     String t = quantVarName("t");
     String o = quantVarName("o");
-    BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
-    BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
+    BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+    BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
     if (excludeThisObject) {
       // Assume all invariants of all objects but the this object.
       return new BPLRequiresClause(forall(tVar, oVar, implies(notEqual(
@@ -1404,7 +1404,7 @@ public class MethodTranslator implements ITranslationConstants {
       }
     } else {
       String o = quantVarName("o");
-      BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
+      BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
       if (excludeThisObject) {
         return new BPLEnsuresClause(forall(oVar, implies(notEqual(
             var(o),
@@ -1512,7 +1512,7 @@ public class MethodTranslator implements ITranslationConstants {
       // ... end of comment ;) ...
       if (!project.isThisInvariantsOnly()) {
         String o = quantVarName("o");
-        BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
+        BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
         addAssert(forall(oVar,
             implies(
               logicalNot(alive(

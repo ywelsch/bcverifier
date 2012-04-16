@@ -637,6 +637,11 @@ public class BPLPrinter implements IBPLVisitor<Object> {
   }
 
   public Object visitArrayType(BPLArrayType type) {
+      if(type.getParameterTypes().length>0){
+          print('<');
+          printList(type.getParameterTypes());
+          print('>');
+      }
     print('[');
     printList(type.getIndexTypes());
     print(']');

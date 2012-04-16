@@ -881,11 +881,11 @@ public class Translator implements ITranslationConstants {
 
     {
       // reference values
-      addFunction(RVAL_FUNC, BPLBuiltInType.REF, new BPLTypeName(VALUE_TYPE));
+      addFunction(RVAL_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(VALUE_TYPE));
       String o1 = quantVarName("o1");
       String o2 = quantVarName("o2");
-      BPLVariable o1Var = new BPLVariable(o1, BPLBuiltInType.REF);
-      BPLVariable o2Var = new BPLVariable(o2, BPLBuiltInType.REF);
+      BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
+      BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
       addAxiom(forall(
           o1Var, o2Var,
           isEquiv(
@@ -898,9 +898,9 @@ public class Translator implements ITranslationConstants {
       BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
       addAxiom(forall(vVar, isEqual(rval(toref(var(v))), var(v)), trigger(rval(toref(var(v))))));
 
-      addFunction(TOREF_FUNC, new BPLTypeName(VALUE_TYPE), BPLBuiltInType.REF);
+      addFunction(TOREF_FUNC, new BPLTypeName(VALUE_TYPE), new BPLTypeName(REF_TYPE));
       String o = quantVarName("o");
-      BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
+      BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
       addAxiom(forall(oVar, isEqual(toref(rval(var(o))), var(o)), trigger(toref(rval(var(o))))));
     }
 
@@ -909,13 +909,13 @@ public class Translator implements ITranslationConstants {
       String i = quantVarName("i");
       String o = quantVarName("o");
       BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-      BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
+      BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
       addAxiom(forall(iVar, oVar, notEqual(ival(var(i)), rval(var(o))), trigger(ival(var(i)), rval(var(o)))));
     }
 
     {
       // type of a value
-      addFunction(TYP_FUNC, new BPLTypeName(VALUE_TYPE),  BPLBuiltInType.NAME);
+      addFunction(TYP_FUNC, new BPLTypeName(VALUE_TYPE),  new BPLTypeName(NAME_TYPE));
       String i = quantVarName("i");
       BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
       addAxiom(forall(iVar, isValueType(typ(ival(var(i)))), trigger(isValueType(typ(ival(var(i)))))));
@@ -923,10 +923,10 @@ public class Translator implements ITranslationConstants {
 
     {
       // uninitialized (default) value
-      addFunction(INIT_FUNC, BPLBuiltInType.NAME, new BPLTypeName(VALUE_TYPE));
+      addFunction(INIT_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(VALUE_TYPE));
 
       String t = quantVarName("t");
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           tVar,
           implies(
@@ -936,7 +936,7 @@ public class Translator implements ITranslationConstants {
           trigger(isValueType(var(t)))
       ));
 
-      tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           tVar,
           implies(
@@ -946,7 +946,7 @@ public class Translator implements ITranslationConstants {
           trigger(isClassType(var(t)))
       ));
 
-      tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           tVar,
           isEqual(
@@ -998,18 +998,18 @@ public class Translator implements ITranslationConstants {
       // An instance field (use typeObject for static fields)
       addFunction(
           FIELD_LOC_FUNC,
-          BPLBuiltInType.REF,
-          BPLBuiltInType.NAME,
+          new BPLTypeName(REF_TYPE),
+          new BPLTypeName(NAME_TYPE),
           new BPLTypeName(LOCATION_TYPE));
 
       String o1 = quantVarName("o1");
       String f1 = quantVarName("f1");
       String o2 = quantVarName("o2");
       String f2 = quantVarName("f2");
-      BPLVariable o1Var = new BPLVariable(o1, BPLBuiltInType.REF);
-      BPLVariable f1Var = new BPLVariable(f1, BPLBuiltInType.NAME);
-      BPLVariable o2Var = new BPLVariable(o2, BPLBuiltInType.REF);
-      BPLVariable f2Var = new BPLVariable(f2, BPLBuiltInType.NAME);
+      BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
+      BPLVariable f1Var = new BPLVariable(f1, new BPLTypeName(NAME_TYPE));
+      BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
+      BPLVariable f2Var = new BPLVariable(f2, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           o1Var, f1Var, o2Var, f2Var,
           isEquiv(
@@ -1027,7 +1027,7 @@ public class Translator implements ITranslationConstants {
       // An array element
       addFunction(
           ARRAY_LOC_FUNC,
-          BPLBuiltInType.REF,
+          new BPLTypeName(REF_TYPE),
           BPLBuiltInType.INT,
           new BPLTypeName(LOCATION_TYPE));
 
@@ -1035,9 +1035,9 @@ public class Translator implements ITranslationConstants {
       String i1 = quantVarName("i1");
       String o2 = quantVarName("o2");
       String i2 = quantVarName("i2");
-      BPLVariable o1Var = new BPLVariable(o1, BPLBuiltInType.REF);
+      BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
       BPLVariable i1Var = new BPLVariable(i1, BPLBuiltInType.INT);
-      BPLVariable o2Var = new BPLVariable(o2, BPLBuiltInType.REF);
+      BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
       BPLVariable i2Var = new BPLVariable(i2, BPLBuiltInType.INT);
       addAxiom(forall(
           o1Var, i1Var, o2Var, i2Var,
@@ -1058,9 +1058,9 @@ public class Translator implements ITranslationConstants {
       String f1 = quantVarName("f1");
       String o2 = quantVarName("o2");
       String i2 = quantVarName("i2");
-      BPLVariable o1Var = new BPLVariable(o1, BPLBuiltInType.REF);
-      BPLVariable f1Var = new BPLVariable(f1, BPLBuiltInType.NAME);
-      BPLVariable o2Var = new BPLVariable(o2, BPLBuiltInType.REF);
+      BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
+      BPLVariable f1Var = new BPLVariable(f1, new BPLTypeName(NAME_TYPE));
+      BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
       BPLVariable i2Var = new BPLVariable(i2, BPLBuiltInType.INT);
       addAxiom(forall(
           o1Var, f1Var, o2Var, i2Var,
@@ -1071,18 +1071,18 @@ public class Translator implements ITranslationConstants {
 
     {
       // The object reference referring to an array element or instance variable
-      addFunction(OBJ_FUNC, new BPLTypeName(LOCATION_TYPE), BPLBuiltInType.REF);
+      addFunction(OBJ_FUNC, new BPLTypeName(LOCATION_TYPE), new BPLTypeName(REF_TYPE));
       String o = quantVarName("o");
       String f = quantVarName("f");
-      BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
-      BPLVariable fVar = new BPLVariable(f, BPLBuiltInType.NAME);
+      BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+      BPLVariable fVar = new BPLVariable(f, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           oVar, fVar,
           isEqual(obj(fieldLoc(var(o), var(f))), var(o)),
           trigger(obj(fieldLoc(var(o), var(f))))
       ));
       String i = quantVarName("i");
-      oVar = new BPLVariable(o, BPLBuiltInType.REF);
+      oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
       BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
       addAxiom(forall(
           oVar, iVar,
@@ -1096,18 +1096,18 @@ public class Translator implements ITranslationConstants {
       addFunction(
           LTYP_FUNC,
           new BPLTypeName(LOCATION_TYPE),
-          BPLBuiltInType.NAME);
+          new BPLTypeName(NAME_TYPE));
       String o = quantVarName("o");
       String f = quantVarName("f");
-      BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
-      BPLVariable fVar = new BPLVariable(f, BPLBuiltInType.NAME);
+      BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+      BPLVariable fVar = new BPLVariable(f, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           oVar, fVar,
           isEqual(ltyp(fieldLoc(var(o), var(f))), fieldType(var(f))),
           trigger(ltyp(fieldLoc(var(o), var(f))))
       ));
       String i = quantVarName("i");
-      oVar = new BPLVariable(o, BPLBuiltInType.REF);
+      oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
       BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
       addAxiom(forall(
           oVar, iVar,
@@ -1120,17 +1120,17 @@ public class Translator implements ITranslationConstants {
     }
 
     // Field declaration
-    addFunction(FIELD_TYPE_FUNC, BPLBuiltInType.NAME, BPLBuiltInType.NAME);
+    addFunction(FIELD_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
 
     {
       // Static fields
-      addFunction(TYPE_OBJECT_FUNC, BPLBuiltInType.NAME, BPLBuiltInType.REF);
+      addFunction(TYPE_OBJECT_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(REF_TYPE));
       String t = quantVarName("t");
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(tVar, nonNull(typeObject(var(t))), trigger(typeObject(var(t)))));
       String h = quantVarName("h");
       BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-      tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(hVar, tVar, alive(rval(typeObject(var(t))), var(h)), trigger(alive(rval(typeObject(var(t))), var(h)))));
     }
 
@@ -1142,16 +1142,16 @@ public class Translator implements ITranslationConstants {
 
     addFunction(
         OBJECT_ALLOC_FUNC,
-        BPLBuiltInType.NAME,
+        new BPLTypeName(NAME_TYPE),
         new BPLTypeName(ALLOCATION_TYPE));
     addFunction(
         ARRAY_ALLOC_FUNC,
-        BPLBuiltInType.NAME,
+        new BPLTypeName(NAME_TYPE),
         BPLBuiltInType.INT,
         new BPLTypeName(ALLOCATION_TYPE));
     addFunction(
         MULTI_ARRAY_ALLOC_FUNC,
-        BPLBuiltInType.NAME,
+        new BPLTypeName(NAME_TYPE),
         BPLBuiltInType.INT,
         new BPLTypeName(ALLOCATION_TYPE),
         new BPLTypeName(ALLOCATION_TYPE));
@@ -1160,13 +1160,13 @@ public class Translator implements ITranslationConstants {
       addFunction(
           ALLOC_TYPE_FUNC,
           new BPLTypeName(ALLOCATION_TYPE),
-          BPLBuiltInType.NAME);
+          new BPLTypeName(NAME_TYPE));
       String t = quantVarName("t");
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(tVar, isEqual(allocType(objectAlloc(var(t))), var(t)), trigger(allocType(objectAlloc(var(t))))));
 
       String i = quantVarName("i");
-      tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
       addAxiom(forall(
           tVar, iVar,
@@ -1175,7 +1175,7 @@ public class Translator implements ITranslationConstants {
       ));
 
       String a = quantVarName("a");
-      tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       iVar = new BPLVariable(i, BPLBuiltInType.INT);
       BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
       addAxiom(forall(
@@ -1311,8 +1311,8 @@ public class Translator implements ITranslationConstants {
       String t = quantVarName("t");
       String h = quantVarName("h");
       String a = quantVarName("a");
-      BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
       BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
       addAxiom(forall(
@@ -1351,8 +1351,8 @@ public class Translator implements ITranslationConstants {
       String v = quantVarName("v");
       BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
       BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-      BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
       addAxiom(forall(
         lVar, hVar, oVar, tVar, vVar,
@@ -1521,10 +1521,10 @@ public class Translator implements ITranslationConstants {
       String t2 = quantVarName("t2");
       String pre_h = quantVarName("pre_h");
       String new_h = quantVarName("new_h");
-      BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
-      BPLVariable o2Var = new BPLVariable(o2, BPLBuiltInType.REF);
-      BPLVariable t2Var = new BPLVariable(t2, BPLBuiltInType.NAME);
+      BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+      BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
+      BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
       BPLVariable pre_hVar = new BPLVariable(pre_h, new BPLTypeName(HEAP_TYPE));
       BPLVariable new_hVar = new BPLVariable(new_h, new BPLTypeName(HEAP_TYPE));
       addAxiom(forall(
@@ -1570,7 +1570,7 @@ public class Translator implements ITranslationConstants {
       String t = quantVarName("t");
       String i = quantVarName("i");
       BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
       addAxiom(forall(
           hVar, tVar, iVar,
@@ -1583,7 +1583,7 @@ public class Translator implements ITranslationConstants {
 
       String a = quantVarName("a");
       hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-      tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       iVar = new BPLVariable(i, BPLBuiltInType.INT);
       BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
       addAxiom(forall(
@@ -1618,7 +1618,7 @@ public class Translator implements ITranslationConstants {
       String i = quantVarName("i");
       String a = quantVarName("a");
       BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
       BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
       addAxiom(forall(
@@ -1640,7 +1640,7 @@ public class Translator implements ITranslationConstants {
       String v = quantVarName("v");
       BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
       hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-      tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       iVar = new BPLVariable(i, BPLBuiltInType.INT);
       addAxiom(forall(
           vVar, hVar, tVar, iVar,
@@ -1658,7 +1658,7 @@ public class Translator implements ITranslationConstants {
       String e = quantVarName("e");
       vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
       hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-      tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       iVar = new BPLVariable(i, BPLBuiltInType.INT);
       aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
       BPLVariable eVar = new BPLVariable(e, BPLBuiltInType.INT);
@@ -1699,19 +1699,19 @@ public class Translator implements ITranslationConstants {
     //
     // Types
     //
-    addFunction(IS_CLASS_TYPE_FUNC, BPLBuiltInType.NAME, BPLBuiltInType.BOOL);
-    addFunction(IS_VALUE_TYPE_FUNC, BPLBuiltInType.NAME, BPLBuiltInType.BOOL);
+    addFunction(IS_CLASS_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+    addFunction(IS_VALUE_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
 
     {
       // primitive types
       for (JBaseType valueType : valueTypes) {
         addConstants(new BPLVariable(
             getValueTypeName(valueType),
-            BPLBuiltInType.NAME));
+            new BPLTypeName(NAME_TYPE)));
       }
 
       String t = quantVarName("t");
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       BPLExpression[] vtExprs = new BPLExpression[valueTypes.length];
       for (int i = 0; i < valueTypes.length; i++) {
         vtExprs[i] = isEqual(var(t), typeRef(valueTypes[i]));
@@ -1725,7 +1725,7 @@ public class Translator implements ITranslationConstants {
       addFunction(
           IS_IN_RANGE_FUNC,
           BPLBuiltInType.INT,
-          BPLBuiltInType.NAME,
+          new BPLTypeName(NAME_TYPE),
           BPLBuiltInType.BOOL);
 
       for (JBaseType valueType : valueTypes) {
@@ -1747,7 +1747,7 @@ public class Translator implements ITranslationConstants {
       String i = quantVarName("i");
       String t = quantVarName("t");
       BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addComment("Associate the types of integer values to their corresponding value ranges.");
       addAxiom(forall(
           iVar, tVar,
@@ -1764,14 +1764,14 @@ public class Translator implements ITranslationConstants {
       addFunction(
           ICAST_FUNC,
           BPLBuiltInType.INT,
-          BPLBuiltInType.NAME,
+          new BPLTypeName(NAME_TYPE),
           BPLBuiltInType.INT);
 
       addComment("A cast value is in the value range of the target type.");
       String i = quantVarName("i");
       String t = quantVarName("t");
       BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           iVar, tVar,
           isInRange(icast(var(i), var(t)), var(t)),
@@ -1781,7 +1781,7 @@ public class Translator implements ITranslationConstants {
       addComment("Values which already are in the target value range are"
                  + " not affected by a cast.");
       iVar = new BPLVariable(i, BPLBuiltInType.INT);
-      tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           iVar, tVar,
           implies(
@@ -1794,11 +1794,11 @@ public class Translator implements ITranslationConstants {
 
     {
       // array types
-      addFunction(ARRAY_TYPE_FUNC, BPLBuiltInType.NAME, BPLBuiltInType.NAME);
+      addFunction(ARRAY_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
 
-      addFunction(ELEMENT_TYPE_FUNC, BPLBuiltInType.NAME, BPLBuiltInType.NAME);
+      addFunction(ELEMENT_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
       String t = quantVarName("t");
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(tVar, isEqual(elementType(arrayType(var(t))), var(t)), trigger(elementType(arrayType(var(t))))));
     }
 
@@ -1809,7 +1809,7 @@ public class Translator implements ITranslationConstants {
       JType serializable = TypeLoader.getClassType("java.io.Serializable");
 
       String t = quantVarName("t");
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           tVar,
           logicalAnd(
@@ -1822,8 +1822,8 @@ public class Translator implements ITranslationConstants {
 
       String t1 = quantVarName("t1");
       String t2 = quantVarName("t2");
-      BPLVariable t1Var = new BPLVariable(t1, BPLBuiltInType.NAME);
-      BPLVariable t2Var = new BPLVariable(t2, BPLBuiltInType.NAME);
+      BPLVariable t1Var = new BPLVariable(t1, new BPLTypeName(NAME_TYPE));
+      BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           t1Var, t2Var,
           implies(
@@ -1832,8 +1832,8 @@ public class Translator implements ITranslationConstants {
           )
       ));
 
-      t1Var = new BPLVariable(t1, BPLBuiltInType.NAME);
-      t2Var = new BPLVariable(t2, BPLBuiltInType.NAME);
+      t1Var = new BPLVariable(t1, new BPLTypeName(NAME_TYPE));
+      t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           t1Var, t2Var,
           implies(
@@ -1894,9 +1894,9 @@ public class Translator implements ITranslationConstants {
     String t = quantVarName("t");
     String this_var_name = quantVarName("param0");
     BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
-    BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
-    BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
-    BPLVariable this_var = new BPLVariable(this_var_name, BPLBuiltInType.REF);
+    BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+    BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+    BPLVariable this_var = new BPLVariable(this_var_name, new BPLTypeName(REF_TYPE));
     
     boolean hasReturnType = (type != null);
     
@@ -1905,8 +1905,8 @@ public class Translator implements ITranslationConstants {
         new BPLVariable[] { this_var },
         new BPLVariable[] {
             new BPLVariable(RETURN_STATE_PARAM, new BPLTypeName(RETURN_STATE_TYPE)),
-            new BPLVariable(RESULT_PARAM, BPLBuiltInType.REF),
-            new BPLVariable(EXCEPTION_PARAM, BPLBuiltInType.REF)
+            new BPLVariable(RESULT_PARAM, new BPLTypeName(REF_TYPE)),
+            new BPLVariable(EXCEPTION_PARAM, new BPLTypeName(REF_TYPE))
         },   
         
         new BPLSpecification(new BPLSpecificationClause[] {
@@ -2049,12 +2049,12 @@ public class Translator implements ITranslationConstants {
       addFunction(
           IS_OF_TYPE_FUNC,
           new BPLTypeName(VALUE_TYPE),
-          BPLBuiltInType.NAME,
+          new BPLTypeName(NAME_TYPE),
           BPLBuiltInType.BOOL);
       String v = quantVarName("v");
       String t = quantVarName("t");
       BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       // A value is of a given type if and only if it is the null value or if
       // its type is a subtype of the given type.
       addAxiom(forall(
@@ -2074,12 +2074,12 @@ public class Translator implements ITranslationConstants {
       addFunction(
           IS_INSTANCE_OF_FUNC,
           new BPLTypeName(VALUE_TYPE),
-          BPLBuiltInType.NAME,
+          new BPLTypeName(NAME_TYPE),
           BPLBuiltInType.BOOL);
       String v = quantVarName("v");
       String t = quantVarName("t");
       BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       // A value is an instance of a given type if and only if it is not the
       // null value and if its type is a subtype of the given type.
       addAxiom(forall(
@@ -2109,8 +2109,8 @@ public class Translator implements ITranslationConstants {
     addComment("The function used for the declaration of object invariants.");
     addFunction(
         INV_FUNC,
-        BPLBuiltInType.NAME,
-        BPLBuiltInType.REF,
+        new BPLTypeName(NAME_TYPE),
+        new BPLTypeName(REF_TYPE),
         new BPLTypeName(HEAP_TYPE),
         BPLBuiltInType.BOOL);
 
@@ -2119,16 +2119,16 @@ public class Translator implements ITranslationConstants {
       addFunction(
           IF_THEN_ELSE_FUNC,
           BPLBuiltInType.BOOL,
-          BPLBuiltInType.ANY,
-          BPLBuiltInType.ANY,
-          BPLBuiltInType.ANY);
+          new BPLTypeName(ANY_TYPE),
+          new BPLTypeName(ANY_TYPE),
+          new BPLTypeName(ANY_TYPE));
 
       String b = quantVarName("b");
       String x = quantVarName("x");
       String y = quantVarName("y");
       BPLVariable bVar = new BPLVariable(b, BPLBuiltInType.BOOL);
-      BPLVariable xVar = new BPLVariable(x, BPLBuiltInType.ANY);
-      BPLVariable yVar = new BPLVariable(y, BPLBuiltInType.ANY);
+      BPLVariable xVar = new BPLVariable(x, new BPLTypeName(ANY_TYPE));
+      BPLVariable yVar = new BPLVariable(y, new BPLTypeName(ANY_TYPE));
       addAxiom(forall(
           bVar, xVar, yVar,
           implies(
@@ -2139,8 +2139,8 @@ public class Translator implements ITranslationConstants {
       ));
 
       bVar = new BPLVariable(b, BPLBuiltInType.BOOL);
-      xVar = new BPLVariable(x, BPLBuiltInType.ANY);
-      yVar = new BPLVariable(y, BPLBuiltInType.ANY);
+      xVar = new BPLVariable(x, new BPLTypeName(ANY_TYPE));
+      yVar = new BPLVariable(y, new BPLTypeName(ANY_TYPE));
       addAxiom(forall(
           bVar, xVar, yVar,
           implies(
@@ -2224,9 +2224,9 @@ public class Translator implements ITranslationConstants {
     SpecificationTranslator translator =
       SpecificationTranslator.forInvariant(h, o);
 
-    BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
+    BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
     BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-    BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+    BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
     
     // An invariant hold for a given object if and only if the object is an
     // instance of the class in which the invariant is declared and if the
@@ -2331,7 +2331,7 @@ public class Translator implements ITranslationConstants {
             axiom,
             isSubtype(translateTypeReference(iface), var(t)));
       }
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+      BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
       addAxiom(forall(
           tVar,
           implies(isSubtype(translateTypeReference(type), var(t)), axiom),
@@ -2373,7 +2373,7 @@ public class Translator implements ITranslationConstants {
         // Declare the constant representing the given class type.
         addConstants(new BPLVariable(
             getClassTypeName(classType),
-            BPLBuiltInType.NAME));
+            new BPLTypeName(NAME_TYPE)));
 
         // State that the type indeed is a class type.
         addAxiom(isClassType(typeRef(classType)));
@@ -2381,7 +2381,7 @@ public class Translator implements ITranslationConstants {
         // Eventually axiomatize the fact that the type is final.
         if (classType.isFinal()) {
           String t = quantVarName("t");
-          BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+          BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
           // Every eventual subtype must be the type itself.
           addAxiom(forall(
               tVar,
@@ -2445,7 +2445,7 @@ public class Translator implements ITranslationConstants {
         fieldReferences.add(field);
 
         // Declare the constant representing the given field.
-        addConstants(new BPLVariable(fieldName, BPLBuiltInType.NAME));
+        addConstants(new BPLVariable(fieldName, new BPLTypeName(NAME_TYPE)));
 
         // Define the field's declared type.
         addAxiom(isEqual(
@@ -2454,7 +2454,7 @@ public class Translator implements ITranslationConstants {
 
         String o = quantVarName("o");
         String h = quantVarName("h");
-        BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
+        BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
         BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
         
         addComment("[SW]: Define field type");
@@ -2510,7 +2510,7 @@ public class Translator implements ITranslationConstants {
         stringLiterals.put(literal, name);
 
         // Declare the constant representing the given field.
-        addConstants(new BPLVariable(name, BPLBuiltInType.REF));
+        addConstants(new BPLVariable(name, new BPLTypeName(REF_TYPE)));
 
         // State that the object representing the literal is of type String and
         // that it is alive in any heap.
@@ -2539,7 +2539,7 @@ public class Translator implements ITranslationConstants {
         GLOBAL_VAR_PREFIX + literal.getName() + CLASS_LITERAL_SUFFIX;
       if (classLiterals.add(literal)) {
         // Declare the constant representing the given field.
-        addConstants(new BPLVariable(name, BPLBuiltInType.REF));
+        addConstants(new BPLVariable(name, new BPLTypeName(REF_TYPE)));
 
         // State that the object representing the literal is of type Class and
         // that it is alive in any heap.

@@ -15,6 +15,12 @@ public interface ITranslationConstants {
 
   String FUNC_PREFIX = "";
 
+  String REF_TYPE = "Ref";
+  
+  String ANY_TYPE = "Any";
+  
+  String NAME_TYPE = "Name";
+  
   String HEAP_TYPE =         "Store";
 
   String LOCATION_TYPE =     "Location";

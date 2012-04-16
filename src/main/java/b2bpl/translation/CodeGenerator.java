@@ -22,6 +22,7 @@ import b2bpl.bpl.ast.BPLQuantifierExpression;
 import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLTrigger;
 import b2bpl.bpl.ast.BPLType;
+import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLUnaryMinusExpression;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableExpression;
@@ -891,7 +892,7 @@ public final class CodeGenerator implements ITranslationConstants {
 
   //@ requires type != null;
   //@ ensures \result != null;
-  public static BPLBuiltInType type(JType type) {
-    return type.isBaseType() ? BPLBuiltInType.INT : BPLBuiltInType.REF;
+  public static BPLType type(JType type) {
+    return type.isBaseType() ? BPLBuiltInType.INT : new BPLTypeName(REF_TYPE);
   }
 }

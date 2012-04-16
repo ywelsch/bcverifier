@@ -56,7 +56,7 @@ public class BoogieRunner {
             ArrayList<String> parameters = new ArrayList<String>();
             parameters.add(BOOGIE_COMMAND);
             parameters.add("/nologo");
-            parameters.add("/timeLimit:30"); //limit time spent to verify each procedure to 30 seconds
+//            parameters.add("/timeLimit:30"); //limit time spent to verify each procedure to 30 seconds
             if(!verify){
                 parameters.add("/noVerify");
             }

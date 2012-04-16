@@ -91,7 +91,7 @@ public class Library implements ITroubleReporter{
             compileSpecification(oldFileNames, oldSpecification);
             compileSpecification(newFileNames, newSpecification);
         } catch (FileNotFoundException e) {
-            throw new TranslationException("Could not writer boogie specification to file.", e);
+            throw new TranslationException("Could not write boogie specification to file.", e);
         }
     }
     
