@@ -38,6 +38,7 @@ import b2bpl.bpl.ast.BPLRequiresClause;
 import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
 import b2bpl.bpl.ast.BPLTrigger;
+import b2bpl.bpl.ast.BPLTypeAlias;
 import b2bpl.bpl.ast.BPLTypeDeclaration;
 import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLUnaryMinusExpression;
@@ -268,4 +269,9 @@ public class EmptyBPLVisitor<R> implements IBPLVisitor<R> {
     // do nothing
     return null;
   }
+
+public R visitTypeAlias(BPLTypeAlias declaration) {
+    // do nothing
+    return null;
+}
 }

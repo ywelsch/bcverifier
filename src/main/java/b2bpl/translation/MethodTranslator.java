@@ -1061,6 +1061,7 @@ public class MethodTranslator implements ITranslationConstants {
     modifiedVariables.clear();
     modifiedHeapLocations.clear();
     
+    
     // constructors return an initialized "this"-parameter,
     // so we add an alias telling that "param0" actually refers to "result"
     // in the constructor's postcondition
@@ -1068,6 +1069,9 @@ public class MethodTranslator implements ITranslationConstants {
     if (method.isConstructor()) addAlias(RESULT_PARAM, thisVar());
     
     startBlock(INIT_BLOCK_LABEL);
+
+    //check the conditions (coupling invariant)
+    addCommand(new BPLCallCommand("check"));
 
     callStatements = 0; // count the number of call statements used so far
 
@@ -2837,6 +2841,9 @@ public class MethodTranslator implements ITranslationConstants {
      * @requires insn != null;
      */
     private void translateInvokeInstruction(InvokeInstruction insn) {
+      //check the coupling invariants
+      addCommand(new BPLCallCommand("check"));
+        
       BCMethod invokedMethod = insn.getMethod();
       JType[] params = invokedMethod.getRealParameterTypes();
            

@@ -47,6 +47,7 @@ import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
 import b2bpl.bpl.ast.BPLSpecificationClause;
 import b2bpl.bpl.ast.BPLTrigger;
+import b2bpl.bpl.ast.BPLTypeAlias;
 import b2bpl.bpl.ast.BPLTypeDeclaration;
 import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLUnaryExpression;
@@ -231,9 +232,22 @@ public class BPLPrinter implements IBPLVisitor<Object> {
 
   public Object visitTypeDeclaration(BPLTypeDeclaration declaration) {
     print("type ");
-    printStringList(declaration.getTypeNames());
+    print(declaration.getName());
+    if(declaration.getTypeParams().length > 0){
+        print(' ');
+    }
+    printStringList(declaration.getTypeParams());
     print(';');
     return null;
+  }
+  
+  public Object visitTypeAlias(BPLTypeAlias declartion) {
+      print("type ");
+      print(declartion.getName());
+      print(" = ");
+      declartion.getType().accept(this);
+      print(';');
+      return null;
   }
 
   public Object visitVariableDeclaration(BPLVariableDeclaration declaration) {
@@ -633,6 +647,10 @@ public class BPLPrinter implements IBPLVisitor<Object> {
 
   public Object visitTypeName(BPLTypeName type) {
     print(type.getName());
+    for(String param : type.getParameters()){
+        print(' ');
+        print(param);
+    }
     return null;
   }
 

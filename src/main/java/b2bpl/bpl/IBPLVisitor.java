@@ -38,6 +38,7 @@ import b2bpl.bpl.ast.BPLRequiresClause;
 import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
 import b2bpl.bpl.ast.BPLTrigger;
+import b2bpl.bpl.ast.BPLTypeAlias;
 import b2bpl.bpl.ast.BPLTypeDeclaration;
 import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLUnaryMinusExpression;
@@ -59,6 +60,8 @@ public interface IBPLVisitor<R> {
   R visitProcedure(BPLProcedure procedure);
 
   R visitTypeDeclaration(BPLTypeDeclaration declaration);
+  
+  R visitTypeAlias(BPLTypeAlias declaration);
 
   R visitVariableDeclaration(BPLVariableDeclaration declaration);
 
