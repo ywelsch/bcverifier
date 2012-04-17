@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -54,7 +56,7 @@ public class BoogieRunner {
         InputStream processOutput = null;
         try {
             ArrayList<String> parameters = new ArrayList<String>();
-            parameters.add(BOOGIE_COMMAND);
+            Collections.addAll(parameters, BOOGIE_COMMAND.split(" "));
             parameters.add("/nologo");
 //            parameters.add("/timeLimit:30"); //limit time spent to verify each procedure to 30 seconds
             if(!verify){
