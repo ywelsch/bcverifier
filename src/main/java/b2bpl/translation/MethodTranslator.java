@@ -1070,9 +1070,6 @@ public class MethodTranslator implements ITranslationConstants {
     
     startBlock(INIT_BLOCK_LABEL);
 
-    //check the conditions (coupling invariant)
-    addCommand(new BPLCallCommand("check"));
-
     callStatements = 0; // count the number of call statements used so far
 
     /*
@@ -2012,10 +2009,20 @@ public class MethodTranslator implements ITranslationConstants {
    *          terminate.
    */
   private void endBlock(BPLTransferCommand transferCommand) {
-    BPLBasicBlock block = new BPLBasicBlock(
-        blockLabel,
+    BPLTransferCommand transCmd;
+    if(transferCommand instanceof BPLGotoCommand){
+        String[] targetLabels = new String[transferCommand.getTargetLabels().length];
+        for(int i=0; i<transferCommand.getTargetLabels().length; i++){
+            targetLabels[i] = getProcedureName(method) + "_" + transferCommand.getTargetLabels()[i];
+        }
+        transCmd = new BPLGotoCommand(targetLabels);
+    } else {
+        transCmd = transferCommand;
+    }
+      BPLBasicBlock block = new BPLBasicBlock(
+        getProcedureName(method) + "_" + blockLabel,
         commands.toArray(new BPLCommand[commands.size()]),
-        transferCommand
+        transCmd
     );
     blocks.add(block);
     blockLabel = null;
@@ -2841,178 +2848,185 @@ public class MethodTranslator implements ITranslationConstants {
      * @requires insn != null;
      */
     private void translateInvokeInstruction(InvokeInstruction insn) {
-      //check the coupling invariants
-      addCommand(new BPLCallCommand("check"));
+        BPLTransferCommand transCmd = new BPLGotoCommand("check");
+        transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
+          BPLBasicBlock block = new BPLBasicBlock(
+            getProcedureName(method) + "_" + blockLabel,
+            commands.toArray(new BPLCommand[commands.size()]),
+            transCmd
+        );
+        blocks.add(block);
+        blockLabel = blockLabel+"_afterReturn";
         
-      BCMethod invokedMethod = insn.getMethod();
-      JType[] params = invokedMethod.getRealParameterTypes();
-           
-      int first = handle.getFrame().getStackSize() - params.length; // first method argument on the stack
-      int stack = handle.getFrame().getStackSize();                 // stack size
-     
-      // Prepare arguments of method call
-      List<BPLExpression> methodParams = new ArrayList<BPLExpression>();
-            
-      // Pass all other method arguments (the first of which refers to the "this" object
-      // if the method is not static).
-      String[] args = new String[params.length];
-      for (int i = 0; i < params.length; i++) {
-        args[i] = stackVar(first + i, params[i]);
-        methodParams.add(new BPLVariableExpression(args[i]));
-      }
-      
-      // does the invoked method provide a return value?
-      //   - non-void method return an object reference or integer value
-      //   - constructors "return" the reference to the instantiated owner object
-      boolean hasReturnValue = !invokedMethod.isVoid() || invokedMethod.isConstructor();
-      
-      // is the invoked method a super-constructor called in the current constructor?
-      //   - every constructors calls a super-constructor, the most general is Object..init()
-      boolean isSuperConstructor = isSuperConstructorCall(invokedMethod, handle);
-      /*
-      boolean isSuperConstructor = method.isConstructor() && invokedMethod.isConstructor() &&
-                                   (args.length > 0) ? (args[0].equals(stackVar(0, params[0]))) : false;
-      */
-                                   
-      // get return type of method
-      //   - normal method: explicitely declared return type
-      //   - constructor: type of the owner object
-      JType retType = (invokedMethod.isConstructor()
-        ? invokedMethod.getOwner()
-        : invokedMethod.getReturnType()
-      );
-      
-      // Non-static method calls may throw a NullPointerException.
-      /*
-      if (!invokedMethod.isStatic() && !invokedMethod.isConstructor()) {
-        translateRuntimeException(
-            "java.lang.NullPointerException",
-            nonNull(var(refStackVar(first))));
-      }
-      */
-
-      // Prepare return values of method call
-      List<BPLVariableExpression> resultVars = new ArrayList<BPLVariableExpression>();
-      resultVars.add(new BPLVariableExpression(returnStateVar(callStatements)));            // return state
-      if (hasReturnValue) {
-        resultVars.add(new BPLVariableExpression(returnValueVar(callStatements, retType))); // return value
-      }
-      resultVars.add(new BPLVariableExpression(exceptionVar(callStatements)));              // exception
-      
-      // Create call command with input and output parameters
-      BPLCommand callCmd = new BPLCallCommand(
-          getProcedureName(invokedMethod),
-          methodParams.toArray(new BPLExpression[methodParams.size()]),
-          resultVars.toArray(new BPLVariableExpression[resultVars.size()])
-      );
-      
-      if (isSuperConstructor) {
-        callCmd.addComment("Super-Constructor:");
-      }
-      
-      addCommand(callCmd);
-      
-      // Make sure that constructor's return values are added to the list of aliases
-      if (invokedMethod.isConstructor()) {
-        for (String v : getAliasedValues(stackVar(first, params[0]))) {
-          addAlias(v, returnValueVar(callStatements, retType));
-        }
-      }
-      
-      // For all object which have not been modified by the method call,
-      // assume their object invariants
-      addAssume(getInvariantAfterLeavingMethod());
-      
-      // If the invoked method is a super-constructor, we need to assign
-      // the result value to the correct register variable.
-      if (isSuperConstructor) {
-        addAssignment(var(refLocalVar(0)), var(returnValueVar(callStatements, retType)));
-      }
-                 
-      // Assume exceptional postcondition for all exceptions
-      // and jump to the appropriate exception handler defined below.
-
-      JClassType[] exceptions = invokedMethod.getExceptionTypes();
-      
-      if (exceptions.length > 0) {
-        // For every exception thrown by the method call, we create a synthetic
-        // BoogiePL block in which we assume the corresponding exceptional
-        // postcondition.
-
-        // Branch to the blocks modeling the normal and the individual
-        // exceptional terminations of the method call.
-        String[] labels = new String[exceptions.length + 1];
-        labels[0] = normalPostBlockLabel(cfgBlock) + UNDERSCORE + callStatements;
-        for (int i = 0; i < exceptions.length; i++) {
-          labels[i + 1] = exceptionalPostBlockLabel(cfgBlock, exceptions[i]) + UNDERSCORE + callStatements;
-        }
-
-        endBlock(labels);
-
-        for (JClassType exception : exceptions) {
-          // Create the actual blocks for the individual exceptions.
-          // It is not necessary to check the exceptional postcondition,
-          // for this will be implicitely done by Boogie.
-          startBlock(exceptionalPostBlockLabel(cfgBlock, exception) + UNDERSCORE + callStatements);
-
-          // Havoc the exception object and assume its static type.
-          /* TODO: REMOVE this deprecated implementation:
-          addHavoc(var(exceptionVar(callStatements)));
-          addAssume(alive(
-              rval(var(exceptionVar(callStatements))),
-              var(HEAP_VAR)));
-          */
-          
-          addAssume(logicalAnd(
-              isExceptionalReturnState(var(RETURN_STATE_VAR + callStatements)),
-              isInstanceOf(
-                  rval(var(exceptionVar(callStatements))),
-                  typeRef(exception))
-          ));
-
-          // Assume the corresponding exceptional postcondition.
-          // addAssume(translateXPostcondition( invokedMethod, exception, PRE_HEAP_VAR, refStackVar(0), args));
-
-          // Now, branch to the actual exception handlers.
-          branchToHandlers(exception);
-        }
-
-        translateReachableExceptionHandlers();
-
-        // Finally, open the BoogiePL block representing the normal termination
-        // of the method. The subsequent translation can simply continue inside
-        // this block.
-        startBlock(normalPostBlockLabel(cfgBlock) + UNDERSCORE + callStatements);
-      }
-
-      // JType returnType = invokedMethod.getReturnType();
-      String resultVar = returnValueVar(callStatements, retType);
-
-      // Upon normal method termination, assume properties about the return value
-      if (hasReturnValue) {
-        // addHavoc(var(resultVar)); // do not havoc: we need to know whether the return value is null
-        if (retType.isReferenceType()) {
-          addAssume(alive(rval(var(resultVar)), var(HEAP_VAR)));
-          addAssume(isOfType(rval(var(resultVar)), typeRef(retType)));
-        } else {
-          addAssume(isOfType(ival(var(resultVar)), typeRef(retType)));
-        }
-      }
-      addAssume(isNormalReturnState(var(RETURN_STATE_VAR + callStatements)));
-
-      // If the method has a return value, we copy the helper variable
-      // callResult to the actual stack variable which will hold the value.
-      if (hasReturnValue) {
-        //String resultStackVar = stackVar(first, retType);
-        String lhs = "";
-        if (isSuperConstructor) {
-          lhs = stackVar(first, retType);
-        } else {
-          // lhs = stackVar(first - 1, retType);
-          lhs = stackVar(first, retType);
-        }        
-        addAssignment(var(lhs), var(resultVar));
-      }
+//      BCMethod invokedMethod = insn.getMethod();
+//      JType[] params = invokedMethod.getRealParameterTypes();
+//           
+//      int first = handle.getFrame().getStackSize() - params.length; // first method argument on the stack
+//      int stack = handle.getFrame().getStackSize();                 // stack size
+//     
+//      // Prepare arguments of method call
+//      List<BPLExpression> methodParams = new ArrayList<BPLExpression>();
+//            
+//      // Pass all other method arguments (the first of which refers to the "this" object
+//      // if the method is not static).
+//      String[] args = new String[params.length];
+//      for (int i = 0; i < params.length; i++) {
+//        args[i] = stackVar(first + i, params[i]);
+//        methodParams.add(new BPLVariableExpression(args[i]));
+//      }
+//      
+//      // does the invoked method provide a return value?
+//      //   - non-void method return an object reference or integer value
+//      //   - constructors "return" the reference to the instantiated owner object
+//      boolean hasReturnValue = !invokedMethod.isVoid() || invokedMethod.isConstructor();
+//      
+//      // is the invoked method a super-constructor called in the current constructor?
+//      //   - every constructors calls a super-constructor, the most general is Object..init()
+//      boolean isSuperConstructor = isSuperConstructorCall(invokedMethod, handle);
+//      /*
+//      boolean isSuperConstructor = method.isConstructor() && invokedMethod.isConstructor() &&
+//                                   (args.length > 0) ? (args[0].equals(stackVar(0, params[0]))) : false;
+//      */
+//                                   
+//      // get return type of method
+//      //   - normal method: explicitely declared return type
+//      //   - constructor: type of the owner object
+//      JType retType = (invokedMethod.isConstructor()
+//        ? invokedMethod.getOwner()
+//        : invokedMethod.getReturnType()
+//      );
+//      
+//      // Non-static method calls may throw a NullPointerException.
+//      /*
+//      if (!invokedMethod.isStatic() && !invokedMethod.isConstructor()) {
+//        translateRuntimeException(
+//            "java.lang.NullPointerException",
+//            nonNull(var(refStackVar(first))));
+//      }
+//      */
+//
+//      // Prepare return values of method call
+//      List<BPLVariableExpression> resultVars = new ArrayList<BPLVariableExpression>();
+//      resultVars.add(new BPLVariableExpression(returnStateVar(callStatements)));            // return state
+//      if (hasReturnValue) {
+//        resultVars.add(new BPLVariableExpression(returnValueVar(callStatements, retType))); // return value
+//      }
+//      resultVars.add(new BPLVariableExpression(exceptionVar(callStatements)));              // exception
+//      
+//      // Create call command with input and output parameters
+//      BPLCommand callCmd = new BPLCallCommand(
+//          getProcedureName(invokedMethod),
+//          methodParams.toArray(new BPLExpression[methodParams.size()]),
+//          resultVars.toArray(new BPLVariableExpression[resultVars.size()])
+//      );
+//      
+//      if (isSuperConstructor) {
+//        callCmd.addComment("Super-Constructor:");
+//      }
+//      
+//      addCommand(callCmd);
+//      
+//      // Make sure that constructor's return values are added to the list of aliases
+//      if (invokedMethod.isConstructor()) {
+//        for (String v : getAliasedValues(stackVar(first, params[0]))) {
+//          addAlias(v, returnValueVar(callStatements, retType));
+//        }
+//      }
+//      
+//      // For all object which have not been modified by the method call,
+//      // assume their object invariants
+//      addAssume(getInvariantAfterLeavingMethod());
+//      
+//      // If the invoked method is a super-constructor, we need to assign
+//      // the result value to the correct register variable.
+//      if (isSuperConstructor) {
+//        addAssignment(var(refLocalVar(0)), var(returnValueVar(callStatements, retType)));
+//      }
+//                 
+//      // Assume exceptional postcondition for all exceptions
+//      // and jump to the appropriate exception handler defined below.
+//
+//      JClassType[] exceptions = invokedMethod.getExceptionTypes();
+//      
+//      if (exceptions.length > 0) {
+//        // For every exception thrown by the method call, we create a synthetic
+//        // BoogiePL block in which we assume the corresponding exceptional
+//        // postcondition.
+//
+//        // Branch to the blocks modeling the normal and the individual
+//        // exceptional terminations of the method call.
+//        String[] labels = new String[exceptions.length + 1];
+//        labels[0] = normalPostBlockLabel(cfgBlock) + UNDERSCORE + callStatements;
+//        for (int i = 0; i < exceptions.length; i++) {
+//          labels[i + 1] = exceptionalPostBlockLabel(cfgBlock, exceptions[i]) + UNDERSCORE + callStatements;
+//        }
+//
+//        endBlock(labels);
+//
+//        for (JClassType exception : exceptions) {
+//          // Create the actual blocks for the individual exceptions.
+//          // It is not necessary to check the exceptional postcondition,
+//          // for this will be implicitely done by Boogie.
+//          startBlock(exceptionalPostBlockLabel(cfgBlock, exception) + UNDERSCORE + callStatements);
+//
+//          // Havoc the exception object and assume its static type.
+//          /* TODO: REMOVE this deprecated implementation:
+//          addHavoc(var(exceptionVar(callStatements)));
+//          addAssume(alive(
+//              rval(var(exceptionVar(callStatements))),
+//              var(HEAP_VAR)));
+//          */
+//          
+//          addAssume(logicalAnd(
+//              isExceptionalReturnState(var(RETURN_STATE_VAR + callStatements)),
+//              isInstanceOf(
+//                  rval(var(exceptionVar(callStatements))),
+//                  typeRef(exception))
+//          ));
+//
+//          // Assume the corresponding exceptional postcondition.
+//          // addAssume(translateXPostcondition( invokedMethod, exception, PRE_HEAP_VAR, refStackVar(0), args));
+//
+//          // Now, branch to the actual exception handlers.
+//          branchToHandlers(exception);
+//        }
+//
+//        translateReachableExceptionHandlers();
+//
+//        // Finally, open the BoogiePL block representing the normal termination
+//        // of the method. The subsequent translation can simply continue inside
+//        // this block.
+//        startBlock(normalPostBlockLabel(cfgBlock) + UNDERSCORE + callStatements);
+//      }
+//
+//      // JType returnType = invokedMethod.getReturnType();
+//      String resultVar = returnValueVar(callStatements, retType);
+//
+//      // Upon normal method termination, assume properties about the return value
+//      if (hasReturnValue) {
+//        // addHavoc(var(resultVar)); // do not havoc: we need to know whether the return value is null
+//        if (retType.isReferenceType()) {
+//          addAssume(alive(rval(var(resultVar)), var(HEAP_VAR)));
+//          addAssume(isOfType(rval(var(resultVar)), typeRef(retType)));
+//        } else {
+//          addAssume(isOfType(ival(var(resultVar)), typeRef(retType)));
+//        }
+//      }
+//      addAssume(isNormalReturnState(var(RETURN_STATE_VAR + callStatements)));
+//
+//      // If the method has a return value, we copy the helper variable
+//      // callResult to the actual stack variable which will hold the value.
+//      if (hasReturnValue) {
+//        //String resultStackVar = stackVar(first, retType);
+//        String lhs = "";
+//        if (isSuperConstructor) {
+//          lhs = stackVar(first, retType);
+//        } else {
+//          // lhs = stackVar(first - 1, retType);
+//          lhs = stackVar(first, retType);
+//        }        
+//        addAssignment(var(lhs), var(resultVar));
+//      }
 
       callStatements++;
     }

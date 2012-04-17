@@ -19,7 +19,9 @@ public interface ITranslationConstants {
   
   String ANY_TYPE = "Any";
   
-  String NAME_TYPE = "Name";
+  String NAME_TYPE = "TName";
+  
+  String METHOD_TYPE = "Method";
   
   String HEAP_TYPE =         "Store";
 

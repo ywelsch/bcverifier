@@ -75,7 +75,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
+
+import de.unikl.bcverifier.BPLTranslatedMethod;
 
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayType;
@@ -89,6 +92,7 @@ import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLFunction;
 import b2bpl.bpl.ast.BPLFunctionParameter;
 import b2bpl.bpl.ast.BPLIntLiteral;
+import b2bpl.bpl.ast.BPLModifiesClause;
 import b2bpl.bpl.ast.BPLNullLiteral;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
@@ -262,6 +266,38 @@ public class Translator implements ITranslationConstants {
         flushPendingTheory();
         return new BPLProgram(
                 declarations.toArray(new BPLDeclaration[declarations.size()]));
+    }
+    
+    public Map<String, BPLTranslatedMethod> translateMethods(JClassType... types) {
+        Map<String, BPLTranslatedMethod> procedures = new HashMap<String, BPLTranslatedMethod>();
+        
+        context = new Context();
+        MethodTranslator methodTranslator = new MethodTranslator(project);
+        BPLProcedure proc;
+        declarations = new ArrayList<BPLDeclaration>();
+        for (JClassType type : types) {
+            for (BCMethod method : type.getMethods()) {
+                if (!method.isAbstract()
+                        && !method.isNative()
+                        && !method.isSynthetic()) {
+                    
+                    proc = methodTranslator.translate(context, method);
+                    declarations.add(new BPLConstantDeclaration(new BPLVariable(GLOBAL_VAR_PREFIX+proc.getName(), new BPLTypeName(METHOD_TYPE))));
+                    procedures.put(method.getName(), new BPLTranslatedMethod(proc, declarations));
+                    declarations = new ArrayList<BPLDeclaration>();
+                }
+            }
+        }
+        flushPendingTheory();
+        
+        return procedures;
+    }
+    
+    public List<BPLDeclaration> getPrelude() {
+        declarations = new ArrayList<BPLDeclaration>();
+        generateTheory();
+        flushPendingTheory();
+        return declarations;
     }
 
     /**
@@ -826,10 +862,11 @@ public class Translator implements ITranslationConstants {
         addType(REF_TYPE);
         addType(ANY_TYPE); //TODO needed?
         addType(NAME_TYPE); //TODO needed?
+        addType(METHOD_TYPE);
         addConstants(new BPLVariable("null", new BPLTypeName(REF_TYPE)));
 
         addType("Field", "_");
-        addDeclaration(new BPLTypeAlias("Heap", new BPLArrayType(new BPLType[]{new BPLTypeName("alpha")}, new BPLType[]{new BPLTypeName("Ref"), new BPLTypeName("Field", "alpha")}, new BPLTypeName("alpha"))));
+        addDeclaration(new BPLTypeAlias("Heap", new BPLArrayType(new String[]{"alpha"}, new BPLType[]{new BPLTypeName("Ref"), new BPLTypeName("Field", "alpha")}, new BPLTypeName("alpha"))));
         
         //
         // Muller/Poetzsch Heffter BoogiePL store axiomatization

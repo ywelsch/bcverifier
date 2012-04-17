@@ -3,7 +3,11 @@ package de.unikl.bcverifier;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -11,7 +15,21 @@ import org.apache.log4j.Logger;
 import b2bpl.CompilationAbortedException;
 import b2bpl.Project;
 import b2bpl.bpl.BPLPrinter;
+import b2bpl.bpl.ast.BPLBasicBlock;
+import b2bpl.bpl.ast.BPLBuiltInType;
+import b2bpl.bpl.ast.BPLCommand;
+import b2bpl.bpl.ast.BPLDeclaration;
+import b2bpl.bpl.ast.BPLGotoCommand;
+import b2bpl.bpl.ast.BPLImplementation;
+import b2bpl.bpl.ast.BPLImplementationBody;
+import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
+import b2bpl.bpl.ast.BPLReturnCommand;
+import b2bpl.bpl.ast.BPLSpecification;
+import b2bpl.bpl.ast.BPLTypeName;
+import b2bpl.bpl.ast.BPLVariable;
+import b2bpl.bpl.ast.BPLVariableDeclaration;
+import b2bpl.bytecode.BCMethod;
 import b2bpl.bytecode.ITroubleReporter;
 import b2bpl.bytecode.JClassType;
 import b2bpl.bytecode.TroubleDescription;
@@ -21,6 +39,7 @@ import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.analysis.SemanticAnalyzer;
 import b2bpl.translation.CodeGenerator;
 import b2bpl.translation.Translator;
+import static b2bpl.translation.ITranslationConstants.*;
 
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
@@ -111,7 +130,52 @@ public class Library implements ITroubleReporter{
           projectTypes[j] = TypeLoader.getClassType(projectTypeNames[j]);
         }
         
-        BPLProgram program = new Translator(project).translate(projectTypes);
+//        BPLProgram program = new Translator(project).translate(projectTypes);
+        Translator translator = new Translator(project);
+        Map<String, BPLTranslatedMethod> procedures = translator.translateMethods(projectTypes);
+        List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();
+        programDecls.addAll(translator.getPrelude());
+        for(BPLTranslatedMethod method : procedures.values()){
+            programDecls.addAll(method.getNeededDeclarations());
+        }
+        
+        int maxLocals = 0, maxStack = 0;
+        List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
+        BPLProcedure proc;
+        for(JClassType classType : projectTypes){
+            for(BCMethod method : classType.getMethods()){
+                if (!method.isAbstract()
+                        && !method.isNative()
+                        && !method.isSynthetic()) {
+                    proc = procedures.get(method.getName()).getProcedure();
+                    maxLocals = Math.max(maxLocals, method.getMaxLocals());
+                    maxStack = Math.max(maxStack, method.getMaxStack());
+                    methodBlocks.add(new BPLBasicBlock(proc.getName(), new BPLCommand[0], new BPLGotoCommand(proc.getImplementation().getBody().getBasicBlocks()[0].getLabel())));
+                    Collections.addAll(methodBlocks, proc.getImplementation().getBody().getBasicBlocks());
+                }
+            }
+        }
+        methodBlocks.add(new BPLBasicBlock("check", new BPLCommand[0], new BPLReturnCommand()));
+        
+        List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
+        BPLVariable[] inParams = new BPLVariable[0];
+        BPLVariable[] outParams = new BPLVariable[0];
+        for(int i=0; i<maxLocals; i++){
+            BPLVariable regr = new BPLVariable(LOCAL_VAR_PREFIX + i + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE));
+            BPLVariable regi = new BPLVariable(LOCAL_VAR_PREFIX + i + INT_TYPE_ABBREV, BPLBuiltInType.INT);
+            localVariables.add(new BPLVariableDeclaration(regr, regi));
+        }
+        for(int i=0; i<maxStack; i++){
+            BPLVariable stackr = new BPLVariable(STACK_VAR_PREFIX + i + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE));
+            BPLVariable stacki = new BPLVariable(STACK_VAR_PREFIX + i + INT_TYPE_ABBREV, BPLBuiltInType.INT);
+            localVariables.add(new BPLVariableDeclaration(stackr, stacki));
+        }
+        
+        String methodName = "checkLibraries";
+        BPLImplementationBody methodBody = new BPLImplementationBody(localVariables.toArray(new BPLVariableDeclaration[localVariables.size()]), methodBlocks.toArray(new BPLBasicBlock[methodBlocks.size()]));
+        BPLImplementation methodImpl = new BPLImplementation(methodName, inParams, outParams, methodBody);
+        programDecls.add(new BPLProcedure(methodName, inParams, outParams, new BPLSpecification(), methodImpl));
+        BPLProgram program = new BPLProgram(programDecls.toArray(new BPLDeclaration[programDecls.size()]));
         
 //        System.out.println(program);
         log.debug("Writing specification to file "+outFile);
