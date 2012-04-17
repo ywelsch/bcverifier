@@ -171,12 +171,12 @@ axiom !(A <: C);
 axiom (forall t:Class :: C <: t ==> t == C || Object <: t); // maybe better encoding with "complete"?
 
 const unique g: Field int;
-const unique run,exec,inc: Method;
+const unique run,exec,inc,self: Method;
 
 axiom (forall m:Method :: definesMethod(A,m) <==> m == exec || m == inc);
 axiom (forall t:Class, m:Method :: t <: C ==> !definesMethod(t,m));
 
-const unique exec_begin, inc_begin, exec_invoc_call1, exec_invoc_call2 : Address; // one for each entry point
+const unique exec_begin, inc_begin, exec_invoc_call1, exec_invoc_call2, self_begin : Address; // one for each entry point
 
 const unique c: Var Ref;
 const unique pos: Var bool;  // ghost variable
@@ -228,10 +228,21 @@ procedure Check_CB()
   dispatch1:
   if (m1_method == exec) { goto exec_begin1; } else
   if (m1_method == inc) { goto inc_begin1; } else
+//  if (m1_method == self) { goto self_begin1; } else
   if (m1_method == rtrn) { goto exec_invoc_call1_1, exec_invoc_call1_2; } else
   { return; }
-
-  if (false) {
+  
+//  dispatch1callinternal:
+//  if (stack1[sp1][place] == exec_begin) { goto exec_begin1; } else
+//  if (stack1[sp1][place] == inc_begin) { goto inc_begin1; } else
+//  if (stack1[sp1][place] == self_begin) { goto self_begin1; } else
+//  { return; }
+  
+//    self_begin1:
+//    assume stack1[sp1][place] == self_begin;
+//    stack1[sp1][place] := null;
+//    
+  
   	exec_begin1:
   	assume stack1[sp1][place] == exec_begin;
     stack1[sp1][this] := m1_receiver;
@@ -248,18 +259,19 @@ procedure Check_CB()
     if (heap1[stack1[sp1][this],g] % 2 == 0) {
       if (sp1 == 0) {
         // output label: rtrn c
+        stack1[sp1][place] := exec_begin;
         m1_method, m1_param := rtrn, stack1[sp1][c];
         goto dispatch2;
       } else { assert false; }
     } else {
       if (sp1 == 0) {
         // output label: rtrn null
+        stack1[sp1][place] := exec_begin;
         m1_method, m1_param := rtrn, null;
         goto dispatch2;
       } else { assert false; }
     }
-  }
-  if (false) {
+  
   	inc_begin1:
   	assume stack1[sp1][place] == inc_begin;
     stack1[sp1][this] := m1_receiver;
@@ -276,11 +288,10 @@ procedure Check_CB()
     }
     if (sp1 == 0) {
       // void rtrn, use null value
+      stack1[sp1][place] := inc_begin;
       m1_method, m1_param := rtrn, null;
       goto dispatch2;
     } else { assert false; }
-  }
-  assume false;
 
   dispatch2:
   if (m2_method == exec) { goto exec_begin2; } else
@@ -288,7 +299,6 @@ procedure Check_CB()
   if (m2_method == rtrn) { goto exec_invoc_call2_1, exec_invoc_call2_2; } else
   { return; }
 
-  if (false) {
   	exec_begin2:
   	assume stack2[sp2][place] == exec_begin;
     stack2[sp2][this] := m2_receiver;
@@ -304,12 +314,13 @@ procedure Check_CB()
     }
     if (sp2 == 0) {
       // output label: rtrn c
+      stack2[sp2][place] := exec_begin;
       m2_method, m2_param := rtrn, stack2[sp2][c];
       goto Checking;
     } else { assert false; }
-  }
-  if (false) {
+    
   	inc_begin2:
+  	assume stack2[sp2][place] == inc_begin;
     stack2[sp2][this] := m2_receiver;
     stack2[sp2][c] := m2_param;
     heap2[stack2[sp2][this],g] := heap2[stack2[sp2][this],g] + 2;
@@ -324,11 +335,10 @@ procedure Check_CB()
     }
     if (sp2 == 0) {
       // void rtrn, use null value
+      stack2[sp2][place] := inc_begin;
       m2_method, m2_param := rtrn, null;
       goto Checking;
     } else { assert false; }
-  }
-  assume false;
 
   Checking:
   call UpdateM(m1_receiver,m2_receiver,m1_method,m2_method,m1_param,m2_param);
