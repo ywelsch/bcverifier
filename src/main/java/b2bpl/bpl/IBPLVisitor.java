@@ -21,6 +21,7 @@ import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLFunctionParameter;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLHavocCommand;
+import b2bpl.bpl.ast.BPLIfCommand;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
@@ -140,4 +141,6 @@ public interface IBPLVisitor<R> {
   R visitArrayType(BPLArrayType type);
 
   R visitParameterizedType(BPLParameterizedType type);
+
+  R visitIfCommand(BPLIfCommand cmd);
 }

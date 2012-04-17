@@ -28,6 +28,7 @@ import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLFunctionParameter;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLHavocCommand;
+import b2bpl.bpl.ast.BPLIfCommand;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
@@ -657,7 +658,7 @@ public class BPLPrinter implements IBPLVisitor<Object> {
   public Object visitArrayType(BPLArrayType type) {
       if(type.getParameterTypes().length>0){
           print('<');
-          printList(type.getParameterTypes());
+          printStringList(type.getParameterTypes());
           print('>');
       }
     print('[');
@@ -674,4 +675,27 @@ public class BPLPrinter implements IBPLVisitor<Object> {
     type.getType().accept(this);
     return null;
   }
+
+public Object visitIfCommand(BPLIfCommand cmd) {
+    print("if ");
+    print('(');
+    cmd.getPredicate().accept(this);
+    print(") {");
+    printNewLine();
+    for(BPLCommand c : cmd.getThenBranch()){
+        c.accept(this);
+        printNewLine();
+    }
+    print('}');
+    if(cmd.getElseBranch().size()>0) {
+        print(" else {");
+        printNewLine();
+        for(BPLCommand c : cmd.getThenBranch()){
+            c.accept(this);
+            printNewLine();
+        }
+        print('}');
+    }
+    return null;
+}
 }

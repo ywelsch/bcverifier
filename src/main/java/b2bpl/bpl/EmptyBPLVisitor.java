@@ -21,6 +21,7 @@ import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLFunctionParameter;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLHavocCommand;
+import b2bpl.bpl.ast.BPLIfCommand;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
@@ -271,6 +272,11 @@ public class EmptyBPLVisitor<R> implements IBPLVisitor<R> {
   }
 
 public R visitTypeAlias(BPLTypeAlias declaration) {
+    // do nothing
+    return null;
+}
+
+public R visitIfCommand(BPLIfCommand cmd) {
     // do nothing
     return null;
 }
