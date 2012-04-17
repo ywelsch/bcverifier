@@ -176,20 +176,22 @@ const unique run,exec,inc: Method;
 axiom (forall m:Method :: definesMethod(A,m) <==> m == exec || m == inc);
 axiom (forall t:Class, m:Method :: t <: C ==> !definesMethod(t,m));
 
-const unique exec_begin, inc_begin, exec_invoc_call : Address; // one for each entry point
+const unique exec_begin, inc_begin, exec_invoc_call1, exec_invoc_call2 : Address; // one for each entry point
 
 const unique c: Var Ref;
 const unique pos: Var bool;  // ghost variable
 
-function Inv(heap1:Heap, heap2:Heap, stack1:Stack, stack2:Stack, sp1:StackPtr, sp2:StackPtr, related:Bij) returns (bool) {
+function Inv(heap1:Heap, heap2:Heap, stack1:Stack, stack2:Stack, sp1:StackPtr, sp2:StackPtr, related:Bij, place: Var Address) returns (bool) {
   ( forall r:Ref :: AllocObj(r,heap1) ==> heap1[r,g] % 2 == 0 ) &&
   sp1 == 0 && sp2 == 0 && RelNull(stack1[sp1][c], stack2[sp2][c], related) &&
-  stack1[sp1][pos] == stack2[sp2][pos]
+  stack1[sp1][place] == stack2[sp2][place]
 }
 
 var rega1, rega2, regb1, regb2, regc1, regc2 : Ref;
 var regaint1, regaint2, regbint1, regbint2: int;
 var regabool1, regabool2, regbbool1, regbbool2: bool;
+
+var place : Var Address;
 const retA : Address;
   
 procedure Check_CB_Ctxt_MGC_New()
@@ -197,110 +199,127 @@ procedure Check_CB_Ctxt_MGC_New()
 {
   var fresh1, fresh2 : Ref;
   var classT : Class;
-  assume Inv(heap1,heap2,stack1,stack2,sp1,sp2,related);
+  assume Inv(heap1,heap2,stack1,stack2,sp1,sp2,related,place);
   assume isPublic(classT);
   assume !heap1[fresh1, alloc] && heap1[fresh1,dynType] == classT;
   heap1[fresh1,alloc] := true;
   assume !heap2[fresh2, alloc] && heap2[fresh2,dynType] == classT;
   heap2[fresh2,alloc] := true;
-  assert Inv(heap1,heap2,stack1,stack2,sp1,sp2,related);
+  assert Inv(heap1,heap2,stack1,stack2,sp1,sp2,related,place);
 }
 
 procedure Check_CB_Sanity_Inv()
   modifies heap1, heap2, stack1, stack2, sp1, sp2, m1_receiver, m2_receiver, m1_method, m2_method, m1_param, m2_param, related;
 {
-  assume Inv(heap1,heap2,stack1,stack2,sp1,sp2,related);
-  assert false;
+  assume Inv(heap1,heap2,stack1,stack2,sp1,sp2,related,place);
+  //assert false;
 }
 
-
 procedure Check_CB()
-  modifies heap1, heap2, stack1, stack2, sp1, sp2, m1_receiver, m2_receiver, m1_method, m2_method, m1_param, m2_param, related;
+  modifies place,heap1, heap2, stack1, stack2, sp1, sp2, m1_receiver, m2_receiver, m1_method, m2_method, m1_param, m2_param, related;
 {
-  assume Inv(heap1,heap2,stack1,stack2,sp1,sp2,related);
+  assume Inv(heap1,heap2,stack1,stack2,sp1,sp2,related,place);
   assume RelM(m1_receiver,m2_receiver,m1_method,m2_method,m1_param,m2_param,related);
   if (m1_method != rtrn) {
     assume sp1 == 0 && sp2 == 0;
   }
+  
+  dispatch1:
+  if (m1_method == exec) { goto exec_begin1; } else
+  if (m1_method == inc) { goto inc_begin1; } else
+  if (m1_method == rtrn) { goto exec_invoc_call1_1, exec_invoc_call1_2; } else
+  { return; }
 
-  if (m1_method == exec) {
+  if (false) {
+  	exec_begin1:
+  	assume stack1[sp1][place] == exec_begin;
     stack1[sp1][this] := m1_receiver;
     stack1[sp1][c] := m1_param;
     if (stack1[sp1][c] != null) {
       stack1[sp1][pos] := true;
       // output label: call c.run()
+      stack1[sp1][place] := exec_invoc_call1;
       m1_receiver, m1_method, m1_param := stack1[sp1][c], run, null;
-      goto L2;
-      RtrnCBexec1:
+      goto dispatch2;
+      exec_invoc_call1_1:
+      assume stack1[sp1][place] == exec_invoc_call1;
     }
     if (heap1[stack1[sp1][this],g] % 2 == 0) {
       if (sp1 == 0) {
         // output label: rtrn c
         m1_method, m1_param := rtrn, stack1[sp1][c];
-        goto L2;
+        goto dispatch2;
       } else { assert false; }
     } else {
       if (sp1 == 0) {
         // output label: rtrn null
         m1_method, m1_param := rtrn, null;
-        goto L2;
+        goto dispatch2;
       } else { assert false; }
     }
-  } else
-  if (m1_method == rtrn) {
-    if (stack1[sp1][pos]) { goto RtrnCBexec1; }
-    else { goto RtrnCBinc1; }
-  } else
-  if (m1_method == inc) {
+  }
+  if (false) {
+  	inc_begin1:
+  	assume stack1[sp1][place] == inc_begin;
     stack1[sp1][this] := m1_receiver;
     stack1[sp1][c] := m1_param;
     heap1[stack1[sp1][this],g] := heap1[stack1[sp1][this],g] + 2;
     if (stack1[sp1][c] != null) {
       stack1[sp1][pos] := false;
       // call c.run()
+      stack1[sp1][place] := exec_invoc_call2;
       m1_receiver, m1_method, m1_param := stack1[sp1][c], run, null;
-      goto L2;
-      RtrnCBinc1:
+      goto dispatch2;
+      exec_invoc_call1_2:
+      assume stack1[sp1][place] == exec_invoc_call2;
     }
     if (sp1 == 0) {
       // void rtrn, use null value
       m1_method, m1_param := rtrn, null;
-      goto L2;
+      goto dispatch2;
     } else { assert false; }
   }
   assume false;
 
-  L2:
-  if (m2_method == exec) {
+  dispatch2:
+  if (m2_method == exec) { goto exec_begin2; } else
+  if (m2_method == inc) { goto inc_begin2; } else
+  if (m2_method == rtrn) { goto exec_invoc_call2_1, exec_invoc_call2_2; } else
+  { return; }
+
+  if (false) {
+  	exec_begin2:
+  	assume stack2[sp2][place] == exec_begin;
     stack2[sp2][this] := m2_receiver;
     stack2[sp2][c] := m2_param;
     if (stack2[sp2][c] != null) {
       stack2[sp2][pos] := true;
       // output label: call c.run()
+      stack2[sp2][place] := exec_invoc_call1;
       m2_receiver, m2_method, m2_param := stack2[sp2][c], run, null;
       goto Checking;
-      RtrnCBexec2:
+      exec_invoc_call2_1:
+      assume stack2[sp2][place] == exec_invoc_call1;
     }
     if (sp2 == 0) {
       // output label: rtrn c
       m2_method, m2_param := rtrn, stack2[sp2][c];
       goto Checking;
     } else { assert false; }
-  } else
-  if (m2_method == rtrn) {
-    if (stack2[sp2][pos]) { goto RtrnCBexec2; }
-    else { goto RtrnCBinc2; }
-  } else
-  if (m2_method == inc) {
+  }
+  if (false) {
+  	inc_begin2:
     stack2[sp2][this] := m2_receiver;
     stack2[sp2][c] := m2_param;
     heap2[stack2[sp2][this],g] := heap2[stack2[sp2][this],g] + 2;
     if (stack2[sp2][c] != null) {
       stack2[sp2][pos] := false;
       // call c.run()
+      stack2[sp2][place] := exec_invoc_call2;
       m2_receiver, m2_method, m2_param := stack2[sp2][c], run, null;
       goto Checking;
-      RtrnCBinc2:
+      exec_invoc_call2_2:
+      assume stack2[sp2][place] == exec_invoc_call2;
     }
     if (sp2 == 0) {
       // void rtrn, use null value
@@ -312,7 +331,7 @@ procedure Check_CB()
 
   Checking:
   call UpdateM(m1_receiver,m2_receiver,m1_method,m2_method,m1_param,m2_param);
-  assert Inv(heap1,heap2,stack1,stack2,sp1,sp2,related);
+  assert Inv(heap1,heap2,stack1,stack2,sp1,sp2,related,place);
 }
 
 /* The modulo operation */
