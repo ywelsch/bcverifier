@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
@@ -142,7 +143,8 @@ public class TypeLoader {
     
     if (loadedClassTypes.add(type)) {
       try {
-        int flags = ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES;
+//        int flags = ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES;
+        int flags = ClassReader.SKIP_FRAMES;
         Attribute[] attributes;
         if (projectTypes.contains(type.getName())) {
           attributes = new Attribute[] {
@@ -358,6 +360,8 @@ public class TypeLoader {
 
     private List<ExceptionHandler> exceptionHandlers;
 
+    private int currentSourceLine = -1;
+
     public BCMethodBuilder(BCMethod method) {
       this.method = method;
     }
@@ -486,6 +490,7 @@ public class TypeLoader {
         String owner,
         String name,
         String descriptor) {
+        
       // Methods can also be invoked on arrays. If so, the owner provided by
       // ASM is the array's descriptor.
       JReferenceType ownerType;
@@ -629,7 +634,7 @@ public class TypeLoader {
     }
 
     public void visitLineNumber(int line, Label start) {
-      // do nothing
+        currentSourceLine  = line;
     }
 
     public void visitMaxs(int maxStack, int maxLocals) {
@@ -685,6 +690,8 @@ public class TypeLoader {
         handle = new InstructionHandle();
       }
       handle.setInstruction(instruction);
+      handle.setSourceLine(currentSourceLine);
+      
       instructions.add(handle);
       currentLabelHandle = null;
     }

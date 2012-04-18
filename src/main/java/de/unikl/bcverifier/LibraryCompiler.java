@@ -1,6 +1,7 @@
 package de.unikl.bcverifier;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
 
 import javax.tools.*;

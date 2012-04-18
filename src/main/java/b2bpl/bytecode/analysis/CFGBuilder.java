@@ -5,8 +5,8 @@ import java.util.HashSet;
 
 import b2bpl.bytecode.BCMethod;
 import b2bpl.bytecode.ExceptionHandler;
-import b2bpl.bytecode.InstructionHandle;
 import b2bpl.bytecode.IInstructionVisitor;
+import b2bpl.bytecode.InstructionHandle;
 import b2bpl.bytecode.Instructions;
 import b2bpl.bytecode.JClassType;
 import b2bpl.bytecode.JNullType;

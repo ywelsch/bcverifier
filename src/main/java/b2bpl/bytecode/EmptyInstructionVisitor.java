@@ -301,6 +301,6 @@ public class EmptyInstructionVisitor implements IInstructionVisitor {
   }
 
   public void visitDup2X2Instruction(Dup2X2Instruction insn) {
-    // do nothing
+      // do nothing
   }
 }

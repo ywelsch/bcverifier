@@ -70,7 +70,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import b2bpl.Main;
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLAssertCommand;
 import b2bpl.bpl.ast.BPLAssignmentCommand;
@@ -78,7 +77,6 @@ import b2bpl.bpl.ast.BPLAssumeCommand;
 import b2bpl.bpl.ast.BPLBasicBlock;
 import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLBuiltInType;
-import b2bpl.bpl.ast.BPLCallCommand;
 import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLEnsuresClause;
 import b2bpl.bpl.ast.BPLExpression;
@@ -2850,6 +2848,7 @@ public class MethodTranslator implements ITranslationConstants {
     private void translateInvokeInstruction(InvokeInstruction insn) {
         BPLTransferCommand transCmd = new BPLGotoCommand("check");
         transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
+        transCmd.addComment("Sourceline: "+handle.getSourceLine());
           BPLBasicBlock block = new BPLBasicBlock(
             getProcedureName(method) + "_" + blockLabel,
             commands.toArray(new BPLCommand[commands.size()]),

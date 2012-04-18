@@ -18,7 +18,7 @@ public abstract class Instruction {
   }
 
   public boolean isUnconditionalBranch() {
-    return false;
+      return false;
   }
 
   public String[] getRuntimeExceptions() {
