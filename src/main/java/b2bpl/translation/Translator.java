@@ -268,13 +268,14 @@ public class Translator implements ITranslationConstants {
                 declarations.toArray(new BPLDeclaration[declarations.size()]));
     }
     
-    public Map<String, BPLTranslatedMethod> translateMethods(JClassType... types) {
-        Map<String, BPLTranslatedMethod> procedures = new HashMap<String, BPLTranslatedMethod>();
+    public Map<String, BPLProcedure> translateMethods(JClassType... types) {
+        Map<String, BPLProcedure> procedures = new HashMap<String, BPLProcedure>();
         
         context = new Context();
-        MethodTranslator methodTranslator = new MethodTranslator(project);
-        BPLProcedure proc;
         declarations = new ArrayList<BPLDeclaration>();
+        MethodTranslator methodTranslator = new MethodTranslator(project);
+        generateTheory();
+        BPLProcedure proc;
         for (JClassType type : types) {
             for (BCMethod method : type.getMethods()) {
                 if (!method.isAbstract()
@@ -283,19 +284,15 @@ public class Translator implements ITranslationConstants {
                     
                     proc = methodTranslator.translate(context, method);
                     declarations.add(new BPLConstantDeclaration(new BPLVariable(GLOBAL_VAR_PREFIX+proc.getName(), new BPLTypeName(METHOD_TYPE))));
-                    procedures.put(method.getName(), new BPLTranslatedMethod(proc, declarations));
-                    declarations = new ArrayList<BPLDeclaration>();
+                    procedures.put(method.getName(), proc);
                 }
             }
         }
-        flushPendingTheory();
         
         return procedures;
     }
     
     public List<BPLDeclaration> getPrelude() {
-        declarations = new ArrayList<BPLDeclaration>();
-        generateTheory();
         flushPendingTheory();
         return declarations;
     }

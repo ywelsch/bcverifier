@@ -66,6 +66,10 @@ public class Main {
         Configuration config = new Configuration();
         try {
             File givenPath = parseParames(args, config);
+            if(givenPath == null){
+                printUsage();
+                return;
+            }
             if(config.isWorkOnAll()){
                 log.debug("Parsing all libraries in "+givenPath);
                 File libraryPath;

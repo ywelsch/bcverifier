@@ -22,6 +22,7 @@ import b2bpl.bpl.ast.BPLDeclaration;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
+import b2bpl.bpl.ast.BPLModifiesClause;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLReturnCommand;
@@ -29,6 +30,7 @@ import b2bpl.bpl.ast.BPLSpecification;
 import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableDeclaration;
+import b2bpl.bpl.ast.BPLVariableExpression;
 import b2bpl.bytecode.BCMethod;
 import b2bpl.bytecode.ITroubleReporter;
 import b2bpl.bytecode.JClassType;
@@ -132,12 +134,9 @@ public class Library implements ITroubleReporter{
         
 //        BPLProgram program = new Translator(project).translate(projectTypes);
         Translator translator = new Translator(project);
-        Map<String, BPLTranslatedMethod> procedures = translator.translateMethods(projectTypes);
+        Map<String, BPLProcedure> procedures = translator.translateMethods(projectTypes);
         List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();
         programDecls.addAll(translator.getPrelude());
-        for(BPLTranslatedMethod method : procedures.values()){
-            programDecls.addAll(method.getNeededDeclarations());
-        }
         
         int maxLocals = 0, maxStack = 0;
         List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
@@ -147,7 +146,7 @@ public class Library implements ITroubleReporter{
                 if (!method.isAbstract()
                         && !method.isNative()
                         && !method.isSynthetic()) {
-                    proc = procedures.get(method.getName()).getProcedure();
+                    proc = procedures.get(method.getName());
                     maxLocals = Math.max(maxLocals, method.getMaxLocals());
                     maxStack = Math.max(maxStack, method.getMaxStack());
                     methodBlocks.add(new BPLBasicBlock(proc.getName(), new BPLCommand[0], new BPLGotoCommand(proc.getImplementation().getBody().getBasicBlocks()[0].getLabel())));
@@ -163,7 +162,8 @@ public class Library implements ITroubleReporter{
         for(int i=0; i<maxLocals; i++){
             BPLVariable regr = new BPLVariable(LOCAL_VAR_PREFIX + i + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE));
             BPLVariable regi = new BPLVariable(LOCAL_VAR_PREFIX + i + INT_TYPE_ABBREV, BPLBuiltInType.INT);
-            localVariables.add(new BPLVariableDeclaration(regr, regi));
+            BPLVariable param = new BPLVariable(PARAM_VAR_PREFIX+ i, new BPLTypeName(REF_TYPE));
+            localVariables.add(new BPLVariableDeclaration(regr, regi, param));
         }
         for(int i=0; i<maxStack; i++){
             BPLVariable stackr = new BPLVariable(STACK_VAR_PREFIX + i + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE));
@@ -171,10 +171,13 @@ public class Library implements ITroubleReporter{
             localVariables.add(new BPLVariableDeclaration(stackr, stacki));
         }
         
+        //backward compatibility with old implementation
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable("result", new BPLTypeName(REF_TYPE)), new BPLVariable("retstate", new BPLTypeName(RETURN_STATE_TYPE))));
+        
         String methodName = "checkLibraries";
         BPLImplementationBody methodBody = new BPLImplementationBody(localVariables.toArray(new BPLVariableDeclaration[localVariables.size()]), methodBlocks.toArray(new BPLBasicBlock[methodBlocks.size()]));
         BPLImplementation methodImpl = new BPLImplementation(methodName, inParams, outParams, methodBody);
-        programDecls.add(new BPLProcedure(methodName, inParams, outParams, new BPLSpecification(), methodImpl));
+        programDecls.add(new BPLProcedure(methodName, inParams, outParams, new BPLSpecification(new BPLModifiesClause(new BPLVariableExpression(HEAP_VAR))), methodImpl));
         BPLProgram program = new BPLProgram(programDecls.toArray(new BPLDeclaration[programDecls.size()]));
         
 //        System.out.println(program);
