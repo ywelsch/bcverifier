@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -132,7 +133,6 @@ public class Library implements ITroubleReporter{
           projectTypes[j] = TypeLoader.getClassType(projectTypeNames[j]);
         }
         
-//        BPLProgram program = new Translator(project).translate(projectTypes);
         Translator translator = new Translator(project);
         Map<String, BPLProcedure> procedures = translator.translateMethods(projectTypes);
         List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();
@@ -141,6 +141,7 @@ public class Library implements ITroubleReporter{
         int maxLocals = 0, maxStack = 0;
         List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
         BPLProcedure proc;
+        Map<String, BPLVariable> usedVariables = new HashMap<String, BPLVariable>();
         for(JClassType classType : projectTypes){
             for(BCMethod method : classType.getMethods()){
                 if (!method.isAbstract()
@@ -150,6 +151,19 @@ public class Library implements ITroubleReporter{
                     proc = procedures.get(method.getQualifiedBoogiePLName());
                     maxLocals = Math.max(maxLocals, method.getMaxLocals());
                     maxStack = Math.max(maxStack, method.getMaxStack());
+                    
+                    for(BPLVariableDeclaration varDecl : proc.getImplementation().getBody().getVariableDeclarations()){
+                        for(BPLVariable var : varDecl.getVariables()){
+                            usedVariables.put(var.getName(), var);
+                        }
+                    }
+                    for(BPLVariable inParam : proc.getInParameters()){
+                        usedVariables.put(inParam.getName(), inParam);
+                    }
+                    for(BPLVariable outParam : proc.getOutParameters()){
+                        usedVariables.put(outParam.getName(), outParam);
+                    }
+                    
                     methodBlocks.add(new BPLBasicBlock(proc.getName(), new BPLCommand[0], new BPLGotoCommand(proc.getImplementation().getBody().getBasicBlocks()[0].getLabel())));
                     Collections.addAll(methodBlocks, proc.getImplementation().getBody().getBasicBlocks());
                 }
@@ -160,20 +174,10 @@ public class Library implements ITroubleReporter{
         List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
         BPLVariable[] inParams = new BPLVariable[0];
         BPLVariable[] outParams = new BPLVariable[0];
-        for(int i=0; i<maxLocals; i++){
-            BPLVariable regr = new BPLVariable(LOCAL_VAR_PREFIX + i + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE));
-            BPLVariable regi = new BPLVariable(LOCAL_VAR_PREFIX + i + INT_TYPE_ABBREV, BPLBuiltInType.INT);
-            BPLVariable param = new BPLVariable(PARAM_VAR_PREFIX+ i, new BPLTypeName(REF_TYPE));
-            localVariables.add(new BPLVariableDeclaration(regr, regi, param));
-        }
-        for(int i=0; i<maxStack; i++){
-            BPLVariable stackr = new BPLVariable(STACK_VAR_PREFIX + i + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE));
-            BPLVariable stacki = new BPLVariable(STACK_VAR_PREFIX + i + INT_TYPE_ABBREV, BPLBuiltInType.INT);
-            localVariables.add(new BPLVariableDeclaration(stackr, stacki));
-        }
         
-        //backward compatibility with old implementation
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable("result", new BPLTypeName(REF_TYPE)), new BPLVariable("retstate", new BPLTypeName(RETURN_STATE_TYPE))));
+        for(BPLVariable var : usedVariables.values()){
+            localVariables.add(new BPLVariableDeclaration(var));
+        }
         
         String methodName = "checkLibraries";
         BPLImplementationBody methodBody = new BPLImplementationBody(localVariables.toArray(new BPLVariableDeclaration[localVariables.size()]), methodBlocks.toArray(new BPLBasicBlock[methodBlocks.size()]));
@@ -181,7 +185,6 @@ public class Library implements ITroubleReporter{
         programDecls.add(new BPLProcedure(methodName, inParams, outParams, new BPLSpecification(new BPLModifiesClause(new BPLVariableExpression(HEAP_VAR))), methodImpl));
         BPLProgram program = new BPLProgram(programDecls.toArray(new BPLDeclaration[programDecls.size()]));
         
-//        System.out.println(program);
         log.debug("Writing specification to file "+outFile);
         PrintWriter writer = new PrintWriter(outFile);
         program.accept(new BPLPrinter(writer));
@@ -219,10 +222,6 @@ public class Library implements ITroubleReporter{
         }
     }
     
-    /*
-     * copied from b2bpl.Main.reportTrouble()
-     * @see b2bpl.bytecode.ITroubleReporter#reportTrouble(b2bpl.bytecode.TroubleMessage)
-     */
     public void reportTrouble(TroubleMessage message) {
         String msg = "";
 
