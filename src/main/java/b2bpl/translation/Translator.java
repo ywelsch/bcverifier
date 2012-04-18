@@ -1930,7 +1930,7 @@ public class Translator implements ITranslationConstants {
                 new BPLVariable[] { this_var },
                 new BPLVariable[] {
                         new BPLVariable(RETURN_STATE_PARAM, new BPLTypeName(RETURN_STATE_TYPE)),
-                        new BPLVariable(RESULT_PARAM, new BPLTypeName(REF_TYPE)),
+                        new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE)),
                         new BPLVariable(EXCEPTION_PARAM, new BPLTypeName(REF_TYPE))
                 },   
 
@@ -1957,10 +1957,10 @@ public class Translator implements ITranslationConstants {
 
                                 new BPLEnsuresClause(logicalAnd(
                                         // postcondition of helper procedure (usually constructor)
-                                        isEqual(var(RESULT_PARAM), var(this_var_name)),
-                                        notEqual(var(RESULT_PARAM), BPLNullLiteral.NULL),
-                                        alive(rval(var(RESULT_PARAM)), var(HEAP_VAR)),
-                                        isInstanceOf(rval(var(RESULT_PARAM)), var(type)),
+                                        isEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), var(this_var_name)),
+                                        notEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), BPLNullLiteral.NULL),
+                                        alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(HEAP_VAR)),
+                                        isInstanceOf(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(type)),
                                         forall(lVar,
                                                 implies(
                                                         // alive(rval(var(o)), old(var(HEAP_VAR))),

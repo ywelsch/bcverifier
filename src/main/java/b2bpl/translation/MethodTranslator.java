@@ -429,7 +429,7 @@ public class MethodTranslator implements ITranslationConstants {
     //@deprecated inParams[0] = new BPLVariable(PRE_HEAP_VAR, new BPLTypeName(HEAP_TYPE));
     for (int i = 0; i < inParams.length; i++) {
       BPLType bplType = type(paramTypes[i]);
-      inParams[i] = new BPLVariable(paramVar(i), bplType);
+      inParams[i] = new BPLVariable(paramVar(i, paramTypes[i]), bplType);
     }
 
     // Prepare list of output parameters
@@ -439,9 +439,9 @@ public class MethodTranslator implements ITranslationConstants {
     outParams.add(new BPLVariable(RETURN_STATE_PARAM, new BPLTypeName(RETURN_STATE_TYPE)));
     if (provideReturnValue) {
       if (method.isConstructor()) {
-        outParams.add(new BPLVariable(RESULT_PARAM, new BPLTypeName(REF_TYPE)));
+        outParams.add(new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE)));
       } else {
-        outParams.add(new BPLVariable(RESULT_PARAM, type(method.getReturnType())));
+        outParams.add(new BPLVariable(RESULT_PARAM + typeAbbrev(type(method.getReturnType())), type(method.getReturnType())));
       }
     }
     outParams.add(new BPLVariable(EXCEPTION_PARAM, new BPLTypeName(REF_TYPE)));
@@ -535,11 +535,11 @@ public class MethodTranslator implements ITranslationConstants {
         if (!method.isConstructor()) {
           requiresClauses.add(new BPLRequiresClause(logicalAnd(
             alive(
-              rval(var(paramVar(i))),
+              rval(var(paramVar(i, params[i]))),
               var(HEAP_VAR)
             ),
             isInstanceOf( // isOfType
-              rval(var(paramVar(i))),
+              rval(var(paramVar(i, params[i]))),
               typeRef
             )
           )));
@@ -561,7 +561,7 @@ public class MethodTranslator implements ITranslationConstants {
         if (method.getOwner().isSubtypeOf(params[i]) || params[i].isSubtypeOf(method.getOwner())) {
           requiresClauses.add(new BPLRequiresClause(notEqual(
               var(thisVar()),
-              var(paramVar(i))
+              var(paramVar(i, params[i]))
           )));
         }
       }
@@ -855,9 +855,9 @@ public class MethodTranslator implements ITranslationConstants {
     if (method.isConstructor()) {
       qResult = logicalAnd(
             Q,
-            alive(rval(var(RESULT_PARAM)), var(HEAP_VAR)),
-            isInstanceOf(rval(var(RESULT_PARAM)), typeRef(method.getOwner())),
-            notEqual(var(RESULT_PARAM), BPLNullLiteral.NULL),
+            alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(HEAP_VAR)),
+            isInstanceOf(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), typeRef(method.getOwner())),
+            notEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), BPLNullLiteral.NULL),
             guaranteeAliveness,
             guaranteeValues
       );
@@ -868,16 +868,16 @@ public class MethodTranslator implements ITranslationConstants {
           qResult = logicalAnd(
             // isNormalReturnState(var(RETURN_STATE_PARAM)),
             Q,
-            alive(rval(var(RESULT_PARAM)), var(HEAP_VAR)),
-            isOfType(rval(var(RESULT_PARAM)), typeRef(method.getReturnType())));
+            alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(HEAP_VAR)),
+            isOfType(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), typeRef(method.getReturnType())));
         } else {
           // The method's return value is not a reference type
           // (in this particular case, we assume type int)
           qResult = logicalAnd(
             // isNormalReturnState(var(RETURN_STATE_PARAM)),
             Q,
-            alive(ival(var(RESULT_PARAM)), var(HEAP_VAR)),
-            isOfType(ival(var(RESULT_PARAM)), typeRef(method.getReturnType())));
+            alive(ival(var(RESULT_PARAM + typeAbbrev(type(method.getReturnType())))), var(HEAP_VAR)),
+            isOfType(ival(var(RESULT_PARAM + typeAbbrev(type(method.getReturnType())))), typeRef(method.getReturnType())));
         }
       } else {
         qResult = Q;
@@ -1037,7 +1037,7 @@ public class MethodTranslator implements ITranslationConstants {
     JType[] paramTypes = method.getRealParameterTypes();
     String[] params = new String[paramTypes.length];
     for (int i = 0; i < params.length; i++) {
-      params[i] = paramVar(i);
+      params[i] = paramVar(i, paramTypes[i]);
     }
     return params;
   }
@@ -1066,7 +1066,7 @@ public class MethodTranslator implements ITranslationConstants {
     // so we add an alias telling that "param0" actually refers to "result"
     // in the constructor's postcondition
     BPLType t = new BPLTypeName(method.getReturnType().getInternalName());
-    if (method.isConstructor()) addAlias(RESULT_PARAM, thisVar());
+    if (method.isConstructor()) addAlias(RESULT_PARAM + typeAbbrev(type(method.getReturnType())), thisVar());
     
     startBlock(INIT_BLOCK_LABEL);
 
@@ -1123,7 +1123,7 @@ public class MethodTranslator implements ITranslationConstants {
 
     JType[] params = method.getRealParameterTypes();
     for (int i = 0; i < params.length; i++) {
-      addAssignment(var(localVar(i, params[i])), var(paramVar(i)));
+      addAssignment(var(localVar(i, params[i])), var(paramVar(i, params[i])));
     }
     
     addAssignment(var(RETURN_STATE_PARAM), var(NORMAL_RETURN_STATE));
@@ -1248,7 +1248,7 @@ public class MethodTranslator implements ITranslationConstants {
         addAssume(alive(ival(topElem), var(HEAP_VAR)));
         addAssume(isOfType(ival(topElem), var(VALUE_TYPE_PREFIX + JBaseType.INT.toString())));
       }
-      addAssignment(var(RESULT_PARAM), var(stackVar(0, retType)));
+      addAssignment(var(RESULT_PARAM + typeAbbrev(type(retType))), var(stackVar(0, retType)));
       addAssignment(var(RETURN_STATE_PARAM), var(NORMAL_RETURN_STATE));
       
     }
@@ -2276,12 +2276,12 @@ public class MethodTranslator implements ITranslationConstants {
     return (type == BPLBuiltInType.INT) ? INT_TYPE_ABBREV : REF_TYPE_ABBREV;
   }
 
-  private static String paramVar(int index) {
-    return PARAM_VAR_PREFIX + index;
+  private static String paramVar(int index, JType type) {
+    return PARAM_VAR_PREFIX + index + typeAbbrev(type(type));
   }
 
   private static String thisVar() {
-    return paramVar(0);
+    return paramVar(0, new JClassType("java.lang.Object")); //TODO 'this' is not really of type Object, but of some subtype
     // return THIS_VAR;
   }
 
@@ -2486,7 +2486,7 @@ public class MethodTranslator implements ITranslationConstants {
    */
   private static boolean isReturnValue(String v)
   {
-    return v.equals(RESULT_PARAM);
+    return v.startsWith(RESULT_PARAM); //TODO better solution here
   }
   
   /**
@@ -3406,7 +3406,7 @@ public class MethodTranslator implements ITranslationConstants {
       // endBlock(POST_BLOCK_LABEL);
 
       addAssignment(var(RETURN_STATE_PARAM), var(NORMAL_RETURN_STATE));
-      addAssignment(var(RESULT_PARAM), var(intStackVar(stack)));
+      addAssignment(var(RESULT_PARAM + INT_TYPE_ABBREV), var(intStackVar(stack))); //TODO maybe this is a boolean
       endBlock(EXIT_BLOCK_LABEL);
     }
 
@@ -3417,7 +3417,7 @@ public class MethodTranslator implements ITranslationConstants {
       // addAssignment(var(RESULT_VAR), var(intStackVar(stack)));
       // endBlock(POST_BLOCK_LABEL);
 
-      addAssignment(var(RESULT_PARAM), var(intStackVar(stack)));
+      addAssignment(var(RESULT_PARAM + INT_TYPE_ABBREV), var(intStackVar(stack)));
       endBlock(EXIT_BLOCK_LABEL);
     }
 
@@ -3428,7 +3428,7 @@ public class MethodTranslator implements ITranslationConstants {
       // addAssignment(var(RESULT_VAR), var(refStackVar(stack)));
       // endBlock(POST_BLOCK_LABEL);
 
-      addAssignment(var(RESULT_PARAM), var(refStackVar(stack)));
+      addAssignment(var(RESULT_PARAM + REF_TYPE_ABBREV), var(refStackVar(stack)));
       endBlock(EXIT_BLOCK_LABEL);
     }
 
