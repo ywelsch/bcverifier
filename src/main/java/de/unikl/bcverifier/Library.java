@@ -146,7 +146,8 @@ public class Library implements ITroubleReporter{
                 if (!method.isAbstract()
                         && !method.isNative()
                         && !method.isSynthetic()) {
-                    proc = procedures.get(method.getName());
+                    log.debug("Adding "+method.getQualifiedBoogiePLName());
+                    proc = procedures.get(method.getQualifiedBoogiePLName());
                     maxLocals = Math.max(maxLocals, method.getMaxLocals());
                     maxStack = Math.max(maxStack, method.getMaxStack());
                     methodBlocks.add(new BPLBasicBlock(proc.getName(), new BPLCommand[0], new BPLGotoCommand(proc.getImplementation().getBody().getBasicBlocks()[0].getLabel())));
@@ -194,6 +195,7 @@ public class Library implements ITroubleReporter{
         
         BoogieRunner.setVerify(verify);
         try {
+            log.info("Checking "+oldSpecification);
             System.out.println(BoogieRunner.runBoogie(oldSpecification));
             if(BoogieRunner.getLastReturn()){
                 log.debug("Success");
@@ -205,6 +207,7 @@ public class Library implements ITroubleReporter{
         }
         
         try {
+            log.info("Checking "+newSpecification);
             System.out.println(BoogieRunner.runBoogie(newSpecification));
             if(BoogieRunner.getLastReturn()){
                 log.debug("Success");

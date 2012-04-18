@@ -6,6 +6,7 @@ import org.apache.commons.io.filefilter.AndFileFilter;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.HiddenFileFilter;
 import org.apache.commons.io.filefilter.NotFileFilter;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
@@ -70,6 +71,12 @@ public class Main {
                 printUsage();
                 return;
             }
+            if(config.isDebug()){
+                Logger.getRootLogger().setLevel(Level.DEBUG);
+            } else {
+                Logger.getRootLogger().setLevel(Level.INFO);
+            }
+            
             if(config.isWorkOnAll()){
                 log.debug("Parsing all libraries in "+givenPath);
                 File libraryPath;

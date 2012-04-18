@@ -284,7 +284,7 @@ public class Translator implements ITranslationConstants {
                     
                     proc = methodTranslator.translate(context, method);
                     declarations.add(new BPLConstantDeclaration(new BPLVariable(GLOBAL_VAR_PREFIX+proc.getName(), new BPLTypeName(METHOD_TYPE))));
-                    procedures.put(method.getName(), proc);
+                    procedures.put(method.getQualifiedBoogiePLName(), proc);
                 }
             }
         }
