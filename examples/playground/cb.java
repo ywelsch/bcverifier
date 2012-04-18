@@ -3,13 +3,13 @@ public interface C { void run(); }
 
 public class A {
   int g; // default value is 0
-  A exec(C c) {
+  C exec(C c) {
     if (c != null) c.run();
-    if (g % 2 == 0) { return null; }
-    else { return self(this); }
+    if (g % 2 == 0) { return c; }
+    else { c = self(c); return c; }
   }
-  private A self(A a) {
-    return a;
+  private C self(C c) {
+    return c;
   }
   void inc() { g = g + 2; }
 }
@@ -19,9 +19,9 @@ public interface C { void run(); }
 
 public class A {
   int g; // default value is 0
-  A exec(C c) {
+  C exec(C c) {
     if (c != null) c.run();
-    return null;
+    return c;
   }
   void inc() { g = g + 2; }
 }
