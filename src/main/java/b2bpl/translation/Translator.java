@@ -81,6 +81,7 @@ import java.util.TreeSet;
 import de.unikl.bcverifier.BPLTranslatedMethod;
 
 import b2bpl.Project;
+import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLArrayType;
 import b2bpl.bpl.ast.BPLAxiom;
 import b2bpl.bpl.ast.BPLBoolLiteral;
@@ -90,10 +91,12 @@ import b2bpl.bpl.ast.BPLDeclaration;
 import b2bpl.bpl.ast.BPLEnsuresClause;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLFunction;
+import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLFunctionParameter;
 import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLModifiesClause;
 import b2bpl.bpl.ast.BPLNullLiteral;
+import b2bpl.bpl.ast.BPLParameterizedType;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLRequiresClause;
@@ -858,12 +861,28 @@ public class Translator implements ITranslationConstants {
     private void axiomatizeHeap() {
         addType(REF_TYPE);
         addType(ANY_TYPE); //TODO needed?
-        addType(NAME_TYPE); //TODO needed?
+        addType(NAME_TYPE);
         addType(METHOD_TYPE);
         addConstants(new BPLVariable("null", new BPLTypeName(REF_TYPE)));
 
         addType("Field", "_");
-        addDeclaration(new BPLTypeAlias("Heap", new BPLArrayType(new String[]{"alpha"}, new BPLType[]{new BPLTypeName("Ref"), new BPLTypeName("Field", "alpha")}, new BPLTypeName("alpha"))));
+        addDeclaration(new BPLTypeAlias("Heap", new BPLParameterizedType(new BPLArrayType(new BPLType[]{new BPLTypeName("Ref"), new BPLTypeName("Field", "alpha")}, new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
+        
+        addDeclaration(new BPLConstantDeclaration(new BPLVariable("alloc", new BPLTypeName("Field", "bool"))));
+        addDeclaration(new BPLConstantDeclaration(new BPLVariable("exposed", new BPLTypeName("Field", "bool"))));
+        addDeclaration(new BPLConstantDeclaration(new BPLVariable("createdByCtxt", new BPLTypeName("Field", "bool"))));
+        
+        addDeclaration(new BPLConstantDeclaration(new BPLVariable("dynType", new BPLTypeName("Field", NAME_TYPE))));
+        
+        addFunction("AllocObj", new BPLTypeName(REF_TYPE), new BPLTypeName("Heap"), BPLBuiltInType.BOOL);
+        BPLVariable refVar = new BPLVariable("r", new BPLTypeName(REF_TYPE));
+        BPLVariable heapVar = new BPLVariable("heap", new BPLTypeName("Heap"));
+        addAxiom(forall(
+                refVar, heapVar, 
+                isEquiv(new BPLFunctionApplication("AllocObj", var("r"), var("heap")), 
+                        logicalAnd(notEqual(var("r"), var("null")), new BPLArrayExpression(var("heap"), var("r"), var("alloc"))))));
+        
+        addDeclaration(new BPLTypeAlias("Bij", new BPLArrayType(new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL)));
         
         //
         // Muller/Poetzsch Heffter BoogiePL store axiomatization

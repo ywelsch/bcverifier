@@ -143,6 +143,8 @@ public class Library implements ITroubleReporter{
         List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
         BPLProcedure proc;
         Map<String, BPLVariable> usedVariables = new HashMap<String, BPLVariable>();
+        List<String> methodLabels = new ArrayList<String>();
+        String methodLabel;
         for(JClassType classType : projectTypes){
             for(BCMethod method : classType.getMethods()){
                 if (!method.isAbstract()
@@ -165,12 +167,17 @@ public class Library implements ITroubleReporter{
                         usedVariables.put(outParam.getName(), outParam);
                     }
                     
-                    methodBlocks.add(new BPLBasicBlock(proc.getName(), new BPLCommand[0], new BPLGotoCommand(proc.getImplementation().getBody().getBasicBlocks()[0].getLabel())));
+                    methodLabel = proc.getName();
+                    methodLabels.add(methodLabel);
+                    //TODO add assume to the method block (e.g. isCall && stack1[sp1][meth] == exec)
+                    methodBlocks.add(new BPLBasicBlock(methodLabel, new BPLCommand[0], new BPLGotoCommand(proc.getImplementation().getBody().getBasicBlocks()[0].getLabel())));
                     Collections.addAll(methodBlocks, proc.getImplementation().getBody().getBasicBlocks());
                 }
             }
         }
         methodBlocks.add(new BPLBasicBlock("check", new BPLCommand[0], new BPLReturnCommand()));
+        
+        methodBlocks.add(0, new BPLBasicBlock("dispatch1", new BPLCommand[0], new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]))));
         
         List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
         BPLVariable[] inParams = new BPLVariable[0];

@@ -4,31 +4,24 @@ import b2bpl.bpl.IBPLVisitor;
 
 
 public class BPLArrayType extends BPLType {
-  private final String[] parameterTypes;
-    
   private final BPLType[] indexTypes;
 
   private final BPLType elementType;
 
   public BPLArrayType(BPLType indexType, BPLType elementType) {
-    this(new String[]{}, new BPLType[] { indexType }, elementType);
+    this(new BPLType[] { indexType }, elementType);
   }
 
   public BPLArrayType(
       BPLType indexType1,
       BPLType indexType2,
       BPLType elementType) {
-    this(new String[]{}, new BPLType[] { indexType1, indexType2 }, elementType);
+    this(new BPLType[] { indexType1, indexType2 }, elementType);
   }
 
-  public BPLArrayType(String[] parameterTypes, BPLType[] indexTypes, BPLType elementType) {
-    this.parameterTypes = parameterTypes;
+  public BPLArrayType(BPLType[] indexTypes, BPLType elementType) {
     this.indexTypes = indexTypes;
     this.elementType = elementType;
-  }
-  
-  public String[] getParameterTypes() {
-      return parameterTypes;
   }
 
   public BPLType[] getIndexTypes() {
