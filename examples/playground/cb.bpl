@@ -69,21 +69,21 @@ function Internal(c: Class, f: Field Ref, heap:Heap) returns (bool) {
 
 const unique Object: Class;
 type Method;
-const unique rtrn: Method;
 
-procedure {:inline 1} UpdateM(m1_receiver:Ref, m2_receiver:Ref, m1_method:Method, m2_method:Method, m1_param:Ref, m2_param:Ref)
+procedure {:inline 1} UpdateM(m1_isCall:bool,m2_isCall:bool,m1_receiver:Ref, m2_receiver:Ref, m1_method:Method, m2_method:Method, m1_param:Ref, m2_param:Ref)
   modifies heap1,heap2,related;
 {
-  assert m1_method == stack2[sp2][meth];
-  assert m1_method != rtrn ==> m1_receiver != null && m2_receiver != null;
-  if (m1_method != rtrn) {
+  assert m1_isCall == m2_isCall;
+  assert {:error "Method names differ"} m1_method == m2_method;
+  assert m1_isCall ==> m1_receiver != null && m2_receiver != null;
+  if (m1_isCall) {
     call Update(m1_receiver,m2_receiver);
   }
   call Update(m1_param,m2_param);
 }
 
-function RelM(m1_receiver:Ref, m2_receiver:Ref, m1_method:Method, m2_method:Method, m1_param:Ref, m2_param:Ref, related:Bij) returns (bool) {
-  (m1_method == m2_method) && (m1_method != rtrn ==> related[m1_receiver,m2_receiver]) && RelNull(m1_param,m2_param,related)
+function RelM(m1_isCall:bool,m2_isCall:bool,m1_receiver:Ref, m2_receiver:Ref, m1_method:Method, m2_method:Method, m1_param:Ref, m2_param:Ref, related:Bij) returns (bool) {
+  (m1_isCall == m2_isCall) && (m1_method == m2_method) && (m1_isCall ==> related[m1_receiver,m2_receiver]) && RelNull(m1_param,m2_param,related)
 }
 
 function RefOfType(o:Ref, heap:Heap, t:Class) returns (bool) {
@@ -158,7 +158,7 @@ function definesMethod(Class,Method) returns (bool);
 
 type Address;
 
-var isCall: bool;
+const unique isCall: Var bool;
 
 const unique place : Var Address;
 const unique retA : Address;
@@ -187,17 +187,18 @@ axiom (forall t:Class, m:Method :: t <: C ==> !definesMethod(t,m));
 const unique exec_begin, inc_begin, exec_invoc_run1, exec_invoc_run2, exec_invoc_self, self_begin : Address; // one for each entry point
 
 const unique c, a: Var Ref;
-const unique pos: Var bool;  // ghost variable
 
 function Inv(heap1:Heap, heap2:Heap, stack1:Stack, stack2:Stack, sp1:StackPtr, sp2:StackPtr, related:Bij, place: Var Address) returns (bool) {
   ( forall r:Ref :: AllocObj(r,heap1) ==> heap1[r,g] % 2 == 0 ) &&
-  sp1 == 0 && sp2 == 0 && RelNull(stack1[sp1][c], stack2[sp2][c], related) &&
+  //sp1 == 0 && sp2 == 0 && 
+  ((!stack1[sp1][isCall]) ==> (sp1 == 0 && sp2 == 0)) &&
+  RelNull(stack1[sp1][c], stack2[sp2][c], related) &&
   stack1[sp1][place] == stack2[sp2][place]
 }
 
-var rega1, rega2, regb1, regb2, regc1, regc2 : Ref;
-var regaint1, regaint2, regbint1, regbint2: int;
-var regabool1, regabool2, regbbool1, regbbool2: bool;
+//var rega1, rega2, regb1, regb2, regc1, regc2 : Ref;
+//var regaint1, regaint2, regbint1, regbint2: int;
+//var regabool1, regabool2, regbbool1, regbbool2: bool;
 
 
 
@@ -224,21 +225,22 @@ procedure Check_CB_Sanity_Inv()
 }*/
 
 procedure Check_CB()
-  modifies isCall, heap1, heap2, stack1, stack2, sp1, sp2, related;
+  modifies heap1, heap2, stack1, stack2, sp1, sp2, related;
 {
   assume Inv(heap1,heap2,stack1,stack2,sp1,sp2,related,place);
-  assume RelM(stack1[sp1][receiver],stack2[sp2][receiver],stack1[sp1][meth],stack2[sp2][meth],stack1[sp1][param1],stack2[sp2][param1],related);
-  if (stack1[sp1][meth] != rtrn) {
+  assume RelM(stack1[sp1][isCall],stack2[sp2][isCall],stack1[sp1][receiver],stack2[sp2][receiver],stack1[sp1][meth],stack2[sp2][meth],stack1[sp1][param1],stack2[sp2][param1],related);
+  if (stack1[sp1][isCall]) {
     assume sp1 == 0 && sp2 == 0;
   } else {
   	assume sp1 >= 0 && sp2 >= 0;
   }
   
   dispatch1:
-  if (isCall && stack1[sp1][meth] == exec) { goto exec_begin1; } else
-  if (isCall && stack1[sp1][meth] == inc) { goto inc_begin1; } else
+  if (stack1[sp1][isCall] && stack1[sp1][meth] == exec) { goto exec_begin1; } else
+  if (stack1[sp1][isCall] && stack1[sp1][meth] == inc) { goto inc_begin1; } else
   //if (isCall && m1_method == self) { goto self_begin1; } else
-  if (!isCall && stack1[sp1][meth] == run) { goto exec_invoc_run1_1, exec_invoc_run1_2; } else
+  if (stack1[sp1][isCall] && stack1[sp1][meth] == self) { return; } else
+  if (!stack1[sp1][isCall] && stack1[sp1][meth] == run) { goto exec_invoc_run1_1, exec_invoc_run1_2; } else
   //if (!isCall && m1_method == self) { goto exec_invoc_self; } else
   { return; }
   
@@ -255,11 +257,11 @@ procedure Check_CB()
     if (sp1 == 0) {
       // void rtrn, use null value
       stack1[sp1][place] := inc_begin;
-      isCall := false; stack1[sp1][meth] := self; stack1[sp1][param1] := stack1[sp1][a];
+      stack1[sp1][isCall] := false; stack1[sp1][meth] := self; stack1[sp1][param1] := stack1[sp1][a];
       goto dispatch2;
     } else { 
     	stack1[sp1][place] := inc_begin;
-        isCall := false; stack1[sp1][meth] := rtrn; stack1[sp1][param1] := stack1[sp1][a];
+        stack1[sp1][isCall] := false; stack1[sp1][meth] := self; stack1[sp1][param1] := stack1[sp1][a];
     	goto dispatch1;
     	//assert false;
     }
@@ -267,13 +269,10 @@ procedure Check_CB()
   
   	exec_begin1:
   	assume stack1[sp1][place] == exec_begin;
-    stack1[sp1][this] := stack1[sp1][receiver];
-    stack1[sp1][c] := stack1[sp1][param1];
+    stack1[sp1][this] := stack1[sp1][receiver]; stack1[sp1][c] := stack1[sp1][param1];
     if (stack1[sp1][c] != null) {
-      stack1[sp1][pos] := true;
       // output label: call c.run()
-      stack1[sp1][place] := exec_invoc_run1;
-      stack1[sp1][receiver] := stack1[sp1][c]; stack1[sp1][meth] := run; stack1[sp1][param1] := null;
+      stack1[sp1][place] := exec_invoc_run1; stack1[sp1][receiver] := stack1[sp1][c]; stack1[sp1][meth] := run; stack1[sp1][param1] := null;
       goto dispatch2;
       exec_invoc_run1_1:
       assume stack1[sp1][place] == exec_invoc_run1;
@@ -281,98 +280,155 @@ procedure Check_CB()
     if (heap1[stack1[sp1][this],g] % 2 == 0) {
       if (sp1 == 0) {
         // output label: rtrn c
-        stack1[sp1][place] := exec_begin;
-        stack1[sp1][meth] := rtrn; stack1[sp1][param1] := stack1[sp1][c];
+        stack1[sp1][place] := exec_begin; stack1[sp1][isCall] := false; stack1[sp1][meth] := exec; stack1[sp1][param1] := stack1[sp1][c];
         goto dispatch2;
       } else { assert false; }
     } else {
-      // call c := this.self(c)
-      stack1[sp1][place] := exec_invoc_self;
-      isCall := true; stack1[sp1][receiver] := stack1[sp1][this]; stack1[sp1][meth] := self; stack1[sp1][param1] := stack1[sp1][c];
-      sp1 := sp1 + 1;
-      exec_invoc_self:
-      sp1 := sp1 - 1;
-      stack1[sp1][c] := stack1[sp1][param1];
+      // call c := this.self(c)      
+      //stack1[sp1+1][place] := exec_invoc_self;
+      // stack1[sp1+1][receiver] := stack1[sp1][this]; stack1[sp1+1][meth] := self; stack1[sp1+1][param1] := stack1[sp1][c];
+      stack1[sp1][isCall] := true; stack1[sp1][meth] := self;
+      // sp1 := sp1 + 1;
+      return;
+      //goto dispatch1;
+      // exec_invoc_self:
+      // sp1 := sp1 - 1;
+      // stack1[sp1][c] := stack1[sp1+1][param1];
       // rtrn c
       if (sp1 == 0) {
         // output label: rtrn c
         stack1[sp1][place] := exec_begin;
-        isCall := false; stack1[sp1][meth] := rtrn; stack1[sp1][param1] := stack1[sp1][c];
+        stack1[sp1][isCall] := false; stack1[sp1][meth] := exec; stack1[sp1][param1] := stack1[sp1][c];
         goto dispatch2;
       } else { assert false; }
     }
   
   	inc_begin1:
   	assume stack1[sp1][place] == inc_begin;
-    stack1[sp1][this] := stack1[sp1][receiver];
-    stack1[sp1][c] := stack1[sp1][param1];
+    stack1[sp1][this] := stack1[sp1][receiver]; stack1[sp1][c] := stack1[sp1][param1];
     heap1[stack1[sp1][this],g] := heap1[stack1[sp1][this],g] + 2;
     if (stack1[sp1][c] != null) {
-      stack1[sp1][pos] := false;
       // call c.run()
-      stack1[sp1][place] := exec_invoc_run2;
-      stack1[sp1][receiver] := stack1[sp1][c]; stack1[sp1][meth] := run; stack1[sp1][param1] := null;
+      stack1[sp1][place] := exec_invoc_run2; stack1[sp1][isCall] := true; stack1[sp1][receiver] := stack1[sp1][c]; stack1[sp1][meth] := run; stack1[sp1][param1] := null;
       goto dispatch2;
       exec_invoc_run1_2:
       assume stack1[sp1][place] == exec_invoc_run2;
     }
     if (sp1 == 0) {
       // void rtrn, use null value
-      stack1[sp1][place] := inc_begin;
-      stack1[sp1][meth] := rtrn; stack1[sp1][param1] := null;
+      stack1[sp1][place] := inc_begin; stack1[sp1][isCall] := false; stack1[sp1][meth] := inc; stack1[sp1][param1] := null;
       goto dispatch2;
     } else { assert false; }
 
   dispatch2:
-  if (isCall && stack2[sp2][meth] == exec) { goto exec_begin2; } else
-  if (isCall && stack2[sp2][meth] == inc) { goto inc_begin2; } else
-  if (!isCall && stack2[sp2][meth] == run) { goto exec_invoc_run2_1, exec_invoc_run2_2; } else
+  if (stack2[sp2][isCall] && stack2[sp2][meth] == exec) { goto exec_begin2; } else
+  if (stack2[sp2][isCall] && stack2[sp2][meth] == inc) { goto inc_begin2; } else
+  if (!stack2[sp2][isCall] && stack2[sp2][meth] == run) { goto exec_invoc_run2_1, exec_invoc_run2_2; } else
   { return; }
 
   	exec_begin2:
   	assume stack2[sp2][place] == exec_begin;
-    stack2[sp2][this] := stack2[sp2][receiver];
-    stack2[sp2][c] := stack2[sp2][param1];
+    stack2[sp2][this] := stack2[sp2][receiver]; stack2[sp2][c] := stack2[sp2][param1];
     if (stack2[sp2][c] != null) {
-      stack2[sp2][pos] := true;
       // output label: call c.run()
-      stack2[sp2][place] := exec_invoc_run1;
-      stack2[sp2][receiver] := stack2[sp2][c]; stack2[sp2][meth] := run; stack2[sp2][param1] := null;
+      stack2[sp2][place] := exec_invoc_run1; stack2[sp2][isCall] := true; stack2[sp2][receiver] := stack2[sp2][c]; stack2[sp2][meth] := run; stack2[sp2][param1] := null;
       goto Checking;
       exec_invoc_run2_1:
       assume stack2[sp2][place] == exec_invoc_run1;
     }
     if (sp2 == 0) {
       // output label: rtrn c
-      stack2[sp2][place] := exec_begin;
-      stack2[sp2][meth] := rtrn; stack2[sp2][param1] := stack2[sp2][c];
+      stack2[sp2][place] := exec_begin; stack2[sp2][isCall] := false; stack2[sp2][meth] := exec; stack2[sp2][param1] := stack2[sp2][c];
       goto Checking;
     } else { assert false; }
     
   	inc_begin2:
   	assume stack2[sp2][place] == inc_begin;
-    stack2[sp2][this] := stack2[sp2][receiver];
-    stack2[sp2][c] := stack2[sp2][param1];
+    stack2[sp2][this] := stack2[sp2][receiver]; stack2[sp2][c] := stack2[sp2][param1];
     heap2[stack2[sp2][this],g] := heap2[stack2[sp2][this],g] + 2;
     if (stack2[sp2][c] != null) {
-      stack2[sp2][pos] := false;
       // call c.run()
-      stack2[sp2][place] := exec_invoc_run2;
-      stack2[sp2][receiver] := stack2[sp2][c]; stack2[sp2][meth] := run; stack2[sp2][param1] := null;
+      stack2[sp2][place] := exec_invoc_run2; stack2[sp2][isCall] := true; stack2[sp2][receiver] := stack2[sp2][c]; stack2[sp2][meth] := run; stack2[sp2][param1] := null;
       goto Checking;
       exec_invoc_run2_2:
       assume stack2[sp2][place] == exec_invoc_run2;
     }
     if (sp2 == 0) {
       // void rtrn, use null value
-      stack2[sp2][place] := inc_begin;
-      stack2[sp2][meth] := rtrn; stack2[sp2][param1] := null;
+      stack2[sp2][place] := inc_begin; stack2[sp2][isCall] := false; stack2[sp2][meth] := inc; stack2[sp2][param1] := null;
       goto Checking;
     } else { assert false; }
 
   Checking:
-  call UpdateM(stack1[sp1][receiver],stack2[sp2][receiver],stack1[sp1][meth],stack2[sp2][meth],stack1[sp1][param1],stack2[sp2][param1]);
+  call UpdateM(stack1[sp1][isCall],stack2[sp2][isCall],stack1[sp1][receiver],stack2[sp2][receiver],stack1[sp1][meth],stack2[sp2][meth],stack1[sp1][param1],stack2[sp2][param1]);
   assert Inv(heap1,heap2,stack1,stack2,sp1,sp2,related,place);
+}
+
+
+/*
+procedure Check_Test() 
+	modifies isCall, heap1, heap2, stack1, stack2, sp1, sp2, related;
+{
+	assume Inv(heap1,heap2,stack1,stack2,sp1,sp2,related,place);
+  	assume RelM(stack1[sp1][receiver],stack2[sp2][receiver],stack1[sp1][meth],stack2[sp2][meth],stack1[sp1][param1],stack2[sp2][param1],related);
+  	if (stack1[sp1][meth] != rtrn) {
+   		assume sp1 == 0 && sp2 == 0;
+  	} else {
+  		assume sp1 >= 0 && sp2 >= 0;
+  	}
+  
+  	dispatch1:
+  	if (stack1[sp1][meth] == exec) { goto exec_begin1; } else
+  	if (stack1[sp1][meth] == inc) { goto inc_begin1; } else
+  	if (stack1[sp1][meth] == rtrn) { goto exec_call_inc1; } else
+	{ return; }
+	
+	exec_begin1:
+	// a = this.inc(); 
+	//stack1[sp+1]
+	stack1[sp1][param1] := null;
+	exec_call_inc1:
+	//stack1[sp1]
+	// return a
+	goto dispatch2;
+	
+	inc_begin1:
+	// return null;
+	goto dispatch2;
+	
+	dispatch2:
+  	if (isCall && stack2[sp2][meth] == exec) { goto exec_begin2; } else
+	{ return; }
+	
+	exec_begin2:
+	// return null;
+	stack2[sp2][param1] := null;
+	goto Checking;
+	
+	Checking:
+	call UpdateM(stack1[sp1][receiver],stack2[sp2][receiver],stack1[sp1][meth],stack2[sp2][meth],stack1[sp1][param1],stack2[sp2][param1]);
+    assert Inv(heap1,heap2,stack1,stack2,sp1,sp2,related,place);
+}
+*/
+
+
+procedure Bla() {
+	var x : int;
+	//assume x == 0;
+	
+	dispatch:
+	if (x == 0) { goto l1; } else
+	if (x == 1) { goto l2; } else
+	{ return; }
+	
+	l1:
+	x := 1;
+	goto dispatch;
+	
+	l2:
+	x := 0;
+	
+	assert x == 0;
 }
 
 /* The modulo operation */
