@@ -288,9 +288,9 @@ procedure Check_CB()
       //stack1[sp1+1][place] := exec_invoc_self;
       // stack1[sp1+1][receiver] := stack1[sp1][this]; stack1[sp1+1][meth] := self; stack1[sp1+1][param1] := stack1[sp1][c];
       stack1[sp1][isCall] := true; stack1[sp1][meth] := self;
-      // sp1 := sp1 + 1;
-      return;
-      //goto dispatch1;
+      //sp1 := sp1 + 1;
+      //return;
+      goto dispatch1;
       // exec_invoc_self:
       // sp1 := sp1 - 1;
       // stack1[sp1][c] := stack1[sp1+1][param1];
