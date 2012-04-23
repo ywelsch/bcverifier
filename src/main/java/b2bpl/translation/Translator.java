@@ -16,6 +16,7 @@ import static b2bpl.translation.CodeGenerator.bitXor;
 import static b2bpl.translation.CodeGenerator.bool2int;
 import static b2bpl.translation.CodeGenerator.divide;
 import static b2bpl.translation.CodeGenerator.elementType;
+import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldLoc;
 import static b2bpl.translation.CodeGenerator.fieldType;
 import static b2bpl.translation.CodeGenerator.forall;
@@ -865,25 +866,100 @@ public class Translator implements ITranslationConstants {
         addType(METHOD_TYPE);
         addConstants(new BPLVariable("null", new BPLTypeName(REF_TYPE)));
 
-        addType("Field", "_");
-        addDeclaration(new BPLTypeAlias("Heap", new BPLParameterizedType(new BPLArrayType(new BPLType[]{new BPLTypeName("Ref"), new BPLTypeName("Field", "alpha")}, new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
-        
-        addDeclaration(new BPLConstantDeclaration(new BPLVariable("alloc", new BPLTypeName("Field", "bool"))));
-        addDeclaration(new BPLConstantDeclaration(new BPLVariable("exposed", new BPLTypeName("Field", "bool"))));
-        addDeclaration(new BPLConstantDeclaration(new BPLVariable("createdByCtxt", new BPLTypeName("Field", "bool"))));
-        
-        addDeclaration(new BPLConstantDeclaration(new BPLVariable("dynType", new BPLTypeName("Field", NAME_TYPE))));
-        
-        addFunction("AllocObj", new BPLTypeName(REF_TYPE), new BPLTypeName("Heap"), BPLBuiltInType.BOOL);
-        BPLVariable refVar = new BPLVariable("r", new BPLTypeName(REF_TYPE));
-        BPLVariable heapVar = new BPLVariable("heap", new BPLTypeName("Heap"));
-        addAxiom(forall(
-                refVar, heapVar, 
-                isEquiv(new BPLFunctionApplication("AllocObj", var("r"), var("heap")), 
-                        logicalAnd(notEqual(var("r"), var("null")), new BPLArrayExpression(var("heap"), var("r"), var("alloc"))))));
-        
-        addDeclaration(new BPLTypeAlias("Bij", new BPLArrayType(new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL)));
-        
+        {
+            final String fieldType = "Field";
+            addType(fieldType, "_");
+            final String heapType = "Heap";
+            addDeclaration(new BPLTypeAlias(heapType, new BPLParameterizedType(new BPLArrayType(new BPLType[]{new BPLTypeName("Ref"), new BPLTypeName(fieldType, "alpha")}, new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
+            
+            final String alloc = "alloc";
+            addDeclaration(new BPLConstantDeclaration(new BPLVariable(alloc, new BPLTypeName(fieldType, "bool"))));
+            final String exposed = "exposed";
+            addDeclaration(new BPLConstantDeclaration(new BPLVariable(exposed, new BPLTypeName(fieldType, "bool"))));
+            final String createdByCtxt = "createdByCtxt";
+            addDeclaration(new BPLConstantDeclaration(new BPLVariable(createdByCtxt, new BPLTypeName(fieldType, "bool"))));
+            
+            final String dynType = "dynType";
+            addDeclaration(new BPLConstantDeclaration(new BPLVariable(dynType, new BPLTypeName(fieldType, NAME_TYPE))));
+            
+            addFunction("AllocObj", new BPLTypeName(REF_TYPE), new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            final String r = "r";
+            BPLVariable refVar = new BPLVariable(r, new BPLTypeName(REF_TYPE));
+            final String heap = "heap";
+            BPLVariable heapVar = new BPLVariable(heap, new BPLTypeName(heapType));
+            addAxiom(forall(
+                    refVar, heapVar, 
+                    isEquiv(new BPLFunctionApplication("AllocObj", var(r), var(heap)), 
+                            logicalAnd(notEqual(var(r), var("null")), new BPLArrayExpression(var(heap), var(r), var(alloc))))));
+            
+            addDeclaration(new BPLTypeAlias("Bij", new BPLArrayType(new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL)));
+            
+            final String heap1 = "heap1";
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap1, new BPLTypeName(heapType), new BPLFunctionApplication("WellformedHeap", var(heap1)))));
+            final String heap2 = "heap2";
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap2, new BPLTypeName(heapType), new BPLFunctionApplication("WellformedHeap", var(heap2)))));
+            final String related = "related";
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName("Bij"), new BPLFunctionApplication("WellformedCoupling", var(heap1), var(heap2), var(related)))));
+            
+            addFunction("WellformedHeap", new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            final String f = "f";
+            BPLVariable fieldRefVar = new BPLVariable(f, new BPLTypeName(fieldType, REF_TYPE));
+            BPLVariable fieldIntVar = new BPLVariable(f, new BPLTypeName(fieldType, "int"));
+            BPLVariable fieldBoolVar = new BPLVariable(f, new BPLTypeName(fieldType, "bool"));
+            addAxiom(forall(
+                    heapVar,
+                    isEquiv(new BPLFunctionApplication("WellformedHeap", var(heap)),
+                            logicalAnd(
+                                    new BPLArrayExpression(var(heap), var("null"), var(alloc)),
+                                    forall(refVar, fieldRefVar, implies(new BPLArrayExpression(var(heap), var(r), var(alloc)), new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(alloc)))),
+                                    forall(refVar, fieldRefVar, implies(logicalNot(new BPLFunctionApplication("AllocObj", var(r), var(heap))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), var("null")))),
+                                    forall(refVar, fieldIntVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
+                                    forall(refVar, fieldBoolVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), BPLBoolLiteral.FALSE)))
+                                    ))
+                    ));
+            
+            addFunction("WellformedCoupling", new BPLTypeName(heapType), new BPLTypeName(heapType), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            BPLVariable heap1Var = new BPLVariable(heap1, new BPLTypeName(heapType));
+            BPLVariable heap2Var = new BPLVariable(heap2, new BPLTypeName(heapType));
+            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName("Bij"));
+            final String r1 = "r1";
+            BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
+            final String r2 = "r2";
+            BPLVariable r2Var = new BPLVariable(r2, new BPLTypeName(REF_TYPE));
+            final String r3 = "r3";
+            BPLVariable r3Var = new BPLVariable(r3, new BPLTypeName(REF_TYPE));
+            final String r4 = "r4";
+            BPLVariable r4Var = new BPLVariable(r4, new BPLTypeName(REF_TYPE));
+            addAxiom(forall(
+                    heap1Var, heap2Var, relatedVar,
+                    isEquiv(new BPLFunctionApplication("WellformedCoupling", var(heap1), var(heap2), var(related)),
+                            logicalAnd(
+                                    new BPLFunctionApplication("Bijective", var(related)),
+                                    new BPLFunctionApplication("ObjectCoupling", var(heap1), var(heap2), var(related)),
+                                    forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(heap1),  var(r1), var(exposed)), new BPLArrayExpression(var(heap2), var(r2), var(exposed))))),
+                                    forall(r1Var, implies(logicalAnd(new BPLFunctionApplication("AllocObj", var(r1), var(heap1)), new BPLArrayExpression(var(heap1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
+                                    forall(r2Var, implies(logicalAnd(new BPLFunctionApplication("AllocObj", var(r2), var(heap2)), new BPLArrayExpression(var(heap2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2)))))
+                                    ))
+                    ));
+            
+            addFunction("ObjectCoupling", new BPLTypeName(heapType), new BPLTypeName(heapType), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            addAxiom(forall(
+                    heap1Var, heap2Var, relatedVar,
+                    isEquiv(new BPLFunctionApplication("ObjectCoupling", var(heap1), var(heap2), var(related)),
+                            forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLFunctionApplication("AllocObj", var(r1), var(heap1)), new BPLFunctionApplication("AllocObj", var(r2), var(heap2))))))
+                    ));
+            
+            
+            addFunction("Bijective", new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            addAxiom(forall(
+                    relatedVar, r1Var, r2Var, r3Var, r4Var,
+                    isEquiv(new BPLFunctionApplication("Bijective", var(related)),
+                            implies(logicalAnd(new BPLArrayExpression(var(related), var(r1) ,var(r2)),
+                                               new BPLArrayExpression(var(related), var(r3) ,var(r4))),
+                                    isEquiv(isEqual(var(r1), var(r3)), isEqual(var(r2), var(r4)))))
+                    ));
+            
+        }
         //
         // Muller/Poetzsch Heffter BoogiePL store axiomatization
         //

@@ -861,6 +861,16 @@ public final class CodeGenerator implements ITranslationConstants {
         triggers,
         expression);
   }
+  
+  //@ requires variable != null && expression != null;
+  //@ ensures \result != null;
+  public static BPLExpression exists(
+      BPLVariable variable,
+      BPLExpression expression) {
+    return exists(
+        new BPLVariable[] { variable },
+        expression);
+  }
 
   //@ requires variables != null && expression != null;
   //@ ensures \result != null;
