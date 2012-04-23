@@ -959,6 +959,55 @@ public class Translator implements ITranslationConstants {
                                     isEquiv(isEqual(var(r1), var(r3)), isEqual(var(r2), var(r4)))))
                     ));
             
+            addComment("Extensionality for simulations");
+//            addAxiom(forall(
+//                    r1Var, r2Var, relatedVar,
+//                    isEqual(new BPLArrayExpression(var(related), var(r1), ), right)
+//                    ));
+            
+            addComment("Extensionality for heaps");
+            
+            final String varType = "Var";
+            addType(varType, "_");
+            final String stackPtrType = "StackPtr";
+            addDeclaration(new BPLTypeAlias(stackPtrType, BPLBuiltInType.INT));
+            final String sp1 = "sp1";
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(sp1, new BPLTypeName(stackPtrType))));
+            final String sp2 = "sp2";
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(sp2, new BPLTypeName(stackPtrType))));
+            
+            final String stackFrameType = "StackFrame";
+            addDeclaration(new BPLTypeAlias(stackFrameType, new BPLParameterizedType(new BPLArrayType(new BPLTypeName(varType, "alpha"), new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
+            final String stackType = "Stack";
+            addDeclaration(new BPLTypeAlias(stackType, new BPLArrayType(new BPLTypeName(stackPtrType), new BPLTypeName(stackFrameType))));
+            
+            final String stack1 = "stack1";
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack1, new BPLTypeName(stackType), new BPLFunctionApplication("WellformedStack", var(stack1), var(sp1), var(heap1)))));
+            final String stack2 = "stack2";
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack2, new BPLTypeName(stackType), new BPLFunctionApplication("WellformedStack", var(stack2), var(sp2), var(heap2)))));
+            
+            final String thisName = "this";
+            addConstants(new BPLVariable(thisName, new BPLTypeName(varType, REF_TYPE)));
+            
+            addFunction("WellformedStack", new BPLTypeName(stackType), new BPLTypeName(stackPtrType), new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            final String stack = "stack";
+            BPLVariable stackVar = new BPLVariable(stack, new BPLTypeName(stackType));
+            final String sp = "sp";
+            BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(stackPtrType));
+            final String p = "p";
+            BPLVariable pVar = new BPLVariable(p, new BPLTypeName(stackPtrType));
+            final String v = "v";
+            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(varType, REF_TYPE));
+            addAxiom(forall(
+                    stackVar, spVar, heapVar,
+                    logicalAnd(
+                            forall(pVar, vVar, implies(logicalAnd(lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp))), new BPLArrayExpression(var(heap), new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), var(alloc)))),
+                            forall(pVar, implies( logicalAnd( lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp)) ), new BPLFunctionApplication("AllocObj", new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(thisName)), var(heap) ) )),
+                            forall(pVar, vVar, implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), var("null")))),
+                            forall(pVar, new BPLVariable(v, new BPLTypeName(varType, "int")), implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), intLiteral(0)))),
+                            forall(pVar, new BPLVariable(v, new BPLTypeName(varType, "bool")), implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), BPLBoolLiteral.FALSE)))
+                            )
+                    ));
         }
         //
         // Muller/Poetzsch Heffter BoogiePL store axiomatization
