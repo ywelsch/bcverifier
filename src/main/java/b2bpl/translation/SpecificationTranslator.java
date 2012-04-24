@@ -1,8 +1,6 @@
 package b2bpl.translation;
 
 import static b2bpl.translation.CodeGenerator.add;
-import static b2bpl.translation.CodeGenerator.alive;
-import static b2bpl.translation.CodeGenerator.arrayAccess;
 import static b2bpl.translation.CodeGenerator.arrayLength;
 import static b2bpl.translation.CodeGenerator.bitAnd;
 import static b2bpl.translation.CodeGenerator.bitOr;
@@ -24,21 +22,17 @@ import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isInstanceOf;
 import static b2bpl.translation.CodeGenerator.isSubtype;
-import static b2bpl.translation.CodeGenerator.ival;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
-import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
 import static b2bpl.translation.CodeGenerator.modulo;
 import static b2bpl.translation.CodeGenerator.multiply;
 import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.quantVarName;
-import static b2bpl.translation.CodeGenerator.rval;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.type;
-import static b2bpl.translation.CodeGenerator.val;
 import static b2bpl.translation.CodeGenerator.var;
 
 import java.util.ArrayList;
@@ -54,7 +48,6 @@ import b2bpl.bpl.ast.BPLUnaryMinusExpression;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import b2bpl.bytecode.BCField;
-import b2bpl.bytecode.JArrayType;
 import b2bpl.bytecode.JType;
 import b2bpl.bytecode.bml.IBMLExpressionVisitor;
 import b2bpl.bytecode.bml.ast.BMLArrayAccessExpression;
@@ -87,6 +80,7 @@ import b2bpl.bytecode.bml.ast.BMLStoreRef;
 import b2bpl.bytecode.bml.ast.BMLThisExpression;
 import b2bpl.bytecode.bml.ast.BMLTypeOfExpression;
 import b2bpl.bytecode.bml.ast.BMLUnaryMinusExpression;
+import de.unikl.bcverifier.TranslationController;
 
 /**
  * A translator for BML specifications.
@@ -354,7 +348,7 @@ public class SpecificationTranslator {
       BMLStoreRef[] refs) {
     this.context = context;
    
-    BPLVariableExpression[] vars = new BPLVariableExpression[] { var(b2bpl.translation.ITranslationConstants.HEAP_VAR) };
+    BPLVariableExpression[] vars = new BPLVariableExpression[] { var(TranslationController.getHeap()) };
     
     /* We initially intended to include all modified field in the "modifies" clause.
      * However, we abandoned this idea and went for the approach where the logic
@@ -490,13 +484,15 @@ public class SpecificationTranslator {
       if (bvTypes.length > 0) {
         // Assume the bound variables are of the desired type.
         bvTypeInfo = isSubtype(
-            typ(val(var(getBoundVariable(0)), bvTypes[0])),
+//            typ(val(var(getBoundVariable(0)), bvTypes[0])),
+                typ(var(getBoundVariable(0))),
             context.translateTypeReference(bvTypes[0]));
         for (int i = 1; i < bvTypes.length; i++) {
           bvTypeInfo = logicalAnd(
               bvTypeInfo,
               isSubtype(
-                  typ(val(var(getBoundVariable(i)), bvTypes[i])),
+//                  typ(val(var(getBoundVariable(i)), bvTypes[i])),
+                  typ(var(getBoundVariable(i))),
                   context.translateTypeReference(bvTypes[i])));
         }
       }
@@ -657,7 +653,7 @@ public class SpecificationTranslator {
     //@ requires expr != null;
     public BPLExpression visitInstanceOfExpression(BMLInstanceOfExpression expr) {
       return isInstanceOf(
-          rval(expr.getExpression().accept(this)),
+          expr.getExpression().accept(this),
           context.translateTypeReference(expr.getTargetType()));
     }
 
@@ -747,25 +743,27 @@ public class SpecificationTranslator {
 
     //@ requires expr != null;
     public BPLExpression visitArrayAccessExpression(BMLArrayAccessExpression expr) {
-      BPLExpression prefix = expr.getPrefix().accept(this);
-      BPLExpression index = expr.getIndex().accept(this);
-      JArrayType arrayType = (JArrayType) expr.getPrefix().getType();
-      return arrayAccess(getHeap(), arrayType, prefix, index);
+//      BPLExpression prefix = expr.getPrefix().accept(this);
+//      BPLExpression index = expr.getIndex().accept(this);
+//      JArrayType arrayType = (JArrayType) expr.getPrefix().getType();
+//      return arrayAccess(getHeap(), arrayType, prefix, index);
+      //TODO how does an array access wark?
+      throw new RuntimeException("Not implemented.");
     }
 
     //@ requires expr != null;
     public BPLExpression visitArrayLengthExpression(BMLArrayLengthExpression expr) {
       BPLExpression prefix = expr.getPrefix().accept(this);
-      return arrayLength(rval(prefix));
+      return arrayLength(prefix);
     }
 
     //@ requires expr != null;
     public BPLExpression visitTypeOfExpression(BMLTypeOfExpression expr) {
       BPLExpression typeExpr = expr.getExpression().accept(this);
       if (expr.getExpression().getType().isReferenceType()) {
-        return typ(rval(typeExpr));
+        return typ(typeExpr);
       }
-      return typ(ival(typeExpr));
+      return typ(typeExpr);
     }
 
     //@ requires expr != null;
@@ -787,7 +785,8 @@ public class SpecificationTranslator {
     //@ requires expr != null;
     public BPLExpression visitFreshExpression(BMLFreshExpression expr) {
       BPLExpression expression = expr.getExpression().accept(this);
-      return logicalNot(alive(rval(expression), var(oldHeap)));
+//      return logicalNot(alive(rval(expression), var(oldHeap)));
+      throw new RuntimeException("Not implemented.");
     }
   }
 }

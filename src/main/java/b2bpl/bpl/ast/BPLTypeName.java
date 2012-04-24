@@ -6,9 +6,9 @@ import b2bpl.bpl.IBPLVisitor;
 public class BPLTypeName extends BPLType {
 
   private final String name;
-  private final String[] params;
+  private final BPLType[] params;
 
-  public BPLTypeName(String name, String...params) {
+  public BPLTypeName(String name, BPLType...params) {
     this.name = name;
     this.params = params;
   }
@@ -17,7 +17,7 @@ public class BPLTypeName extends BPLType {
     return name;
   }
   
-  public String[] getParameters() {
+  public BPLType[] getParameters() {
       return params;
   }
 

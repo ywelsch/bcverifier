@@ -1,11 +1,6 @@
 package b2bpl.translation;
 
 import static b2bpl.translation.CodeGenerator.add;
-import static b2bpl.translation.CodeGenerator.alive;
-import static b2bpl.translation.CodeGenerator.allocType;
-import static b2bpl.translation.CodeGenerator.arrayAlloc;
-import static b2bpl.translation.CodeGenerator.arrayLength;
-import static b2bpl.translation.CodeGenerator.arrayLoc;
 import static b2bpl.translation.CodeGenerator.arrayType;
 import static b2bpl.translation.CodeGenerator.bitAnd;
 import static b2bpl.translation.CodeGenerator.bitOr;
@@ -15,18 +10,12 @@ import static b2bpl.translation.CodeGenerator.bitUShr;
 import static b2bpl.translation.CodeGenerator.bitXor;
 import static b2bpl.translation.CodeGenerator.bool2int;
 import static b2bpl.translation.CodeGenerator.divide;
-import static b2bpl.translation.CodeGenerator.elementType;
 import static b2bpl.translation.CodeGenerator.exists;
-import static b2bpl.translation.CodeGenerator.fieldLoc;
 import static b2bpl.translation.CodeGenerator.fieldType;
 import static b2bpl.translation.CodeGenerator.forall;
-import static b2bpl.translation.CodeGenerator.get;
-import static b2bpl.translation.CodeGenerator.heapAdd;
-import static b2bpl.translation.CodeGenerator.heapNew;
 import static b2bpl.translation.CodeGenerator.icast;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
 import static b2bpl.translation.CodeGenerator.implies;
-import static b2bpl.translation.CodeGenerator.initVal;
 import static b2bpl.translation.CodeGenerator.int2bool;
 import static b2bpl.translation.CodeGenerator.inv;
 import static b2bpl.translation.CodeGenerator.isClassType;
@@ -35,40 +24,22 @@ import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isExceptionalReturnState;
 import static b2bpl.translation.CodeGenerator.isInRange;
 import static b2bpl.translation.CodeGenerator.isInstanceOf;
-import static b2bpl.translation.CodeGenerator.isNewMultiArray;
 import static b2bpl.translation.CodeGenerator.isNormalReturnState;
-import static b2bpl.translation.CodeGenerator.isOfType;
-import static b2bpl.translation.CodeGenerator.isStatic;
 import static b2bpl.translation.CodeGenerator.isSubtype;
 import static b2bpl.translation.CodeGenerator.isValueType;
-import static b2bpl.translation.CodeGenerator.ival;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
-import static b2bpl.translation.CodeGenerator.ltyp;
 import static b2bpl.translation.CodeGenerator.modulo;
-import static b2bpl.translation.CodeGenerator.multiArrayAlloc;
-import static b2bpl.translation.CodeGenerator.multiArrayParent;
-import static b2bpl.translation.CodeGenerator.multiArrayPosition;
 import static b2bpl.translation.CodeGenerator.multiply;
-import static b2bpl.translation.CodeGenerator.neg;
-import static b2bpl.translation.CodeGenerator.nonNull;
 import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.nullLiteral;
-import static b2bpl.translation.CodeGenerator.obj;
-import static b2bpl.translation.CodeGenerator.objectAlloc;
-import static b2bpl.translation.CodeGenerator.old;
 import static b2bpl.translation.CodeGenerator.quantVarName;
-import static b2bpl.translation.CodeGenerator.rval;
 import static b2bpl.translation.CodeGenerator.sub;
-import static b2bpl.translation.CodeGenerator.toint;
-import static b2bpl.translation.CodeGenerator.toref;
 import static b2bpl.translation.CodeGenerator.trigger;
 import static b2bpl.translation.CodeGenerator.typ;
-import static b2bpl.translation.CodeGenerator.typeObject;
-import static b2bpl.translation.CodeGenerator.update;
 import static b2bpl.translation.CodeGenerator.var;
 
 import java.util.ArrayList;
@@ -79,33 +50,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
-import de.unikl.bcverifier.BPLTranslatedMethod;
-
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLArrayType;
 import b2bpl.bpl.ast.BPLAxiom;
-import b2bpl.bpl.ast.BPLBasicBlock;
 import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLConstantDeclaration;
 import b2bpl.bpl.ast.BPLDeclaration;
-import b2bpl.bpl.ast.BPLEnsuresClause;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLFunction;
 import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLFunctionParameter;
-import b2bpl.bpl.ast.BPLImplementation;
-import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
-import b2bpl.bpl.ast.BPLModifiesClause;
-import b2bpl.bpl.ast.BPLNullLiteral;
 import b2bpl.bpl.ast.BPLParameterizedType;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
-import b2bpl.bpl.ast.BPLRequiresClause;
 import b2bpl.bpl.ast.BPLSpecification;
-import b2bpl.bpl.ast.BPLSpecificationClause;
 import b2bpl.bpl.ast.BPLType;
 import b2bpl.bpl.ast.BPLTypeAlias;
 import b2bpl.bpl.ast.BPLTypeDeclaration;
@@ -870,26 +831,24 @@ public class Translator implements ITranslationConstants {
         addConstants(new BPLVariable("null", new BPLTypeName(REF_TYPE)));
 
         {
-            final String fieldType = "Field";
-            addType(fieldType, "_");
-            final String heapType = "Heap";
-            addDeclaration(new BPLTypeAlias(heapType, new BPLParameterizedType(new BPLArrayType(new BPLType[]{new BPLTypeName("Ref"), new BPLTypeName(fieldType, "alpha")}, new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
+            addType(FIELD_TYPE, "_");
+            addDeclaration(new BPLTypeAlias(HEAP_TYPE, new BPLParameterizedType(new BPLArrayType(new BPLType[]{new BPLTypeName("Ref"), new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha"))}, new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
             
             final String alloc = "alloc";
-            addDeclaration(new BPLConstantDeclaration(new BPLVariable(alloc, new BPLTypeName(fieldType, "bool"))));
+            addDeclaration(new BPLConstantDeclaration(new BPLVariable(alloc, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL))));
             final String exposed = "exposed";
-            addDeclaration(new BPLConstantDeclaration(new BPLVariable(exposed, new BPLTypeName(fieldType, "bool"))));
+            addDeclaration(new BPLConstantDeclaration(new BPLVariable(exposed, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL))));
             final String createdByCtxt = "createdByCtxt";
-            addDeclaration(new BPLConstantDeclaration(new BPLVariable(createdByCtxt, new BPLTypeName(fieldType, "bool"))));
+            addDeclaration(new BPLConstantDeclaration(new BPLVariable(createdByCtxt, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL))));
             
             final String dynType = "dynType";
-            addDeclaration(new BPLConstantDeclaration(new BPLVariable(dynType, new BPLTypeName(fieldType, NAME_TYPE))));
+            addDeclaration(new BPLConstantDeclaration(new BPLVariable(dynType, new BPLTypeName(FIELD_TYPE, new BPLTypeName(NAME_TYPE)))));
             
-            addFunction("AllocObj", new BPLTypeName(REF_TYPE), new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            addFunction("AllocObj", new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             final String r = "r";
             BPLVariable refVar = new BPLVariable(r, new BPLTypeName(REF_TYPE));
             final String heap = "heap";
-            BPLVariable heapVar = new BPLVariable(heap, new BPLTypeName(heapType));
+            BPLVariable heapVar = new BPLVariable(heap, new BPLTypeName(HEAP_TYPE));
             addAxiom(forall(
                     refVar, heapVar, 
                     isEquiv(new BPLFunctionApplication("AllocObj", var(r), var(heap)), 
@@ -898,17 +857,17 @@ public class Translator implements ITranslationConstants {
             addDeclaration(new BPLTypeAlias("Bij", new BPLArrayType(new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL)));
             
             final String heap1 = "heap1";
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap1, new BPLTypeName(heapType), new BPLFunctionApplication("WellformedHeap", var(heap1)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE), new BPLFunctionApplication("WellformedHeap", var(heap1)))));
             final String heap2 = "heap2";
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap2, new BPLTypeName(heapType), new BPLFunctionApplication("WellformedHeap", var(heap2)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE), new BPLFunctionApplication("WellformedHeap", var(heap2)))));
             final String related = "related";
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName("Bij"), new BPLFunctionApplication("WellformedCoupling", var(heap1), var(heap2), var(related)))));
             
-            addFunction("WellformedHeap", new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            addFunction("WellformedHeap", new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             final String f = "f";
-            BPLVariable fieldRefVar = new BPLVariable(f, new BPLTypeName(fieldType, REF_TYPE));
-            BPLVariable fieldIntVar = new BPLVariable(f, new BPLTypeName(fieldType, "int"));
-            BPLVariable fieldBoolVar = new BPLVariable(f, new BPLTypeName(fieldType, "bool"));
+            BPLVariable fieldRefVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)));
+            BPLVariable fieldIntVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT));
+            BPLVariable fieldBoolVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL));
             addAxiom(forall(
                     heapVar,
                     isEquiv(new BPLFunctionApplication("WellformedHeap", var(heap)),
@@ -921,9 +880,9 @@ public class Translator implements ITranslationConstants {
                                     ))
                     ));
             
-            addFunction("WellformedCoupling", new BPLTypeName(heapType), new BPLTypeName(heapType), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
-            BPLVariable heap1Var = new BPLVariable(heap1, new BPLTypeName(heapType));
-            BPLVariable heap2Var = new BPLVariable(heap2, new BPLTypeName(heapType));
+            addFunction("WellformedCoupling", new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            BPLVariable heap1Var = new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE));
+            BPLVariable heap2Var = new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE));
             BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName("Bij"));
             final String r1 = "r1";
             BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
@@ -945,7 +904,7 @@ public class Translator implements ITranslationConstants {
                                     ))
                     ));
             
-            addFunction("ObjectCoupling", new BPLTypeName(heapType), new BPLTypeName(heapType), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            addFunction("ObjectCoupling", new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
                     isEquiv(new BPLFunctionApplication("ObjectCoupling", var(heap1), var(heap2), var(related)),
@@ -991,7 +950,7 @@ public class Translator implements ITranslationConstants {
                                     )
                     )));
             
-            addFunction("NonNull", new BPLTypeName(NAME_TYPE), new BPLTypeName(fieldType, REF_TYPE), new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            addFunction("NonNull", new BPLTypeName(NAME_TYPE), new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             final String c = "c";
             BPLVariable cVar = new BPLVariable(c, new BPLTypeName(NAME_TYPE));
             addAxiom(forall(
@@ -1003,7 +962,7 @@ public class Translator implements ITranslationConstants {
                             ))
                     )));
             
-            addFunction("Internal", new BPLTypeName(NAME_TYPE), new BPLTypeName(fieldType, REF_TYPE), new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            addFunction("Internal", new BPLTypeName(NAME_TYPE), new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     cVar, fieldRefVar, heapVar,
                     isEquiv(new BPLFunctionApplication("Internal", var(c), var(f), var(heap)), 
@@ -1013,7 +972,7 @@ public class Translator implements ITranslationConstants {
                             ))
                     )));
             
-            addFunction("RefOfType", new BPLTypeName(REF_TYPE), new BPLTypeName(heapType), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction("RefOfType", new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             final String o = "o";
             BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
             final String t = "t";
@@ -1028,7 +987,7 @@ public class Translator implements ITranslationConstants {
                             )
                     ));
             
-            addFunction("FType", new BPLType[]{new BPLTypeName(heapType), new BPLTypeName(NAME_TYPE), new BPLTypeName(fieldType, REF_TYPE), new BPLTypeName(NAME_TYPE)}, BPLBuiltInType.BOOL);
+            addFunction("FType", new BPLType[]{new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)), new BPLTypeName(NAME_TYPE)}, BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heapVar, cVar, fieldRefVar, tVar,
                     logicalAnd(
@@ -1051,7 +1010,7 @@ public class Translator implements ITranslationConstants {
                                     ))
                     )));
             
-            addFunction("Unique", new BPLTypeName(NAME_TYPE), new BPLTypeName(fieldType, REF_TYPE), new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            addFunction("Unique", new BPLTypeName(NAME_TYPE), new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     cVar, fieldRefVar, heapVar,
                     isEquiv(new BPLFunctionApplication("Unique", var(c), var(f), var(heap)), 
@@ -1078,45 +1037,41 @@ public class Translator implements ITranslationConstants {
             
             addComment("Extensionality for heaps");
             
-            final String varType = "Var";
-            addType(varType, "_");
-            final String stackPtrType = "StackPtr";
-            addDeclaration(new BPLTypeAlias(stackPtrType, BPLBuiltInType.INT));
+            addType(VAR_TYPE, "_");
+            addDeclaration(new BPLTypeAlias(STACK_PTR_TYPE, BPLBuiltInType.INT));
             final String sp1 = "sp1";
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(sp1, new BPLTypeName(stackPtrType))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(sp1, new BPLTypeName(STACK_PTR_TYPE))));
             final String sp2 = "sp2";
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(sp2, new BPLTypeName(stackPtrType))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(sp2, new BPLTypeName(STACK_PTR_TYPE))));
             
-            final String stackFrameType = "StackFrame";
-            addDeclaration(new BPLTypeAlias(stackFrameType, new BPLParameterizedType(new BPLArrayType(new BPLTypeName(varType, "alpha"), new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
-            final String stackType = "Stack";
-            addDeclaration(new BPLTypeAlias(stackType, new BPLArrayType(new BPLTypeName(stackPtrType), new BPLTypeName(stackFrameType))));
+            addDeclaration(new BPLTypeAlias(STACK_FRAME_TYPE, new BPLParameterizedType(new BPLArrayType(new BPLTypeName(VAR_TYPE, new BPLTypeName("alpha")), new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
+            addDeclaration(new BPLTypeAlias(STACK_TYPE, new BPLArrayType(new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(STACK_FRAME_TYPE))));
             
             final String stack1 = "stack1";
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack1, new BPLTypeName(stackType), new BPLFunctionApplication("WellformedStack", var(stack1), var(sp1), var(heap1)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack1, new BPLTypeName(STACK_TYPE), new BPLFunctionApplication("WellformedStack", var(stack1), var(sp1), var(heap1)))));
             final String stack2 = "stack2";
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack2, new BPLTypeName(stackType), new BPLFunctionApplication("WellformedStack", var(stack2), var(sp2), var(heap2)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack2, new BPLTypeName(STACK_TYPE), new BPLFunctionApplication("WellformedStack", var(stack2), var(sp2), var(heap2)))));
             
             final String thisName = "this";
-            addConstants(new BPLVariable(thisName, new BPLTypeName(varType, REF_TYPE)));
+            addConstants(new BPLVariable(thisName, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
             
-            addFunction("WellformedStack", new BPLTypeName(stackType), new BPLTypeName(stackPtrType), new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            addFunction("WellformedStack", new BPLTypeName(STACK_TYPE), new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             final String stack = "stack";
-            BPLVariable stackVar = new BPLVariable(stack, new BPLTypeName(stackType));
+            BPLVariable stackVar = new BPLVariable(stack, new BPLTypeName(STACK_TYPE));
             final String sp = "sp";
-            BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(stackPtrType));
+            BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
             final String p = "p";
-            BPLVariable pVar = new BPLVariable(p, new BPLTypeName(stackPtrType));
+            BPLVariable pVar = new BPLVariable(p, new BPLTypeName(STACK_PTR_TYPE));
             final String v = "v";
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(varType, REF_TYPE));
+            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
             addAxiom(forall(
                     stackVar, spVar, heapVar,
                     logicalAnd(
                             forall(pVar, vVar, implies(logicalAnd(lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp))), new BPLArrayExpression(var(heap), new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), var(alloc)))),
                             forall(pVar, implies( logicalAnd( lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp)) ), new BPLFunctionApplication("AllocObj", new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(thisName)), var(heap) ) )),
                             forall(pVar, vVar, implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), var("null")))),
-                            forall(pVar, new BPLVariable(v, new BPLTypeName(varType, "int")), implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), intLiteral(0)))),
-                            forall(pVar, new BPLVariable(v, new BPLTypeName(varType, "bool")), implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), BPLBoolLiteral.FALSE)))
+                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), intLiteral(0)))),
+                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.BOOL)), implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), BPLBoolLiteral.FALSE)))
                             )
                     ));
             
@@ -1126,11 +1081,11 @@ public class Translator implements ITranslationConstants {
             final String addressType = "Address";
             addType(addressType);
             
-            addConstants(new BPLVariable("isCall", new BPLTypeName(varType, "bool")));
-            addConstants(new BPLVariable("place", new BPLTypeName(varType, addressType)));
+            addConstants(new BPLVariable("isCall", new BPLTypeName(VAR_TYPE, BPLBuiltInType.BOOL)));
+            addConstants(new BPLVariable("place", new BPLTypeName(VAR_TYPE, new BPLTypeName(addressType))));
             addConstants(new BPLVariable("retA", new BPLTypeName(addressType)));
-            addConstants(new BPLVariable("meth", new BPLTypeName(varType, METHOD_TYPE)));
-            addConstants(new BPLVariable("receiver", new BPLTypeName(varType, REF_TYPE)));
+            addConstants(new BPLVariable("meth", new BPLTypeName(VAR_TYPE, new BPLTypeName(METHOD_TYPE))));
+            addConstants(new BPLVariable("receiver", new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
         }
 //        //
 //        // Muller/Poetzsch Heffter BoogiePL store axiomatization
@@ -1138,7 +1093,7 @@ public class Translator implements ITranslationConstants {
 //        addType(HEAP_TYPE);
 //
 //        // Create global heap variable for entire program
-//        addDeclaration(new BPLVariableDeclaration(new BPLVariable[] { new BPLVariable(HEAP_VAR, new BPLTypeName(HEAP_TYPE)) } ));
+//        addDeclaration(new BPLVariableDeclaration(new BPLVariable[] { new BPLVariable(TranslationController.getHeap(), new BPLTypeName(HEAP_TYPE)) } ));
 //
 //        //
 //        // Values (objects, primitive values, arrays)
@@ -1410,7 +1365,7 @@ public class Translator implements ITranslationConstants {
 //        }
 //
 //        // Field declaration
-//        addFunction(FIELD_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
+        addFunction(FIELD_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
 //
 //        {
 //            // Static fields
@@ -2042,7 +1997,7 @@ public class Translator implements ITranslationConstants {
             addAxiom(forall(
                     iVar, tVar,
                     isEquiv(
-                            isSubtype(typ(ival(var(i))), var(t)),
+                            isSubtype(typ(var(i)), var(t)),
                             isInRange(var(i), var(t))
                             ),
                             trigger(isInRange(var(i), var(t)))
@@ -2175,112 +2130,112 @@ public class Translator implements ITranslationConstants {
 
         {
             // Class fields which appear in one or more modifies clauses
-            // SpecificationTranslator translator = SpecificationTranslator.forModifiesClause(HEAP_VAR, parameters);
+            // SpecificationTranslator translator = SpecificationTranslator.forModifiesClause(TranslationController.getHeap(), parameters);
             // return translator.translateModifiesStoreRefs(context, project.getSpecificationDesugarer().getModifiesStoreRefs(method));
         }
     }
 
-    private BPLProcedure axiomatizeHelperProcedure(String name, String type) {
-        String l = quantVarName("l");
-        String o = quantVarName("o");
-        String t = quantVarName("t");
-        String this_var_name = quantVarName("param0");
-        BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
-        BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
-        BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-        BPLVariable this_var = new BPLVariable(this_var_name, new BPLTypeName(REF_TYPE));
-
-        boolean hasReturnType = (type != null);
-
-        return new BPLProcedure(
-                name,
-                new BPLVariable[] { this_var },
-                new BPLVariable[] {
-                        new BPLVariable(RETURN_STATE_PARAM, new BPLTypeName(RETURN_STATE_TYPE)),
-                        new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE)),
-                        new BPLVariable(EXCEPTION_PARAM, new BPLTypeName(REF_TYPE))
-                },   
-
-                new BPLSpecification(new BPLSpecificationClause[] {
-
-                        new BPLRequiresClause(
-                                // All invariants are required to hold prior to a constructor call.
-                                forall(
-                                        oVar, tVar,
-                                        implies(
-                                                logicalAnd(
-                                                        alive(rval(var(o)), var(HEAP_VAR)),
-                                                        isSubtype(var(t), typ(rval(var(o)))),
-                                                        notEqual(var(o), var(this_var_name))
-                                                        ),
-                                                        inv(var(t), var(o), var(HEAP_VAR))
-                                                )
-                                        )
-                                )
-
-                        ,
-
-                        hasReturnType ?
-
-                                new BPLEnsuresClause(logicalAnd(
-                                        // postcondition of helper procedure (usually constructor)
-                                        isEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), var(this_var_name)),
-                                        notEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), BPLNullLiteral.NULL),
-                                        alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(HEAP_VAR)),
-                                        isInstanceOf(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(type)),
-                                        forall(lVar,
-                                                implies(
-                                                        // alive(rval(var(o)), old(var(HEAP_VAR))),
-                                                        alive(rval(obj(var(l))), old(var(HEAP_VAR))),
-                                                        logicalAnd(
-                                                                isEqual(
-                                                                        get(var(HEAP_VAR), var(l)),
-                                                                        get(old(var(HEAP_VAR)), var(l))
-                                                                        ),
-                                                                        //alive(rval(var(o)), var(HEAP_VAR))
-                                                                        alive(rval(obj(var(l))), var(HEAP_VAR))
-                                                                )
-                                                        )
-                                                )
-                                        ))
-
-                        :
-
-                            new BPLEnsuresClause(
-                                    // postcondition of helper procedure (usually constructor)
-                                    forall(lVar,
-                                            implies(
-                                                    // alive(rval(var(o)), old(var(HEAP_VAR))),
-                                                    alive(rval(obj(var(l))), old(var(HEAP_VAR))),
-                                                    logicalAnd(
-                                                            isEqual(
-                                                                    get(var(HEAP_VAR), var(l)),
-                                                                    get(old(var(HEAP_VAR)), var(l))
-                                                                    ),
-                                                                    //alive(rval(var(o)), var(HEAP_VAR))
-                                                                    alive(rval(obj(var(l))), var(HEAP_VAR))
-                                                            )
-                                                    )
-                                            )
-                                    )
-
-                                ,
-
-                                new BPLEnsuresClause(
-                                        // All invariants are required to hold after a constructor call.
-                                        forall(
-                                                oVar, tVar,
-                                                implies(
-                                                        // BPLBoolLiteral.FALSE,
-                                                        isEqual(var(o), var(this_var_name)),
-                                                        inv(var(t), var(o), var(HEAP_VAR))
-                                                        )
-                                                )
-                                        )
-
-                })
-                );
-    }
+//    private BPLProcedure axiomatizeHelperProcedure(String name, String type) {
+//        String l = quantVarName("l");
+//        String o = quantVarName("o");
+//        String t = quantVarName("t");
+//        String this_var_name = quantVarName("param0");
+//        BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
+//        BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+//        BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//        BPLVariable this_var = new BPLVariable(this_var_name, new BPLTypeName(REF_TYPE));
+//
+//        boolean hasReturnType = (type != null);
+//
+//        return new BPLProcedure(
+//                name,
+//                new BPLVariable[] { this_var },
+//                new BPLVariable[] {
+//                        new BPLVariable(RETURN_STATE_PARAM, new BPLTypeName(RETURN_STATE_TYPE)),
+//                        new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE)),
+//                        new BPLVariable(EXCEPTION_PARAM, new BPLTypeName(REF_TYPE))
+//                },   
+//
+//                new BPLSpecification(new BPLSpecificationClause[] {
+//
+//                        new BPLRequiresClause(
+//                                // All invariants are required to hold prior to a constructor call.
+//                                forall(
+//                                        oVar, tVar,
+//                                        implies(
+//                                                logicalAnd(
+//                                                        alive(rval(var(o)), var(TranslationController.getHeap())),
+//                                                        isSubtype(var(t), typ(rval(var(o)))),
+//                                                        notEqual(var(o), var(this_var_name))
+//                                                        ),
+//                                                        inv(var(t), var(o), var(TranslationController.getHeap()))
+//                                                )
+//                                        )
+//                                )
+//
+//                        ,
+//
+//                        hasReturnType ?
+//
+//                                new BPLEnsuresClause(logicalAnd(
+//                                        // postcondition of helper procedure (usually constructor)
+//                                        isEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), var(this_var_name)),
+//                                        notEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), BPLNullLiteral.NULL),
+//                                        alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(TranslationController.getHeap())),
+//                                        isInstanceOf(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(type))//,
+////                                        forall(lVar,
+////                                                implies(
+////                                                        // alive(rval(var(o)), old(var(TranslationController.getHeap()))),
+////                                                        alive(rval(obj(var(l))), old(var(TranslationController.getHeap()))),
+////                                                        logicalAnd(
+////                                                                isEqual(
+////                                                                        get(var(TranslationController.getHeap()), var(l)),
+////                                                                        get(old(var(TranslationController.getHeap())), var(l))
+////                                                                        ),
+////                                                                        //alive(rval(var(o)), var(TranslationController.getHeap()))
+////                                                                        alive(rval(obj(var(l))), var(TranslationController.getHeap()))
+////                                                                )
+////                                                        )
+////                                                )
+//                                        ))
+//
+//                        :
+//
+//                            new BPLEnsuresClause(
+//                                    // postcondition of helper procedure (usually constructor)
+//                                    forall(lVar,
+//                                            implies(
+//                                                    // alive(rval(var(o)), old(var(TranslationController.getHeap()))),
+//                                                    alive(rval(obj(var(l))), old(var(TranslationController.getHeap()))),
+//                                                    logicalAnd(
+//                                                            isEqual(
+//                                                                    get(var(TranslationController.getHeap()), var(l)),
+//                                                                    get(old(var(TranslationController.getHeap())), var(l))
+//                                                                    ),
+//                                                                    //alive(rval(var(o)), var(TranslationController.getHeap()))
+//                                                                    alive(rval(obj(var(l))), var(TranslationController.getHeap()))
+//                                                            )
+//                                                    )
+//                                            )
+//                                    )
+//
+//                                ,
+//
+//                                new BPLEnsuresClause(
+//                                        // All invariants are required to hold after a constructor call.
+//                                        forall(
+//                                                oVar, tVar,
+//                                                implies(
+//                                                        // BPLBoolLiteral.FALSE,
+//                                                        isEqual(var(o), var(this_var_name)),
+//                                                        inv(var(t), var(o), var(TranslationController.getHeap()))
+//                                                        )
+//                                                )
+//                                        )
+//
+//                })
+//                );
+//    }
 
     /**
      * Defines and axiomatizes some simple helper functions.
@@ -2363,28 +2318,29 @@ public class Translator implements ITranslationConstants {
 //        }
 
 //        {
-//            addFunction(
-//                    IS_INSTANCE_OF_FUNC,
-//                    new BPLTypeName(VALUE_TYPE),
-//                    new BPLTypeName(NAME_TYPE),
-//                    BPLBuiltInType.BOOL);
-//            String v = quantVarName("v");
-//            String t = quantVarName("t");
-//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-//            // A value is an instance of a given type if and only if it is not the
-//            // null value and if its type is a subtype of the given type.
-//            addAxiom(forall(
-//                    vVar, tVar,
-//                    isEquiv(
-//                            isInstanceOf(var(v), var(t)),
-//                            logicalAnd(
-//                                    notEqual(var(v), rval(nullLiteral())),
-//                                    isSubtype(typ(var(v)), var(t))
-//                                    )
-//                            ),
-//                            trigger(isInstanceOf(var(v), var(t)))
-//                    ));
+        //TODO check that the definition of isInstanceOf is ok
+            addFunction(
+                    IS_INSTANCE_OF_FUNC,
+                    new BPLTypeName(REF_TYPE),
+                    new BPLTypeName(NAME_TYPE),
+                    BPLBuiltInType.BOOL);
+            String v = quantVarName("v");
+            String t = quantVarName("t");
+            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(REF_TYPE));
+            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+            // A value is an instance of a given type if and only if it is not the
+            // null value and if its type is a subtype of the given type.
+            addAxiom(forall(
+                    vVar, tVar,
+                    isEquiv(
+                            isInstanceOf(var(v), var(t)),
+                            logicalAnd(
+                                    notEqual(var(v), nullLiteral()),
+                                    isSubtype(typ(var(v)), var(t))
+                                    )
+                            ),
+                            trigger(isInstanceOf(var(v), var(t)))
+                    ));
 //
 //            // [SW] inserted: if a value is an instance of a given type t,
 //            // the value is of type t.
@@ -2546,7 +2502,7 @@ public class Translator implements ITranslationConstants {
                         isEquiv(
                                 inv(var(t), var(o), var(h)),
                                 implies(
-                                        isInstanceOf(rval(var(o)), var(t)),
+                                        isInstanceOf(var(o), var(t)),
                                         translator.translate(context, invariant)
                                         )
                                 )
@@ -2732,12 +2688,12 @@ public class Translator implements ITranslationConstants {
          * <i>name</i>.
          */
         public BPLExpression translateFieldReference(BCField field) {
-            String fieldName = field.getQualifiedName();
+            String fieldName = GLOBAL_VAR_PREFIX+field.getQualifiedName();
             if (!fieldReferences.contains(field)) {
                 fieldReferences.add(field);
 
                 // Declare the constant representing the given field.
-                addConstants(new BPLVariable(fieldName, new BPLTypeName(NAME_TYPE)));
+                addConstants(new BPLVariable(fieldName, new BPLTypeName(FIELD_TYPE, CodeGenerator.type(field.getType()))));
 
                 // Define the field's declared type.
                 addAxiom(isEqual(
@@ -2753,7 +2709,7 @@ public class Translator implements ITranslationConstants {
                 addAxiom(forall(
                         oVar, hVar,
                         isSubtype(
-                                typ(get(var(h), fieldLoc(var(o), var(fieldName)))),
+                                typ(new BPLArrayExpression(var(h), var(o), var(fieldName))),
                                 translateTypeReference(field.getType())
                                 )
                         ));
@@ -2809,14 +2765,14 @@ public class Translator implements ITranslationConstants {
                 JType string = TypeLoader.getClassType("java.lang.String");
                 String h = quantVarName("h");
                 BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-                addAxiom(forall(
-                        hVar,
-                        logicalAnd(
-                                isInstanceOf(rval(var(name)), typeRef(string)),
-                                alive(rval(var(name)), var(h))
-                                ),
-                                trigger(alive(rval(var(name)), var(h)))
-                        ));
+//                addAxiom(forall(
+//                        hVar,
+//                        logicalAnd(
+//                                isInstanceOf(rval(var(name)), typeRef(string)),
+//                                alive(rval(var(name)), var(h))
+//                                ),
+//                                trigger(alive(rval(var(name)), var(h)))
+//                        ));
             }
             return var(stringLiterals.get(literal));
         }
@@ -2838,14 +2794,14 @@ public class Translator implements ITranslationConstants {
                 JType clazz = TypeLoader.getClassType("java.lang.Class");
                 String h = quantVarName("h");
                 BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-                addAxiom(forall(
-                        hVar,
-                        logicalAnd(
-                                isInstanceOf(rval(var(name)), typeRef(clazz)),
-                                alive(rval(var(name)), var(h))
-                                ),
-                                trigger(alive(rval(var(name)), var(h)))
-                        ));
+//                addAxiom(forall(
+//                        hVar,
+//                        logicalAnd(
+//                                isInstanceOf(rval(var(name)), typeRef(clazz)),
+//                                alive(rval(var(name)), var(h))
+//                                ),
+//                                trigger(alive(rval(var(name)), var(h)))
+//                        ));
             }
             return var(name);
         }

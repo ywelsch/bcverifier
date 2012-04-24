@@ -5,15 +5,12 @@ import static b2bpl.translation.CodeGenerator.arrayLoc;
 import static b2bpl.translation.CodeGenerator.fieldAccess;
 import static b2bpl.translation.CodeGenerator.fieldLoc;
 import static b2bpl.translation.CodeGenerator.forall;
-import static b2bpl.translation.CodeGenerator.get;
 import static b2bpl.translation.CodeGenerator.implies;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.quantVarName;
-import static b2bpl.translation.CodeGenerator.rval;
-import static b2bpl.translation.CodeGenerator.toref;
 import static b2bpl.translation.CodeGenerator.var;
 import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLBuiltInType;
@@ -280,11 +277,12 @@ public class ModifiesFilter {
       onLhs--;
       BPLExpression index = specTranslator.translate(context, storeRef.getIndex());
 
-      if (onLhs > 0) {
-        // If we are on the LHS of a field/array access, we simply return a
-        // normal array access expression.
-        return toref(get(var(specTranslator.heap), arrayLoc(prefix, index)));
-      }
+      //TODO array access
+//      if (onLhs > 0) {
+//        // If we are on the LHS of a field/array access, we simply return a
+//        // normal array access expression.
+//        return toref(get(var(specTranslator.heap), arrayLoc(prefix, index)));
+//      }
       // If we are not on the LHS of a field/array access, we must return an
       // expression stating that the given location does not correspond to the
       // BML store reference being filtered out.
@@ -306,7 +304,7 @@ public class ModifiesFilter {
           implies(
               logicalAnd(
                   lessEqual(context.translateIntLiteral(0), var(i)),
-                  less(var(i), arrayLength(rval(prefix)))),
+                  less(var(i), arrayLength(prefix))),
               notEqual(var(location), arrayLoc(prefix, var(i)))));
     }
 

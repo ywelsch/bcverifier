@@ -6,6 +6,7 @@ import java.util.List;
 
 import b2bpl.Main;
 import b2bpl.Project;
+import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
 import b2bpl.bpl.ast.BPLBinaryLogicalExpression;
 import b2bpl.bpl.ast.BPLBoolLiteral;
@@ -231,115 +232,115 @@ public final class CodeGenerator implements ITranslationConstants {
     return new BPLFunctionApplication(INV_FUNC, type, object, heap);
   }
 
-  //@ requires heap != null && variable != null;
-  //@ ensures \result != null;
-  public static BPLExpression get(BPLExpression heap, BPLExpression variable) {
-    return new BPLFunctionApplication(GET_FUNC, heap, variable);
-  }
+//  //@ requires heap != null && variable != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression get(BPLExpression heap, BPLExpression variable) {
+//    return new BPLFunctionApplication(GET_FUNC, heap, variable);
+//  }
 
-  //@ requires heap != null && variable != null && value != null;
-  //@ ensures \result != null;
-  public static BPLExpression update(
-      BPLExpression heap,
-      BPLExpression variable,
-      BPLExpression value) {
-    return new BPLFunctionApplication(UPDATE_FUNC, heap, variable, value);
-  }
+//  //@ requires heap != null && variable != null && value != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression update(
+//      BPLExpression heap,
+//      BPLExpression variable,
+//      BPLExpression value) {
+//    return new BPLFunctionApplication(UPDATE_FUNC, heap, variable, value);
+//  }
 
-  //@ requires value != null && heap != null;
-  //@ ensures \result != null;
-  public static BPLExpression alive(BPLExpression value, BPLExpression heap) {
-    return new BPLFunctionApplication(ALIVE_FUNC, value, heap);
-  }
+//  //@ requires value != null && heap != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression alive(BPLExpression value, BPLExpression heap) {
+//    return new BPLFunctionApplication(ALIVE_FUNC, value, heap);
+//  }
 
-  //@ requires heap != null && allocation != null;
-  //@ ensures \result != null;
-  public static BPLExpression heapNew(
-      BPLExpression heap,
-      BPLExpression allocation) {
-    return new BPLFunctionApplication(NEW_FUNC, heap, allocation);
-  }
+//  //@ requires heap != null && allocation != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression heapNew(
+//      BPLExpression heap,
+//      BPLExpression allocation) {
+//    return new BPLFunctionApplication(NEW_FUNC, heap, allocation);
+//  }
 
-  //@ requires context != null && heap != null;
-  //@ ensures \result != null;
-  public static BPLExpression heapNew(
-      ITranslationContext context,
-      BPLExpression heap,
-      JType type) {
-    return heapNew(heap, objectAlloc(context.translateTypeReference(type)));
-  }
+//  //@ requires context != null && heap != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression heapNew(
+//      ITranslationContext context,
+//      BPLExpression heap,
+//      JType type) {
+//    return heapNew(heap, objectAlloc(context.translateTypeReference(type)));
+//  }
 
-  //@ requires context != null && heap != null;
-  //@ ensures \result != null;
-  public static BPLExpression heapNewArray(
-      ITranslationContext context,
-      BPLExpression heap,
-      JType type,
-      BPLExpression length) {
-    return heapNew(
-        heap,
-        arrayAlloc(context.translateTypeReference(type), length));
-  }
+//  //@ requires context != null && heap != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression heapNewArray(
+//      ITranslationContext context,
+//      BPLExpression heap,
+//      JType type,
+//      BPLExpression length) {
+//    return heapNew(
+//        heap,
+//        arrayAlloc(context.translateTypeReference(type), length));
+//  }
 
-  //@ requires heap != null && allocation != null;
-  //@ ensures \result != null;
-  public static BPLExpression heapAdd(
-      BPLExpression heap,
-      BPLExpression allocation) {
-    return new BPLFunctionApplication(ADD_FUNC, heap, allocation);
-  }
+//  //@ requires heap != null && allocation != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression heapAdd(
+//      BPLExpression heap,
+//      BPLExpression allocation) {
+//    return new BPLFunctionApplication(ADD_FUNC, heap, allocation);
+//  }
+//
+//  //@ requires context != null && heap != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression heapAdd(
+//      ITranslationContext context,
+//      BPLExpression heap,
+//      JType type) {
+//    return heapAdd(heap, objectAlloc(context.translateTypeReference(type)));
+//  }
 
-  //@ requires context != null && heap != null;
-  //@ ensures \result != null;
-  public static BPLExpression heapAdd(
-      ITranslationContext context,
-      BPLExpression heap,
-      JType type) {
-    return heapAdd(heap, objectAlloc(context.translateTypeReference(type)));
-  }
-
-  //@ requires context != null && heap != null && type != null;
-  //@ ensures \result != null;
-  public static BPLExpression heapAddArray(
-      ITranslationContext context,
-      BPLExpression heap,
-      JType type,
-      BPLExpression length) {
-    return heapAdd(heap, arrayAlloc(context.translateTypeReference(type), length));
-  }
+//  //@ requires context != null && heap != null && type != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression heapAddArray(
+//      ITranslationContext context,
+//      BPLExpression heap,
+//      JType type,
+//      BPLExpression length) {
+//    return heapAdd(heap, arrayAlloc(context.translateTypeReference(type), length));
+//  }
   
-  //@ requires value != null;
-  //@ ensures \result != null;
-  public static BPLExpression toint(BPLExpression value) {
-    return new BPLFunctionApplication(TOINT_FUNC, value);
-  }
+//  //@ requires value != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression toint(BPLExpression value) {
+//    return new BPLFunctionApplication(TOINT_FUNC, value);
+//  }
 
-  //@ requires value != null;
-  //@ ensures \result != null;
-  public static BPLExpression toref(BPLExpression value) {
-    return new BPLFunctionApplication(TOREF_FUNC, value);
-  }
+//  //@ requires value != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression toref(BPLExpression value) {
+//    return new BPLFunctionApplication(TOREF_FUNC, value);
+//  }
 
-  //@ requires integer != null;
-  //@ ensures \result != null;
-  public static BPLExpression ival(BPLExpression integer) {
-    return new BPLFunctionApplication(IVAL_FUNC, integer);
-  }
-  
-  //@ requires reference != null;
-  //@ ensures \result != null;
-  public static BPLExpression rval(BPLExpression reference) {
-    return new BPLFunctionApplication(RVAL_FUNC, reference);
-  }
+//  //@ requires integer != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression ival(BPLExpression integer) {
+//    return new BPLFunctionApplication(IVAL_FUNC, integer);
+//  }
+//  
+//  //@ requires reference != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression rval(BPLExpression reference) {
+//    return new BPLFunctionApplication(RVAL_FUNC, reference);
+//  }
 
-  //@ requires object != null && objectType != null;
-  //@ ensures \result != null;
-  public static BPLExpression val(BPLExpression object, JType objectType) {
-    if (type(objectType) == BPLBuiltInType.INT) {
-      return new BPLFunctionApplication(IVAL_FUNC, object);
-    }
-    return new BPLFunctionApplication(RVAL_FUNC, object);
-  }
+//  //@ requires object != null && objectType != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression val(BPLExpression object, JType objectType) {
+//    if (type(objectType) == BPLBuiltInType.INT) {
+//      return new BPLFunctionApplication(IVAL_FUNC, object);
+//    }
+//    return new BPLFunctionApplication(RVAL_FUNC, object);
+//  }
 
   //@ requires type != null;
   //@ ensures \result != null;
@@ -483,56 +484,58 @@ public final class CodeGenerator implements ITranslationConstants {
       String heapVar,
       BPLExpression reference,
       BCField field) {
-    BPLExpression val = get(var(heapVar), fieldLoc(context, reference, field));
-    if (type(field.getType()) == BPLBuiltInType.INT) {
-      return toint(val);
-    }
-    return toref(val);
+//    BPLExpression val = get(var(heapVar), fieldLoc(context, reference, field));
+      BPLExpression val = new BPLArrayExpression(var(heapVar), reference, var(GLOBAL_VAR_PREFIX + field.getQualifiedName()));
+//    if (type(field.getType()) == BPLBuiltInType.INT) {
+//      return toint(val);
+//    }
+//    return toref(val);
+      return val;
   }
 
-  //@ requires context != null && heapVar != null && reference != null && field != null && value != null;
-  //@ ensures \result != null;
-  public static BPLExpression fieldUpdate(
-      ITranslationContext context,
-      String heapVar,
-      BPLExpression reference,
-      BCField field,
-      BPLExpression value) {
-    BPLExpression loc = fieldLoc(context, reference, field);
-    if (type(field.getType()) == BPLBuiltInType.INT) {
-      return update(var(heapVar), loc, ival(value));
-    }
-    return update(var(heapVar), loc, rval(value));
-  }
+//  //@ requires context != null && heapVar != null && reference != null && field != null && value != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression fieldUpdate(
+//      ITranslationContext context,
+//      String heapVar,
+//      BPLExpression reference,
+//      BCField field,
+//      BPLExpression value) {
+//    BPLExpression loc = fieldLoc(context, reference, field);
+//    if (type(field.getType()) == BPLBuiltInType.INT) {
+//      return update(var(heapVar), loc, ival(value));
+//    }
+//    return update(var(heapVar), loc, rval(value));
+//  }
 
-  //@ requires heapVar != null && arrayType != null && reference != null && index != null;
-  //@ ensures \result != null;
-  public static BPLExpression arrayAccess(
-      String heapVar,
-      JArrayType arrayType,
-      BPLExpression reference,
-      BPLExpression index) {
-    BPLExpression val = get(var(heapVar), arrayLoc(reference, index));
-    if (type(arrayType.getIndexedType()) == BPLBuiltInType.INT) {
-      return toint(val);
-    }
-    return toref(val);
-  }
+//  //@ requires heapVar != null && arrayType != null && reference != null && index != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression arrayAccess(
+//      String heapVar,
+//      JArrayType arrayType,
+//      BPLExpression reference,
+//      BPLExpression index) {
+//    BPLExpression val = get(var(heapVar), arrayLoc(reference, index));
+//    if (type(arrayType.getIndexedType()) == BPLBuiltInType.INT) {
+//      return toint(val);
+//    }
+//    return toref(val);
+//  }
 
-  //@ requires heapVar != null && arrayType != null && reference != null && index != null && value != null;
-  //@ ensures \result != null;
-  public static BPLExpression arrayUpdate(
-      String heapVar,
-      JArrayType arrayType,
-      BPLExpression reference,
-      BPLExpression index,
-      BPLExpression value) {
-    BPLExpression loc = arrayLoc(reference, index);
-    if (type(arrayType.getIndexedType()) == BPLBuiltInType.INT) {
-      return update(var(heapVar), loc, ival(value));
-    }
-    return update(var(heapVar), loc, rval(value));
-  }
+//  //@ requires heapVar != null && arrayType != null && reference != null && index != null && value != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression arrayUpdate(
+//      String heapVar,
+//      JArrayType arrayType,
+//      BPLExpression reference,
+//      BPLExpression index,
+//      BPLExpression value) {
+//    BPLExpression loc = arrayLoc(reference, index);
+//    if (type(arrayType.getIndexedType()) == BPLBuiltInType.INT) {
+//      return update(var(heapVar), loc, ival(value));
+//    }
+//    return update(var(heapVar), loc, rval(value));
+//  }
 
   //@ ensures \result != null;
   public static BPLExpression nullLiteral() {

@@ -22,16 +22,26 @@ public interface ITranslationConstants {
   String NAME_TYPE = "TName";
   
   String METHOD_TYPE = "Method";
-  
-  String HEAP_TYPE =         "Store";
 
-  String LOCATION_TYPE =     "Location";
+  String FIELD_TYPE = "Field";
+  
+  String VAR_TYPE = "Var";
+
+  String STACK_PTR_TYPE = "StackPtr";
+
+  String STACK_FRAME_TYPE = "StackFrame";
+
+  String STACK_TYPE = "Stack";
+  
+  String HEAP_TYPE =         "Heap";
+
+//  String LOCATION_TYPE =     "Location";
 
   String ALLOCATION_TYPE =   "Allocation";
   
   String RETURN_STATE_TYPE = "ReturnState";
 
-  String HEAP_VAR     = "heap";
+//  String HEAP_VAR     = "heap";
 
   String OLD_HEAP_VAR = "old_heap";
 
@@ -41,7 +51,7 @@ public interface ITranslationConstants {
 
   String LOOP_VARIANT_VAR_PREFIX = "loop_variant";
 
-  String VALUE_TYPE = "Value";
+//  String VALUE_TYPE = "Value";
 
   String RESULT_VAR = "result";
 

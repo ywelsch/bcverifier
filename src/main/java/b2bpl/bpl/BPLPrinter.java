@@ -48,6 +48,7 @@ import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
 import b2bpl.bpl.ast.BPLSpecificationClause;
 import b2bpl.bpl.ast.BPLTrigger;
+import b2bpl.bpl.ast.BPLType;
 import b2bpl.bpl.ast.BPLTypeAlias;
 import b2bpl.bpl.ast.BPLTypeDeclaration;
 import b2bpl.bpl.ast.BPLTypeName;
@@ -648,9 +649,9 @@ public class BPLPrinter implements IBPLVisitor<Object> {
 
   public Object visitTypeName(BPLTypeName type) {
     print(type.getName());
-    for(String param : type.getParameters()){
+    for(BPLType param : type.getParameters()){
         print(' ');
-        print(param);
+        param.accept(this);
     }
     return null;
   }

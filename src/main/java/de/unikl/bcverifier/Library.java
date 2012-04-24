@@ -184,7 +184,7 @@ public class Library implements ITroubleReporter{
         methodBlocks.add(0, new BPLBasicBlock("dispatch1", new BPLCommand[0], new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]))));
         
         for(int i=0; i<maxLocals; i++){
-            programDecls.add(new BPLConstantDeclaration(new BPLVariable("param"+i, new BPLTypeName("Var", REF_TYPE))));
+            programDecls.add(new BPLConstantDeclaration(new BPLVariable("param"+i, new BPLTypeName("Var", new BPLTypeName(REF_TYPE)))));
         }
         
         
@@ -199,7 +199,7 @@ public class Library implements ITroubleReporter{
         String methodName = "checkLibraries";
         BPLImplementationBody methodBody = new BPLImplementationBody(localVariables.toArray(new BPLVariableDeclaration[localVariables.size()]), methodBlocks.toArray(new BPLBasicBlock[methodBlocks.size()]));
         BPLImplementation methodImpl = new BPLImplementation(methodName, inParams, outParams, methodBody);
-        programDecls.add(new BPLProcedure(methodName, inParams, outParams, new BPLSpecification(new BPLModifiesClause(new BPLVariableExpression(HEAP_VAR))), methodImpl));
+        programDecls.add(new BPLProcedure(methodName, inParams, outParams, new BPLSpecification(new BPLModifiesClause(new BPLVariableExpression("heap1"), new BPLVariableExpression("heap2"))), methodImpl));
         BPLProgram program = new BPLProgram(programDecls.toArray(new BPLDeclaration[programDecls.size()]));
         
         log.debug("Writing specification to file "+outFile);
