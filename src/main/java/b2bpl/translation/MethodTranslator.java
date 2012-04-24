@@ -41,7 +41,6 @@ import static b2bpl.translation.CodeGenerator.nullLiteral;
 import static b2bpl.translation.CodeGenerator.old;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.sub;
-import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.type;
 import static b2bpl.translation.CodeGenerator.var;
 

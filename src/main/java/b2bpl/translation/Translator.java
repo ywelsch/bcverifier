@@ -1160,7 +1160,7 @@ public class Translator implements ITranslationConstants {
 //
 //        {
 //            // type of a value
-//            addFunction(TYP_FUNC, new BPLTypeName(VALUE_TYPE),  new BPLTypeName(NAME_TYPE));
+            addFunction(TYP_FUNC, new BPLTypeName(REF_TYPE),  new BPLTypeName(NAME_TYPE));
 //            String i = quantVarName("i");
 //            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
 //            addAxiom(forall(iVar, isValueType(typ(ival(var(i)))), trigger(isValueType(typ(ival(var(i)))))));
@@ -2495,19 +2495,20 @@ public class Translator implements ITranslationConstants {
          */
 
         // Extended version:
-        addAxiom(forall(
-                oVar, hVar, tVar,
-                implies(
-                        isSubtype(var(t), typeRef(type)),
-                        isEquiv(
-                                inv(var(t), var(o), var(h)),
-                                implies(
-                                        isInstanceOf(var(o), var(t)),
-                                        translator.translate(context, invariant)
-                                        )
-                                )
-                        )  
-                ));
+        //TODO do we need something like this in our implementation?
+//        addAxiom(forall(
+//                oVar, hVar, tVar,
+//                implies(
+//                        isSubtype(var(t), typeRef(type)),
+//                        isEquiv(
+//                                inv(var(t), var(o), var(h)),
+//                                implies(
+//                                        isInstanceOf(var(o), var(t)),
+//                                        translator.translate(context, invariant)
+//                                        )
+//                                )
+//                        )  
+//                ));
 
         //     axiom (forall o: ref, h: Store, t: name :: t <: $test4.A ==> inv(t, o, h) <==> isInstanceOf(rval(o), t) ==> toint(get(h, fieldLoc(o, test4.A.value))) >= 0); // inserted
 
