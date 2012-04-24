@@ -85,6 +85,7 @@ import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLArrayType;
 import b2bpl.bpl.ast.BPLAxiom;
+import b2bpl.bpl.ast.BPLBasicBlock;
 import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLConstantDeclaration;
@@ -94,6 +95,8 @@ import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLFunction;
 import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLFunctionParameter;
+import b2bpl.bpl.ast.BPLImplementation;
+import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLModifiesClause;
 import b2bpl.bpl.ast.BPLNullLiteral;
@@ -959,6 +962,114 @@ public class Translator implements ITranslationConstants {
                                     isEquiv(isEqual(var(r1), var(r3)), isEqual(var(r2), var(r4)))))
                     ));
             
+//            final String updateProcedureName = "Update";
+//            final BPLVariable[] updateInParams = new BPLVariable[]{r1Var, r2Var};
+//            final BPLVariable[] updateOutParams = BPLVariable.EMPTY_ARRAY;
+//            addDeclaration(new BPLProcedure(updateProcedureName, updateInParams, updateOutParams, new BPLSpecification(
+//                    new BPLModifiesClause(var(heap1), var(heap2), var(related))
+//                    ), new BPLImplementation(updateProcedureName, updateInParams, updateOutParams, new BPLImplementationBody(
+//                            new BPLVariableDeclaration[]{
+//                                     
+//                            }, new BPLBasicBlock[]{
+//                                    
+//                            }
+//                            ))));
+            
+            addFunction("RelNull", new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            addAxiom(forall(
+                    r1Var, r2Var, relatedVar,
+                    logicalOr(
+                            logicalAnd(
+                                    isEqual(var(r1), var("null")),
+                                    isEqual(var(r2), var("null"))
+                                    )
+                            ,
+                            logicalAnd(
+                                    notEqual(var(r1), var("null")),
+                                    notEqual(var(r2), var("null")),
+                                    new BPLArrayExpression(var(related), var(r1), var(r2))
+                                    )
+                    )));
+            
+            addFunction("NonNull", new BPLTypeName(NAME_TYPE), new BPLTypeName(fieldType, REF_TYPE), new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            final String c = "c";
+            BPLVariable cVar = new BPLVariable(c, new BPLTypeName(NAME_TYPE));
+            addAxiom(forall(
+                    cVar, fieldRefVar, heapVar,
+                    isEquiv(new BPLFunctionApplication("NonNull", var(c), var(f), var(heap)), 
+                    forall(refVar, implies(
+                            logicalAnd(new BPLFunctionApplication("AllocObj", var(r), var(heap)), new BPLFunctionApplication("RefOfType", var(r), var(heap), var(c))),
+                            notEqual(new BPLArrayExpression(var(heap), var(r), var(f)), var("null"))
+                            ))
+                    )));
+            
+            addFunction("Internal", new BPLTypeName(NAME_TYPE), new BPLTypeName(fieldType, REF_TYPE), new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            addAxiom(forall(
+                    cVar, fieldRefVar, heapVar,
+                    isEquiv(new BPLFunctionApplication("Internal", var(c), var(f), var(heap)), 
+                    forall(refVar, implies(
+                            logicalAnd(new BPLFunctionApplication("AllocObj", var(r), var(heap)), new BPLFunctionApplication("RefOfType", var(r), var(heap), var(c))),
+                            logicalNot(new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(createdByCtxt)))
+                            ))
+                    )));
+            
+            addFunction("RefOfType", new BPLTypeName(REF_TYPE), new BPLTypeName(heapType), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            final String o = "o";
+            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+            final String t = "t";
+            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+            addAxiom(forall(
+                    oVar, heapVar, tVar,
+                    isEquiv(new BPLFunctionApplication("RefOfType", var(o), var(heap), var(t)),
+                            implies(
+                                    new BPLFunctionApplication("AllocObj", var(o), var(heap)),
+                                    isEqual(new BPLArrayExpression(var(heap), var(o), var(dynType)), var(t)) //TODO implement subtyping here
+                                    )
+                            )
+                    ));
+            
+            addFunction("FType", new BPLType[]{new BPLTypeName(heapType), new BPLTypeName(NAME_TYPE), new BPLTypeName(fieldType, REF_TYPE), new BPLTypeName(NAME_TYPE)}, BPLBuiltInType.BOOL);
+            addAxiom(forall(
+                    heapVar, cVar, fieldRefVar, tVar,
+                    logicalAnd(
+                            forall(oVar, implies(
+                                    logicalAnd(
+                                            new BPLFunctionApplication("AllocObj", var(o), var(heap)),
+                                            isEqual(new BPLArrayExpression(var(heap), var(o), var(dynType)), var(c)) ),
+                                    new BPLFunctionApplication("RefOfType", 
+                                            new BPLArrayExpression(var(heap), var(o), var(f)),
+                                            var(heap),
+                                            var(t)
+                                            )
+                                    ))
+                            ,
+                            forall(oVar, implies(
+                                    logicalAnd(
+                                            new BPLFunctionApplication("AllocObj", var(o), var(heap)),
+                                            notEqual(new BPLArrayExpression(var(heap), var(o), var(dynType)), var(c)) ),
+                                    isEqual(new BPLArrayExpression(var(heap), var(o), var(f)), var("null"))
+                                    ))
+                    )));
+            
+            addFunction("Unique", new BPLTypeName(NAME_TYPE), new BPLTypeName(fieldType, REF_TYPE), new BPLTypeName(heapType), BPLBuiltInType.BOOL);
+            addAxiom(forall(
+                    cVar, fieldRefVar, heapVar,
+                    isEquiv(new BPLFunctionApplication("Unique", var(c), var(f), var(heap)), 
+                            forall(r1Var, r2Var, 
+                                    implies(
+                                            logicalAnd(
+                                                    new BPLFunctionApplication("AllocObj", var(r1), var(heap)),
+                                                    new BPLFunctionApplication("AllocObj", var(r2), var(heap)),
+                                                    new BPLFunctionApplication("RefOfType", var(r1), var(heap), var(c)),
+                                                    new BPLFunctionApplication("RefOfType", var(r2), var(heap), var(c)),
+                                                    notEqual(var(r1), var(r2))
+                                                    ),
+                                            notEqual(new BPLArrayExpression(var(heap), var(r1), var(f)), new BPLArrayExpression(var(heap), var(r2), var(f)))
+                                            )
+                                    )
+                            )
+                    ));
+            
             addComment("Extensionality for simulations");
 //            addAxiom(forall(
 //                    r1Var, r2Var, relatedVar,
@@ -1008,855 +1119,867 @@ public class Translator implements ITranslationConstants {
                             forall(pVar, new BPLVariable(v, new BPLTypeName(varType, "bool")), implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), BPLBoolLiteral.FALSE)))
                             )
                     ));
+            
+            addFunction("isPublic", new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction("definesMethod", new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            
+            final String addressType = "Address";
+            addType(addressType);
+            
+            addConstants(new BPLVariable("isCall", new BPLTypeName(varType, "bool")));
+            addConstants(new BPLVariable("place", new BPLTypeName(varType, addressType)));
+            addConstants(new BPLVariable("retA", new BPLTypeName(addressType)));
+            addConstants(new BPLVariable("meth", new BPLTypeName(varType, METHOD_TYPE)));
+            addConstants(new BPLVariable("receiver", new BPLTypeName(varType, REF_TYPE)));
         }
-        //
-        // Muller/Poetzsch Heffter BoogiePL store axiomatization
-        //
-        addType(HEAP_TYPE);
-
-        // Create global heap variable for entire program
-        addDeclaration(new BPLVariableDeclaration(new BPLVariable[] { new BPLVariable(HEAP_VAR, new BPLTypeName(HEAP_TYPE)) } ));
-
-        //
-        // Values (objects, primitive values, arrays)
-        //
-        addType(VALUE_TYPE);
-
-        {
-            // integer values
-            addFunction(IVAL_FUNC, BPLBuiltInType.INT, new BPLTypeName(VALUE_TYPE));
-            String i = quantVarName("i");
-            String j = quantVarName("j");
-            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            BPLVariable jVar = new BPLVariable(j, BPLBuiltInType.INT);
-            addAxiom(forall(
-                    iVar, jVar,
-                    isEquiv(
-                            isEqual(ival(var(i)), ival(var(j))),
-                            isEqual(var(i), var(j))
-                            ),
-                            trigger(ival(var(i)), ival(var(j)))
-                    ));
-            String v = quantVarName("v");
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            addAxiom(forall(vVar, isEqual(ival(toint(var(v))), var(v)), trigger(ival(toint(var(v))))));
-
-            addFunction(TOINT_FUNC, new BPLTypeName(VALUE_TYPE), BPLBuiltInType.INT);
-            iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            addAxiom(forall(iVar, isEqual(toint(ival(var(i))), var(i)), trigger(toint(ival(var(i))))));
-        }
-
-        {
-            // reference values
-            addFunction(RVAL_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(VALUE_TYPE));
-            String o1 = quantVarName("o1");
-            String o2 = quantVarName("o2");
-            BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
-            BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
-            addAxiom(forall(
-                    o1Var, o2Var,
-                    isEquiv(
-                            isEqual(rval(var(o1)), rval(var(o2))),
-                            isEqual(var(o1), var(o2))
-                            ),
-                            trigger(rval(var(o1)), rval(var(o2)))
-                    ));
-            String v = quantVarName("v");
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            addAxiom(forall(vVar, isEqual(rval(toref(var(v))), var(v)), trigger(rval(toref(var(v))))));
-
-            addFunction(TOREF_FUNC, new BPLTypeName(VALUE_TYPE), new BPLTypeName(REF_TYPE));
-            String o = quantVarName("o");
-            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
-            addAxiom(forall(oVar, isEqual(toref(rval(var(o))), var(o)), trigger(toref(rval(var(o))))));
-        }
-
-        {
-            // integer and reference values
-            String i = quantVarName("i");
-            String o = quantVarName("o");
-            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
-            addAxiom(forall(iVar, oVar, notEqual(ival(var(i)), rval(var(o))), trigger(ival(var(i)), rval(var(o)))));
-        }
-
-        {
-            // type of a value
-            addFunction(TYP_FUNC, new BPLTypeName(VALUE_TYPE),  new BPLTypeName(NAME_TYPE));
-            String i = quantVarName("i");
-            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            addAxiom(forall(iVar, isValueType(typ(ival(var(i)))), trigger(isValueType(typ(ival(var(i)))))));
-        }
-
-        {
-            // uninitialized (default) value
-            addFunction(INIT_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(VALUE_TYPE));
-
-            String t = quantVarName("t");
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    tVar,
-                    implies(
-                            isValueType(var(t)),
-                            isEqual(initVal(var(t)), ival(intLiteral(0)))
-                            ),
-                            trigger(isValueType(var(t)))
-                    ));
-
-            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    tVar,
-                    implies(
-                            isClassType(var(t)),
-                            isEqual(initVal(var(t)), rval(nullLiteral()))
-                            ),
-                            trigger(isClassType(var(t)))
-                    ));
-
-            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    tVar,
-                    isEqual(
-                            initVal(arrayType(elementType(var(t)))),
-                            rval(nullLiteral())
-                            ),
-                            trigger(initVal(arrayType(elementType(var(t)))))
-                    ));
-        }
-
-        {
-            // static values
-            addFunction(
-                    STATIC_FUNC,
-                    new BPLTypeName(VALUE_TYPE),
-                    BPLBuiltInType.BOOL);
-            String v = quantVarName("v");
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            addAxiom(forall(
-                    vVar,
-                    isEquiv(
-                            isStatic(var(v)),
-                            logicalOr(
-                                    isValueType(typ(var(v))),
-                                    isEqual(var(v), rval(nullLiteral()))
-                                    )
-                            ),
-                            trigger(isValueType(typ(var(v))))
-                    ));
-        }
-
-        {
-            // array length
-            addFunction(
-                    ARRAY_LENGTH_FUNC,
-                    new BPLTypeName(VALUE_TYPE),
-                    BPLBuiltInType.INT);
-            String v = quantVarName("v");
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            addAxiom(forall(vVar, lessEqual(intLiteral(0), arrayLength(var(v))), trigger(arrayLength(var(v)))));
-        }
-
-        //
-        // Locations (fields and array elements)
-        //
-        addType(LOCATION_TYPE);
-
-        {
-            // An instance field (use typeObject for static fields)
-            addFunction(
-                    FIELD_LOC_FUNC,
-                    new BPLTypeName(REF_TYPE),
-                    new BPLTypeName(NAME_TYPE),
-                    new BPLTypeName(LOCATION_TYPE));
-
-            String o1 = quantVarName("o1");
-            String f1 = quantVarName("f1");
-            String o2 = quantVarName("o2");
-            String f2 = quantVarName("f2");
-            BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
-            BPLVariable f1Var = new BPLVariable(f1, new BPLTypeName(NAME_TYPE));
-            BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
-            BPLVariable f2Var = new BPLVariable(f2, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    o1Var, f1Var, o2Var, f2Var,
-                    isEquiv(
-                            isEqual(fieldLoc(var(o1), var(f1)), fieldLoc(var(o2), var(f2))),
-                            logicalAnd(
-                                    isEqual(var(o1), var(o2)),
-                                    isEqual(var(f1), var(f2))
-                                    )
-                            ),
-                            trigger(fieldLoc(var(o1), var(f1)), fieldLoc(var(o2), var(f2)))
-                    ));
-        }
-
-        {
-            // An array element
-            addFunction(
-                    ARRAY_LOC_FUNC,
-                    new BPLTypeName(REF_TYPE),
-                    BPLBuiltInType.INT,
-                    new BPLTypeName(LOCATION_TYPE));
-
-            String o1 = quantVarName("o1");
-            String i1 = quantVarName("i1");
-            String o2 = quantVarName("o2");
-            String i2 = quantVarName("i2");
-            BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
-            BPLVariable i1Var = new BPLVariable(i1, BPLBuiltInType.INT);
-            BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
-            BPLVariable i2Var = new BPLVariable(i2, BPLBuiltInType.INT);
-            addAxiom(forall(
-                    o1Var, i1Var, o2Var, i2Var,
-                    isEquiv(
-                            isEqual(arrayLoc(var(o1), var(i1)), arrayLoc(var(o2), var(i2))),
-                            logicalAnd(
-                                    isEqual(var(o1), var(o2)),
-                                    isEqual(var(i1), var(i2))
-                                    )
-                            ),
-                            trigger(arrayLoc(var(o1), var(i1)), arrayLoc(var(o2), var(i2)))
-                    ));
-        }
-
-        {
-            // instance fields and array elements
-            String o1 = quantVarName("o1");
-            String f1 = quantVarName("f1");
-            String o2 = quantVarName("o2");
-            String i2 = quantVarName("i2");
-            BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
-            BPLVariable f1Var = new BPLVariable(f1, new BPLTypeName(NAME_TYPE));
-            BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
-            BPLVariable i2Var = new BPLVariable(i2, BPLBuiltInType.INT);
-            addAxiom(forall(
-                    o1Var, f1Var, o2Var, i2Var,
-                    notEqual(fieldLoc(var(o1), var(f1)), arrayLoc(var(o2), var(i2))),
-                    trigger(fieldLoc(var(o1), var(f1)), arrayLoc(var(o2), var(i2)))
-                    ));
-        } 
-
-        {
-            // The object reference referring to an array element or instance variable
-            addFunction(OBJ_FUNC, new BPLTypeName(LOCATION_TYPE), new BPLTypeName(REF_TYPE));
-            String o = quantVarName("o");
-            String f = quantVarName("f");
-            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
-            BPLVariable fVar = new BPLVariable(f, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    oVar, fVar,
-                    isEqual(obj(fieldLoc(var(o), var(f))), var(o)),
-                    trigger(obj(fieldLoc(var(o), var(f))))
-                    ));
-            String i = quantVarName("i");
-            oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
-            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            addAxiom(forall(
-                    oVar, iVar,
-                    isEqual(obj(arrayLoc(var(o), var(i))), var(o)),
-                    trigger(obj(arrayLoc(var(o), var(i))))
-                    ));
-        }
-
-        {
-            // Type of a location
-            addFunction(
-                    LTYP_FUNC,
-                    new BPLTypeName(LOCATION_TYPE),
-                    new BPLTypeName(NAME_TYPE));
-            String o = quantVarName("o");
-            String f = quantVarName("f");
-            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
-            BPLVariable fVar = new BPLVariable(f, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    oVar, fVar,
-                    isEqual(ltyp(fieldLoc(var(o), var(f))), fieldType(var(f))),
-                    trigger(ltyp(fieldLoc(var(o), var(f))))
-                    ));
-            String i = quantVarName("i");
-            oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
-            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            addAxiom(forall(
-                    oVar, iVar,
-                    isEqual(
-                            ltyp(arrayLoc(var(o), var(i))),
-                            elementType(typ(rval(var(o))))
-                            ),
-                            trigger(ltyp(arrayLoc(var(o), var(i))))
-                    ));
-        }
-
-        // Field declaration
-        addFunction(FIELD_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
-
-        {
-            // Static fields
-            addFunction(TYPE_OBJECT_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(REF_TYPE));
-            String t = quantVarName("t");
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(tVar, nonNull(typeObject(var(t))), trigger(typeObject(var(t)))));
-            String h = quantVarName("h");
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(hVar, tVar, alive(rval(typeObject(var(t))), var(h)), trigger(alive(rval(typeObject(var(t))), var(h)))));
-        }
-
-        //
-        // An allocation is either an object of a specified class type or an array
-        // of a specified element type
-        //
-        addType(ALLOCATION_TYPE);
-
-        addFunction(
-                OBJECT_ALLOC_FUNC,
-                new BPLTypeName(NAME_TYPE),
-                new BPLTypeName(ALLOCATION_TYPE));
-        addFunction(
-                ARRAY_ALLOC_FUNC,
-                new BPLTypeName(NAME_TYPE),
-                BPLBuiltInType.INT,
-                new BPLTypeName(ALLOCATION_TYPE));
-        addFunction(
-                MULTI_ARRAY_ALLOC_FUNC,
-                new BPLTypeName(NAME_TYPE),
-                BPLBuiltInType.INT,
-                new BPLTypeName(ALLOCATION_TYPE),
-                new BPLTypeName(ALLOCATION_TYPE));
-
-        {
-            addFunction(
-                    ALLOC_TYPE_FUNC,
-                    new BPLTypeName(ALLOCATION_TYPE),
-                    new BPLTypeName(NAME_TYPE));
-            String t = quantVarName("t");
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(tVar, isEqual(allocType(objectAlloc(var(t))), var(t)), trigger(allocType(objectAlloc(var(t))))));
-
-            String i = quantVarName("i");
-            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            addAxiom(forall(
-                    tVar, iVar,
-                    isEqual(allocType(arrayAlloc(var(t), var(i))), arrayType(var(t))),
-                    trigger(allocType(arrayAlloc(var(t), var(i))))
-                    ));
-
-            String a = quantVarName("a");
-            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
-            addAxiom(forall(
-                    tVar, iVar, aVar,
-                    isEqual(
-                            allocType(multiArrayAlloc(var(t), var(i), var(a))),
-                            arrayType(var(t))
-                            ),
-                            trigger(allocType(multiArrayAlloc(var(t), var(i), var(a))))
-                    ));
-        }
-
-        //
-        // Heap functions
-        //
-
-        addComment("Returns the heap after storing a value in a location.");
-        addFunction(
-                UPDATE_FUNC,
-                new BPLTypeName(HEAP_TYPE),
-                new BPLTypeName(LOCATION_TYPE),
-                new BPLTypeName(VALUE_TYPE),
-                new BPLTypeName(HEAP_TYPE));
-
-        addComment("Returns the heap after an object of the given type"
-                + " has been allocated.");
-        addFunction(
-                ADD_FUNC,
-                new BPLTypeName(HEAP_TYPE),
-                new BPLTypeName(ALLOCATION_TYPE),
-                new BPLTypeName(HEAP_TYPE));
-
-        addComment("Returns the value stored in a location.");
-        addFunction(
-                GET_FUNC,
-                new BPLTypeName(HEAP_TYPE),
-                new BPLTypeName(LOCATION_TYPE),
-                new BPLTypeName(VALUE_TYPE));
-
-        addComment("Returns true if a value is alive in a given heap.");
-        addFunction(
-                ALIVE_FUNC,
-                new BPLTypeName(VALUE_TYPE),
-                new BPLTypeName(HEAP_TYPE),
-                BPLBuiltInType.BOOL);
-
-        addComment("Returns a newly allocated object of the given type.");
-        addFunction(
-                NEW_FUNC,
-                new BPLTypeName(HEAP_TYPE),
-                new BPLTypeName(ALLOCATION_TYPE),
-                new BPLTypeName(VALUE_TYPE));
-
-        //
-        // Heap axioms
-        //
-
-        {
-            addComment("[SW]: a value is alive on the heap if it is written onto it.");
-            String l = quantVarName("l");
-            String h = quantVarName("h");
-            String v = quantVarName("v");
-            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            addAxiom(forall(
-                    lVar, hVar, vVar,
-                    alive(var(v), update(var(h), var(l), var(v)))
-                    ));
-        }
-
-        {
-            addComment("Field stores do not affect the values stored in other fields.");
-            String l1 = quantVarName("l1");
-            String l2 = quantVarName("l2");
-            String h = quantVarName("h");
-            String v = quantVarName("v");
-            BPLVariable l1Var = new BPLVariable(l1, new BPLTypeName(LOCATION_TYPE));
-            BPLVariable l2Var = new BPLVariable(l2, new BPLTypeName(LOCATION_TYPE));
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            addAxiom(forall(
-                    l1Var, l2Var, hVar, vVar,
-                    implies(
-                            notEqual(var(l1), var(l2)),
-                            isEqual(
-                                    get(update(var(h), var(l1), var(v)), var(l2)),
-                                    get(var(h), var(l2))
-                                    )
-                            ),
-                            trigger(get(update(var(h), var(l1), var(v)), var(l2)))
-                    ));
-        }
-
-        {
-            addComment("Field stores are persistent.");
-            String l = quantVarName("l");
-            String h = quantVarName("h");
-            String v = quantVarName("v");
-            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            addAxiom(forall(
-                    lVar, hVar, vVar,
-                    implies(
-                            logicalAnd(
-                                    alive(rval(obj(var(l))), var(h)),
-                                    alive(var(v), var(h))),
-                                    isEqual(get(update(var(h), var(l), var(v)), var(l)), var(v))
-                            ),
-                            trigger(get(update(var(h), var(l), var(v)), var(l)))
-                    ));
-        }
-
-        {
-            addComment("Object allocation does not affect the existing heap.");
-            String l = quantVarName("l");
-            String h = quantVarName("h");
-            String a = quantVarName("a");
-            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
-            addAxiom(forall(
-                    lVar, hVar, aVar,
-                    isEqual(get(heapAdd(var(h), var(a)), var(l)), get(var(h), var(l))),
-                    trigger(get(heapAdd(var(h), var(a)), var(l)))
-                    ));
-        }
-
-        { /*
-      addComment("[SW]: Object allocation does not affect existing invariants.");
-      String o = quantVarName("o");
-      String t = quantVarName("t");
-      String h = quantVarName("h");
-      String a = quantVarName("a");
-      BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
-      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
-      BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-      BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
-      addAxiom(forall(
-         oVar, tVar, hVar, aVar,
-         isEqual(inv(var(t), var(o), heapAdd(var(h), var(a))), inv(var(t), var(o), var(h))),
-         trigger(inv(var(t), var(o), heapAdd(var(h), var(a))))
-      ));
-         */ }
-
-        {
-            addComment("Field stores do not affect object liveness.");
-            String l = quantVarName("l");
-            String h = quantVarName("h");
-            String v1 = quantVarName("v1");
-            String v2 = quantVarName("v2");
-            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable v1Var = new BPLVariable(v1, new BPLTypeName(VALUE_TYPE));
-            BPLVariable v2Var = new BPLVariable(v2, new BPLTypeName(VALUE_TYPE));
-            addAxiom(forall(
-                    lVar, hVar, v1Var, v2Var,
-                    isEquiv(
-                            alive(var(v1), update(var(h), var(l), var(v2))),
-                            alive(var(v1), var(h))
-                            ),
-                            trigger(alive(var(v1), update(var(h), var(l), var(v2))))
-                    ));
-        }
-
-        {
-            addComment("[SW]: Field stores do not affect the invariants of other fields.");
-            String l = quantVarName("l");
-            String h = quantVarName("h");
-            String o = quantVarName("o");
-            String t = quantVarName("t");
-            String v = quantVarName("v");
-            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            addAxiom(forall(
-                    lVar, hVar, oVar, tVar, vVar,
-                    implies(
-                            notEqual(var(o), obj(var(l))),
-                            isEqual(
-                                    inv(var(t), var(o), update(var(h), var(l), var(v))),
-                                    inv(var(t), var(o), var(h))
-                                    )
-                            ),
-                            trigger(inv(var(t), var(o), update(var(h), var(l), var(v))))
-                    ));
-        }
-
-        {
-            addComment("Alive objects remain alive when a newly allocated object is"
-                    + " added to the heap.");
-            String h = quantVarName("h");
-            String v = quantVarName("v");
-            String a = quantVarName("a");
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
-            addAxiom(forall(
-                    hVar, vVar, aVar,
-                    implies(
-                            alive(var(v), var(h)),
-                            alive(var(v), heapAdd(var(h), var(a)))
-                            ),
-                            trigger(alive(var(v), heapAdd(var(h), var(a))))
-                    ));
-
-            addComment("A newly allocated object becomes alive in the heap it is added to.");
-            hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
-            addAxiom(forall(
-                    hVar, aVar,
-                    alive(heapNew(var(h), var(a)), heapAdd(var(h), var(a))),
-                    trigger(heapNew(var(h), var(a)), heapAdd(var(h), var(a)))
-                    ));
-        }
-
-        {
-            addComment("Values reachable from alive objects are themselves alive.");
-            String l = quantVarName("l");
-            String h = quantVarName("h");
-            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            addAxiom(forall(
-                    lVar, hVar,
-                    implies(
-                            alive(rval(obj(var(l))), var(h)),
-                            alive(get(var(h), var(l)), var(h))),
-                            trigger(alive(get(var(h), var(l)), var(h)))
-                    ));
-        }
-
-        {
-            addComment("Static values are always alive.");
-            String h = quantVarName("h");
-            String v = quantVarName("v");
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            addAxiom(forall(
-                    hVar, vVar,
-                    implies(isStatic(var(v)), alive(var(v), var(h))),
-                    trigger(alive(var(v), var(h)))
-                    ));
-        }
-
-        {
-            addComment("A newly allocated object is not alive"
-                    + " in the heap it was created in.");
-            String h = quantVarName("h");
-            String a = quantVarName("a");
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
-            addAxiom(forall(
-                    hVar, aVar,
-                    logicalNot(alive(heapNew(var(h), var(a)), var(h))),
-                    trigger(alive(heapNew(var(h), var(a)), var(h)))
-                    ));
-        }
-
-        {
-            addComment("Allocated objects retain their type.");
-            String h = quantVarName("h");
-            String a = quantVarName("a");
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
-            addAxiom(forall(
-                    hVar, aVar,
-                    isEqual(typ(heapNew(var(h), var(a))), allocType(var(a))),
-                    trigger(typ(heapNew(var(h), var(a))))
-                    ));
-        }
-
-        {
-            addComment("Creating an object of a given type in two heaps yields"
-                    + " the same result if liveness of all objects of that type"
-                    + " is identical in both heaps.");
-            String h1 = quantVarName("h1");
-            String h2 = quantVarName("h2");
-            String a = quantVarName("a");
-            String v = quantVarName("v");
-            BPLVariable h1Var = new BPLVariable(h1, new BPLTypeName(HEAP_TYPE));
-            BPLVariable h2Var = new BPLVariable(h2, new BPLTypeName(HEAP_TYPE));
-            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            addAxiom(forall(
-                    h1Var, h2Var, aVar,
-                    isEquiv(
-                            isEqual(heapNew(var(h1), var(a)), heapNew(var(h2), var(a))),
-                            forall(
-                                    vVar,
-                                    implies(
-                                            isEqual(typ(var(v)), allocType(var(a))),
-                                            isEquiv(
-                                                    alive(var(v), var(h1)),
-                                                    alive(var(v), var(h2))
-                                                    )
-                                            ),
-                                            trigger(alive(var(v), var(h1)), alive(var(v), var(h2)), allocType(var(a)))
-                                    )
-                            ),
-                            trigger(heapNew(var(h1), var(a)), heapNew(var(h2), var(a)))
-                    ));
-        }
-
-        {
-            addComment("Two heaps are equal if they are indistinguishable"
-                    + " by the alive and get functions.");
-            String h1 = quantVarName("h1");
-            String h2 = quantVarName("h2");
-            String v = quantVarName("v");
-            String l = quantVarName("l");
-            BPLVariable h1Var = new BPLVariable(h1, new BPLTypeName(HEAP_TYPE));
-            BPLVariable h2Var = new BPLVariable(h2, new BPLTypeName(HEAP_TYPE));
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
-            addAxiom(forall(
-                    h1Var, h2Var,
-                    implies(
-                            logicalAnd(
-                                    forall(
-                                            vVar,
-                                            isEquiv(alive(var(v), var(h1)), alive(var(v), var(h2))),
-                                            trigger(alive(var(v), var(h1)), alive(var(v), var(h2)))
-                                            ),
-                                            forall(
-                                                    lVar,
-                                                    isEqual(get(var(h1), var(l)), get(var(h2), var(l))),
-                                                    trigger(get(var(h1), var(l)), get(var(h2), var(l)))
-                                                    )
-                                    ),
-                                    isEqual(var(h1), var(h2))
-                            )
-                    ));
-        }
-
-        {
-            addComment("[SW]: object allocations preserve existing invariants");
-            String o = quantVarName("o");
-            String t = quantVarName("t");
-            String o2 = quantVarName("o2");
-            String t2 = quantVarName("t2");
-            String pre_h = quantVarName("pre_h");
-            String new_h = quantVarName("new_h");
-            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
-            BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
-            BPLVariable pre_hVar = new BPLVariable(pre_h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable new_hVar = new BPLVariable(new_h, new BPLTypeName(HEAP_TYPE));
-            addAxiom(forall(
-                    oVar, tVar, pre_hVar, new_hVar,
-                    implies(
-                            logicalAnd(
-                                    isEqual(heapNew(var(pre_h), objectAlloc(var(t))), rval(var(o))),
-                                    isEqual(var(new_h), heapAdd(var(pre_h), objectAlloc(var(t))))
-                                    ),
-                                    logicalAnd(
-                                            logicalNot(inv(var(t), var(o), var(new_h))),
-                                            forall(
-                                                    o2Var, t2Var,
-                                                    implies(
-                                                            logicalOr(
-                                                                    notEqual(var(t2), var(t)),
-                                                                    notEqual(var(o2), var(o))
-                                                                    ),
-                                                                    isEqual(
-                                                                            inv(var(t2), var(o2), var(new_h)),
-                                                                            inv(var(t2), var(o2), var(pre_h))
-                                                                            )
-                                                            )
-                                                    )
-                                            )
-                            )
-                    ));
-        }
-
-        {
-            addComment("Get always returns either null or a value whose type"
-                    + " is a subtype of the (static) location type.");
-            String h = quantVarName("h");
-            String l = quantVarName("l");
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
-            addAxiom(forall(hVar, lVar, isOfType(get(var(h), var(l)), ltyp(var(l))),trigger(isOfType(get(var(h), var(l)), ltyp(var(l))))));
-        }
-
-        {
-            addComment("New arrays have the allocated length.");
-            String h = quantVarName("h");
-            String t = quantVarName("t");
-            String i = quantVarName("i");
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            addAxiom(forall(
-                    hVar, tVar, iVar,
-                    isEqual(
-                            arrayLength(heapNew(var(h), arrayAlloc(var(t), var(i)))),
-                            var(i)
-                            ),
-                            trigger(arrayLength(heapNew(var(h), arrayAlloc(var(t), var(i)))))
-                    ));
-
-            String a = quantVarName("a");
-            hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
-            addAxiom(forall(
-                    hVar, tVar, iVar, aVar,
-                    isEqual(
-                            arrayLength(heapNew(var(h), multiArrayAlloc(var(t), var(i), var(a)))),
-                            var(i)
-                            ),
-                            trigger(arrayLength(heapNew(var(h), multiArrayAlloc(var(t), var(i), var(a)))))
-                    ));
-        }
-
-        {
-            // Multi-dimensional arrays
-            addFunction(
-                    IS_NEW_MULTI_ARRAY_FUNC,
-                    new BPLTypeName(VALUE_TYPE),
-                    new BPLTypeName(HEAP_TYPE),
-                    new BPLTypeName(ALLOCATION_TYPE),
-                    BPLBuiltInType.BOOL);
-            addFunction(
-                    MULTI_ARRAY_PARENT_FUNC,
-                    new BPLTypeName(VALUE_TYPE),
-                    new BPLTypeName(VALUE_TYPE));
-            addFunction(
-                    MULTI_ARRAY_POSITION_FUNC,
-                    new BPLTypeName(VALUE_TYPE),
-                    BPLBuiltInType.INT);
-
-            String h = quantVarName("h");
-            String t = quantVarName("t");
-            String i = quantVarName("i");
-            String a = quantVarName("a");
-            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
-            addAxiom(forall(
-                    hVar, tVar, iVar, aVar,
-                    isNewMultiArray(
-                            heapNew(var(h), multiArrayAlloc(var(t), var(i), var(a))),
-                            var(h),
-                            multiArrayAlloc(var(t), var(i), var(a))
-                            ),
-                            trigger(
-                                    isNewMultiArray(
-                                            heapNew(var(h), multiArrayAlloc(var(t), var(i), var(a))),
-                                            var(h),
-                                            multiArrayAlloc(var(t), var(i), var(a))
-                                            )
-                                    )
-                    ));
-
-            String v = quantVarName("v");
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            addAxiom(forall(
-                    vVar, hVar, tVar, iVar,
-                    isEquiv(
-                            isNewMultiArray(var(v), var(h), arrayAlloc(var(t), var(i))),
-                            logicalAnd(
-                                    logicalNot(alive(var(v), var(h))),
-                                    isEqual(typ(var(v)), arrayType(var(t))),
-                                    isEqual(arrayLength(var(v)), var(i))
-                                    )
-                            ),
-                            trigger(isNewMultiArray(var(v), var(h), arrayAlloc(var(t), var(i))))
-                    ));
-
-            String e = quantVarName("e");
-            vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
-            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
-            BPLVariable eVar = new BPLVariable(e, BPLBuiltInType.INT);
-            addAxiom(forall(
-                    vVar, hVar, tVar, iVar, aVar,
-                    isEquiv(
-                            isNewMultiArray(var(v), var(h), multiArrayAlloc(var(t), var(i), var(a))),
-                            logicalAnd(
-                                    logicalNot(alive(var(v), var(h))),
-                                    isEqual(typ(var(v)), arrayType(var(t))),
-                                    isEqual(arrayLength(var(v)), var(i)),
-                                    forall(
-                                            eVar,
-                                            logicalAnd(
-                                                    isNewMultiArray(get(var(h), arrayLoc(toref(var(v)), var(e))), var(h), var(a)),
-                                                    isEqual(
-                                                            multiArrayParent(get(var(h), arrayLoc(toref(var(v)), var(e)))),
-                                                            var(v)
-                                                            ),
-                                                            isEqual(
-                                                                    multiArrayPosition(get(var(h), arrayLoc(toref(var(v)), var(e)))),
-                                                                    var(e)
-                                                                    )
-                                                    ),
-                                                    trigger(isNewMultiArray(get(var(h), arrayLoc(toref(var(v)), var(e))), var(h), var(a)))
-                                            )
-                                    )
-                            ),
-                            trigger(isNewMultiArray(var(v), var(h), multiArrayAlloc(var(t), var(i), var(a))))
-                    ));
-        }
+//        //
+//        // Muller/Poetzsch Heffter BoogiePL store axiomatization
+//        //
+//        addType(HEAP_TYPE);
+//
+//        // Create global heap variable for entire program
+//        addDeclaration(new BPLVariableDeclaration(new BPLVariable[] { new BPLVariable(HEAP_VAR, new BPLTypeName(HEAP_TYPE)) } ));
+//
+//        //
+//        // Values (objects, primitive values, arrays)
+//        //
+//        addType(VALUE_TYPE);
+//
+//        {
+//            // integer values
+//            addFunction(IVAL_FUNC, BPLBuiltInType.INT, new BPLTypeName(VALUE_TYPE));
+//            String i = quantVarName("i");
+//            String j = quantVarName("j");
+//            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            BPLVariable jVar = new BPLVariable(j, BPLBuiltInType.INT);
+//            addAxiom(forall(
+//                    iVar, jVar,
+//                    isEquiv(
+//                            isEqual(ival(var(i)), ival(var(j))),
+//                            isEqual(var(i), var(j))
+//                            ),
+//                            trigger(ival(var(i)), ival(var(j)))
+//                    ));
+//            String v = quantVarName("v");
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            addAxiom(forall(vVar, isEqual(ival(toint(var(v))), var(v)), trigger(ival(toint(var(v))))));
+//
+//            addFunction(TOINT_FUNC, new BPLTypeName(VALUE_TYPE), BPLBuiltInType.INT);
+//            iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            addAxiom(forall(iVar, isEqual(toint(ival(var(i))), var(i)), trigger(toint(ival(var(i))))));
+//        }
+//
+//        {
+//            // reference values
+//            addFunction(RVAL_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(VALUE_TYPE));
+//            String o1 = quantVarName("o1");
+//            String o2 = quantVarName("o2");
+//            BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
+//            BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
+//            addAxiom(forall(
+//                    o1Var, o2Var,
+//                    isEquiv(
+//                            isEqual(rval(var(o1)), rval(var(o2))),
+//                            isEqual(var(o1), var(o2))
+//                            ),
+//                            trigger(rval(var(o1)), rval(var(o2)))
+//                    ));
+//            String v = quantVarName("v");
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            addAxiom(forall(vVar, isEqual(rval(toref(var(v))), var(v)), trigger(rval(toref(var(v))))));
+//
+//            addFunction(TOREF_FUNC, new BPLTypeName(VALUE_TYPE), new BPLTypeName(REF_TYPE));
+//            String o = quantVarName("o");
+//            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+//            addAxiom(forall(oVar, isEqual(toref(rval(var(o))), var(o)), trigger(toref(rval(var(o))))));
+//        }
+//
+//        {
+//            // integer and reference values
+//            String i = quantVarName("i");
+//            String o = quantVarName("o");
+//            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+//            addAxiom(forall(iVar, oVar, notEqual(ival(var(i)), rval(var(o))), trigger(ival(var(i)), rval(var(o)))));
+//        }
+//
+//        {
+//            // type of a value
+//            addFunction(TYP_FUNC, new BPLTypeName(VALUE_TYPE),  new BPLTypeName(NAME_TYPE));
+//            String i = quantVarName("i");
+//            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            addAxiom(forall(iVar, isValueType(typ(ival(var(i)))), trigger(isValueType(typ(ival(var(i)))))));
+//        }
+//
+//        {
+//            // uninitialized (default) value
+//            addFunction(INIT_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(VALUE_TYPE));
+//
+//            String t = quantVarName("t");
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(
+//                    tVar,
+//                    implies(
+//                            isValueType(var(t)),
+//                            isEqual(initVal(var(t)), ival(intLiteral(0)))
+//                            ),
+//                            trigger(isValueType(var(t)))
+//                    ));
+//
+//            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(
+//                    tVar,
+//                    implies(
+//                            isClassType(var(t)),
+//                            isEqual(initVal(var(t)), rval(nullLiteral()))
+//                            ),
+//                            trigger(isClassType(var(t)))
+//                    ));
+//
+//            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(
+//                    tVar,
+//                    isEqual(
+//                            initVal(arrayType(elementType(var(t)))),
+//                            rval(nullLiteral())
+//                            ),
+//                            trigger(initVal(arrayType(elementType(var(t)))))
+//                    ));
+//        }
+//
+//        {
+//            // static values
+//            addFunction(
+//                    STATIC_FUNC,
+//                    new BPLTypeName(VALUE_TYPE),
+//                    BPLBuiltInType.BOOL);
+//            String v = quantVarName("v");
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            addAxiom(forall(
+//                    vVar,
+//                    isEquiv(
+//                            isStatic(var(v)),
+//                            logicalOr(
+//                                    isValueType(typ(var(v))),
+//                                    isEqual(var(v), rval(nullLiteral()))
+//                                    )
+//                            ),
+//                            trigger(isValueType(typ(var(v))))
+//                    ));
+//        }
+//
+//        {
+//            // array length
+//            addFunction(
+//                    ARRAY_LENGTH_FUNC,
+//                    new BPLTypeName(VALUE_TYPE),
+//                    BPLBuiltInType.INT);
+//            String v = quantVarName("v");
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            addAxiom(forall(vVar, lessEqual(intLiteral(0), arrayLength(var(v))), trigger(arrayLength(var(v)))));
+//        }
+//
+//        //
+//        // Locations (fields and array elements)
+//        //
+//        addType(LOCATION_TYPE);
+//
+//        {
+//            // An instance field (use typeObject for static fields)
+//            addFunction(
+//                    FIELD_LOC_FUNC,
+//                    new BPLTypeName(REF_TYPE),
+//                    new BPLTypeName(NAME_TYPE),
+//                    new BPLTypeName(LOCATION_TYPE));
+//
+//            String o1 = quantVarName("o1");
+//            String f1 = quantVarName("f1");
+//            String o2 = quantVarName("o2");
+//            String f2 = quantVarName("f2");
+//            BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
+//            BPLVariable f1Var = new BPLVariable(f1, new BPLTypeName(NAME_TYPE));
+//            BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
+//            BPLVariable f2Var = new BPLVariable(f2, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(
+//                    o1Var, f1Var, o2Var, f2Var,
+//                    isEquiv(
+//                            isEqual(fieldLoc(var(o1), var(f1)), fieldLoc(var(o2), var(f2))),
+//                            logicalAnd(
+//                                    isEqual(var(o1), var(o2)),
+//                                    isEqual(var(f1), var(f2))
+//                                    )
+//                            ),
+//                            trigger(fieldLoc(var(o1), var(f1)), fieldLoc(var(o2), var(f2)))
+//                    ));
+//        }
+//
+//        {
+//            // An array element
+//            addFunction(
+//                    ARRAY_LOC_FUNC,
+//                    new BPLTypeName(REF_TYPE),
+//                    BPLBuiltInType.INT,
+//                    new BPLTypeName(LOCATION_TYPE));
+//
+//            String o1 = quantVarName("o1");
+//            String i1 = quantVarName("i1");
+//            String o2 = quantVarName("o2");
+//            String i2 = quantVarName("i2");
+//            BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
+//            BPLVariable i1Var = new BPLVariable(i1, BPLBuiltInType.INT);
+//            BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
+//            BPLVariable i2Var = new BPLVariable(i2, BPLBuiltInType.INT);
+//            addAxiom(forall(
+//                    o1Var, i1Var, o2Var, i2Var,
+//                    isEquiv(
+//                            isEqual(arrayLoc(var(o1), var(i1)), arrayLoc(var(o2), var(i2))),
+//                            logicalAnd(
+//                                    isEqual(var(o1), var(o2)),
+//                                    isEqual(var(i1), var(i2))
+//                                    )
+//                            ),
+//                            trigger(arrayLoc(var(o1), var(i1)), arrayLoc(var(o2), var(i2)))
+//                    ));
+//        }
+//
+//        {
+//            // instance fields and array elements
+//            String o1 = quantVarName("o1");
+//            String f1 = quantVarName("f1");
+//            String o2 = quantVarName("o2");
+//            String i2 = quantVarName("i2");
+//            BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
+//            BPLVariable f1Var = new BPLVariable(f1, new BPLTypeName(NAME_TYPE));
+//            BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
+//            BPLVariable i2Var = new BPLVariable(i2, BPLBuiltInType.INT);
+//            addAxiom(forall(
+//                    o1Var, f1Var, o2Var, i2Var,
+//                    notEqual(fieldLoc(var(o1), var(f1)), arrayLoc(var(o2), var(i2))),
+//                    trigger(fieldLoc(var(o1), var(f1)), arrayLoc(var(o2), var(i2)))
+//                    ));
+//        } 
+//
+//        {
+//            // The object reference referring to an array element or instance variable
+//            addFunction(OBJ_FUNC, new BPLTypeName(LOCATION_TYPE), new BPLTypeName(REF_TYPE));
+//            String o = quantVarName("o");
+//            String f = quantVarName("f");
+//            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+//            BPLVariable fVar = new BPLVariable(f, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(
+//                    oVar, fVar,
+//                    isEqual(obj(fieldLoc(var(o), var(f))), var(o)),
+//                    trigger(obj(fieldLoc(var(o), var(f))))
+//                    ));
+//            String i = quantVarName("i");
+//            oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+//            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            addAxiom(forall(
+//                    oVar, iVar,
+//                    isEqual(obj(arrayLoc(var(o), var(i))), var(o)),
+//                    trigger(obj(arrayLoc(var(o), var(i))))
+//                    ));
+//        }
+//
+//        {
+//            // Type of a location
+//            addFunction(
+//                    LTYP_FUNC,
+//                    new BPLTypeName(LOCATION_TYPE),
+//                    new BPLTypeName(NAME_TYPE));
+//            String o = quantVarName("o");
+//            String f = quantVarName("f");
+//            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+//            BPLVariable fVar = new BPLVariable(f, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(
+//                    oVar, fVar,
+//                    isEqual(ltyp(fieldLoc(var(o), var(f))), fieldType(var(f))),
+//                    trigger(ltyp(fieldLoc(var(o), var(f))))
+//                    ));
+//            String i = quantVarName("i");
+//            oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+//            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            addAxiom(forall(
+//                    oVar, iVar,
+//                    isEqual(
+//                            ltyp(arrayLoc(var(o), var(i))),
+//                            elementType(typ(rval(var(o))))
+//                            ),
+//                            trigger(ltyp(arrayLoc(var(o), var(i))))
+//                    ));
+//        }
+//
+//        // Field declaration
+//        addFunction(FIELD_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
+//
+//        {
+//            // Static fields
+//            addFunction(TYPE_OBJECT_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(REF_TYPE));
+//            String t = quantVarName("t");
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(tVar, nonNull(typeObject(var(t))), trigger(typeObject(var(t)))));
+//            String h = quantVarName("h");
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(hVar, tVar, alive(rval(typeObject(var(t))), var(h)), trigger(alive(rval(typeObject(var(t))), var(h)))));
+//        }
+//
+//        //
+//        // An allocation is either an object of a specified class type or an array
+//        // of a specified element type
+//        //
+//        addType(ALLOCATION_TYPE);
+//
+//        addFunction(
+//                OBJECT_ALLOC_FUNC,
+//                new BPLTypeName(NAME_TYPE),
+//                new BPLTypeName(ALLOCATION_TYPE));
+//        addFunction(
+//                ARRAY_ALLOC_FUNC,
+//                new BPLTypeName(NAME_TYPE),
+//                BPLBuiltInType.INT,
+//                new BPLTypeName(ALLOCATION_TYPE));
+//        addFunction(
+//                MULTI_ARRAY_ALLOC_FUNC,
+//                new BPLTypeName(NAME_TYPE),
+//                BPLBuiltInType.INT,
+//                new BPLTypeName(ALLOCATION_TYPE),
+//                new BPLTypeName(ALLOCATION_TYPE));
+//
+//        {
+//            addFunction(
+//                    ALLOC_TYPE_FUNC,
+//                    new BPLTypeName(ALLOCATION_TYPE),
+//                    new BPLTypeName(NAME_TYPE));
+//            String t = quantVarName("t");
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(tVar, isEqual(allocType(objectAlloc(var(t))), var(t)), trigger(allocType(objectAlloc(var(t))))));
+//
+//            String i = quantVarName("i");
+//            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            addAxiom(forall(
+//                    tVar, iVar,
+//                    isEqual(allocType(arrayAlloc(var(t), var(i))), arrayType(var(t))),
+//                    trigger(allocType(arrayAlloc(var(t), var(i))))
+//                    ));
+//
+//            String a = quantVarName("a");
+//            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
+//            addAxiom(forall(
+//                    tVar, iVar, aVar,
+//                    isEqual(
+//                            allocType(multiArrayAlloc(var(t), var(i), var(a))),
+//                            arrayType(var(t))
+//                            ),
+//                            trigger(allocType(multiArrayAlloc(var(t), var(i), var(a))))
+//                    ));
+//        }
+//
+//        //
+//        // Heap functions
+//        //
+//
+//        addComment("Returns the heap after storing a value in a location.");
+//        addFunction(
+//                UPDATE_FUNC,
+//                new BPLTypeName(HEAP_TYPE),
+//                new BPLTypeName(LOCATION_TYPE),
+//                new BPLTypeName(VALUE_TYPE),
+//                new BPLTypeName(HEAP_TYPE));
+//
+//        addComment("Returns the heap after an object of the given type"
+//                + " has been allocated.");
+//        addFunction(
+//                ADD_FUNC,
+//                new BPLTypeName(HEAP_TYPE),
+//                new BPLTypeName(ALLOCATION_TYPE),
+//                new BPLTypeName(HEAP_TYPE));
+//
+//        addComment("Returns the value stored in a location.");
+//        addFunction(
+//                GET_FUNC,
+//                new BPLTypeName(HEAP_TYPE),
+//                new BPLTypeName(LOCATION_TYPE),
+//                new BPLTypeName(VALUE_TYPE));
+//
+//        addComment("Returns true if a value is alive in a given heap.");
+//        addFunction(
+//                ALIVE_FUNC,
+//                new BPLTypeName(VALUE_TYPE),
+//                new BPLTypeName(HEAP_TYPE),
+//                BPLBuiltInType.BOOL);
+//
+//        addComment("Returns a newly allocated object of the given type.");
+//        addFunction(
+//                NEW_FUNC,
+//                new BPLTypeName(HEAP_TYPE),
+//                new BPLTypeName(ALLOCATION_TYPE),
+//                new BPLTypeName(VALUE_TYPE));
+//
+//        //
+//        // Heap axioms
+//        //
+//
+//        {
+//            addComment("[SW]: a value is alive on the heap if it is written onto it.");
+//            String l = quantVarName("l");
+//            String h = quantVarName("h");
+//            String v = quantVarName("v");
+//            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            addAxiom(forall(
+//                    lVar, hVar, vVar,
+//                    alive(var(v), update(var(h), var(l), var(v)))
+//                    ));
+//        }
+//
+//        {
+//            addComment("Field stores do not affect the values stored in other fields.");
+//            String l1 = quantVarName("l1");
+//            String l2 = quantVarName("l2");
+//            String h = quantVarName("h");
+//            String v = quantVarName("v");
+//            BPLVariable l1Var = new BPLVariable(l1, new BPLTypeName(LOCATION_TYPE));
+//            BPLVariable l2Var = new BPLVariable(l2, new BPLTypeName(LOCATION_TYPE));
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            addAxiom(forall(
+//                    l1Var, l2Var, hVar, vVar,
+//                    implies(
+//                            notEqual(var(l1), var(l2)),
+//                            isEqual(
+//                                    get(update(var(h), var(l1), var(v)), var(l2)),
+//                                    get(var(h), var(l2))
+//                                    )
+//                            ),
+//                            trigger(get(update(var(h), var(l1), var(v)), var(l2)))
+//                    ));
+//        }
+//
+//        {
+//            addComment("Field stores are persistent.");
+//            String l = quantVarName("l");
+//            String h = quantVarName("h");
+//            String v = quantVarName("v");
+//            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            addAxiom(forall(
+//                    lVar, hVar, vVar,
+//                    implies(
+//                            logicalAnd(
+//                                    alive(rval(obj(var(l))), var(h)),
+//                                    alive(var(v), var(h))),
+//                                    isEqual(get(update(var(h), var(l), var(v)), var(l)), var(v))
+//                            ),
+//                            trigger(get(update(var(h), var(l), var(v)), var(l)))
+//                    ));
+//        }
+//
+//        {
+//            addComment("Object allocation does not affect the existing heap.");
+//            String l = quantVarName("l");
+//            String h = quantVarName("h");
+//            String a = quantVarName("a");
+//            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
+//            addAxiom(forall(
+//                    lVar, hVar, aVar,
+//                    isEqual(get(heapAdd(var(h), var(a)), var(l)), get(var(h), var(l))),
+//                    trigger(get(heapAdd(var(h), var(a)), var(l)))
+//                    ));
+//        }
+//
+//        { /*
+//      addComment("[SW]: Object allocation does not affect existing invariants.");
+//      String o = quantVarName("o");
+//      String t = quantVarName("t");
+//      String h = quantVarName("h");
+//      String a = quantVarName("a");
+//      BPLVariable oVar = new BPLVariable(o, BPLBuiltInType.REF);
+//      BPLVariable tVar = new BPLVariable(t, BPLBuiltInType.NAME);
+//      BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//      BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
+//      addAxiom(forall(
+//         oVar, tVar, hVar, aVar,
+//         isEqual(inv(var(t), var(o), heapAdd(var(h), var(a))), inv(var(t), var(o), var(h))),
+//         trigger(inv(var(t), var(o), heapAdd(var(h), var(a))))
+//      ));
+//         */ }
+//
+//        {
+//            addComment("Field stores do not affect object liveness.");
+//            String l = quantVarName("l");
+//            String h = quantVarName("h");
+//            String v1 = quantVarName("v1");
+//            String v2 = quantVarName("v2");
+//            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable v1Var = new BPLVariable(v1, new BPLTypeName(VALUE_TYPE));
+//            BPLVariable v2Var = new BPLVariable(v2, new BPLTypeName(VALUE_TYPE));
+//            addAxiom(forall(
+//                    lVar, hVar, v1Var, v2Var,
+//                    isEquiv(
+//                            alive(var(v1), update(var(h), var(l), var(v2))),
+//                            alive(var(v1), var(h))
+//                            ),
+//                            trigger(alive(var(v1), update(var(h), var(l), var(v2))))
+//                    ));
+//        }
+//
+//        {
+//            addComment("[SW]: Field stores do not affect the invariants of other fields.");
+//            String l = quantVarName("l");
+//            String h = quantVarName("h");
+//            String o = quantVarName("o");
+//            String t = quantVarName("t");
+//            String v = quantVarName("v");
+//            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            addAxiom(forall(
+//                    lVar, hVar, oVar, tVar, vVar,
+//                    implies(
+//                            notEqual(var(o), obj(var(l))),
+//                            isEqual(
+//                                    inv(var(t), var(o), update(var(h), var(l), var(v))),
+//                                    inv(var(t), var(o), var(h))
+//                                    )
+//                            ),
+//                            trigger(inv(var(t), var(o), update(var(h), var(l), var(v))))
+//                    ));
+//        }
+//
+//        {
+//            addComment("Alive objects remain alive when a newly allocated object is"
+//                    + " added to the heap.");
+//            String h = quantVarName("h");
+//            String v = quantVarName("v");
+//            String a = quantVarName("a");
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
+//            addAxiom(forall(
+//                    hVar, vVar, aVar,
+//                    implies(
+//                            alive(var(v), var(h)),
+//                            alive(var(v), heapAdd(var(h), var(a)))
+//                            ),
+//                            trigger(alive(var(v), heapAdd(var(h), var(a))))
+//                    ));
+//
+//            addComment("A newly allocated object becomes alive in the heap it is added to.");
+//            hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
+//            addAxiom(forall(
+//                    hVar, aVar,
+//                    alive(heapNew(var(h), var(a)), heapAdd(var(h), var(a))),
+//                    trigger(heapNew(var(h), var(a)), heapAdd(var(h), var(a)))
+//                    ));
+//        }
+//
+//        {
+//            addComment("Values reachable from alive objects are themselves alive.");
+//            String l = quantVarName("l");
+//            String h = quantVarName("h");
+//            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            addAxiom(forall(
+//                    lVar, hVar,
+//                    implies(
+//                            alive(rval(obj(var(l))), var(h)),
+//                            alive(get(var(h), var(l)), var(h))),
+//                            trigger(alive(get(var(h), var(l)), var(h)))
+//                    ));
+//        }
+//
+//        {
+//            addComment("Static values are always alive.");
+//            String h = quantVarName("h");
+//            String v = quantVarName("v");
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            addAxiom(forall(
+//                    hVar, vVar,
+//                    implies(isStatic(var(v)), alive(var(v), var(h))),
+//                    trigger(alive(var(v), var(h)))
+//                    ));
+//        }
+//
+//        {
+//            addComment("A newly allocated object is not alive"
+//                    + " in the heap it was created in.");
+//            String h = quantVarName("h");
+//            String a = quantVarName("a");
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
+//            addAxiom(forall(
+//                    hVar, aVar,
+//                    logicalNot(alive(heapNew(var(h), var(a)), var(h))),
+//                    trigger(alive(heapNew(var(h), var(a)), var(h)))
+//                    ));
+//        }
+//
+//        {
+//            addComment("Allocated objects retain their type.");
+//            String h = quantVarName("h");
+//            String a = quantVarName("a");
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
+//            addAxiom(forall(
+//                    hVar, aVar,
+//                    isEqual(typ(heapNew(var(h), var(a))), allocType(var(a))),
+//                    trigger(typ(heapNew(var(h), var(a))))
+//                    ));
+//        }
+//
+//        {
+//            addComment("Creating an object of a given type in two heaps yields"
+//                    + " the same result if liveness of all objects of that type"
+//                    + " is identical in both heaps.");
+//            String h1 = quantVarName("h1");
+//            String h2 = quantVarName("h2");
+//            String a = quantVarName("a");
+//            String v = quantVarName("v");
+//            BPLVariable h1Var = new BPLVariable(h1, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable h2Var = new BPLVariable(h2, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            addAxiom(forall(
+//                    h1Var, h2Var, aVar,
+//                    isEquiv(
+//                            isEqual(heapNew(var(h1), var(a)), heapNew(var(h2), var(a))),
+//                            forall(
+//                                    vVar,
+//                                    implies(
+//                                            isEqual(typ(var(v)), allocType(var(a))),
+//                                            isEquiv(
+//                                                    alive(var(v), var(h1)),
+//                                                    alive(var(v), var(h2))
+//                                                    )
+//                                            ),
+//                                            trigger(alive(var(v), var(h1)), alive(var(v), var(h2)), allocType(var(a)))
+//                                    )
+//                            ),
+//                            trigger(heapNew(var(h1), var(a)), heapNew(var(h2), var(a)))
+//                    ));
+//        }
+//
+//        {
+//            addComment("Two heaps are equal if they are indistinguishable"
+//                    + " by the alive and get functions.");
+//            String h1 = quantVarName("h1");
+//            String h2 = quantVarName("h2");
+//            String v = quantVarName("v");
+//            String l = quantVarName("l");
+//            BPLVariable h1Var = new BPLVariable(h1, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable h2Var = new BPLVariable(h2, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
+//            addAxiom(forall(
+//                    h1Var, h2Var,
+//                    implies(
+//                            logicalAnd(
+//                                    forall(
+//                                            vVar,
+//                                            isEquiv(alive(var(v), var(h1)), alive(var(v), var(h2))),
+//                                            trigger(alive(var(v), var(h1)), alive(var(v), var(h2)))
+//                                            ),
+//                                            forall(
+//                                                    lVar,
+//                                                    isEqual(get(var(h1), var(l)), get(var(h2), var(l))),
+//                                                    trigger(get(var(h1), var(l)), get(var(h2), var(l)))
+//                                                    )
+//                                    ),
+//                                    isEqual(var(h1), var(h2))
+//                            )
+//                    ));
+//        }
+//
+//        {
+//            addComment("[SW]: object allocations preserve existing invariants");
+//            String o = quantVarName("o");
+//            String t = quantVarName("t");
+//            String o2 = quantVarName("o2");
+//            String t2 = quantVarName("t2");
+//            String pre_h = quantVarName("pre_h");
+//            String new_h = quantVarName("new_h");
+//            BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
+//            BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
+//            BPLVariable pre_hVar = new BPLVariable(pre_h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable new_hVar = new BPLVariable(new_h, new BPLTypeName(HEAP_TYPE));
+//            addAxiom(forall(
+//                    oVar, tVar, pre_hVar, new_hVar,
+//                    implies(
+//                            logicalAnd(
+//                                    isEqual(heapNew(var(pre_h), objectAlloc(var(t))), rval(var(o))),
+//                                    isEqual(var(new_h), heapAdd(var(pre_h), objectAlloc(var(t))))
+//                                    ),
+//                                    logicalAnd(
+//                                            logicalNot(inv(var(t), var(o), var(new_h))),
+//                                            forall(
+//                                                    o2Var, t2Var,
+//                                                    implies(
+//                                                            logicalOr(
+//                                                                    notEqual(var(t2), var(t)),
+//                                                                    notEqual(var(o2), var(o))
+//                                                                    ),
+//                                                                    isEqual(
+//                                                                            inv(var(t2), var(o2), var(new_h)),
+//                                                                            inv(var(t2), var(o2), var(pre_h))
+//                                                                            )
+//                                                            )
+//                                                    )
+//                                            )
+//                            )
+//                    ));
+//        }
+//
+//        {
+//            addComment("Get always returns either null or a value whose type"
+//                    + " is a subtype of the (static) location type.");
+//            String h = quantVarName("h");
+//            String l = quantVarName("l");
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
+//            addAxiom(forall(hVar, lVar, isOfType(get(var(h), var(l)), ltyp(var(l))),trigger(isOfType(get(var(h), var(l)), ltyp(var(l))))));
+//        }
+//
+//        {
+//            addComment("New arrays have the allocated length.");
+//            String h = quantVarName("h");
+//            String t = quantVarName("t");
+//            String i = quantVarName("i");
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            addAxiom(forall(
+//                    hVar, tVar, iVar,
+//                    isEqual(
+//                            arrayLength(heapNew(var(h), arrayAlloc(var(t), var(i)))),
+//                            var(i)
+//                            ),
+//                            trigger(arrayLength(heapNew(var(h), arrayAlloc(var(t), var(i)))))
+//                    ));
+//
+//            String a = quantVarName("a");
+//            hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
+//            addAxiom(forall(
+//                    hVar, tVar, iVar, aVar,
+//                    isEqual(
+//                            arrayLength(heapNew(var(h), multiArrayAlloc(var(t), var(i), var(a)))),
+//                            var(i)
+//                            ),
+//                            trigger(arrayLength(heapNew(var(h), multiArrayAlloc(var(t), var(i), var(a)))))
+//                    ));
+//        }
+//
+//        {
+//            // Multi-dimensional arrays
+//            addFunction(
+//                    IS_NEW_MULTI_ARRAY_FUNC,
+//                    new BPLTypeName(VALUE_TYPE),
+//                    new BPLTypeName(HEAP_TYPE),
+//                    new BPLTypeName(ALLOCATION_TYPE),
+//                    BPLBuiltInType.BOOL);
+//            addFunction(
+//                    MULTI_ARRAY_PARENT_FUNC,
+//                    new BPLTypeName(VALUE_TYPE),
+//                    new BPLTypeName(VALUE_TYPE));
+//            addFunction(
+//                    MULTI_ARRAY_POSITION_FUNC,
+//                    new BPLTypeName(VALUE_TYPE),
+//                    BPLBuiltInType.INT);
+//
+//            String h = quantVarName("h");
+//            String t = quantVarName("t");
+//            String i = quantVarName("i");
+//            String a = quantVarName("a");
+//            BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            BPLVariable aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
+//            addAxiom(forall(
+//                    hVar, tVar, iVar, aVar,
+//                    isNewMultiArray(
+//                            heapNew(var(h), multiArrayAlloc(var(t), var(i), var(a))),
+//                            var(h),
+//                            multiArrayAlloc(var(t), var(i), var(a))
+//                            ),
+//                            trigger(
+//                                    isNewMultiArray(
+//                                            heapNew(var(h), multiArrayAlloc(var(t), var(i), var(a))),
+//                                            var(h),
+//                                            multiArrayAlloc(var(t), var(i), var(a))
+//                                            )
+//                                    )
+//                    ));
+//
+//            String v = quantVarName("v");
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            addAxiom(forall(
+//                    vVar, hVar, tVar, iVar,
+//                    isEquiv(
+//                            isNewMultiArray(var(v), var(h), arrayAlloc(var(t), var(i))),
+//                            logicalAnd(
+//                                    logicalNot(alive(var(v), var(h))),
+//                                    isEqual(typ(var(v)), arrayType(var(t))),
+//                                    isEqual(arrayLength(var(v)), var(i))
+//                                    )
+//                            ),
+//                            trigger(isNewMultiArray(var(v), var(h), arrayAlloc(var(t), var(i))))
+//                    ));
+//
+//            String e = quantVarName("e");
+//            vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
+//            tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            aVar = new BPLVariable(a, new BPLTypeName(ALLOCATION_TYPE));
+//            BPLVariable eVar = new BPLVariable(e, BPLBuiltInType.INT);
+//            addAxiom(forall(
+//                    vVar, hVar, tVar, iVar, aVar,
+//                    isEquiv(
+//                            isNewMultiArray(var(v), var(h), multiArrayAlloc(var(t), var(i), var(a))),
+//                            logicalAnd(
+//                                    logicalNot(alive(var(v), var(h))),
+//                                    isEqual(typ(var(v)), arrayType(var(t))),
+//                                    isEqual(arrayLength(var(v)), var(i)),
+//                                    forall(
+//                                            eVar,
+//                                            logicalAnd(
+//                                                    isNewMultiArray(get(var(h), arrayLoc(toref(var(v)), var(e))), var(h), var(a)),
+//                                                    isEqual(
+//                                                            multiArrayParent(get(var(h), arrayLoc(toref(var(v)), var(e)))),
+//                                                            var(v)
+//                                                            ),
+//                                                            isEqual(
+//                                                                    multiArrayPosition(get(var(h), arrayLoc(toref(var(v)), var(e)))),
+//                                                                    var(e)
+//                                                                    )
+//                                                    ),
+//                                                    trigger(isNewMultiArray(get(var(h), arrayLoc(toref(var(v)), var(e))), var(h), var(a)))
+//                                            )
+//                                    )
+//                            ),
+//                            trigger(isNewMultiArray(var(v), var(h), multiArrayAlloc(var(t), var(i), var(a))))
+//                    ));
+//        }
     }
 
     /**
@@ -1959,59 +2082,59 @@ public class Translator implements ITranslationConstants {
                     ));
         }
 
-        {
-            // array types
-            addFunction(ARRAY_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
+//        {
+//            // array types
+//            addFunction(ARRAY_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
+//
+//            addFunction(ELEMENT_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
+//            String t = quantVarName("t");
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(tVar, isEqual(elementType(arrayType(var(t))), var(t)), trigger(elementType(arrayType(var(t))))));
+//        }
 
-            addFunction(ELEMENT_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
-            String t = quantVarName("t");
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(tVar, isEqual(elementType(arrayType(var(t))), var(t)), trigger(elementType(arrayType(var(t))))));
-        }
-
-        {
-            JType object = TypeLoader.getClassType("java.lang.Object");
-            JType cloneable = TypeLoader.getClassType("java.lang.Cloneable");
-            JType throwable = TypeLoader.getClassType("java.lang.Throwable");
-            JType serializable = TypeLoader.getClassType("java.io.Serializable");
-
-            String t = quantVarName("t");
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    tVar,
-                    logicalAnd(
-                            isSubtype(arrayType(var(t)), typeRef(object)),
-                            isSubtype(arrayType(var(t)), typeRef(cloneable)),
-                            isSubtype(arrayType(var(t)), typeRef(serializable)),
-                            isSubtype(arrayType(var(t)), typeRef(throwable))
-                            )
-                    ));
-
-            String t1 = quantVarName("t1");
-            String t2 = quantVarName("t2");
-            BPLVariable t1Var = new BPLVariable(t1, new BPLTypeName(NAME_TYPE));
-            BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    t1Var, t2Var,
-                    implies(
-                            isSubtype(var(t1), var(t2)),
-                            isSubtype(arrayType(var(t1)), arrayType(var(t2)))
-                            )
-                    ));
-
-            t1Var = new BPLVariable(t1, new BPLTypeName(NAME_TYPE));
-            t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    t1Var, t2Var,
-                    implies(
-                            isSubtype(var(t1), arrayType(var(t2))),
-                            logicalAnd(
-                                    isEqual(var(t1), arrayType(elementType(var(t1)))),
-                                    isSubtype(elementType(var(t1)), var(t2)))
-                            ),
-                            trigger(isSubtype(var(t1), arrayType(var(t2))))
-                    ));
-        }
+//        {
+//            JType object = TypeLoader.getClassType("java.lang.Object");
+//            JType cloneable = TypeLoader.getClassType("java.lang.Cloneable");
+//            JType throwable = TypeLoader.getClassType("java.lang.Throwable");
+//            JType serializable = TypeLoader.getClassType("java.io.Serializable");
+//
+//            String t = quantVarName("t");
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(
+//                    tVar,
+//                    logicalAnd(
+//                            isSubtype(arrayType(var(t)), typeRef(object)),
+//                            isSubtype(arrayType(var(t)), typeRef(cloneable)),
+//                            isSubtype(arrayType(var(t)), typeRef(serializable)),
+//                            isSubtype(arrayType(var(t)), typeRef(throwable))
+//                            )
+//                    ));
+//
+//            String t1 = quantVarName("t1");
+//            String t2 = quantVarName("t2");
+//            BPLVariable t1Var = new BPLVariable(t1, new BPLTypeName(NAME_TYPE));
+//            BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(
+//                    t1Var, t2Var,
+//                    implies(
+//                            isSubtype(var(t1), var(t2)),
+//                            isSubtype(arrayType(var(t1)), arrayType(var(t2)))
+//                            )
+//                    ));
+//
+//            t1Var = new BPLVariable(t1, new BPLTypeName(NAME_TYPE));
+//            t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(
+//                    t1Var, t2Var,
+//                    implies(
+//                            isSubtype(var(t1), arrayType(var(t2))),
+//                            logicalAnd(
+//                                    isEqual(var(t1), arrayType(elementType(var(t1)))),
+//                                    isSubtype(elementType(var(t1)), var(t2)))
+//                            ),
+//                            trigger(isSubtype(var(t1), arrayType(var(t2))))
+//                    ));
+//        }
 
         {
             // Method calls (exception handling)
@@ -2038,17 +2161,17 @@ public class Translator implements ITranslationConstants {
             addAxiom(forall(sVar, isEquiv(notEqual(var(s), var(ex)), logicalNot(isExceptionalReturnState(var(s)))), trigger(isExceptionalReturnState(var(s)))));
         }
 
-        {
-            // FIXME[sw]: Temporary partial axiomatization of the Java type system.
-            //            Should later be replaced with either an on-the-fly compilation
-            //            of (BML annotated) Java Runtime Libraries or a
-            //            precompiled BoogiePL version.
-            typeRef(TypeLoader.getClassType("java.lang.Exception"));
-            declarations.add(axiomatizeHelperProcedure("java.lang.Object..init", "$java.lang.Object"));
-            declarations.add(axiomatizeHelperProcedure("java.lang.Throwable..init", "$java.lang.Throwable"));
-            declarations.add(axiomatizeHelperProcedure("java.lang.Exception..init", "$java.lang.Exception")); // $java.lang.Throwable is sufficient
-            declarations.add(axiomatizeHelperProcedure("java.io.PrintStream.println", null));
-        }
+//        {
+//            // FIXME[sw]: Temporary partial axiomatization of the Java type system.
+//            //            Should later be replaced with either an on-the-fly compilation
+//            //            of (BML annotated) Java Runtime Libraries or a
+//            //            precompiled BoogiePL version.
+//            typeRef(TypeLoader.getClassType("java.lang.Exception"));
+//            declarations.add(axiomatizeHelperProcedure("java.lang.Object..init", "$java.lang.Object"));
+//            declarations.add(axiomatizeHelperProcedure("java.lang.Throwable..init", "$java.lang.Throwable"));
+//            declarations.add(axiomatizeHelperProcedure("java.lang.Exception..init", "$java.lang.Exception")); // $java.lang.Throwable is sufficient
+//            declarations.add(axiomatizeHelperProcedure("java.io.PrintStream.println", null));
+//        }
 
         {
             // Class fields which appear in one or more modifies clauses
@@ -2214,74 +2337,74 @@ public class Translator implements ITranslationConstants {
                     ));
         }
 
-        {
-            addFunction(
-                    IS_OF_TYPE_FUNC,
-                    new BPLTypeName(VALUE_TYPE),
-                    new BPLTypeName(NAME_TYPE),
-                    BPLBuiltInType.BOOL);
-            String v = quantVarName("v");
-            String t = quantVarName("t");
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            // A value is of a given type if and only if it is the null value or if
-            // its type is a subtype of the given type.
-            addAxiom(forall(
-                    vVar, tVar,
-                    isEquiv(
-                            isOfType(var(v), var(t)),
-                            logicalOr(
-                                    isEqual(var(v), rval(nullLiteral())),
-                                    isSubtype(typ(var(v)), var(t))
-                                    )
-                            ),
-                            trigger(isOfType(var(v), var(t)))
-                    ));
-        }
+//        {
+//            addFunction(
+//                    IS_OF_TYPE_FUNC,
+//                    new BPLTypeName(VALUE_TYPE),
+//                    new BPLTypeName(NAME_TYPE),
+//                    BPLBuiltInType.BOOL);
+//            String v = quantVarName("v");
+//            String t = quantVarName("t");
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            // A value is of a given type if and only if it is the null value or if
+//            // its type is a subtype of the given type.
+//            addAxiom(forall(
+//                    vVar, tVar,
+//                    isEquiv(
+//                            isOfType(var(v), var(t)),
+//                            logicalOr(
+//                                    isEqual(var(v), rval(nullLiteral())),
+//                                    isSubtype(typ(var(v)), var(t))
+//                                    )
+//                            ),
+//                            trigger(isOfType(var(v), var(t)))
+//                    ));
+//        }
 
-        {
-            addFunction(
-                    IS_INSTANCE_OF_FUNC,
-                    new BPLTypeName(VALUE_TYPE),
-                    new BPLTypeName(NAME_TYPE),
-                    BPLBuiltInType.BOOL);
-            String v = quantVarName("v");
-            String t = quantVarName("t");
-            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            // A value is an instance of a given type if and only if it is not the
-            // null value and if its type is a subtype of the given type.
-            addAxiom(forall(
-                    vVar, tVar,
-                    isEquiv(
-                            isInstanceOf(var(v), var(t)),
-                            logicalAnd(
-                                    notEqual(var(v), rval(nullLiteral())),
-                                    isSubtype(typ(var(v)), var(t))
-                                    )
-                            ),
-                            trigger(isInstanceOf(var(v), var(t)))
-                    ));
+//        {
+//            addFunction(
+//                    IS_INSTANCE_OF_FUNC,
+//                    new BPLTypeName(VALUE_TYPE),
+//                    new BPLTypeName(NAME_TYPE),
+//                    BPLBuiltInType.BOOL);
+//            String v = quantVarName("v");
+//            String t = quantVarName("t");
+//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            // A value is an instance of a given type if and only if it is not the
+//            // null value and if its type is a subtype of the given type.
+//            addAxiom(forall(
+//                    vVar, tVar,
+//                    isEquiv(
+//                            isInstanceOf(var(v), var(t)),
+//                            logicalAnd(
+//                                    notEqual(var(v), rval(nullLiteral())),
+//                                    isSubtype(typ(var(v)), var(t))
+//                                    )
+//                            ),
+//                            trigger(isInstanceOf(var(v), var(t)))
+//                    ));
+//
+//            // [SW] inserted: if a value is an instance of a given type t,
+//            // the value is of type t.
+//            addAxiom(forall(
+//                    vVar, tVar,
+//                    implies(
+//                            isInstanceOf(var(v), var(t)),
+//                            isOfType(var(v), var(t))
+//                            ),
+//                            trigger(isInstanceOf(var(v), var(t)))
+//                    ));   
+//        }
 
-            // [SW] inserted: if a value is an instance of a given type t,
-            // the value is of type t.
-            addAxiom(forall(
-                    vVar, tVar,
-                    implies(
-                            isInstanceOf(var(v), var(t)),
-                            isOfType(var(v), var(t))
-                            ),
-                            trigger(isInstanceOf(var(v), var(t)))
-                    ));   
-        }
-
-        addComment("The function used for the declaration of object invariants.");
-        addFunction(
-                INV_FUNC,
-                new BPLTypeName(NAME_TYPE),
-                new BPLTypeName(REF_TYPE),
-                new BPLTypeName(HEAP_TYPE),
-                BPLBuiltInType.BOOL);
+//        addComment("The function used for the declaration of object invariants.");
+//        addFunction(
+//                INV_FUNC,
+//                new BPLTypeName(NAME_TYPE),
+//                new BPLTypeName(REF_TYPE),
+//                new BPLTypeName(HEAP_TYPE),
+//                BPLBuiltInType.BOOL);
 
         {
             // if-then-else function

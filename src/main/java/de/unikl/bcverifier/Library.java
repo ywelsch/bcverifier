@@ -20,6 +20,7 @@ import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLBasicBlock;
 import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLCommand;
+import b2bpl.bpl.ast.BPLConstantDeclaration;
 import b2bpl.bpl.ast.BPLDeclaration;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLImplementation;
@@ -111,7 +112,10 @@ public class Library implements ITroubleReporter{
         }
         
         try {
+            TranslationController.enterRound1();
             compileSpecification(oldFileNames, oldSpecification);
+            
+            TranslationController.enterRound2();
             compileSpecification(newFileNames, newSpecification);
         } catch (FileNotFoundException e) {
             throw new TranslationException("Could not write boogie specification to file.", e);
@@ -178,6 +182,11 @@ public class Library implements ITroubleReporter{
         methodBlocks.add(new BPLBasicBlock("check", new BPLCommand[0], new BPLReturnCommand()));
         
         methodBlocks.add(0, new BPLBasicBlock("dispatch1", new BPLCommand[0], new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]))));
+        
+        for(int i=0; i<maxLocals; i++){
+            programDecls.add(new BPLConstantDeclaration(new BPLVariable("param"+i, new BPLTypeName("Var", REF_TYPE))));
+        }
+        
         
         List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
         BPLVariable[] inParams = new BPLVariable[0];
