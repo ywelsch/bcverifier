@@ -413,11 +413,18 @@ procedure Check_Test()
 */
 
 
+const unroll_Count:int;
+axiom (unroll_Count == 2);
+
 procedure Bla() {
 	var x : int;
 	//assume x == 0;
+	var invoc_counter : int;
+	assume invoc_counter == 0;
 	
 	dispatch:
+	assert invoc_counter < unroll_Count;
+	invoc_counter := invoc_counter + 1;
 	if (x == 0) { goto l1; } else
 	if (x == 1) { goto l2; } else
 	{ return; }
@@ -429,7 +436,7 @@ procedure Bla() {
 	l2:
 	x := 0;
 	
-	assert x == 0;
+	//assert x == 0;
 }
 
 /* The modulo operation */
