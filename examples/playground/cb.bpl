@@ -163,7 +163,7 @@ const unique isCall: Var bool;
 const unique place : Var Address;
 const unique retA : Address;
 const unique meth: Var Method;
-const unique receiver, param1: Var Ref;
+const unique receiver, retVal, param1: Var Ref;
 //const unique isCall: Var bool;
 
 // END PRELUDE
@@ -235,13 +235,16 @@ procedure Check_CB()
   	assume sp1 >= 0 && sp2 >= 0;
   }
   
+  assume stack1[sp1][place] != exec_invoc_self;
+  assume stack1[sp1][place] != self_begin;
+  
   dispatch1:
-  if (stack1[sp1][isCall] && stack1[sp1][meth] == exec) { goto exec_begin1; } else
+  if (stack1[sp1][isCall] && stack1[sp1][meth] == exec) { goto exec_begin1, exec_invoc_self; } else
   if (stack1[sp1][isCall] && stack1[sp1][meth] == inc) { goto inc_begin1; } else
   //if (isCall && m1_method == self) { goto self_begin1; } else
-  if (stack1[sp1][isCall] && stack1[sp1][meth] == self) { return; } else
+  if (stack1[sp1][isCall] && stack1[sp1][meth] == self) { goto self_begin1; } else
   if (!stack1[sp1][isCall] && stack1[sp1][meth] == run) { goto exec_invoc_run1_1, exec_invoc_run1_2; } else
-  //if (!isCall && m1_method == self) { goto exec_invoc_self; } else
+  //if (stack1[sp1][isCall] && stack1[sp1][meth] == self) { goto exec_invoc_self; } else
   { return; }
   
 //  dispatch1callinternal:
@@ -252,18 +255,15 @@ procedure Check_CB()
   
     self_begin1:
     assume stack1[sp1][place] == self_begin;
-    
+    stack1[sp1][this] := stack1[sp1][receiver];
+    stack1[sp1][c] := stack1[sp1][param1];
     //rtrn
     if (sp1 == 0) {
-      // void rtrn, use null value
-      stack1[sp1][place] := inc_begin;
-      stack1[sp1][isCall] := false; stack1[sp1][meth] := self; stack1[sp1][param1] := stack1[sp1][a];
-      goto dispatch2;
-    } else { 
-    	stack1[sp1][place] := inc_begin;
-        stack1[sp1][isCall] := false; stack1[sp1][meth] := self; stack1[sp1][param1] := stack1[sp1][a];
+      assert false;
+    } else {
+        stack1[sp1][retVal] := stack1[sp1][c];
+        sp1 := sp1 - 1;
     	goto dispatch1;
-    	//assert false;
     }
     
   
@@ -277,7 +277,7 @@ procedure Check_CB()
       exec_invoc_run1_1:
       assume stack1[sp1][place] == exec_invoc_run1;
     }
-    if (heap1[stack1[sp1][this],g] % 2 == 0) {
+    if (heap1[stack1[sp1][this],g] % 2 != 0) {
       if (sp1 == 0) {
         // output label: rtrn c
         stack1[sp1][place] := exec_begin; stack1[sp1][isCall] := false; stack1[sp1][meth] := exec; stack1[sp1][param1] := stack1[sp1][c];
@@ -286,14 +286,15 @@ procedure Check_CB()
     } else {
       // call c := this.self(c)      
       //stack1[sp1+1][place] := exec_invoc_self;
-      // stack1[sp1+1][receiver] := stack1[sp1][this]; stack1[sp1+1][meth] := self; stack1[sp1+1][param1] := stack1[sp1][c];
-      stack1[sp1][isCall] := true; stack1[sp1][meth] := self;
-      //sp1 := sp1 + 1;
+      stack1[sp1][place] := exec_invoc_self;
+      stack1[sp1+1][place] := self_begin; stack1[sp1+1][isCall] := true; stack1[sp1+1][receiver] := stack1[sp1][this]; stack1[sp1+1][meth] := self; stack1[sp1+1][param1] := stack1[sp1][c];
+      //stack1[sp1][isCall] := true; stack1[sp1][meth] := self;
+      sp1 := sp1 + 1;
       //return;
       goto dispatch1;
-      // exec_invoc_self:
-      // sp1 := sp1 - 1;
-      // stack1[sp1][c] := stack1[sp1+1][param1];
+      exec_invoc_self:
+      assume stack1[sp1][place] == exec_invoc_self;
+      stack1[sp1][c] := stack1[sp1+1][retVal]; 
       // rtrn c
       if (sp1 == 0) {
         // output label: rtrn c
