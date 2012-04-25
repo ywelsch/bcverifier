@@ -1,5 +1,8 @@
 package de.unikl.bcverifier;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class TranslationController {
     private static boolean isActive = false;
     private static int round;
@@ -12,8 +15,15 @@ public class TranslationController {
     private static final String LABEL_PREFIX1 = "round1_";
     private static final String LABEL_PREFIX2 = "round2_";
     
+    private static Set<String> declaredMethods = new HashSet<String>();
+    
+    public static Set<String> declaredMethods() {
+        return declaredMethods;
+    }
+    
     public static void activate() {
         isActive = true;
+        declaredMethods.clear();
     }
     
     public static void deactivate() {

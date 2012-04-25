@@ -111,8 +111,8 @@ public class LoopTargetDetector {
       // but we nevertheless visit the variable expressions to handle their
       // occurrence at a central point and to more cleanly follow the visitor
       // pattern.
-      for (BPLExpression variable : command.getVariables()) {
-        variable.accept(this); //FIXME[MW] since the variable expressions of a havoc command are stack accesses now, this may break
+      for (BPLVariableExpression variable : command.getVariables()) {
+        variable.accept(this);
       }
       return null;
     }

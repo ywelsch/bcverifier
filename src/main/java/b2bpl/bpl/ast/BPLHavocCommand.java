@@ -5,13 +5,13 @@ import b2bpl.bpl.IBPLVisitor;
 
 public class BPLHavocCommand extends BPLCommand {
 
-  private final BPLExpression[] variables;
+  private final BPLVariableExpression[] variables;
 
-  public BPLHavocCommand(BPLExpression... variables) {
+  public BPLHavocCommand(BPLVariableExpression... variables) {
     this.variables = variables;
   }
 
-  public BPLExpression[] getVariables() {
+  public BPLVariableExpression[] getVariables() {
     return variables;
   }
 

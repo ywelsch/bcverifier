@@ -487,7 +487,7 @@ public final class CodeGenerator implements ITranslationConstants {
       BPLExpression reference,
       BCField field) {
 //    BPLExpression val = get(var(heapVar), fieldLoc(context, reference, field));
-      BPLExpression val = new BPLArrayExpression(var(heapVar), reference, var(GLOBAL_VAR_PREFIX + field.getQualifiedName()));
+      BPLExpression val = new BPLArrayExpression(var(heapVar), reference, context.translateFieldReference(field));
 //    if (type(field.getType()) == BPLBuiltInType.INT) {
 //      return toint(val);
 //    }

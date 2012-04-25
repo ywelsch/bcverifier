@@ -49,6 +49,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
+import org.apache.log4j.Logger;
+
+import de.unikl.bcverifier.TranslationController;
+
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLArrayType;
@@ -250,7 +254,13 @@ public class Translator implements ITranslationConstants {
                         && !method.isSynthetic()) {
                     
                     proc = methodTranslator.translate(context, method);
-                    declarations.add(new BPLConstantDeclaration(new BPLVariable(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method), new BPLTypeName(METHOD_TYPE))));
+                    final String methodName = GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method);
+                    if(!TranslationController.declaredMethods().contains(methodName)){
+                        Logger.getLogger(Translator.class).debug("Adding method "+methodName);
+                        declarations.add(new BPLConstantDeclaration(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE))));
+                        TranslationController.declaredMethods().add(methodName);
+                    }
+                    declarations.add(new BPLAxiom(new BPLFunctionApplication("definesMethod", typeRef(type), var(methodName))));
                     procedures.put(method.getQualifiedBoogiePLName(), proc);
                 }
             }
@@ -479,7 +489,6 @@ public class Translator implements ITranslationConstants {
         axiomatizeTypeSystem();
         axiomatizeArithmetic();
         axiomatizeBitwiseInstructions();
-        declarations.add(new BPLProcedure("check", new BPLVariable[]{}, new BPLVariable[]{}, new BPLSpecification()));
     }
 
     /**
@@ -2646,6 +2655,12 @@ public class Translator implements ITranslationConstants {
                                     ),
                                     trigger(isSubtype(var(t), typeRef(classType)))
                             ));
+                }
+                
+                if(classType.isPublic()){
+                    addAxiom(new BPLFunctionApplication("isPublic", typeRef(classType)));
+                } else {
+                    addAxiom(logicalNot(new BPLFunctionApplication("isPublic", typeRef(classType))));
                 }
 
                 // Generate axioms for ruling out "wrong supertypes".

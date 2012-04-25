@@ -121,6 +121,9 @@ public class Library implements ITroubleReporter{
             TranslationController.enterRound1();
             compileSpecification(oldFileNames, oldSpecification);
             
+            
+            TranslationController.activate(); //TODO remove (this resets the controller)
+            
             TranslationController.enterRound2();
             compileSpecification(newFileNames, newSpecification);
         } catch (FileNotFoundException e) {

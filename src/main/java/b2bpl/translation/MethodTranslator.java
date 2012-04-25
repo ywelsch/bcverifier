@@ -42,6 +42,7 @@ import static b2bpl.translation.CodeGenerator.old;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.stack;
 import static b2bpl.translation.CodeGenerator.sub;
+import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.type;
 import static b2bpl.translation.CodeGenerator.var;
 
@@ -1278,7 +1279,7 @@ public class MethodTranslator implements ITranslationConstants {
         addAssume(isInstanceOf(topElem, typeRef(retType)));
       } else {
 //        addAssume(alive(ival(topElem), var(TranslationController.getHeap())));
-        addAssume(isOfType(topElem, var(VALUE_TYPE_PREFIX + JBaseType.INT.toString())));
+//        addAssume(isOfType(topElem, var(VALUE_TYPE_PREFIX + JBaseType.INT.toString())));
       }
       
       if(TranslationController.isActive()){
@@ -1503,9 +1504,9 @@ public class MethodTranslator implements ITranslationConstants {
         JType type = frame.getLocal(i);
         if (type != null) {
           if (type.isBaseType()) {
-            addAssume(isOfType(var(localVar(i, type)), typeRef(type)));
+//            addAssume(isOfType(var(localVar(i, type)), typeRef(type)));
           } else if (type != JNullType.NULL) {
-            addAssume(isOfType(var(localVar(i, type)), typeRef(type)));
+            addAssume(isEqual(typ(var(localVar(i, type))), typeRef(type)));
           }
         }
       }
@@ -1514,9 +1515,9 @@ public class MethodTranslator implements ITranslationConstants {
         JType type = frame.peek(i);
         if (type != null) {
           if (type.isBaseType()) {
-            addAssume(isOfType(var(stackVar(i, type)), typeRef(type)));
+//            addAssume(isOfType(var(stackVar(i, type)), typeRef(type)));
           } else if (type != JNullType.NULL) {
-            addAssume(isOfType(var(stackVar(i, type)), typeRef(type)));
+            addAssume(isEqual(typ(stack(var(stackVar(i, type)))), typeRef(type)));
           }
         }
       }
@@ -2034,7 +2035,7 @@ public class MethodTranslator implements ITranslationConstants {
    * 
    * @param variables The variables of the havoc statement.
    */
-  private void addHavoc(BPLExpression... variables) {
+  private void addHavoc(BPLVariableExpression... variables) {
     addCommand(new BPLHavocCommand(variables));
   }
 
@@ -3508,7 +3509,9 @@ public class MethodTranslator implements ITranslationConstants {
     //@ requires insn != null;
     public void visitNewInstruction(NewInstruction insn) {
       int stack = handle.getFrame().getStackSize();
-      addHavoc(stack(var(refStackVar(stack))));
+      addHavoc(var(swapVar(JNullType.NULL)));
+      addAssignment(stack(var(refStackVar(stack))), var(swapVar(JNullType.NULL)));
+//      addHavoc(var(refStackVar(stack)));
       //TODO do we need to do anything to reserve the memory space on the heap?
 //      addAssume(isEqual(
 //          heapNew(context, var(TranslationController.getHeap()), insn.getType()),
@@ -3526,7 +3529,9 @@ public class MethodTranslator implements ITranslationConstants {
           "java.lang.NegativeArraySizeException",
           lessEqual(intLiteral(0), stack(var(len))));
 
-      addHavoc(stack(var(ref)));
+      addHavoc(var(swapVar(JNullType.NULL)));
+      addAssignment(stack(var(ref)), var(swapVar(JNullType.NULL)));
+//      addHavoc(var(ref)));
     //TODO do we need to do anything to reserve the memory space on the heap?
 //      addAssume(isEqual(heapNewArray(
 //          context,
@@ -3583,7 +3588,9 @@ public class MethodTranslator implements ITranslationConstants {
       }
       translateRuntimeException("java.lang.NegativeArraySizeException", vc);
 
-      addHavoc(stack(var(ref)));
+      addHavoc(var(swapVar(JNullType.NULL)));
+      addAssignment(stack(var(ref)), var(swapVar(JNullType.NULL)));
+//      addHavoc(stack(var(ref)));
     //TODO do we need to do anything to reserve the memory space on the heap?
 //      addAssume(isEqual(heapNew(var(TranslationController.getHeap()), buildMultiArrayAllocation(
 //          type,
