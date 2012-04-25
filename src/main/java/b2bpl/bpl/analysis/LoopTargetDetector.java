@@ -9,6 +9,7 @@ import b2bpl.bpl.ast.BPLAssignmentCommand;
 import b2bpl.bpl.ast.BPLBasicBlock;
 import b2bpl.bpl.ast.BPLCallCommand;
 import b2bpl.bpl.ast.BPLCommand;
+import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLHavocCommand;
 import b2bpl.bpl.ast.BPLOldExpression;
 import b2bpl.bpl.ast.BPLVariableExpression;
@@ -110,8 +111,8 @@ public class LoopTargetDetector {
       // but we nevertheless visit the variable expressions to handle their
       // occurrence at a central point and to more cleanly follow the visitor
       // pattern.
-      for (BPLVariableExpression variable : command.getVariables()) {
-        variable.accept(this);
+      for (BPLExpression variable : command.getVariables()) {
+        variable.accept(this); //FIXME[MW] since the variable expressions of a havoc command are stack accesses now, this may break
       }
       return null;
     }

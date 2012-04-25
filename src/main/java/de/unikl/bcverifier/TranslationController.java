@@ -1,6 +1,7 @@
 package de.unikl.bcverifier;
 
 public class TranslationController {
+    private static boolean isActive = false;
     private static int round;
     private static final String HEAP1 = "heap1";
     private static final String HEAP2 = "heap2";
@@ -10,6 +11,18 @@ public class TranslationController {
     private static final String SP2 = "sp2";
     private static final String LABEL_PREFIX1 = "round1_";
     private static final String LABEL_PREFIX2 = "round2_";
+    
+    public static void activate() {
+        isActive = true;
+    }
+    
+    public static void deactivate() {
+        isActive = false;
+    }
+    
+    public static boolean isActive() {
+        return isActive;
+    }
     
     public static void enterRound1() {
         round = 1;

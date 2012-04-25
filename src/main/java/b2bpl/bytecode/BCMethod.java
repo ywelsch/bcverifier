@@ -108,7 +108,7 @@ public class BCMethod extends BCMember implements IOpCodes {
     s.append(name.replace(IConstants.CONSTRUCTOR_NAME, ITranslationConstants.CONSTRUCTOR_NAME));
     
     if (this.returnType.getName() != "void") {
-      s.append('.');
+      s.append('#');
       s.append(this.returnType.toString());
     }
     

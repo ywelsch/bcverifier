@@ -17,7 +17,6 @@ import static b2bpl.translation.CodeGenerator.icast;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
 import static b2bpl.translation.CodeGenerator.implies;
 import static b2bpl.translation.CodeGenerator.int2bool;
-import static b2bpl.translation.CodeGenerator.inv;
 import static b2bpl.translation.CodeGenerator.isClassType;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
@@ -251,7 +250,7 @@ public class Translator implements ITranslationConstants {
                         && !method.isSynthetic()) {
                     
                     proc = methodTranslator.translate(context, method);
-                    declarations.add(new BPLConstantDeclaration(new BPLVariable(GLOBAL_VAR_PREFIX+proc.getName(), new BPLTypeName(METHOD_TYPE))));
+                    declarations.add(new BPLConstantDeclaration(new BPLVariable(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method), new BPLTypeName(METHOD_TYPE))));
                     procedures.put(method.getQualifiedBoogiePLName(), proc);
                 }
             }
@@ -844,14 +843,14 @@ public class Translator implements ITranslationConstants {
             final String dynType = "dynType";
             addDeclaration(new BPLConstantDeclaration(new BPLVariable(dynType, new BPLTypeName(FIELD_TYPE, new BPLTypeName(NAME_TYPE)))));
             
-            addFunction("AllocObj", new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
+            addFunction(ITranslationConstants.ALLOC_OBJ, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             final String r = "r";
             BPLVariable refVar = new BPLVariable(r, new BPLTypeName(REF_TYPE));
             final String heap = "heap";
             BPLVariable heapVar = new BPLVariable(heap, new BPLTypeName(HEAP_TYPE));
             addAxiom(forall(
                     refVar, heapVar, 
-                    isEquiv(new BPLFunctionApplication("AllocObj", var(r), var(heap)), 
+                    isEquiv(new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(r), var(heap)), 
                             logicalAnd(notEqual(var(r), var("null")), new BPLArrayExpression(var(heap), var(r), var(alloc))))));
             
             addDeclaration(new BPLTypeAlias("Bij", new BPLArrayType(new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL)));
@@ -874,7 +873,7 @@ public class Translator implements ITranslationConstants {
                             logicalAnd(
                                     new BPLArrayExpression(var(heap), var("null"), var(alloc)),
                                     forall(refVar, fieldRefVar, implies(new BPLArrayExpression(var(heap), var(r), var(alloc)), new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(alloc)))),
-                                    forall(refVar, fieldRefVar, implies(logicalNot(new BPLFunctionApplication("AllocObj", var(r), var(heap))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), var("null")))),
+                                    forall(refVar, fieldRefVar, implies(logicalNot(new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(r), var(heap))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), var("null")))),
                                     forall(refVar, fieldIntVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
                                     forall(refVar, fieldBoolVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), BPLBoolLiteral.FALSE)))
                                     ))
@@ -899,8 +898,8 @@ public class Translator implements ITranslationConstants {
                                     new BPLFunctionApplication("Bijective", var(related)),
                                     new BPLFunctionApplication("ObjectCoupling", var(heap1), var(heap2), var(related)),
                                     forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(heap1),  var(r1), var(exposed)), new BPLArrayExpression(var(heap2), var(r2), var(exposed))))),
-                                    forall(r1Var, implies(logicalAnd(new BPLFunctionApplication("AllocObj", var(r1), var(heap1)), new BPLArrayExpression(var(heap1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
-                                    forall(r2Var, implies(logicalAnd(new BPLFunctionApplication("AllocObj", var(r2), var(heap2)), new BPLArrayExpression(var(heap2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2)))))
+                                    forall(r1Var, implies(logicalAnd(new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(r1), var(heap1)), new BPLArrayExpression(var(heap1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
+                                    forall(r2Var, implies(logicalAnd(new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(r2), var(heap2)), new BPLArrayExpression(var(heap2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2)))))
                                     ))
                     ));
             
@@ -908,7 +907,7 @@ public class Translator implements ITranslationConstants {
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
                     isEquiv(new BPLFunctionApplication("ObjectCoupling", var(heap1), var(heap2), var(related)),
-                            forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLFunctionApplication("AllocObj", var(r1), var(heap1)), new BPLFunctionApplication("AllocObj", var(r2), var(heap2))))))
+                            forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(r1), var(heap1)), new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(r2), var(heap2))))))
                     ));
             
             
@@ -957,7 +956,7 @@ public class Translator implements ITranslationConstants {
                     cVar, fieldRefVar, heapVar,
                     isEquiv(new BPLFunctionApplication("NonNull", var(c), var(f), var(heap)), 
                     forall(refVar, implies(
-                            logicalAnd(new BPLFunctionApplication("AllocObj", var(r), var(heap)), new BPLFunctionApplication("RefOfType", var(r), var(heap), var(c))),
+                            logicalAnd(new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(r), var(heap)), new BPLFunctionApplication("RefOfType", var(r), var(heap), var(c))),
                             notEqual(new BPLArrayExpression(var(heap), var(r), var(f)), var("null"))
                             ))
                     )));
@@ -967,7 +966,7 @@ public class Translator implements ITranslationConstants {
                     cVar, fieldRefVar, heapVar,
                     isEquiv(new BPLFunctionApplication("Internal", var(c), var(f), var(heap)), 
                     forall(refVar, implies(
-                            logicalAnd(new BPLFunctionApplication("AllocObj", var(r), var(heap)), new BPLFunctionApplication("RefOfType", var(r), var(heap), var(c))),
+                            logicalAnd(new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(r), var(heap)), new BPLFunctionApplication("RefOfType", var(r), var(heap), var(c))),
                             logicalNot(new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(createdByCtxt)))
                             ))
                     )));
@@ -981,7 +980,7 @@ public class Translator implements ITranslationConstants {
                     oVar, heapVar, tVar,
                     isEquiv(new BPLFunctionApplication("RefOfType", var(o), var(heap), var(t)),
                             implies(
-                                    new BPLFunctionApplication("AllocObj", var(o), var(heap)),
+                                    new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(o), var(heap)),
                                     isEqual(new BPLArrayExpression(var(heap), var(o), var(dynType)), var(t)) //TODO implement subtyping here
                                     )
                             )
@@ -993,7 +992,7 @@ public class Translator implements ITranslationConstants {
                     logicalAnd(
                             forall(oVar, implies(
                                     logicalAnd(
-                                            new BPLFunctionApplication("AllocObj", var(o), var(heap)),
+                                            new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(o), var(heap)),
                                             isEqual(new BPLArrayExpression(var(heap), var(o), var(dynType)), var(c)) ),
                                     new BPLFunctionApplication("RefOfType", 
                                             new BPLArrayExpression(var(heap), var(o), var(f)),
@@ -1004,7 +1003,7 @@ public class Translator implements ITranslationConstants {
                             ,
                             forall(oVar, implies(
                                     logicalAnd(
-                                            new BPLFunctionApplication("AllocObj", var(o), var(heap)),
+                                            new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(o), var(heap)),
                                             notEqual(new BPLArrayExpression(var(heap), var(o), var(dynType)), var(c)) ),
                                     isEqual(new BPLArrayExpression(var(heap), var(o), var(f)), var("null"))
                                     ))
@@ -1017,8 +1016,8 @@ public class Translator implements ITranslationConstants {
                             forall(r1Var, r2Var, 
                                     implies(
                                             logicalAnd(
-                                                    new BPLFunctionApplication("AllocObj", var(r1), var(heap)),
-                                                    new BPLFunctionApplication("AllocObj", var(r2), var(heap)),
+                                                    new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(r1), var(heap)),
+                                                    new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, var(r2), var(heap)),
                                                     new BPLFunctionApplication("RefOfType", var(r1), var(heap), var(c)),
                                                     new BPLFunctionApplication("RefOfType", var(r2), var(heap), var(c)),
                                                     notEqual(var(r1), var(r2))
@@ -1068,7 +1067,7 @@ public class Translator implements ITranslationConstants {
                     stackVar, spVar, heapVar,
                     logicalAnd(
                             forall(pVar, vVar, implies(logicalAnd(lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp))), new BPLArrayExpression(var(heap), new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), var(alloc)))),
-                            forall(pVar, implies( logicalAnd( lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp)) ), new BPLFunctionApplication("AllocObj", new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(thisName)), var(heap) ) )),
+                            forall(pVar, implies( logicalAnd( lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp)) ), new BPLFunctionApplication(ITranslationConstants.ALLOC_OBJ, new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(thisName)), var(heap) ) )),
                             forall(pVar, vVar, implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), var("null")))),
                             forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), intLiteral(0)))),
                             forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.BOOL)), implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), BPLBoolLiteral.FALSE)))
@@ -1086,6 +1085,13 @@ public class Translator implements ITranslationConstants {
             addConstants(new BPLVariable("retA", new BPLTypeName(addressType)));
             addConstants(new BPLVariable("meth", new BPLTypeName(VAR_TYPE, new BPLTypeName(METHOD_TYPE))));
             addConstants(new BPLVariable("receiver", new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
+            
+            addComment("mapping from class names to their representatives for static access");
+            addFunction("ClassRepr", new BPLTypeName(NAME_TYPE), new BPLTypeName(REF_TYPE));
+            addAxiom(forall(
+                    tVar,
+                    logicalNot(isSubtype(new BPLFunctionApplication(TYP_FUNC, new BPLFunctionApplication("ClassRepr", var(t))), var(GLOBAL_VAR_PREFIX+"java.lang.Object")))
+                    ));
         }
 //        //
 //        // Muller/Poetzsch Heffter BoogiePL store axiomatization
@@ -1365,7 +1371,7 @@ public class Translator implements ITranslationConstants {
 //        }
 //
 //        // Field declaration
-        addFunction(FIELD_TYPE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
+        addFunction(FIELD_TYPE_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), new BPLTypeName(NAME_TYPE)); //TODO hack for parameter here
 //
 //        {
 //            // Static fields
@@ -1989,19 +1995,19 @@ public class Translator implements ITranslationConstants {
                         ));
             }
 
-            String i = quantVarName("i");
-            String t = quantVarName("t");
-            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-            addComment("Associate the types of integer values to their corresponding value ranges.");
-            addAxiom(forall(
-                    iVar, tVar,
-                    isEquiv(
-                            isSubtype(typ(var(i)), var(t)),
-                            isInRange(var(i), var(t))
-                            ),
-                            trigger(isInRange(var(i), var(t)))
-                    ));
+//            String i = quantVarName("i");
+//            String t = quantVarName("t");
+//            BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//            addComment("Associate the types of integer values to their corresponding value ranges.");
+//            addAxiom(forall(
+//                    iVar, tVar,
+//                    isEquiv(
+//                            isSubtype(typ(var(i)), var(t)),
+//                            isInRange(var(i), var(t))
+//                            ),
+//                            trigger(isInRange(var(i), var(t)))
+//                    ));
         }
 
         {
@@ -2706,14 +2712,16 @@ public class Translator implements ITranslationConstants {
                 BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
                 BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
 
-                addComment("[SW]: Define field type");
-                addAxiom(forall(
-                        oVar, hVar,
-                        isSubtype(
-                                typ(new BPLArrayExpression(var(h), var(o), var(fieldName))),
-                                translateTypeReference(field.getType())
-                                )
-                        ));
+                if(!field.getType().isBaseType()){
+                    addComment("[SW]: Define field type");
+                    addAxiom(forall(
+                            oVar, hVar,
+                            isSubtype(
+                                    typ(new BPLArrayExpression(var(h), var(o), var(fieldName))),
+                                    translateTypeReference(field.getType())
+                                    )
+                            ));
+                }
 
                 // For every field referenced, we also translate its owner type.
                 translateTypeReference(field.getOwner());

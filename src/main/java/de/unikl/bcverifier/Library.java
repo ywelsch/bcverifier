@@ -17,6 +17,8 @@ import org.apache.log4j.Logger;
 import b2bpl.CompilationAbortedException;
 import b2bpl.Project;
 import b2bpl.bpl.BPLPrinter;
+import b2bpl.bpl.ast.BPLArrayExpression;
+import b2bpl.bpl.ast.BPLAssumeCommand;
 import b2bpl.bpl.ast.BPLBasicBlock;
 import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLCommand;
@@ -43,8 +45,10 @@ import b2bpl.bytecode.TroublePosition;
 import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.analysis.SemanticAnalyzer;
 import b2bpl.translation.CodeGenerator;
+import b2bpl.translation.MethodTranslator;
 import b2bpl.translation.Translator;
 import static b2bpl.translation.ITranslationConstants.*;
+import static b2bpl.translation.CodeGenerator.*;
 
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
@@ -112,6 +116,8 @@ public class Library implements ITroubleReporter{
         }
         
         try {
+            TranslationController.activate();
+            
             TranslationController.enterRound1();
             compileSpecification(oldFileNames, oldSpecification);
             
@@ -147,6 +153,7 @@ public class Library implements ITroubleReporter{
         List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
         BPLProcedure proc;
         Map<String, BPLVariable> usedVariables = new HashMap<String, BPLVariable>();
+        Map<String, BPLVariable> stackVariables = new HashMap<String, BPLVariable>();
         List<String> methodLabels = new ArrayList<String>();
         String methodLabel;
         for(JClassType classType : projectTypes){
@@ -161,11 +168,12 @@ public class Library implements ITroubleReporter{
                     
                     for(BPLVariableDeclaration varDecl : proc.getImplementation().getBody().getVariableDeclarations()){
                         for(BPLVariable var : varDecl.getVariables()){
-                            usedVariables.put(var.getName(), var);
+                            if(var.getType().isTypeName() && ((BPLTypeName)var.getType()).getName().equals(VAR_TYPE)){
+                                stackVariables.put(var.getName(), var);
+                            } else {
+                                usedVariables.put(var.getName(), var);
+                            }
                         }
-                    }
-                    for(BPLVariable inParam : proc.getInParameters()){
-                        usedVariables.put(inParam.getName(), inParam);
                     }
                     for(BPLVariable outParam : proc.getOutParameters()){
                         usedVariables.put(outParam.getName(), outParam);
@@ -173,20 +181,22 @@ public class Library implements ITroubleReporter{
                     
                     methodLabel = proc.getName();
                     methodLabels.add(methodLabel);
-                    //TODO add assume to the method block (e.g. isCall && stack1[sp1][meth] == exec)
-                    methodBlocks.add(new BPLBasicBlock(methodLabel, new BPLCommand[0], new BPLGotoCommand(proc.getImplementation().getBody().getBasicBlocks()[0].getLabel())));
+                    methodBlocks.add(new BPLBasicBlock(methodLabel,
+                            new BPLCommand[]{new BPLAssumeCommand(isEqual(
+                                    stack(var("meth")) ,
+                                    var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method))))},
+                            new BPLGotoCommand(proc.getImplementation().getBody().getBasicBlocks()[0].getLabel())));
                     Collections.addAll(methodBlocks, proc.getImplementation().getBody().getBasicBlocks());
                 }
             }
         }
+        for(BPLVariable var : stackVariables.values()){
+            programDecls.add(new BPLConstantDeclaration(var));
+        }
+        
         methodBlocks.add(new BPLBasicBlock("check", new BPLCommand[0], new BPLReturnCommand()));
         
         methodBlocks.add(0, new BPLBasicBlock("dispatch1", new BPLCommand[0], new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]))));
-        
-        for(int i=0; i<maxLocals; i++){
-            programDecls.add(new BPLConstantDeclaration(new BPLVariable("param"+i, new BPLTypeName("Var", new BPLTypeName(REF_TYPE)))));
-        }
-        
         
         List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
         BPLVariable[] inParams = new BPLVariable[0];
@@ -199,7 +209,14 @@ public class Library implements ITroubleReporter{
         String methodName = "checkLibraries";
         BPLImplementationBody methodBody = new BPLImplementationBody(localVariables.toArray(new BPLVariableDeclaration[localVariables.size()]), methodBlocks.toArray(new BPLBasicBlock[methodBlocks.size()]));
         BPLImplementation methodImpl = new BPLImplementation(methodName, inParams, outParams, methodBody);
-        programDecls.add(new BPLProcedure(methodName, inParams, outParams, new BPLSpecification(new BPLModifiesClause(new BPLVariableExpression("heap1"), new BPLVariableExpression("heap2"))), methodImpl));
+        programDecls.add(new BPLProcedure(methodName, inParams, outParams, new BPLSpecification(
+                new BPLModifiesClause(
+                        new BPLVariableExpression("heap1"),
+                        new BPLVariableExpression("heap2"),
+                        new BPLVariableExpression("stack1"),
+                        new BPLVariableExpression("stack2")
+                        )
+                ), methodImpl));
         BPLProgram program = new BPLProgram(programDecls.toArray(new BPLDeclaration[programDecls.size()]));
         
         log.debug("Writing specification to file "+outFile);

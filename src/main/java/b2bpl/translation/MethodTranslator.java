@@ -40,6 +40,7 @@ import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.nullLiteral;
 import static b2bpl.translation.CodeGenerator.old;
 import static b2bpl.translation.CodeGenerator.quantVarName;
+import static b2bpl.translation.CodeGenerator.stack;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.type;
 import static b2bpl.translation.CodeGenerator.var;
@@ -333,11 +334,13 @@ public class MethodTranslator implements ITranslationConstants {
 
     // The stack variables.
     for (int i = 0; i < method.getMaxStack(); i++) {
-      BPLVariable stackr = new BPLVariable(refStackVar(i), new BPLTypeName(REF_TYPE));
-      BPLVariable stacki = new BPLVariable(intStackVar(i), BPLBuiltInType.INT);
+      BPLVariable stackr = new BPLVariable(refStackVar(i), new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
+      BPLVariable stacki = new BPLVariable(intStackVar(i), new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT));
       
       // vars.add(new BPLVariableDeclaration(stackr, stacki));
-      vars.add(filterVariableDeclarations(blocks, stackr, stacki));
+//      vars.add(filterVariableDeclarations(blocks, stackr, stacki));
+      vars.add(new BPLVariableDeclaration(stackr));
+      vars.add(new BPLVariableDeclaration(stacki));
     }
 
     // Return variables for method calls
@@ -397,37 +400,51 @@ public class MethodTranslator implements ITranslationConstants {
       vars.add(new BPLVariableDeclaration(lvVars.toArray(new BPLVariable[lvVars.size()])));
     }
 
-    // Build the different parts of the BoogiePL procedure.
-    String name = getProcedureName(method);
-    BPLImplementationBody body = new BPLImplementationBody(
-        vars.toArray(new BPLVariableDeclaration[vars.size()]),
-        blocks.toArray(new BPLBasicBlock[blocks.size()]));
-
-    boolean provideReturnValue = !method.isVoid() || method.isConstructor();
     
-    JType[] paramTypes = method.getRealParameterTypes();
     
     // Prepare list of input parameters
+    JType[] paramTypes = method.getRealParameterTypes();
+    boolean provideReturnValue = !method.isVoid() || method.isConstructor();
+    
     BPLVariable[] inParams = new BPLVariable[paramTypes.length];
     //@deprecated inParams[0] = new BPLVariable(PRE_HEAP_VAR, new BPLTypeName(HEAP_TYPE));
     for (int i = 0; i < inParams.length; i++) {
-      BPLType bplType = type(paramTypes[i]);
-      inParams[i] = new BPLVariable(paramVar(i, paramTypes[i]), bplType);
+        if(TranslationController.isActive()){
+            BPLType bplType = new BPLTypeName(VAR_TYPE, type(paramTypes[i]));
+            vars.add(new BPLVariableDeclaration(new BPLVariable(paramVar(i, paramTypes[i]), bplType)));
+        }
+        BPLType bplType = type(paramTypes[i]);
+        inParams[i] = new BPLVariable(paramVar(i, paramTypes[i]), bplType);
     }
-
+    
     // Prepare list of output parameters
     // BPLVariable[] outParams = BPLVariable.EMPTY_ARRAY;
     List<BPLVariable> outParams = new ArrayList<BPLVariable>();
     //@deprecated outParams.add(new BPLVariable(RETURN_HEAP_PARAM, new BPLTypeName(HEAP_TYPE)));
     outParams.add(new BPLVariable(RETURN_STATE_PARAM, new BPLTypeName(RETURN_STATE_TYPE)));
     if (provideReturnValue) {
-      if (method.isConstructor()) {
-        outParams.add(new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE)));
-      } else {
-        outParams.add(new BPLVariable(RESULT_PARAM + typeAbbrev(type(method.getReturnType())), type(method.getReturnType())));
-      }
+        if(TranslationController.isActive()){
+            if (method.isConstructor()) {
+                vars.add(new BPLVariableDeclaration(new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)))));
+            } else {
+                vars.add(new BPLVariableDeclaration(new BPLVariable(RESULT_PARAM + typeAbbrev(type(method.getReturnType())), new BPLTypeName(VAR_TYPE, type(method.getReturnType())))));
+            }
+        } else {
+            if (method.isConstructor()) {
+                outParams.add(new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE)));
+            } else {
+                outParams.add(new BPLVariable(RESULT_PARAM + typeAbbrev(type(method.getReturnType())), type(method.getReturnType())));
+            }
+        }
     }
     outParams.add(new BPLVariable(EXCEPTION_PARAM, new BPLTypeName(REF_TYPE)));
+    
+    // Build the different parts of the BoogiePL procedure.
+    String name = getProcedureName(method);
+    BPLImplementationBody body = new BPLImplementationBody(
+        vars.toArray(new BPLVariableDeclaration[vars.size()]),
+        blocks.toArray(new BPLBasicBlock[blocks.size()]));
+
 
     BPLImplementation implementation = new BPLImplementation(
         name,
@@ -995,7 +1012,7 @@ public class MethodTranslator implements ITranslationConstants {
     // Append the names of the method's parameters in order to correctly handle
     // overloaded methods.
     for (JType type : method.getParameterTypes()) {
-      name += ".";
+      name += "$";
       if (type.isArrayType()) {
         // For array types, we append the array's component type name followed
         // by the array's dimension.
@@ -1009,6 +1026,38 @@ public class MethodTranslator implements ITranslationConstants {
 
     return name;
   }
+  
+  public static String getMethodName(BCMethod method) {
+      String name;
+
+      // The names of constructors and class initializers used in the JVM are not
+      // valid BoogiePL identifiers, so we give them different names which may
+      // not clash with names of ordinary methods.
+      if (method.isConstructor()) {
+        name = "." + CONSTRUCTOR_NAME;
+      } else if (method.isClassInitializer()) {
+        name = "." + CLASS_INITIALIZER_NAME;
+      } else {
+        name = method.getName();
+      }
+
+      // Append the names of the method's parameters in order to correctly handle
+      // overloaded methods.
+      for (JType type : method.getParameterTypes()) {
+        name += "$";
+        if (type.isArrayType()) {
+          // For array types, we append the array's component type name followed
+          // by the array's dimension.
+          JArrayType arrayType = (JArrayType)type;
+          JType componentType = arrayType.getComponentType();
+          name += componentType.getName() + "#" + arrayType.getDimension();
+        } else {
+          name += type.getName();
+        }
+      }
+
+      return name;
+    }
 
   /**
    * Convenience method returning the names of the in-parameter names of the
@@ -1106,7 +1155,7 @@ public class MethodTranslator implements ITranslationConstants {
 
     JType[] params = method.getRealParameterTypes();
     for (int i = 0; i < params.length; i++) {
-      addAssignment(var(localVar(i, params[i])), var(paramVar(i, params[i])));
+      addAssignment(var(localVar(i, params[i])), stack(var(paramVar(i, params[i]))));
     }
     
     addAssignment(var(RETURN_STATE_PARAM), var(NORMAL_RETURN_STATE));
@@ -1222,7 +1271,7 @@ public class MethodTranslator implements ITranslationConstants {
         ? method.getOwner()
         : method.getReturnType();
       
-      BPLExpression topElem = var(stackVar(0, retType));
+      BPLExpression topElem = stack(var(stackVar(0, retType)));
       
       if (method.getReturnType().isReferenceType() || method.isConstructor()) {
 //        addAssume(alive(rval(topElem), var(TranslationController.getHeap())));
@@ -1231,8 +1280,13 @@ public class MethodTranslator implements ITranslationConstants {
 //        addAssume(alive(ival(topElem), var(TranslationController.getHeap())));
         addAssume(isOfType(topElem, var(VALUE_TYPE_PREFIX + JBaseType.INT.toString())));
       }
-      addAssignment(var(RESULT_PARAM + typeAbbrev(type(retType))), var(stackVar(0, retType)));
-      addAssignment(var(RETURN_STATE_PARAM), var(NORMAL_RETURN_STATE));
+      
+      if(TranslationController.isActive()){
+          addAssignment(stack(var(RESULT_PARAM + typeAbbrev(type(retType)))), stack(var(stackVar(0, retType))));
+      } else {
+          addAssignment(var(RESULT_PARAM + typeAbbrev(type(retType))), stack(var(stackVar(0, retType))));
+          addAssignment(var(RETURN_STATE_PARAM), var(NORMAL_RETURN_STATE));
+      }
       
     }
 
@@ -1980,7 +2034,7 @@ public class MethodTranslator implements ITranslationConstants {
    * 
    * @param variables The variables of the havoc statement.
    */
-  private void addHavoc(BPLVariableExpression... variables) {
+  private void addHavoc(BPLExpression... variables) {
     addCommand(new BPLHavocCommand(variables));
   }
 
@@ -2592,49 +2646,49 @@ public class MethodTranslator implements ITranslationConstants {
     public void visitILoadInstruction(ILoadInstruction insn) {
       int stack = handle.getFrame().getStackSize();
       int local = insn.getIndex();
-      addAssignment(var(intStackVar(stack)), var(intLocalVar(local)));
+      addAssignment(stack(var(intStackVar(stack))), var(intLocalVar(local)));
     }
   
     //@ requires insn != null;
     public void visitLLoadInstruction(LLoadInstruction insn) {
       int stack = handle.getFrame().getStackSize();
       int local = insn.getIndex();
-      addAssignment(var(intStackVar(stack)), var(intLocalVar(local)));
+      addAssignment(stack(var(intStackVar(stack))), var(intLocalVar(local)));
     }
 
     //@ requires insn != null;
     public void visitALoadInstruction(ALoadInstruction insn) {
       int stack = handle.getFrame().getStackSize();
       int local = insn.getIndex();
-      addAssignment(var(refStackVar(stack)), var(refLocalVar(local)));
+      addAssignment(stack(var(refStackVar(stack))), var(refLocalVar(local)));
     }
 
     //@ requires insn != null;
     public void visitIStoreInstruction(IStoreInstruction insn) {
       int stack = handle.getFrame().getStackSize() - 1;
       int local = insn.getIndex();
-      addAssignment(var(intLocalVar(local)), var(intStackVar(stack)));
+      addAssignment(var(intLocalVar(local)), stack(var(intStackVar(stack))));
     }
 
     //@ requires insn != null;
     public void visitLStoreInstruction(LStoreInstruction insn) {
       int stack = handle.getFrame().getStackSize() - 1;
       int local = insn.getIndex();
-      addAssignment(var(intLocalVar(local)), var(intStackVar(stack)));
+      addAssignment(var(intLocalVar(local)), stack(var(intStackVar(stack))));
     }
 
     //@ requires insn != null;
     public void visitAStoreInstruction(AStoreInstruction insn) {
       int stack = handle.getFrame().getStackSize() - 1;
       int local = insn.getIndex();
-      addAssignment(var(refLocalVar(local)), var(refStackVar(stack)));
+      addAssignment(var(refLocalVar(local)), stack(var(refStackVar(stack))));
     }
 
     //@ requires insn != null;
     public void visitVConstantInstruction(VConstantInstruction insn) {
       int stack = handle.getFrame().getStackSize();
       int constant = insn.getConstant();
-      addAssignment(var(intStackVar(stack)), intLiteral(constant));
+      addAssignment(stack(var(intStackVar(stack))), intLiteral(constant));
     }
 
     //@ requires insn != null;
@@ -2643,25 +2697,25 @@ public class MethodTranslator implements ITranslationConstants {
       Object constant = insn.getConstant();
       if (constant instanceof Integer) {
         Integer integer = (Integer) constant;
-        addAssignment(var(intStackVar(stack)), intLiteral(integer.intValue()));
+        addAssignment(stack(var(intStackVar(stack))), intLiteral(integer.intValue()));
       } else if (constant instanceof Long) {
         Long integer = (Long) constant;
-        addAssignment(var(intStackVar(stack)), intLiteral(integer.intValue()));
+        addAssignment(stack(var(intStackVar(stack))), intLiteral(integer.intValue()));
       } else if (constant instanceof String) {
         String string = (String) constant;
         BPLExpression stringExpr = context.translateStringLiteral(string);
-        addAssignment(var(refStackVar(stack)), stringExpr);
+        addAssignment(stack(var(refStackVar(stack))), stringExpr);
       } else if (constant instanceof JType) {
         JType type = (JType) constant;
         BPLExpression typeExpr = context.translateClassLiteral(type);
-        addAssignment(var(refStackVar(stack)), typeExpr);
+        addAssignment(stack(var(refStackVar(stack))), typeExpr);
       }
     }
 
     //@ requires insn != null;
     public void visitAConstNullInstruction(AConstNullInstruction insn) {
       int stack = handle.getFrame().getStackSize();
-      addAssignment(var(refStackVar(stack)), nullLiteral());
+      addAssignment(stack(var(refStackVar(stack))), nullLiteral());
     }
 
     //@ requires insn != null;
@@ -2671,11 +2725,11 @@ public class MethodTranslator implements ITranslationConstants {
 
       translateRuntimeException(
           "java.lang.NullPointerException",
-          nonNull(var(refStackVar(stack))));
+          nonNull(stack(var(refStackVar(stack)))));
 
-      BPLExpression ref = var(refStackVar(stack));
+      BPLExpression ref = stack(var(refStackVar(stack)));
       BPLExpression get = fieldAccess(context, TranslationController.getHeap(), ref, field);
-      addAssignment(var(stackVar(stack, field.getType())), get);
+      addAssignment(stack(var(stackVar(stack, field.getType()))), get);
     }
 
     //@ requires insn != null;
@@ -2686,7 +2740,7 @@ public class MethodTranslator implements ITranslationConstants {
 
       translateRuntimeException(
           "java.lang.NullPointerException",
-          nonNull(var(refStackVar(stackLhs))));
+          nonNull(stack(var(refStackVar(stackLhs)))));
 
       BPLExpression lhs = var(refStackVar(stackLhs));
       BPLExpression rhs = var(stackVar(stackRhs, field.getType()));
@@ -2703,8 +2757,8 @@ public class MethodTranslator implements ITranslationConstants {
         }
       }
       
-      BPLExpression heapLocation = new BPLArrayExpression(var(TranslationController.getHeap()), lhs, var(GLOBAL_VAR_PREFIX + field.getQualifiedName()));
-      BPLCommand cmd = new BPLAssignmentCommand(heapLocation, rhs);
+      BPLExpression heapLocation = new BPLArrayExpression(var(TranslationController.getHeap()), stack(lhs), var(GLOBAL_VAR_PREFIX + field.getQualifiedName()));
+      BPLCommand cmd = new BPLAssignmentCommand(heapLocation, stack(rhs));
       addCommand(cmd);
     }
 
@@ -2714,7 +2768,7 @@ public class MethodTranslator implements ITranslationConstants {
       BCField field = insn.getField();
 
       BPLExpression get = fieldAccess(context, TranslationController.getHeap(), null, field);
-      addAssignment(var(stackVar(stack, field.getType())), get);
+      addAssignment(stack(var(stackVar(stack, field.getType()))), get);
     }
 
     //@ requires insn != null;
@@ -2724,8 +2778,8 @@ public class MethodTranslator implements ITranslationConstants {
 
       BPLExpression rhs = var(stackVar(stackRhs, field.getType()));
 //      BPLExpression update = fieldUpdate(context, TranslationController.getHeap(), null, field, rhs);
-      BPLExpression heapLocation = new BPLArrayExpression(var(TranslationController.getHeap()), null, var(GLOBAL_VAR_PREFIX+field.getQualifiedName())); //TODO how to model static fields
-      addAssignment(heapLocation, rhs);
+      BPLExpression heapLocation = new BPLArrayExpression(var(TranslationController.getHeap()), new BPLFunctionApplication("ClassRepr", typeRef(field.getType())), var(GLOBAL_VAR_PREFIX+field.getQualifiedName())); //TODO check static fields are accessed correctly
+      addAssignment(heapLocation, stack(rhs));
     }
 
     private void translateArrayLoadInstruction() {
@@ -2738,7 +2792,7 @@ public class MethodTranslator implements ITranslationConstants {
 
       translateRuntimeException(
           "java.lang.NullPointerException",
-          nonNull(var(ref)));
+          nonNull(stack(var(ref))));
 //      translateRuntimeException(
 //          "java.lang.ArrayIndexOutOfBoundsException",
 //          lessEqual(intLiteral(0), var(idx)),
@@ -2746,7 +2800,7 @@ public class MethodTranslator implements ITranslationConstants {
 
       //TODO how to access an array
 //      BPLExpression get = arrayAccess(TranslationController.getHeap(), arrayType, var(ref), var(idx));
-//      addAssignment(var(stackVar(stackRef, elemType)), get);
+//      addAssignment(stack(var(stackVar(stackRef, elemType))), get);
     }
 
     //@ requires insn != null;
@@ -2771,7 +2825,7 @@ public class MethodTranslator implements ITranslationConstants {
 
       translateRuntimeException(
           "java.lang.NullPointerException",
-          nonNull(var(ref)));
+          nonNull(stack(var(ref))));
 //      translateRuntimeException(
 //          "java.lang.ArrayIndexOutOfBoundsException",
 //          lessEqual(intLiteral(0), var(idx)),
@@ -2809,9 +2863,9 @@ public class MethodTranslator implements ITranslationConstants {
 
       translateRuntimeException(
           "java.lang.NullPointerException",
-          nonNull(var(ref)));
+          nonNull(stack(var(ref))));
 
-//      addAssignment(var(intStackVar(stack)), arrayLength(rval(var(ref))));
+//      addAssignment(stack(var(intStackVar(stack))), arrayLength(rval(var(ref))));
       //TODO array length
       throw new RuntimeException("Not implemented.");
     }
@@ -2845,6 +2899,7 @@ public class MethodTranslator implements ITranslationConstants {
             commands.toArray(new BPLCommand[commands.size()]),
             transCmd
         );
+        //TODO load parameters and push them onto the stack
         blocks.add(block);
         blockLabel = blockLabel+"_afterReturn";
         
@@ -3050,33 +3105,33 @@ public class MethodTranslator implements ITranslationConstants {
       switch (opcode) {
         case IOpCodes.IADD:
         case IOpCodes.LADD:
-          expr = add(var(left), var(right));
+          expr = add(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.ISUB:
         case IOpCodes.LSUB:
-          expr = sub(var(left), var(right));
+          expr = sub(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IMUL:
         case IOpCodes.LMUL:
-          expr = multiply(var(left), var(right));
+          expr = multiply(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IDIV:
         case IOpCodes.LDIV:
           translateRuntimeException("java.lang.ArithmeticException", notEqual(
-              var(right),
+              stack(var(right)),
               intLiteral(0)));
-          expr = divide(var(left), var(right));
+          expr = divide(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IREM:
         case IOpCodes.LREM:
         default:
           translateRuntimeException("java.lang.ArithmeticException", notEqual(
-              var(right),
+              stack(var(right)),
               intLiteral(0)));
-          expr = modulo(var(left), var(right));
+          expr = modulo(stack(var(left)), stack(var(right)));
           break;
       }
-      addAssignment(var(intStackVar(stackLeft)), expr);
+      addAssignment(stack(var(intStackVar(stackLeft))), expr);
     }
 
     //@ requires insn != null;
@@ -3098,31 +3153,31 @@ public class MethodTranslator implements ITranslationConstants {
       switch (opcode) {
         case IOpCodes.ISHL:
         case IOpCodes.LSHL:
-          expr = bitShl(var(left), var(right));
+          expr = bitShl(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.ISHR:
         case IOpCodes.LSHR:
-          expr = bitShr(var(left), var(right));
+          expr = bitShr(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IUSHR:
         case IOpCodes.LUSHR:
-          expr = bitUShr(var(left), var(right));
+          expr = bitUShr(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IAND:
         case IOpCodes.LAND:
-          expr = bitAnd(var(left), var(right));
+          expr = bitAnd(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IOR:
         case IOpCodes.LOR:
-          expr = bitOr(var(left), var(right));
+          expr = bitOr(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IXOR:
         case IOpCodes.LXOR:
         default:
-          expr = bitXor(var(left), var(right));
+          expr = bitXor(stack(var(left)), stack(var(right)));
           break;
       }
-      addAssignment(var(intStackVar(stackLeft)), expr);
+      addAssignment(stack(var(intStackVar(stackLeft))), expr);
     }
 
     //@ requires insn != null;
@@ -3138,13 +3193,13 @@ public class MethodTranslator implements ITranslationConstants {
     //@ requires insn != null;
     public void visitINegInstruction(INegInstruction insn) {
       int stack = handle.getFrame().getStackSize() - 1;
-      addAssignment(var(intStackVar(stack)), neg(var(intStackVar(stack))));
+      addAssignment(stack(var(intStackVar(stack))), neg(stack(var(intStackVar(stack)))));
     }
 
     //@ requires insn != null;
     public void visitLNegInstruction(LNegInstruction insn) {
       int stack = handle.getFrame().getStackSize() - 1;
-      addAssignment(var(intStackVar(stack)), neg(var(intStackVar(stack))));
+      addAssignment(stack(var(intStackVar(stack))), neg(stack(var(intStackVar(stack)))));
     }
 
     //@ requires insn != null;
@@ -3203,29 +3258,29 @@ public class MethodTranslator implements ITranslationConstants {
       BPLExpression cmpFalse;
       switch (insn.getOpcode()) {
         case IOpCodes.IF_ICMPEQ:
-          cmpTrue = isEqual(var(left), var(right));
-          cmpFalse = notEqual(var(left), var(right));
+          cmpTrue = isEqual(stack(var(left)), stack(var(right)));
+          cmpFalse = notEqual(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IF_ICMPNE:
-          cmpTrue = notEqual(var(left), var(right));
-          cmpFalse = isEqual(var(left), var(right));
+          cmpTrue = notEqual(stack(var(left)), stack(var(right)));
+          cmpFalse = isEqual(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IF_ICMPLT:
-          cmpTrue = less(var(left), var(right));
-          cmpFalse = greaterEqual(var(left), var(right));
+          cmpTrue = less(stack(var(left)), stack(var(right)));
+          cmpFalse = greaterEqual(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IF_ICMPGE:
-          cmpTrue = greaterEqual(var(left), var(right));
-          cmpFalse = less(var(left), var(right));
+          cmpTrue = greaterEqual(stack(var(left)), stack(var(right)));
+          cmpFalse = less(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IF_ICMPGT:
-          cmpTrue = greater(var(left), var(right));
-          cmpFalse = lessEqual(var(left), var(right));
+          cmpTrue = greater(stack(var(left)), stack(var(right)));
+          cmpFalse = lessEqual(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IF_ICMPLE:
         default:
-          cmpTrue = lessEqual(var(left), var(right));
-          cmpFalse = greater(var(left), var(right));
+          cmpTrue = lessEqual(stack(var(left)), stack(var(right)));
+          cmpFalse = greater(stack(var(left)), stack(var(right)));
           break;
       }
       translateIfInstruction(insn, cmpTrue, cmpFalse);
@@ -3239,13 +3294,13 @@ public class MethodTranslator implements ITranslationConstants {
       BPLExpression cmpFalse;
       switch (insn.getOpcode()) {
         case IOpCodes.IF_ACMPEQ:
-          cmpTrue = isEqual(var(left), var(right));
-          cmpFalse = notEqual(var(left), var(right));
+          cmpTrue = isEqual(stack(var(left)), stack(var(right)));
+          cmpFalse = notEqual(stack(var(left)), stack(var(right)));
           break;
         case IOpCodes.IF_ACMPNE:
         default:
-          cmpTrue = notEqual(var(left), var(right));
-          cmpFalse = isEqual(var(left), var(right));
+          cmpTrue = notEqual(stack(var(left)), stack(var(right)));
+          cmpFalse = isEqual(stack(var(left)), stack(var(right)));
           break;
       }
       translateIfInstruction(insn, cmpTrue, cmpFalse);
@@ -3258,29 +3313,29 @@ public class MethodTranslator implements ITranslationConstants {
       BPLExpression cmpFalse;
       switch (insn.getOpcode()) {
         case IOpCodes.IFEQ:
-          cmpTrue = isEqual(var(operand), intLiteral(0));
-          cmpFalse = notEqual(var(operand), intLiteral(0));
+          cmpTrue = isEqual(stack(var(operand)), intLiteral(0));
+          cmpFalse = notEqual(stack(var(operand)), intLiteral(0));
           break;
         case IOpCodes.IFNE:
-          cmpTrue = notEqual(var(operand), intLiteral(0));
-          cmpFalse = isEqual(var(operand), intLiteral(0));
+          cmpTrue = notEqual(stack(var(operand)), intLiteral(0));
+          cmpFalse = isEqual(stack(var(operand)), intLiteral(0));
           break;
         case IOpCodes.IFLT:
-          cmpTrue = less(var(operand), intLiteral(0));
-          cmpFalse = greaterEqual(var(operand), intLiteral(0));
+          cmpTrue = less(stack(var(operand)), intLiteral(0));
+          cmpFalse = greaterEqual(stack(var(operand)), intLiteral(0));
           break;
         case IOpCodes.IFGE:
-          cmpTrue = greaterEqual(var(operand), intLiteral(0));
-          cmpFalse = less(var(operand), intLiteral(0));
+          cmpTrue = greaterEqual(stack(var(operand)), intLiteral(0));
+          cmpFalse = less(stack(var(operand)), intLiteral(0));
           break;
         case IOpCodes.IFGT:
-          cmpTrue = greater(var(operand), intLiteral(0));
-          cmpFalse = lessEqual(var(operand), intLiteral(0));
+          cmpTrue = greater(stack(var(operand)), intLiteral(0));
+          cmpFalse = lessEqual(stack(var(operand)), intLiteral(0));
           break;
         case IOpCodes.IFLE:
         default:
-          cmpTrue = lessEqual(var(operand), intLiteral(0));
-          cmpFalse = greater(var(operand), intLiteral(0));
+          cmpTrue = lessEqual(stack(var(operand)), intLiteral(0));
+          cmpFalse = greater(stack(var(operand)), intLiteral(0));
           break;
       }
       translateIfInstruction(insn, cmpTrue, cmpFalse);
@@ -3289,13 +3344,13 @@ public class MethodTranslator implements ITranslationConstants {
     //@ requires insn != null;
     public void visitIfNonNullInstruction(IfNonNullInstruction insn) {
       String operand = refStackVar(handle.getFrame().getStackSize() - 1);
-      translateIfInstruction(insn, nonNull(var(operand)), isNull(var(operand)));
+      translateIfInstruction(insn, nonNull(stack(var(operand))), isNull(stack(var(operand))));
     }
 
     //@ requires insn != null;
     public void visitIfNullInstruction(IfNullInstruction insn) {
       String operand = refStackVar(handle.getFrame().getStackSize() - 1);
-      translateIfInstruction(insn, isNull(var(operand)), nonNull(var(operand)));
+      translateIfInstruction(insn, isNull(stack(var(operand))), nonNull(stack(var(operand))));
     }
 
     //@ requires insn != null;
@@ -3304,14 +3359,14 @@ public class MethodTranslator implements ITranslationConstants {
       String right = intStackVar(handle.getFrame().getStackSize() - 1);
 
       BPLExpression expr = ifThenElse(
-          greater(var(left), var(right)),
+          greater(stack(var(left)), stack(var(right))),
           intLiteral(1),
           ifThenElse(
-              isEqual(var(left), var(right)),
+              isEqual(stack(var(left)), stack(var(right))),
               intLiteral(0),
               intLiteral(-1)));
 
-      addAssignment(var(left), cast(expr, BPLBuiltInType.INT));
+      addAssignment(stack(var(left)), cast(expr, BPLBuiltInType.INT));
     }
 
     //@ requires insn != null;
@@ -3336,16 +3391,16 @@ public class MethodTranslator implements ITranslationConstants {
       InstructionHandle[] targets = insn.getTargets();
       for (int i = 0; i < targets.length; i++) {
         startBlock(caseBlockLabel(cfgBlock, i));
-        addAssume(isEqual(var(stackVar), intLiteral(keys[i])));
+        addAssume(isEqual(stack(var(stackVar)), intLiteral(keys[i])));
         BasicBlock caseBlock = method.getCFG().findBlockStartingAt(targets[i]);
         endBlock(cfgBlock.getSuccessorEdge(caseBlock));
       }
       InstructionHandle dfltTarget = insn.getDefaultTarget();
       startBlock(defaultBlockLabel(cfgBlock));
       if (keys.length > 0) {
-        BPLExpression expr = notEqual(var(stackVar), intLiteral(keys[0]));
+        BPLExpression expr = notEqual(stack(var(stackVar)), intLiteral(keys[0]));
         for (int i = 1; i < keys.length; i++) {
-          expr = logicalAnd(expr, notEqual(var(stackVar), intLiteral(keys[i])));
+          expr = logicalAnd(expr, notEqual(stack(var(stackVar)), intLiteral(keys[i])));
         }
         addAssume(expr);
       }
@@ -3369,14 +3424,14 @@ public class MethodTranslator implements ITranslationConstants {
       InstructionHandle[] targets = insn.getTargets();
       for (int i = 0; i < targets.length; i++) {
         startBlock(caseBlockLabel(cfgBlock, i));
-        addAssume(isEqual(var(stackVar), intLiteral(minIdx + i)));
+        addAssume(isEqual(stack(var(stackVar)), intLiteral(minIdx + i)));
         BasicBlock caseBlock = method.getCFG().findBlockStartingAt(targets[i]);
         endBlock(cfgBlock.getSuccessorEdge(caseBlock));
       }
       InstructionHandle dfltTarget = insn.getDefaultTarget();
       startBlock(defaultBlockLabel(cfgBlock));
-      addAssume(logicalOr(less(var(stackVar), intLiteral(minIdx)), greater(
-          var(stackVar),
+      addAssume(logicalOr(less(stack(var(stackVar)), intLiteral(minIdx)), greater(
+          stack(var(stackVar)),
           intLiteral(maxIdx))));
       BasicBlock dfltBlock = method.getCFG().findBlockStartingAt(dfltTarget);
       endBlock(cfgBlock.getSuccessorEdge(dfltBlock));
@@ -3396,7 +3451,11 @@ public class MethodTranslator implements ITranslationConstants {
       // endBlock(POST_BLOCK_LABEL);
 
       addAssignment(var(RETURN_STATE_PARAM), var(NORMAL_RETURN_STATE));
-      addAssignment(var(RESULT_PARAM + INT_TYPE_ABBREV), var(intStackVar(stack))); //TODO maybe this is a boolean
+      if(TranslationController.isActive()){
+          addAssignment(stack(var(RESULT_PARAM + INT_TYPE_ABBREV)), stack(var(intStackVar(stack)))); //TODO maybe this is a boolean
+      } else {
+          addAssignment(var(RESULT_PARAM + INT_TYPE_ABBREV), stack(var(intStackVar(stack)))); //TODO maybe this is a boolean
+      }
       endBlock(EXIT_BLOCK_LABEL);
     }
 
@@ -3407,7 +3466,11 @@ public class MethodTranslator implements ITranslationConstants {
       // addAssignment(var(RESULT_VAR), var(intStackVar(stack)));
       // endBlock(POST_BLOCK_LABEL);
 
-      addAssignment(var(RESULT_PARAM + INT_TYPE_ABBREV), var(intStackVar(stack)));
+      if(TranslationController.isActive()){
+          addAssignment(stack(var(RESULT_PARAM + INT_TYPE_ABBREV)), stack(var(intStackVar(stack))));
+      } else {
+          addAssignment(var(RESULT_PARAM + INT_TYPE_ABBREV), stack(var(intStackVar(stack))));
+      }
       endBlock(EXIT_BLOCK_LABEL);
     }
 
@@ -3418,7 +3481,11 @@ public class MethodTranslator implements ITranslationConstants {
       // addAssignment(var(RESULT_VAR), var(refStackVar(stack)));
       // endBlock(POST_BLOCK_LABEL);
 
-      addAssignment(var(RESULT_PARAM + REF_TYPE_ABBREV), var(refStackVar(stack)));
+      if(TranslationController.isActive()){
+          addAssignment(stack(var(RESULT_PARAM + REF_TYPE_ABBREV)), stack(var(refStackVar(stack))));
+      } else {
+          addAssignment(var(RESULT_PARAM + REF_TYPE_ABBREV), stack(var(refStackVar(stack))));
+      }
       endBlock(EXIT_BLOCK_LABEL);
     }
 
@@ -3428,10 +3495,10 @@ public class MethodTranslator implements ITranslationConstants {
 
       translateRuntimeException(
           "java.lang.NullPointerException",
-          nonNull(var(refStackVar(stack))));
+          nonNull(stack(var(refStackVar(stack)))));
 
       if (stack != 0) {
-        addAssignment(var(refStackVar(0)), var(refStackVar(stack)));
+        addAssignment(stack(var(refStackVar(0))), stack(var(refStackVar(stack))));
       }
 
       branchToHandlers(handle.getFrame().peek());
@@ -3441,7 +3508,7 @@ public class MethodTranslator implements ITranslationConstants {
     //@ requires insn != null;
     public void visitNewInstruction(NewInstruction insn) {
       int stack = handle.getFrame().getStackSize();
-      addHavoc(var(refStackVar(stack)));
+      addHavoc(stack(var(refStackVar(stack))));
       //TODO do we need to do anything to reserve the memory space on the heap?
 //      addAssume(isEqual(
 //          heapNew(context, var(TranslationController.getHeap()), insn.getType()),
@@ -3457,9 +3524,9 @@ public class MethodTranslator implements ITranslationConstants {
 
       translateRuntimeException(
           "java.lang.NegativeArraySizeException",
-          lessEqual(intLiteral(0), var(len)));
+          lessEqual(intLiteral(0), stack(var(len))));
 
-      addHavoc(var(ref));
+      addHavoc(stack(var(ref)));
     //TODO do we need to do anything to reserve the memory space on the heap?
 //      addAssume(isEqual(heapNewArray(
 //          context,
@@ -3491,11 +3558,11 @@ public class MethodTranslator implements ITranslationConstants {
       if (dimension == 1) {
         return arrayAlloc(
             typeRef(type.getIndexedType()),
-            var(intStackVar(lengthIdx)));
+            stack(var(intStackVar(lengthIdx))));
       } else {
         return multiArrayAlloc(
             typeRef(type.getIndexedType()),
-            var(intStackVar(lengthIdx)),
+            stack(var(intStackVar(lengthIdx))),
             buildMultiArrayAllocation(
                 (JArrayType) type.getIndexedType(),
                 dimension - 1,
@@ -3512,11 +3579,11 @@ public class MethodTranslator implements ITranslationConstants {
 
       BPLExpression[] vc = new BPLExpression[dims];
       for (int i = 0; i < dims; i++) {
-        vc[i] = lessEqual(intLiteral(0), var(intStackVar(first + i)));
+        vc[i] = lessEqual(intLiteral(0), stack(var(intStackVar(first + i))));
       }
       translateRuntimeException("java.lang.NegativeArraySizeException", vc);
 
-      addHavoc(var(ref));
+      addHavoc(stack(var(ref)));
     //TODO do we need to do anything to reserve the memory space on the heap?
 //      addAssume(isEqual(heapNew(var(TranslationController.getHeap()), buildMultiArrayAllocation(
 //          type,
@@ -3536,6 +3603,7 @@ public class MethodTranslator implements ITranslationConstants {
       String stackVar = refStackVar(handle.getFrame().getStackSize() - 1);
       BPLExpression type = typeRef(insn.getType());
 
+      //TODO implement cast checks
 //      translateRuntimeException("java.lang.ClassCastException", isOfType(
 //          rval(var(stackVar)),
 //          type));
@@ -3546,8 +3614,8 @@ public class MethodTranslator implements ITranslationConstants {
       int stack = handle.getFrame().getStackSize() - 1;
       BPLExpression type = typeRef(insn.getTargetType());
 
-      addAssignment(var(intStackVar(stack)), icast(
-          var(intStackVar(stack)),
+      addAssignment(stack(var(intStackVar(stack))), icast(
+          stack(var(intStackVar(stack))),
           type));
     }
 
@@ -3556,8 +3624,8 @@ public class MethodTranslator implements ITranslationConstants {
       int stack = handle.getFrame().getStackSize() - 1;
       BPLExpression type = typeRef(insn.getType());
 
-      addAssignment(var(intStackVar(stack)), bool2int(isInstanceOf(
-          var(refStackVar(stack)),
+      addAssignment(stack(var(intStackVar(stack))), bool2int(isInstanceOf(
+          stack(var(refStackVar(stack))),
           type)));
     }
 
@@ -3574,9 +3642,9 @@ public class MethodTranslator implements ITranslationConstants {
       int stack1 = handle.getFrame().getStackSize() - 1;
       int stack2 = handle.getFrame().getStackSize() - 2;
       JType type = handle.getFrame().peek();
-      addAssignment(var(swapVar(type)), var(stackVar(stack2, type)));
-      addAssignment(var(stackVar(stack2, type)), var(stackVar(stack1, type)));
-      addAssignment(var(stackVar(stack1, type)), var(swapVar(type)));
+      addAssignment(var(swapVar(type)), stack(var(stackVar(stack2, type))));
+      addAssignment(stack(var(stackVar(stack2, type))), stack(var(stackVar(stack1, type))));
+      addAssignment(stack(var(stackVar(stack1, type))), var(swapVar(type)));
     }
 
     private void translateDupInstruction(int dupCount, int offset) {
@@ -3585,14 +3653,14 @@ public class MethodTranslator implements ITranslationConstants {
         int from = top - i;
         int to = from + dupCount;
         JType type = handle.getFrame().peek(from);
-        addAssignment(var(stackVar(to, type)), var(stackVar(from, type)));
+        addAssignment(stack(var(stackVar(to, type))), stack(var(stackVar(from, type))));
       }
       if (dupCount < offset) {
         for (int i = 0; i < dupCount; i++) {
           int from = (top + dupCount) - i;
           int to = from - offset;
           JType type = handle.getFrame().peek(from - dupCount);
-          addAssignment(var(stackVar(to, type)), var(stackVar(from, type)));
+          addAssignment(stack(var(stackVar(to, type))), stack(var(stackVar(from, type))));
         }
       }
     }
@@ -3734,7 +3802,7 @@ public class MethodTranslator implements ITranslationConstants {
 //              }
 //            }
 
-            addAssignment(var(EXCEPTION_PARAM), var(refStackVar(0)));
+            addAssignment(var(EXCEPTION_PARAM), stack(var(refStackVar(0))));
             // FIXME addAssignment(var(RETURN_VALUE_PARAM), var(refStackVar(0)));
 
             endBlock(cfgBlock.getSuccessorEdge(block));

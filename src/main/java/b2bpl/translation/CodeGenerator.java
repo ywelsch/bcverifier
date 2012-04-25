@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import de.unikl.bcverifier.TranslationController;
+
 import b2bpl.Main;
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayExpression;
@@ -342,11 +344,11 @@ public final class CodeGenerator implements ITranslationConstants {
 //    return new BPLFunctionApplication(RVAL_FUNC, object);
 //  }
 
-  //@ requires type != null;
-  //@ ensures \result != null;
-  public static BPLExpression initVal(BPLExpression type) {
-    return new BPLFunctionApplication(INIT_FUNC, type);
-  }
+//  //@ requires type != null;
+//  //@ ensures \result != null;
+//  public static BPLExpression initVal(BPLExpression type) {
+//    return new BPLFunctionApplication(INIT_FUNC, type);
+//  }
 
   //@ requires value != null;
   //@ ensures \result != null;
@@ -907,5 +909,9 @@ public final class CodeGenerator implements ITranslationConstants {
   //@ ensures \result != null;
   public static BPLType type(JType type) {
     return type.isBaseType() ? BPLBuiltInType.INT : new BPLTypeName(REF_TYPE);
+  }
+  
+  public static BPLExpression stack(BPLExpression exp){
+      return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.getStack()), var(TranslationController.getStackPointer())), exp);
   }
 }

@@ -238,4 +238,6 @@ public interface ITranslationConstants {
   String INT_LITERAL_PREFIX = GLOBAL_VAR_PREFIX + "int#";
 
   String CLASS_LITERAL_SUFFIX = ".class";
+
+public static final String ALLOC_OBJ = "AllocObj";
 }
