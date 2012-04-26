@@ -817,11 +817,13 @@ public final class CodeGenerator implements ITranslationConstants {
         return type.isBaseType() ? BPLBuiltInType.INT : new BPLTypeName(
                 REF_TYPE);
     }
+    
+    public static BPLExpression stack(BPLExpression sp, BPLExpression exp) {
+        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.getStack()), sp), exp);
+    }
 
     public static BPLExpression stack(BPLExpression exp) {
-        return new BPLArrayExpression(new BPLArrayExpression(
-                var(TranslationController.getStack()),
-                var(TranslationController.getStackPointer())), exp);
+        return stack(var(TranslationController.getStackPointer()), exp);
     }
 
     public static BPLExpression heap(BPLExpression exp1, BPLExpression exp2) {

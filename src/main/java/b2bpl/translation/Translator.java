@@ -24,6 +24,7 @@ import static b2bpl.translation.CodeGenerator.isExceptionalReturnState;
 import static b2bpl.translation.CodeGenerator.isInRange;
 import static b2bpl.translation.CodeGenerator.isInstanceOf;
 import static b2bpl.translation.CodeGenerator.isNormalReturnState;
+import static b2bpl.translation.CodeGenerator.isOfType;
 import static b2bpl.translation.CodeGenerator.isSubtype;
 import static b2bpl.translation.CodeGenerator.isValueType;
 import static b2bpl.translation.CodeGenerator.less;
@@ -250,12 +251,12 @@ public class Translator implements ITranslationConstants {
         BPLProcedure proc;
         for (JClassType type : types) {
             for (BCMethod method : type.getMethods()) {
+                final String methodName = GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method);
                 if (!method.isAbstract()
                         && !method.isNative()
                         && !method.isSynthetic()) {
                     
                     proc = methodTranslator.translate(context, method);
-                    final String methodName = GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method);
                     if(!TranslationController.declaredMethods().contains(methodName)){
                         Logger.getLogger(Translator.class).debug("Adding method "+methodName);
                         declarations.add(new BPLConstantDeclaration(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE))));
@@ -266,6 +267,12 @@ public class Translator implements ITranslationConstants {
                         declarations.add(new BPLAxiom(new BPLFunctionApplication("isCallable", typeRef(type), var(methodName))));
                     }
                     procedures.put(method.getQualifiedBoogiePLName(), proc);
+                } else if(method.isAbstract()){
+                    if(!TranslationController.declaredMethods().contains(methodName)){
+                        Logger.getLogger(Translator.class).debug("Adding abstract method "+methodName);
+                        declarations.add(new BPLConstantDeclaration(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE))));
+                        TranslationController.declaredMethods().add(methodName);
+                    }
                 }
             }
         }
@@ -2312,30 +2319,30 @@ public class Translator implements ITranslationConstants {
                     ));
         }
 
-//        {
-//            addFunction(
-//                    IS_OF_TYPE_FUNC,
-//                    new BPLTypeName(VALUE_TYPE),
-//                    new BPLTypeName(NAME_TYPE),
-//                    BPLBuiltInType.BOOL);
-//            String v = quantVarName("v");
-//            String t = quantVarName("t");
-//            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
-//            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-//            // A value is of a given type if and only if it is the null value or if
-//            // its type is a subtype of the given type.
-//            addAxiom(forall(
-//                    vVar, tVar,
-//                    isEquiv(
-//                            isOfType(var(v), var(t)),
-//                            logicalOr(
-//                                    isEqual(var(v), rval(nullLiteral())),
-//                                    isSubtype(typ(var(v)), var(t))
-//                                    )
-//                            ),
-//                            trigger(isOfType(var(v), var(t)))
-//                    ));
-//        }
+        {
+            addFunction(
+                    IS_OF_TYPE_FUNC,
+                    new BPLTypeName(REF_TYPE),
+                    new BPLTypeName(NAME_TYPE),
+                    BPLBuiltInType.BOOL);
+            String v = quantVarName("v");
+            String t = quantVarName("t");
+            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(REF_TYPE));
+            BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+            // A value is of a given type if and only if it is the null value or if
+            // its type is a subtype of the given type.
+            addAxiom(forall(
+                    vVar, tVar,
+                    isEquiv(
+                            isOfType(var(v), var(t)),
+                            logicalOr(
+                                    isEqual(var(v), nullLiteral()),
+                                    isSubtype(typ(var(v)), var(t))
+                                    )
+                            ),
+                            trigger(isOfType(var(v), var(t)))
+                    ));
+        }
 
 //        {
         //TODO check that the definition of isInstanceOf is ok

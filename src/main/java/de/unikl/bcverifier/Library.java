@@ -228,7 +228,9 @@ public class Library implements ITroubleReporter{
                         new BPLVariableExpression("heap1"),
                         new BPLVariableExpression("heap2"),
                         new BPLVariableExpression("stack1"),
-                        new BPLVariableExpression("stack2")
+                        new BPLVariableExpression("stack2"),
+                        new BPLVariableExpression("sp1"),
+                        new BPLVariableExpression("sp2")
                         )
                 ), methodImpl));
         BPLProgram program = new BPLProgram(programDecls.toArray(new BPLDeclaration[programDecls.size()]));
