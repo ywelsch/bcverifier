@@ -11,5 +11,5 @@ for %%f in (Bag0.ssc Bag1.ssc Bag2.ssc
             Bag9.ssc) do (
   echo.
   echo -------------------- %%f --------------------
-  "%SSCEXE%" /target:library /debug /verify %SSC_ARGS% %%f
+  "%SSCEXE%" /target:library /debug %SSC_ARGS% %%f
 )

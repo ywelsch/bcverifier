@@ -184,10 +184,21 @@ public class Library implements ITroubleReporter{
                     
                     methodLabel = proc.getName();
                     methodLabels.add(methodLabel);
+                    
+                    List<BPLCommand> preMethodCommands = new ArrayList<BPLCommand>();
+                    preMethodCommands.add(new BPLAssumeCommand(
+                                        logicalAnd(
+                                        isEqual(
+                                                stack(var("meth")) ,
+                                                var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method))
+                                                ),
+                                        //the method is callable from the type of the "this" variable on the stack
+                                        isCallable(typ(stack(var(PARAM_VAR_PREFIX + "0" + REF_TYPE_ABBREV))), var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method)))
+                                        )
+                                    ));
+                    
                     methodBlocks.add(new BPLBasicBlock(methodLabel,
-                            new BPLCommand[]{new BPLAssumeCommand(isEqual(
-                                    stack(var("meth")) ,
-                                    var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method))))},
+                            preMethodCommands.toArray(new BPLCommand[preMethodCommands.size()]),
                             new BPLGotoCommand(proc.getImplementation().getBody().getBasicBlocks()[0].getLabel())));
                     Collections.addAll(methodBlocks, proc.getImplementation().getBody().getBasicBlocks());
                 }

@@ -16,16 +16,19 @@ import static b2bpl.translation.CodeGenerator.fieldLoc;
 import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.greater;
 import static b2bpl.translation.CodeGenerator.greaterEqual;
+import static b2bpl.translation.CodeGenerator.heap;
 import static b2bpl.translation.CodeGenerator.icast;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
 import static b2bpl.translation.CodeGenerator.implies;
 import static b2bpl.translation.CodeGenerator.inv;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isExceptionalReturnState;
+import static b2bpl.translation.CodeGenerator.isInRange;
 import static b2bpl.translation.CodeGenerator.isInstanceOf;
 import static b2bpl.translation.CodeGenerator.isNormalReturnState;
 import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isOfType;
+import static b2bpl.translation.CodeGenerator.isSubtype;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
@@ -1155,8 +1158,26 @@ public class MethodTranslator implements ITranslationConstants {
     //@deprecated addAssume(alive(rval(var(thisVar())), var(TranslationController.getHeap())));
 
     JType[] params = method.getRealParameterTypes();
+    if(TranslationController.isActive()){
+        addAssume(nonNull(stack(var(thisVar()))));
+    }
+    
     for (int i = 0; i < params.length; i++) {
-      addAssignment(var(localVar(i, params[i])), stack(var(paramVar(i, params[i]))));
+      if(TranslationController.isActive()){
+        if(params[i].isBaseType()){
+            JBaseType baseType = (JBaseType)params[i];
+            addAssume(isInRange(stack(var(paramVar(i, baseType))), typeRef(baseType)));
+        } else if(params[i].isClassType()){
+            JClassType classType = (JClassType)params[i];
+            addAssume(isSubtype(typ(stack(var(paramVar(i, classType)))), context.translateTypeReference(classType)));
+            addAssume(heap(stack(var(paramVar(i, classType))), var("alloc")));
+        } else {
+            //TODO arrays
+        }
+        addAssignment(var(localVar(i, params[i])), stack(var(paramVar(i, params[i]))));
+      } else {
+          addAssignment(var(localVar(i, params[i])), var(paramVar(i, params[i])));
+      }
     }
     
     addAssignment(var(RETURN_STATE_PARAM), var(NORMAL_RETURN_STATE));
@@ -1238,7 +1259,7 @@ public class MethodTranslator implements ITranslationConstants {
       startBlock(postXBlockLabel(exception));
 
       // addAssume(isInstanceOf(rval(var(refStackVar(0))), typeRef(exception)));
-      addAssume(isInstanceOf(var(EXCEPTION_PARAM), typeRef(exception)));
+      addAssume(isSubtype(var(EXCEPTION_PARAM), typeRef(exception)));
 //      addAssume(alive(rval(var(EXCEPTION_PARAM)), var(TranslationController.getHeap())));
       addAssignment(var(RETURN_STATE_PARAM), var(EXCEPTIONAL_RETURN_STATE));
 
@@ -2758,7 +2779,7 @@ public class MethodTranslator implements ITranslationConstants {
         }
       }
       
-      BPLExpression heapLocation = new BPLArrayExpression(var(TranslationController.getHeap()), stack(lhs), var(GLOBAL_VAR_PREFIX + field.getQualifiedName()));
+      BPLExpression heapLocation = new BPLArrayExpression(var(TranslationController.getHeap()), stack(lhs), context.translateFieldReference(field));
       BPLCommand cmd = new BPLAssignmentCommand(heapLocation, stack(rhs));
       addCommand(cmd);
     }
@@ -3511,6 +3532,8 @@ public class MethodTranslator implements ITranslationConstants {
       int stack = handle.getFrame().getStackSize();
       addHavoc(var(swapVar(JNullType.NULL)));
       addAssignment(stack(var(refStackVar(stack))), var(swapVar(JNullType.NULL)));
+      addAssume(nonNull(stack(var(refStackVar(stack)))));
+      addAssume(isEqual(typ(stack(var(refStackVar(stack)))), typeRef(insn.getType())));
 //      addHavoc(var(refStackVar(stack)));
       //TODO do we need to do anything to reserve the memory space on the heap?
 //      addAssume(isEqual(
@@ -3661,6 +3684,7 @@ public class MethodTranslator implements ITranslationConstants {
         int to = from + dupCount;
         JType type = handle.getFrame().peek(from);
         addAssignment(stack(var(stackVar(to, type))), stack(var(stackVar(from, type))));
+        
       }
       if (dupCount < offset) {
         for (int i = 0; i < dupCount; i++) {

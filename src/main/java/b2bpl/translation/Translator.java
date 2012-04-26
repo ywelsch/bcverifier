@@ -70,6 +70,7 @@ import b2bpl.bpl.ast.BPLParameterizedType;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLSpecification;
+import b2bpl.bpl.ast.BPLTrigger;
 import b2bpl.bpl.ast.BPLType;
 import b2bpl.bpl.ast.BPLTypeAlias;
 import b2bpl.bpl.ast.BPLTypeDeclaration;
@@ -261,6 +262,9 @@ public class Translator implements ITranslationConstants {
                         TranslationController.declaredMethods().add(methodName);
                     }
                     declarations.add(new BPLAxiom(new BPLFunctionApplication("definesMethod", typeRef(type), var(methodName))));
+                    if(method.isPublic()){
+                        declarations.add(new BPLAxiom(new BPLFunctionApplication("isCallable", typeRef(type), var(methodName))));
+                    }
                     procedures.put(method.getQualifiedBoogiePLName(), proc);
                 }
             }
@@ -1085,6 +1089,7 @@ public class Translator implements ITranslationConstants {
             
             addFunction("isPublic", new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addFunction("definesMethod", new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction("isCallable", new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             
             final String addressType = "Address";
             addType(addressType);
