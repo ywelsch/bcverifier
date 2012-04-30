@@ -155,19 +155,26 @@ axiom isPublic(Object);
 axiom (forall t: Class :: Object <: t ==> t == Object);
 
 function definesMethod(Class,Method) returns (bool);
+function memberOf(Method,Class,Class) returns (bool);
+
+axiom (forall m:Method, c1,c2:Class :: {memberOf(m,c1,c2)} memberOf(m,c1,c2) <==> 
+	(c1 == c2 && definesMethod(c2,m)) ||
+	(!definesMethod(c2,m) && (forall c3:Class :: classExtends(c2,c3) ==> memberOf(m,c1,c3)))
+);
+
+function classExtends(Class,Class) returns (bool);
 
 type Address;
 
 const unique isCall: Var bool;
 
 const unique place : Var Address;
-const unique retA : Address;
+//const unique retA : Address;
 const unique meth: Var Method;
 const unique receiver, retVal, param1: Var Ref;
 //const unique isCall: Var bool;
 
 // END PRELUDE
-
 
 const unique A, C: Class;
 axiom isPublic(A);
@@ -438,6 +445,25 @@ procedure Bla() {
 	
 	//assert x == 0;
 }
+
+const unique C1, C2, C3: Class;
+axiom (forall c:Class :: {classExtends(C3,c)} classExtends(C3,c) <==> c == C2);
+axiom (forall c:Class :: {classExtends(C2,c)} classExtends(C2,c) <==> c == C1);
+axiom (forall m:Method :: definesMethod(C1,m) <==> m == run);
+axiom (forall m:Method :: definesMethod(C2,m) <==> m == exec);
+axiom (forall m:Method :: definesMethod(C3,m) <==> m == exec);
+
+axiom (forall c:Class :: !classExtends(c,C3)); // final class
+
+procedure Blubb() {
+	//assert memberOf(run,C1,C1);
+	//assert memberOf(run,C1,C2);
+	assert memberOf(run,C1,C3);
+	assert memberOf(exec,C2,C2);
+	
+	//assert (forall c:Class :: c != C3 ==> !memberOf(exec,C3,c));
+}
+
 
 /* The modulo operation */
 axiom (forall x: int, y: int :: {x % y} {x / y} x % y == x - (x / y) * y);
