@@ -1,5 +1,6 @@
 package b2bpl.bpl;
 
+import b2bpl.bpl.ast.BPLArrayAssignment;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLArrayType;
 import b2bpl.bpl.ast.BPLAssertCommand;
@@ -277,6 +278,11 @@ public R visitTypeAlias(BPLTypeAlias declaration) {
 }
 
 public R visitIfCommand(BPLIfCommand cmd) {
+    // do nothing
+    return null;
+}
+
+public R visitArrayAssignment(BPLArrayAssignment bplArrayAssignment) {
     // do nothing
     return null;
 }

@@ -92,8 +92,7 @@ public class Library implements ITroubleReporter{
         File bplPath = new File(libraryPath, "bpl");
         bplPath.mkdir();
         
-        File oldSpecification = new File(bplPath, "old.bpl");
-        File newSpecification = new File(bplPath, "new.bpl");
+        File specificationFile = new File(bplPath, "specification.bpl");
         
         Collection<File> oldClassFiles = FileUtils.listFiles(oldVersionPath, new String[]{"class"}, true);
         String[] oldFileNames = new String[oldClassFiles.size()+2];
@@ -116,22 +115,77 @@ public class Library implements ITroubleReporter{
         }
         
         try {
+            List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();
+            List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
+            
+            
+            
+            Project project = Project.fromCommandLine(oldFileNames, new PrintWriter(System.out));
+            CodeGenerator.setProject(project);
+            
+            TypeLoader.setProject(project);
+            TypeLoader.setProjectTypes(project.getProjectTypes());
+            TypeLoader.setSpecificationProvider(project.getSpecificationProvider());
+            TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, this));
+            TypeLoader.setTroubleReporter(this);
+            
+            programDecls.addAll(new Translator(project).getPrelude()); //TODO workaround to generate Prelude
+            
+            
+            
             TranslationController.activate();
             
             TranslationController.enterRound1();
-            compileSpecification(oldFileNames, oldSpecification);
-            
-            
-            TranslationController.activate(); //TODO remove (this resets the controller)
+            LibraryDefinition libraryDefinition1 = compileSpecification(oldFileNames);
+            programDecls.addAll(libraryDefinition1.getNeededDeclarations());
+            methodBlocks.addAll(libraryDefinition1.getMethodBlocks());
             
             TranslationController.enterRound2();
-            compileSpecification(newFileNames, newSpecification);
+            LibraryDefinition libraryDefinition2 = compileSpecification(newFileNames);
+            programDecls.addAll(libraryDefinition2.getNeededDeclarations());
+            methodBlocks.addAll(libraryDefinition2.getMethodBlocks());
+            
+
+            methodBlocks.add(new BPLBasicBlock(TranslationController.getCheckLabel(), new BPLCommand[0], new BPLReturnCommand()));
+            
+            
+            for(BPLVariable var : TranslationController.stackVariables().values()){
+                programDecls.add(new BPLConstantDeclaration(var));
+            }
+            
+            List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
+            BPLVariable[] inParams = new BPLVariable[0];
+            BPLVariable[] outParams = new BPLVariable[0];
+            
+            for(BPLVariable var : TranslationController.usedVariables().values()){
+                localVariables.add(new BPLVariableDeclaration(var));
+            }
+            
+            String methodName = "checkLibraries";
+            BPLImplementationBody methodBody = new BPLImplementationBody(localVariables.toArray(new BPLVariableDeclaration[localVariables.size()]), methodBlocks.toArray(new BPLBasicBlock[methodBlocks.size()]));
+            BPLImplementation methodImpl = new BPLImplementation(methodName, inParams, outParams, methodBody);
+            programDecls.add(new BPLProcedure(methodName, inParams, outParams, new BPLSpecification(
+                    new BPLModifiesClause(
+                            new BPLVariableExpression("heap1"),
+                            new BPLVariableExpression("heap2"),
+                            new BPLVariableExpression("stack1"),
+                            new BPLVariableExpression("stack2"),
+                            new BPLVariableExpression("sp1"),
+                            new BPLVariableExpression("sp2")
+                            )
+                    ), methodImpl));
+            BPLProgram program = new BPLProgram(programDecls.toArray(new BPLDeclaration[programDecls.size()]));
+            
+            log.debug("Writing specification to file "+specificationFile);
+            PrintWriter writer = new PrintWriter(specificationFile);
+            program.accept(new BPLPrinter(writer));
+            writer.close();
         } catch (FileNotFoundException e) {
             throw new TranslationException("Could not write boogie specification to file.", e);
         }
     }
     
-    private void compileSpecification(String[] fileNames, File outFile) throws FileNotFoundException {
+    private LibraryDefinition compileSpecification(String[] fileNames) throws FileNotFoundException {
         Project project = Project.fromCommandLine(fileNames, new PrintWriter(System.out));
         CodeGenerator.setProject(project);
         
@@ -150,13 +204,11 @@ public class Library implements ITroubleReporter{
         Translator translator = new Translator(project);
         Map<String, BPLProcedure> procedures = translator.translateMethods(projectTypes);
         List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();
-        programDecls.addAll(translator.getPrelude());
+        programDecls.addAll(translator.getNeededDeclarations());
         
         int maxLocals = 0, maxStack = 0;
         List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
         BPLProcedure proc;
-        Map<String, BPLVariable> usedVariables = new HashMap<String, BPLVariable>();
-        Map<String, BPLVariable> stackVariables = new HashMap<String, BPLVariable>();
         List<String> methodLabels = new ArrayList<String>();
         String methodLabel;
         for(JClassType classType : projectTypes){
@@ -172,17 +224,17 @@ public class Library implements ITroubleReporter{
                     for(BPLVariableDeclaration varDecl : proc.getImplementation().getBody().getVariableDeclarations()){
                         for(BPLVariable var : varDecl.getVariables()){
                             if(var.getType().isTypeName() && ((BPLTypeName)var.getType()).getName().equals(VAR_TYPE)){
-                                stackVariables.put(var.getName(), var);
+                                TranslationController.stackVariables().put(var.getName(), var);
                             } else {
-                                usedVariables.put(var.getName(), var);
+                                TranslationController.usedVariables().put(var.getName(), var);
                             }
                         }
                     }
                     for(BPLVariable outParam : proc.getOutParameters()){
-                        usedVariables.put(outParam.getName(), outParam);
+                        TranslationController.usedVariables().put(outParam.getName(), outParam);
                     }
                     
-                    methodLabel = proc.getName();
+                    methodLabel = TranslationController.prefix(proc.getName());
                     methodLabels.add(methodLabel);
                     
                     List<BPLCommand> preMethodCommands = new ArrayList<BPLCommand>();
@@ -204,64 +256,20 @@ public class Library implements ITroubleReporter{
                 }
             }
         }
-        for(BPLVariable var : stackVariables.values()){
-            programDecls.add(new BPLConstantDeclaration(var));
-        }
         
-        methodBlocks.add(new BPLBasicBlock("check", new BPLCommand[0], new BPLReturnCommand()));
+        methodBlocks.add(0, new BPLBasicBlock(TranslationController.getDispatchLabel(), new BPLCommand[0], new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]))));
         
-        methodBlocks.add(0, new BPLBasicBlock("dispatch1", new BPLCommand[0], new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]))));
-        
-        List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
-        BPLVariable[] inParams = new BPLVariable[0];
-        BPLVariable[] outParams = new BPLVariable[0];
-        
-        for(BPLVariable var : usedVariables.values()){
-            localVariables.add(new BPLVariableDeclaration(var));
-        }
-        
-        String methodName = "checkLibraries";
-        BPLImplementationBody methodBody = new BPLImplementationBody(localVariables.toArray(new BPLVariableDeclaration[localVariables.size()]), methodBlocks.toArray(new BPLBasicBlock[methodBlocks.size()]));
-        BPLImplementation methodImpl = new BPLImplementation(methodName, inParams, outParams, methodBody);
-        programDecls.add(new BPLProcedure(methodName, inParams, outParams, new BPLSpecification(
-                new BPLModifiesClause(
-                        new BPLVariableExpression("heap1"),
-                        new BPLVariableExpression("heap2"),
-                        new BPLVariableExpression("stack1"),
-                        new BPLVariableExpression("stack2"),
-                        new BPLVariableExpression("sp1"),
-                        new BPLVariableExpression("sp2")
-                        )
-                ), methodImpl));
-        BPLProgram program = new BPLProgram(programDecls.toArray(new BPLDeclaration[programDecls.size()]));
-        
-        log.debug("Writing specification to file "+outFile);
-        PrintWriter writer = new PrintWriter(outFile);
-        program.accept(new BPLPrinter(writer));
-        writer.close();
+        return new LibraryDefinition(programDecls, methodBlocks);
     }
     
     public void check(boolean verify){
         File bplPath = new File(libraryPath, "bpl");
-        File oldSpecification = new File(bplPath, "old.bpl");
-        File newSpecification = new File(bplPath, "new.bpl");
+        File specificationFile = new File(bplPath, "specification.bpl");
         
         BoogieRunner.setVerify(verify);
         try {
-            log.info("Checking "+oldSpecification);
-            System.out.println(BoogieRunner.runBoogie(oldSpecification));
-            if(BoogieRunner.getLastReturn()){
-                log.debug("Success");
-            } else {
-                log.debug("Error");
-            }
-        } catch (BoogieRunException e) {
-            e.printStackTrace();
-        }
-        
-        try {
-            log.info("Checking "+newSpecification);
-            System.out.println(BoogieRunner.runBoogie(newSpecification));
+            log.info("Checking "+specificationFile);
+            System.out.println(BoogieRunner.runBoogie(specificationFile));
             if(BoogieRunner.getLastReturn()){
                 log.debug("Success");
             } else {

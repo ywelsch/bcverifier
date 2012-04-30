@@ -2,6 +2,7 @@ package b2bpl.bpl;
 
 import java.io.PrintWriter;
 
+import b2bpl.bpl.ast.BPLArrayAssignment;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLArrayType;
 import b2bpl.bpl.ast.BPLAssertCommand;
@@ -594,6 +595,11 @@ public class BPLPrinter implements IBPLVisitor<Object> {
         print("exists");
         break;
     }
+    if(expr.getTypeParameters().length>0){
+        print('<');
+        printList(expr.getTypeParameters());
+        print('>');
+    }
     print(' ');
     printList(expr.getVariables());
     print(" :: ");
@@ -692,6 +698,13 @@ public Object visitIfCommand(BPLIfCommand cmd) {
         }
         print('}');
     }
+    return null;
+}
+
+public Object visitArrayAssignment(BPLArrayAssignment bplArrayAssignment) {
+    printList(bplArrayAssignment.getIndices());
+    print(" := ");
+    bplArrayAssignment.getRight().accept(this);
     return null;
 }
 }

@@ -1,5 +1,6 @@
 package b2bpl.bpl;
 
+import b2bpl.bpl.ast.BPLArrayAssignment;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLArrayType;
 import b2bpl.bpl.ast.BPLAssertCommand;
@@ -143,4 +144,6 @@ public interface IBPLVisitor<R> {
   R visitParameterizedType(BPLParameterizedType type);
 
   R visitIfCommand(BPLIfCommand cmd);
+
+  R visitArrayAssignment(BPLArrayAssignment bplArrayAssignment);
 }

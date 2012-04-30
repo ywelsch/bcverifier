@@ -779,6 +779,14 @@ public final class CodeGenerator implements ITranslationConstants {
                 BPLQuantifierExpression.Operator.FORALL, variables, triggers,
                 expression);
     }
+    
+    public static BPLExpression forall(BPLType[] typeParameters,
+            BPLVariable[] variables, BPLExpression expression,
+            BPLTrigger... triggers) {
+        return new BPLQuantifierExpression(typeParameters,
+                BPLQuantifierExpression.Operator.FORALL, variables, triggers,
+                expression);
+    }
 
     // @ requires variable != null && expression != null;
     // @ ensures \result != null;

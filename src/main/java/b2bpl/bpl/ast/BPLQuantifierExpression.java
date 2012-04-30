@@ -13,6 +13,8 @@ public class BPLQuantifierExpression extends BPLExpression {
 
   private final BPLExpression expression;
 
+  private final BPLType[] typeParameters;
+
   public BPLQuantifierExpression(
       Operator operator,
       BPLVariable[] variables,
@@ -25,11 +27,21 @@ public class BPLQuantifierExpression extends BPLExpression {
       BPLVariable[] variables,
       BPLTrigger[] triggers,
       BPLExpression expression) {
-    super(Precedence.ATOM);
-    this.operator = operator;
-    this.variables = variables;
-    this.triggers = triggers;
-    this.expression = expression;
+    this(BPLType.EMPTY_ARRAY, operator, variables, triggers, expression);
+  }
+  
+  public BPLQuantifierExpression(
+          BPLType[] typeParameters,
+          Operator operator,
+          BPLVariable[] variables,
+          BPLTrigger[] triggers,
+          BPLExpression expression) {
+      super(Precedence.ATOM);
+      this.typeParameters = typeParameters;
+      this.operator = operator;
+      this.variables = variables;
+      this.triggers = triggers;
+      this.expression = expression;
   }
 
   public boolean isPredicate() {
@@ -56,7 +68,11 @@ public class BPLQuantifierExpression extends BPLExpression {
     return expression;
   }
 
-  public String toString() {
+  public BPLType[] getTypeParameters() {
+    return typeParameters;
+}
+
+public String toString() {
     StringBuffer sb = new StringBuffer();
 
     sb.append('(');

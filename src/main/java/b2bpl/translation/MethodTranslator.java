@@ -2072,14 +2072,14 @@ public class MethodTranslator implements ITranslationConstants {
         if(transferCommand instanceof BPLGotoCommand){
             String[] targetLabels = new String[transferCommand.getTargetLabels().length];
             for(int i=0; i<transferCommand.getTargetLabels().length; i++){
-                targetLabels[i] = getProcedureName(method) + "_" + transferCommand.getTargetLabels()[i];
+                targetLabels[i] = TranslationController.prefix(getProcedureName(method) + "_" + transferCommand.getTargetLabels()[i]);
             }
             transCmd = new BPLGotoCommand(targetLabels);
         } else {
             transCmd = transferCommand;
         }
         BPLBasicBlock block = new BPLBasicBlock(
-                getProcedureName(method) + "_" + blockLabel,
+                TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
                 commands.toArray(new BPLCommand[commands.size()]),
                 transCmd
                 );
@@ -2745,9 +2745,11 @@ public class MethodTranslator implements ITranslationConstants {
             int stack = handle.getFrame().getStackSize() - 1;
             BCField field = insn.getField();
 
-            translateRuntimeException(
-                    "java.lang.NullPointerException",
-                    nonNull(stack(var(refStackVar(stack)))));
+            if(!TranslationController.isActive()){
+                translateRuntimeException(
+                        "java.lang.NullPointerException",
+                        nonNull(stack(var(refStackVar(stack)))));
+            }
 
             BPLExpression ref = stack(var(refStackVar(stack)));
             BPLExpression get = fieldAccess(context, TranslationController.getHeap(), ref, field);
@@ -2760,9 +2762,11 @@ public class MethodTranslator implements ITranslationConstants {
             int stackRhs = handle.getFrame().getStackSize() - 1;
             BCField field = insn.getField();
 
-            translateRuntimeException(
-                    "java.lang.NullPointerException",
-                    nonNull(stack(var(refStackVar(stackLhs)))));
+            if(!TranslationController.isActive()){
+                translateRuntimeException(
+                        "java.lang.NullPointerException",
+                        nonNull(stack(var(refStackVar(stackLhs)))));
+            }
 
             BPLExpression lhs = var(refStackVar(stackLhs));
             BPLExpression rhs = var(stackVar(stackRhs, field.getType()));
@@ -2812,9 +2816,11 @@ public class MethodTranslator implements ITranslationConstants {
             String ref = refStackVar(stackRef);
             String idx = intStackVar(stackIdx);
 
-            translateRuntimeException(
-                    "java.lang.NullPointerException",
-                    nonNull(stack(var(ref))));
+            if(!TranslationController.isActive()){
+                translateRuntimeException(
+                        "java.lang.NullPointerException",
+                        nonNull(stack(var(ref))));
+            }
             //      translateRuntimeException(
             //          "java.lang.ArrayIndexOutOfBoundsException",
             //          lessEqual(intLiteral(0), var(idx)),
@@ -2845,9 +2851,11 @@ public class MethodTranslator implements ITranslationConstants {
             String idx = intStackVar(stackIdx);
             String val = stackVar(stackVal, elemType);
 
-            translateRuntimeException(
-                    "java.lang.NullPointerException",
-                    nonNull(stack(var(ref))));
+            if(!TranslationController.isActive()){
+                translateRuntimeException(
+                        "java.lang.NullPointerException",
+                        nonNull(stack(var(ref))));
+            }
             //      translateRuntimeException(
             //          "java.lang.ArrayIndexOutOfBoundsException",
             //          lessEqual(intLiteral(0), var(idx)),
@@ -2883,9 +2891,11 @@ public class MethodTranslator implements ITranslationConstants {
             int stack = handle.getFrame().getStackSize() - 1;
             String ref = refStackVar(stack);
 
-            translateRuntimeException(
-                    "java.lang.NullPointerException",
-                    nonNull(stack(var(ref))));
+            if(!TranslationController.isActive()){
+                translateRuntimeException(
+                        "java.lang.NullPointerException",
+                        nonNull(stack(var(ref))));
+            }
 
             //      addAssignment(stack(var(intStackVar(stack))), arrayLength(rval(var(ref))));
             //TODO array length
@@ -3100,16 +3110,16 @@ public class MethodTranslator implements ITranslationConstants {
                 addAssignment(var(TranslationController.getStackPointer()), add(var(TranslationController.getStackPointer()), intLiteral(1)));
 
 
-                BPLTransferCommand transCmd = new BPLGotoCommand("check");
+                BPLTransferCommand transCmd = new BPLGotoCommand(TranslationController.getCheckLabel());
                 transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
                 transCmd.addComment("Sourceline: "+handle.getSourceLine());
                 BPLBasicBlock block = new BPLBasicBlock(
-                        getProcedureName(method) + "_" + blockLabel,
+                        TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
                         commands.toArray(new BPLCommand[commands.size()]),
                         transCmd
                         );
                 blocks.add(block);
-                blockLabel = blockLabel+"_afterReturn";//TODO correct label
+                blockLabel = TranslationController.prefix(blockLabel+"_afterReturn");//TODO correct label
 
                 callStatements++;
             }
@@ -3156,9 +3166,11 @@ public class MethodTranslator implements ITranslationConstants {
                 break;
             case IOpCodes.IDIV:
             case IOpCodes.LDIV:
-                translateRuntimeException("java.lang.ArithmeticException", notEqual(
-                        stack(var(right)),
-                        intLiteral(0)));
+                if(!TranslationController.isActive()){
+                    translateRuntimeException("java.lang.ArithmeticException", notEqual(
+                            stack(var(right)),
+                            intLiteral(0)));
+                }
                 expr = divide(stack(var(left)), stack(var(right)));
                 break;
             case IOpCodes.IREM:
@@ -3532,9 +3544,11 @@ public class MethodTranslator implements ITranslationConstants {
         public void visitAThrowInstruction(AThrowInstruction insn) {
             int stack = handle.getFrame().getStackSize() - 1;
 
-            translateRuntimeException(
-                    "java.lang.NullPointerException",
-                    nonNull(stack(var(refStackVar(stack)))));
+            if(!TranslationController.isActive()){
+                translateRuntimeException(
+                        "java.lang.NullPointerException",
+                        nonNull(stack(var(refStackVar(stack)))));
+            }
 
             if (stack != 0) {
                 addAssignment(stack(var(refStackVar(0))), stack(var(refStackVar(stack))));
@@ -3565,9 +3579,11 @@ public class MethodTranslator implements ITranslationConstants {
             String ref = refStackVar(stack);
             String len = intStackVar(stack);
 
-            translateRuntimeException(
-                    "java.lang.NegativeArraySizeException",
-                    lessEqual(intLiteral(0), stack(var(len))));
+            if(!TranslationController.isActive()){
+                translateRuntimeException(
+                        "java.lang.NegativeArraySizeException",
+                        lessEqual(intLiteral(0), stack(var(len))));
+            }
 
             addHavoc(var(swapVar(JNullType.NULL)));
             addAssignment(stack(var(ref)), var(swapVar(JNullType.NULL)));
@@ -3626,7 +3642,9 @@ public class MethodTranslator implements ITranslationConstants {
             for (int i = 0; i < dims; i++) {
                 vc[i] = lessEqual(intLiteral(0), stack(var(intStackVar(first + i))));
             }
-            translateRuntimeException("java.lang.NegativeArraySizeException", vc);
+            if(!TranslationController.isActive()){
+                translateRuntimeException("java.lang.NegativeArraySizeException", vc);
+            }
 
             addHavoc(var(swapVar(JNullType.NULL)));
             addAssignment(stack(var(ref)), var(swapVar(JNullType.NULL)));

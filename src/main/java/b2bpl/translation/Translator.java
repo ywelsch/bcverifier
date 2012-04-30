@@ -55,6 +55,7 @@ import org.apache.log4j.Logger;
 import de.unikl.bcverifier.TranslationController;
 
 import b2bpl.Project;
+import b2bpl.bpl.ast.BPLArrayAssignment;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLArrayType;
 import b2bpl.bpl.ast.BPLAxiom;
@@ -78,6 +79,7 @@ import b2bpl.bpl.ast.BPLTypeDeclaration;
 import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableDeclaration;
+import b2bpl.bpl.ast.BPLVariableExpression;
 import b2bpl.bytecode.BCField;
 import b2bpl.bytecode.BCMethod;
 import b2bpl.bytecode.JArrayType;
@@ -247,7 +249,7 @@ public class Translator implements ITranslationConstants {
         context = new Context();
         declarations = new ArrayList<BPLDeclaration>();
         MethodTranslator methodTranslator = new MethodTranslator(project);
-        generateTheory();
+
         BPLProcedure proc;
         for (JClassType type : types) {
             for (BCMethod method : type.getMethods()) {
@@ -281,7 +283,14 @@ public class Translator implements ITranslationConstants {
     }
     
     public List<BPLDeclaration> getPrelude() {
+        context = new Context();
+        declarations = new ArrayList<BPLDeclaration>();
+        generateTheory();
         flushPendingTheory();
+        return declarations;
+    }
+    
+    public List<BPLDeclaration> getNeededDeclarations() {
         return declarations;
     }
 
@@ -1049,12 +1058,17 @@ public class Translator implements ITranslationConstants {
                     ));
             
             addComment("Extensionality for simulations");
-//            addAxiom(forall(
-//                    r1Var, r2Var, relatedVar,
-//                    isEqual(new BPLArrayExpression(var(related), var(r1), ), right)
-//                    ));
+            addAxiom(forall(
+                    r1Var, r2Var, relatedVar,
+                    isEqual(new BPLArrayExpression(var(related), new BPLArrayAssignment(new BPLVariableExpression[]{var(r1), var(r2)}, new BPLArrayExpression(var(related), var(r1), var(r2)))), var(related))
+                    ));
             
             addComment("Extensionality for heaps");
+            BPLVariable fieldAlphaVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")));
+            addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
+                    new BPLVariable[]{refVar, fieldAlphaVar, heapVar},
+                    isEqual(new BPLArrayExpression(var(heap), new BPLArrayAssignment(new BPLVariableExpression[]{var(r), var(f)}, new BPLArrayExpression(var(heap), var(r), var(f)))), var(heap))
+                    ));
             
             addType(VAR_TYPE, "_");
             addDeclaration(new BPLTypeAlias(STACK_PTR_TYPE, BPLBuiltInType.INT));
@@ -1093,6 +1107,13 @@ public class Translator implements ITranslationConstants {
                             forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.BOOL)), implies(logicalOr( less(var(p), intLiteral(0)), less(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), BPLBoolLiteral.FALSE)))
                             )
                     ));
+            
+            addComment("Extensionality for stacks");
+            addAxiom(forall(
+                    spVar, stackVar,
+                    isEqual(new BPLArrayExpression(var(stack), new BPLArrayAssignment(new BPLVariableExpression[]{var(sp)}, new BPLArrayExpression(var(stack), var(sp)))), var(stack))
+                    ));
+            
             
             addFunction("isPublic", new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addFunction("definesMethod", new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
@@ -2572,8 +2593,8 @@ public class Translator implements ITranslationConstants {
          * Initializes the internal datastructures.
          */
         public Context() {
-            typeReferences = new HashSet<JClassType>();
-            fieldReferences = new HashSet<BCField>();
+            typeReferences = TranslationController.referencedTypes();
+            fieldReferences = TranslationController.referencedFields();
             symbolicIntLiterals = new TreeSet<Long>();
             stringLiterals = new HashMap<String, String>();
             classLiterals = new HashSet<JType>();

@@ -3,7 +3,9 @@ package b2bpl.bpl.ast;
 
 public abstract class BPLType extends BPLNode {
 
-  public boolean isBuiltInType() {
+  public static final BPLType[] EMPTY_ARRAY = new BPLType[0];
+
+public boolean isBuiltInType() {
     return false;
   }
 
