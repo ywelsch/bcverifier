@@ -81,36 +81,36 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLOldExpression(var);
     }
 
-    // @ requires prefix != null && field != null;
-    // @ ensures \result != null;
-    public static BPLExpression fieldLoc(BPLExpression prefix,
-            BPLExpression field) {
-        return new BPLFunctionApplication(FIELD_LOC_FUNC, prefix, field);
-    }
+//    // @ requires prefix != null && field != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression fieldLoc(BPLExpression prefix,
+//            BPLExpression field) {
+//        return new BPLFunctionApplication(FIELD_LOC_FUNC, prefix, field);
+//    }
 
-    // @ requires context != null && reference != null && field != null;
-    // @ ensures \result != null;
-    public static BPLExpression fieldLoc(ITranslationContext context,
-            BPLExpression reference, BCField field) {
-        if (field.isStatic()) {
-            reference = typeObject(context.translateTypeReference(field
-                    .getOwner()));
-        }
-        return fieldLoc(reference, context.translateFieldReference(field));
-    }
+//    // @ requires context != null && reference != null && field != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression fieldLoc(ITranslationContext context,
+//            BPLExpression reference, BCField field) {
+//        if (field.isStatic()) {
+//            reference = typeObject(context.translateTypeReference(field
+//                    .getOwner()));
+//        }
+//        return fieldLoc(reference, context.translateFieldReference(field));
+//    }
 
-    // @ requires reference != null && index != null;
-    // @ ensures \result != null;
-    public static BPLExpression arrayLoc(BPLExpression reference,
-            BPLExpression index) {
-        return new BPLFunctionApplication(ARRAY_LOC_FUNC, reference, index);
-    }
+//    // @ requires reference != null && index != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression arrayLoc(BPLExpression reference,
+//            BPLExpression index) {
+//        return new BPLFunctionApplication(ARRAY_LOC_FUNC, reference, index);
+//    }
 
-    // @ requires location != null;
-    // @ ensures \result != null;
-    public static BPLExpression obj(BPLExpression location) {
-        return new BPLFunctionApplication(OBJ_FUNC, location);
-    }
+//    // @ requires location != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression obj(BPLExpression location) {
+//        return new BPLFunctionApplication(OBJ_FUNC, location);
+//    }
 
     // @ requires reference != null;
     // @ ensures \result != null;
@@ -118,64 +118,64 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(ARRAY_LENGTH_FUNC, reference);
     }
 
-    // @ requires type != null;
-    // @ ensures \result != null;
-    public static BPLExpression arrayType(BPLExpression type) {
-        return new BPLFunctionApplication(ARRAY_TYPE_FUNC, type);
-    }
+//    // @ requires type != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression arrayType(BPLExpression type) {
+//        return new BPLFunctionApplication(ARRAY_TYPE_FUNC, type);
+//    }
 
-    // @ requires type != null;
-    // @ ensures \result != null;
-    public static BPLExpression elementType(BPLExpression type) {
-        return new BPLFunctionApplication(ELEMENT_TYPE_FUNC, type);
-    }
+//    // @ requires type != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression elementType(BPLExpression type) {
+//        return new BPLFunctionApplication(ELEMENT_TYPE_FUNC, type);
+//    }
 
-    // @ requires type != null;
-    // @ ensures \result != null;
-    public static BPLExpression typeObject(BPLExpression type) {
-        return new BPLFunctionApplication(TYPE_OBJECT_FUNC, type);
-    }
+//    // @ requires type != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression typeObject(BPLExpression type) {
+//        return new BPLFunctionApplication(TYPE_OBJECT_FUNC, type);
+//    }
 
-    // @ requires type != null;
-    // @ ensures \result != null;
-    public static BPLExpression objectAlloc(BPLExpression type) {
-        return new BPLFunctionApplication(OBJECT_ALLOC_FUNC, type);
-    }
+//    // @ requires type != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression objectAlloc(BPLExpression type) {
+//        return new BPLFunctionApplication(OBJECT_ALLOC_FUNC, type);
+//    }
 
-    // @ requires type != null && length != null;
-    // @ ensures \result != null;
-    public static BPLExpression arrayAlloc(BPLExpression type,
-            BPLExpression length) {
-        return new BPLFunctionApplication(ARRAY_ALLOC_FUNC, type, length);
-    }
+//    // @ requires type != null && length != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression arrayAlloc(BPLExpression type,
+//            BPLExpression length) {
+//        return new BPLFunctionApplication(ARRAY_ALLOC_FUNC, type, length);
+//    }
 
-    // @ requires type != null && length != null && allocation != null;
-    // @ ensures \result != null;
-    public static BPLExpression multiArrayAlloc(BPLExpression type,
-            BPLExpression length, BPLExpression allocation) {
-        return new BPLFunctionApplication(MULTI_ARRAY_ALLOC_FUNC, type, length,
-                allocation);
-    }
+//    // @ requires type != null && length != null && allocation != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression multiArrayAlloc(BPLExpression type,
+//            BPLExpression length, BPLExpression allocation) {
+//        return new BPLFunctionApplication(MULTI_ARRAY_ALLOC_FUNC, type, length,
+//                allocation);
+//    }
 
-    // @ requires value != nul && heap != null && allocation != null;
-    // @ ensures \result != null;
-    public static BPLExpression isNewMultiArray(BPLExpression value,
-            BPLExpression heap, BPLExpression allocation) {
-        return new BPLFunctionApplication(IS_NEW_MULTI_ARRAY_FUNC, value, heap,
-                allocation);
-    }
+//    // @ requires value != nul && heap != null && allocation != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression isNewMultiArray(BPLExpression value,
+//            BPLExpression heap, BPLExpression allocation) {
+//        return new BPLFunctionApplication(IS_NEW_MULTI_ARRAY_FUNC, value, heap,
+//                allocation);
+//    }
 
-    // @ requires value != null;
-    // @ ensures \result != null;
-    public static BPLExpression multiArrayParent(BPLExpression value) {
-        return new BPLFunctionApplication(MULTI_ARRAY_PARENT_FUNC, value);
-    }
+//    // @ requires value != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression multiArrayParent(BPLExpression value) {
+//        return new BPLFunctionApplication(MULTI_ARRAY_PARENT_FUNC, value);
+//    }
 
-    // @ requires value != null;
-    // @ ensures \result != null;
-    public static BPLExpression multiArrayPosition(BPLExpression value) {
-        return new BPLFunctionApplication(MULTI_ARRAY_POSITION_FUNC, value);
-    }
+//    // @ requires value != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression multiArrayPosition(BPLExpression value) {
+//        return new BPLFunctionApplication(MULTI_ARRAY_POSITION_FUNC, value);
+//    }
 
     // @ requires field != null;
     // @ ensures \result != null;
@@ -195,25 +195,25 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(IS_VALUE_TYPE_FUNC, type);
     }
 
-    // @ requires type != null;
-    // @ ensures \result != null;
-    public static BPLExpression isNormalReturnState(BPLExpression type) {
-        return new BPLFunctionApplication(IS_NORMAL_RETURN_STATE_FUNC, type);
-    }
+//    // @ requires type != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression isNormalReturnState(BPLExpression type) {
+//        return new BPLFunctionApplication(IS_NORMAL_RETURN_STATE_FUNC, type);
+//    }
 
-    // @ requires type != null;
-    // @ ensures \result != null;
-    public static BPLExpression isExceptionalReturnState(BPLExpression type) {
-        return new BPLFunctionApplication(IS_EXCEPTIONAL_RETURN_STATE_FUNC,
-                type);
-    }
+//    // @ requires type != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression isExceptionalReturnState(BPLExpression type) {
+//        return new BPLFunctionApplication(IS_EXCEPTIONAL_RETURN_STATE_FUNC,
+//                type);
+//    }
 
-    // @ requires type != null && object != null && heap != null;
-    // @ ensures \result != null;
-    public static BPLExpression inv(BPLExpression type, BPLExpression object,
-            BPLExpression heap) {
-        return new BPLFunctionApplication(INV_FUNC, type, object, heap);
-    }
+//    // @ requires type != null && object != null && heap != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression inv(BPLExpression type, BPLExpression object,
+//            BPLExpression heap) {
+//        return new BPLFunctionApplication(INV_FUNC, type, object, heap);
+//    }
 
     // //@ requires heap != null && variable != null;
     // //@ ensures \result != null;
@@ -334,11 +334,11 @@ public final class CodeGenerator implements ITranslationConstants {
     // return new BPLFunctionApplication(INIT_FUNC, type);
     // }
 
-    // @ requires value != null;
-    // @ ensures \result != null;
-    public static BPLExpression isStatic(BPLExpression value) {
-        return new BPLFunctionApplication(STATIC_FUNC, value);
-    }
+//    // @ requires value != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression isStatic(BPLExpression value) {
+//        return new BPLFunctionApplication(STATIC_FUNC, value);
+//    }
 
     // @ requires value != null;
     // @ ensures \result != null;
@@ -346,17 +346,17 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(TYP_FUNC, value);
     }
 
-    // @ requires value != null;
-    // @ ensures \result != null;
-    public static BPLExpression ltyp(BPLExpression value) {
-        return new BPLFunctionApplication(LTYP_FUNC, value);
-    }
+//    // @ requires value != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression ltyp(BPLExpression value) {
+//        return new BPLFunctionApplication(LTYP_FUNC, value);
+//    }
 
-    // @ requires allocation != null;
-    // @ ensures \result != null;
-    public static BPLExpression allocType(BPLExpression allocation) {
-        return new BPLFunctionApplication(ALLOC_TYPE_FUNC, allocation);
-    }
+//    // @ requires allocation != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression allocType(BPLExpression allocation) {
+//        return new BPLFunctionApplication(ALLOC_TYPE_FUNC, allocation);
+//    }
 
     // @ requires object != null && type != null;
     // @ ensures \result != null;
@@ -372,21 +372,21 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(IS_IN_RANGE_FUNC, integer, type);
     }
 
-    // @ requires expression != null && type != null;
-    // @ ensures \result != null;
-    public static BPLExpression icast(BPLExpression expression,
-            BPLExpression type) {
-        return new BPLFunctionApplication(ICAST_FUNC, expression, type);
-    }
+//    // @ requires expression != null && type != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression icast(BPLExpression expression,
+//            BPLExpression type) {
+//        return new BPLFunctionApplication(ICAST_FUNC, expression, type);
+//    }
 
-    // @ requires condition != null && expression1 != null && expression2 !=
-    // null;
-    // @ ensures \result != null;
-    public static BPLExpression ifThenElse(BPLExpression condition,
-            BPLExpression expression1, BPLExpression expression2) {
-        return new BPLFunctionApplication(IF_THEN_ELSE_FUNC, condition,
-                expression1, expression2);
-    }
+//    // @ requires condition != null && expression1 != null && expression2 !=
+//    // null;
+//    // @ ensures \result != null;
+//    public static BPLExpression ifThenElse(BPLExpression condition,
+//            BPLExpression expression1, BPLExpression expression2) {
+//        return new BPLFunctionApplication(IF_THEN_ELSE_FUNC, condition,
+//                expression1, expression2);
+//    }
 
     // @ requires value != null && type != null;
     // @ ensures \result != null;
@@ -546,11 +546,11 @@ public final class CodeGenerator implements ITranslationConstants {
                 BPLBinaryArithmeticExpression.Operator.REMAINDER, left, right);
     }
 
-    // @ requires expr != null;
-    // @ ensures \result != null;
-    public static BPLExpression neg(BPLExpression expr) {
-        return new BPLUnaryMinusExpression(expr);
-    }
+//    // @ requires expr != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression neg(BPLExpression expr) {
+//        return new BPLUnaryMinusExpression(expr);
+//    }
 
     // @ requires operand != null;
     // @ ensures \result != null;
@@ -826,6 +826,150 @@ public final class CodeGenerator implements ITranslationConstants {
                 REF_TYPE);
     }
     
+    public static BPLExpression wellformedHeap(BPLExpression exp1){
+        return new BPLFunctionApplication(WELLFORMED_HEAP_FUNC, exp1);
+    }
+    
+    public static BPLExpression wellfomredCoupling(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(WELLFORMED_COUPLING_FUNC, exp1, exp2, exp3);
+    }
+    
+    public static BPLExpression objectCoupling(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(OBJECT_COUPLING_FUNC, exp1, exp2, exp3);
+    }
+    
+    public static BPLExpression bijective(BPLExpression exp1){
+        return new BPLFunctionApplication(BIJECTIVE_FUNC, exp1);
+    }
+    
+    public static BPLExpression classRepr(BPLExpression exp){
+        return new BPLFunctionApplication(CLASS_REPR_FUNC, exp);
+    }
+    
+    public static BPLExpression classReprInv(BPLExpression exp){
+        return new BPLFunctionApplication(CLASS_REPR_INV_FUNC, exp);
+    }
+    
+    public static BPLExpression isStaticField(BPLExpression exp){
+        return new BPLFunctionApplication(IS_STATIC_FIELD_FUNC, exp);
+    }
+    
+    public static BPLExpression baseClass(BPLExpression exp){
+        return new BPLFunctionApplication(BASE_CLASS_FUNC, exp);
+    }
+    
+    public static BPLExpression asDirectSubClass(BPLExpression exp1, BPLExpression exp2){
+        return new BPLFunctionApplication(AS_DIRECT_SUB_CLASS_FUNC, exp1, exp2);
+    }
+    
+    public static BPLExpression oneClassDown(BPLExpression exp1, BPLExpression exp2){
+        return new BPLFunctionApplication(ONE_CLASS_DOWN_FUNC, exp1, exp2);
+    }
+    
+    public static BPLExpression asType(BPLExpression exp1, BPLExpression exp2){
+        return new BPLFunctionApplication(AS_TYPE_FUNC, exp1, exp2);
+    }
+    
+    public static BPLExpression isAllocated(BPLExpression exp1, BPLExpression exp2){
+        return new BPLFunctionApplication(IS_ALLOCATED_FUNC, exp1, exp2);
+    }
+    
+    public static BPLExpression asRefField(BPLExpression exp1, BPLExpression exp2){
+        return new BPLFunctionApplication(AS_REF_FIELD_FUNC, exp1, exp2);
+    }
+    
+    public static BPLExpression asRangeField(BPLExpression exp1, BPLExpression exp2){
+        return new BPLFunctionApplication(AS_RANGE_FIELD_FUNC, exp1, exp2);
+    }
+    
+    public static BPLExpression isMemberlessType(BPLExpression exp1){
+        return new BPLFunctionApplication(IS_MEMBERLESS_TYPE_FUNC, exp1);
+    }
+    
+    public static BPLExpression asInterface(BPLExpression exp1){
+        return new BPLFunctionApplication(AS_INTERFACE_FUNC, exp1);
+    }
+    
+    public static BPLExpression intToInt(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(INT_TO_INT_FUNC, exp1, exp2, exp3);
+    }
+    
+    public static BPLExpression intToReal(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(INT_TO_REAL_FUNC, exp1, exp2, exp3);
+    }
+    
+    public static BPLExpression realToInt(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(REAL_TO_INT_FUNC, exp1, exp2, exp3);
+    }
+    
+    public static BPLExpression realToReal(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(REAL_TO_REAL_FUNC, exp1, exp2, exp3);
+    }
+    
+    public static BPLExpression sizeIs(BPLExpression exp1){
+        return new BPLFunctionApplication(SIZE_IS_FUNC, exp1);
+    }
+
+    public static BPLExpression ifThenElse(BPLExpression condition,
+            BPLExpression expression1, BPLExpression expression2) {
+        return new BPLFunctionApplication(IF_THEN_ELSE_FUNC, condition,
+                expression1, expression2);
+    }
+    
+
+    public static BPLExpression neg(BPLExpression expr) {
+        return new BPLFunctionApplication(NEG_FUNC, expr);
+    }
+
+    public static BPLExpression rneg(BPLExpression expr) {
+        return new BPLFunctionApplication(RNEG_FUNC, expr);
+    }
+    
+    public static BPLExpression radd(BPLExpression expr1, BPLExpression expr2) {
+        return new BPLFunctionApplication(RADD_FUNC, expr1, expr2);
+    }
+    
+    public static BPLExpression rsub(BPLExpression expr1, BPLExpression expr2) {
+        return new BPLFunctionApplication(RSUB_FUNC, expr1, expr2);
+    }
+    
+    public static BPLExpression rmul(BPLExpression expr1, BPLExpression expr2) {
+        return new BPLFunctionApplication(RMUL_FUNC, expr1, expr2);
+    }
+    
+    public static BPLExpression rdiv(BPLExpression expr1, BPLExpression expr2) {
+        return new BPLFunctionApplication(RDIV_FUNC, expr1, expr2);
+    }
+    
+    public static BPLExpression rmod(BPLExpression expr1, BPLExpression expr2) {
+        return new BPLFunctionApplication(RMOD_FUNC, expr1, expr2);
+    }
+    
+    public static BPLExpression rless(BPLExpression expr1, BPLExpression expr2) {
+        return new BPLFunctionApplication(RLESS_FUNC, expr1, expr2);
+    }
+    
+    public static BPLExpression rleq(BPLExpression expr1, BPLExpression expr2) {
+        return new BPLFunctionApplication(RLESS_OR_EQUAL_FUNC, expr1, expr2);
+    }
+    
+    public static BPLExpression req(BPLExpression expr1, BPLExpression expr2) {
+        return new BPLFunctionApplication(REQ_FUNC, expr1, expr2);
+    }
+    
+    public static BPLExpression rneq(BPLExpression expr1, BPLExpression expr2) {
+        return new BPLFunctionApplication(RNEQ_FUNC, expr1, expr2);
+    }
+    
+    public static BPLExpression rgeq(BPLExpression expr1, BPLExpression expr2) {
+        return new BPLFunctionApplication(RGREATER_OR_EQUAL_FUNC, expr1, expr2);
+    }
+    
+    public static BPLExpression rgreater(BPLExpression expr1, BPLExpression expr2) {
+        return new BPLFunctionApplication(RGREATER_FUNC, expr1, expr2);
+    }
+    
+
     public static BPLExpression stack(BPLExpression sp, BPLExpression exp) {
         return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.getStack()), sp), exp);
     }
@@ -839,7 +983,35 @@ public final class CodeGenerator implements ITranslationConstants {
                 exp1, exp2);
     }
     
-    public static BPLExpression isCallable(BPLExpression left, BPLExpression right){
-        return new BPLFunctionApplication("isCallable", left, right);
+    public static BPLExpression isCallable(BPLExpression exp1, BPLExpression exp2){
+        return new BPLFunctionApplication("isCallable", exp1, exp2);
+    }
+    
+    public static BPLExpression relNull(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(REL_NULL_FUNC, exp1, exp2, exp3);
+    }
+    
+    public static BPLExpression nonNull(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(NON_NULL_FUNC, exp1, exp2, exp3);
+    }
+    
+    public static BPLExpression refOfType(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(REF_OF_TYPE_FUNC, exp1, exp2, exp3);
+    }
+    
+    public static BPLExpression internal(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(INTERNAL_FUNC, exp1, exp2, exp3);
+    }
+    
+    public static BPLExpression ftype(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3, BPLExpression exp4){
+        return new BPLFunctionApplication(FTYPE_FUNC, exp1, exp2, exp3, exp4);
+    }
+    
+    public static BPLExpression unique(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(UNIQUE_FUNC, exp1, exp2, exp3);
+    }
+    
+    public static BPLExpression wellformedStack(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(WELLFORMED_STACK_FUNC, exp1, exp2, exp3);
     }
 }
