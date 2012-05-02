@@ -1381,6 +1381,7 @@ public class Translator implements ITranslationConstants {
             addConstants(new BPLVariable("meth", new BPLTypeName(VAR_TYPE, new BPLTypeName(METHOD_TYPE))));
             addConstants(new BPLVariable("receiver", new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
 
+            flushPendingTheory(); //TODO this is needed at the moment to generate information about the long values (which should be printed into the program code directly)
         }
     }
 
@@ -3049,49 +3050,49 @@ public class Translator implements ITranslationConstants {
      * all bytecode methods.
      */
     private void flushPendingTheory() {
-//        // If we have generated symbolic constants representing large integer
-//        // values, we axiomatize their relative order in order maintain as much
-//        // information as possible.
-//        if (context.symbolicIntLiterals.size() > 0) {
-//            // The requested iterator gives us the integers in ascending order.
-//            Iterator<Long> intConstants = context.symbolicIntLiterals.iterator();
-//            long current = intConstants.next();
-//            long maxConstant = project.getMaxIntConstant();
-//            // Handle the negative values.
-//            while ((current < 0) && intConstants.hasNext()) {
-//                long next = intConstants.next();
-//                if (next < 0) {
-//                    // If the next integer is still negative, we simply state that the
-//                    // current integer is less than the next one.
-//                    addAxiom(less(intLiteral(current), intLiteral(next)));
-//                } else {
-//                    // If the next integer is positive, we state that the current integer
-//                    // is less than the lowest integer value explicitly represented in the
-//                    // BoogiePL program but we do not relate the current negative
-//                    // integer to the next one which is positive.
-//                    addAxiom(less(intLiteral(current), intLiteral(-maxConstant)));
-//                }
-//                current = next;
-//            }
-//            if (current < 0) {
-//                // If the current integer is still negative, the above loop guard tells
-//                // us that there are no more integers to process but we must still
-//                // relate the current negative integer to the lowest integer value
-//                // explicitly represented in the BoogiePL program.
-//                addAxiom(less(intLiteral(current), intLiteral(-maxConstant)));
-//            } else {
-//                // If the current integer is positive, we relate it to the largest
-//                // integer value explicitly represented in the BoogiePL program.
-//                addAxiom(less(intLiteral(maxConstant), intLiteral(current)));
-//            }
-//            while (intConstants.hasNext()) {
-//                // Likewise, axiomatize the relative order of the remaining integers
-//                // which must be all positive.
-//                long next = intConstants.next();
-//                addAxiom(less(intLiteral(current), intLiteral(next)));
-//                current = next;
-//            }
-//        }
+        // If we have generated symbolic constants representing large integer
+        // values, we axiomatize their relative order in order maintain as much
+        // information as possible.
+        if (context.symbolicIntLiterals.size() > 0) {
+            // The requested iterator gives us the integers in ascending order.
+            Iterator<Long> intConstants = context.symbolicIntLiterals.iterator();
+            long current = intConstants.next();
+            long maxConstant = project.getMaxIntConstant();
+            // Handle the negative values.
+            while ((current < 0) && intConstants.hasNext()) {
+                long next = intConstants.next();
+                if (next < 0) {
+                    // If the next integer is still negative, we simply state that the
+                    // current integer is less than the next one.
+                    addAxiom(less(intLiteral(current), intLiteral(next)));
+                } else {
+                    // If the next integer is positive, we state that the current integer
+                    // is less than the lowest integer value explicitly represented in the
+                    // BoogiePL program but we do not relate the current negative
+                    // integer to the next one which is positive.
+                    addAxiom(less(intLiteral(current), intLiteral(-maxConstant)));
+                }
+                current = next;
+            }
+            if (current < 0) {
+                // If the current integer is still negative, the above loop guard tells
+                // us that there are no more integers to process but we must still
+                // relate the current negative integer to the lowest integer value
+                // explicitly represented in the BoogiePL program.
+                addAxiom(less(intLiteral(current), intLiteral(-maxConstant)));
+            } else {
+                // If the current integer is positive, we relate it to the largest
+                // integer value explicitly represented in the BoogiePL program.
+                addAxiom(less(intLiteral(maxConstant), intLiteral(current)));
+            }
+            while (intConstants.hasNext()) {
+                // Likewise, axiomatize the relative order of the remaining integers
+                // which must be all positive.
+                long next = intConstants.next();
+                addAxiom(less(intLiteral(current), intLiteral(next)));
+                current = next;
+            }
+        }
     }
 
     /**

@@ -31,6 +31,8 @@ public class TranslationController {
     private static Map<String, BPLVariable> stackVariables = new HashMap<String, BPLVariable>();
     private static HashSet<JClassType> referencedTypes = new HashSet<JClassType>();
     private static HashSet<BCField> referencedFields = new HashSet<BCField>();
+    private static HashSet<String> places = new HashSet<String>();
+    private static String lastPlace = null;
     
     public static Set<String> declaredMethods() {
         return declaredMethods;
@@ -50,6 +52,10 @@ public class TranslationController {
     
     public static HashSet<BCField> referencedFields() {
         return referencedFields;
+    }
+    
+    public static HashSet<String> places() {
+        return places;
     }
     
     public static void activate() {
@@ -141,5 +147,43 @@ public class TranslationController {
         default:
             return "check";
         }
+    }
+    
+    /**
+     * returns the place name for a place inside a method
+     * @param methodName the name of the method we are currently in
+     * @param atBegin states if we are currently at the begin of the method or 
+     * if we should be a place for some loop or other usable location in the code
+     * @return
+     */
+    public static String buildPlace(String methodName, boolean atBegin){
+        String placeName;
+        if(atBegin){
+            placeName = prefix(methodName+"_begin");
+            lastPlace = placeName;
+            places.add(placeName);
+            return placeName;
+        } else {
+            // we have a loop or some other place inside the method, no method call
+            for(int i = 0; i<Integer.MAX_VALUE; i++){
+                placeName = prefix(methodName+i);
+                if(!places.contains(placeName)){
+                    places.add(placeName);
+                    lastPlace = placeName;
+                    return placeName;
+                }
+            }
+            throw new RuntimeException("No possible places left for method "+methodName);
+        }
+    }
+    
+    public static String buildPlace(String methodName, String invocedMethod) {
+        String placeName;
+        for(int i=0; i<Integer.MAX_VALUE; i++){
+            placeName = prefix(methodName + "_" + invocedMethod+i);
+            lastPlace = placeName;
+            places.add(placeName);
+        }
+        throw new RuntimeException("No possible places left for method invocation of "+ invocedMethod+" in method "+methodName);
     }
 }

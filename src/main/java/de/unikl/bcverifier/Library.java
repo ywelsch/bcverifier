@@ -18,6 +18,7 @@ import b2bpl.CompilationAbortedException;
 import b2bpl.Project;
 import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLArrayExpression;
+import b2bpl.bpl.ast.BPLAssertCommand;
 import b2bpl.bpl.ast.BPLAssumeCommand;
 import b2bpl.bpl.ast.BPLBasicBlock;
 import b2bpl.bpl.ast.BPLBuiltInType;
@@ -167,6 +168,10 @@ public class Library implements ITroubleReporter{
                 programDecls.add(new BPLConstantDeclaration(var));
             }
             
+            for(String place : TranslationController.places()){
+                programDecls.add(new BPLConstantDeclaration(new BPLVariable(place, new BPLTypeName(ADDRESS_TYPE))));
+            }
+            
             List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
             BPLVariable[] inParams = new BPLVariable[0];
             BPLVariable[] outParams = new BPLVariable[0];
@@ -265,6 +270,7 @@ public class Library implements ITroubleReporter{
                     List<BPLCommand> preMethodCommands = new ArrayList<BPLCommand>();
                     preMethodCommands.add(new BPLAssumeCommand(
                                         logicalAnd(
+                                        isEqual(stack(var("place")), var(TranslationController.buildPlace(proc.getName(), true))),
                                         isEqual(
                                                 stack(var("meth")) ,
                                                 var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method))
