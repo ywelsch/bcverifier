@@ -173,7 +173,7 @@ public class Library implements ITroubleReporter{
             
             for(BPLVariable var : TranslationController.stackVariables().values()){
                 programDecls.add(new BPLConstantDeclaration(var));
-                if(var.getName().startsWith(PARAM_VAR_PREFIX)){
+                if(var.getName().matches(PARAM_VAR_PREFIX+"\\d+_r")){
                     procAssumes.add(new BPLAssumeCommand(related(stack1(var(var.getName())), stack2(var(var.getName())))));
                 }
             }

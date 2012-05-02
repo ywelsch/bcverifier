@@ -1286,7 +1286,7 @@ public class MethodTranslator implements ITranslationConstants {
 
                     if (method.getReturnType().isReferenceType() || method.isConstructor()) {
                         //        addAssume(alive(rval(topElem), var(TranslationController.getHeap())));
-                        addAssume(isInstanceOf(topElem, typeRef(retType)));
+                        addAssume(isOfType(topElem, typeRef(retType)));
                     } else {
                         //        addAssume(alive(ival(topElem), var(TranslationController.getHeap())));
                         //        addAssume(isOfType(topElem, var(VALUE_TYPE_PREFIX + JBaseType.INT.toString())));
@@ -1300,7 +1300,7 @@ public class MethodTranslator implements ITranslationConstants {
 
         }
 
-        endBlock();
+        rawEndBlock(TranslationController.getCheckLabel());
     }
 
     /**
@@ -2069,6 +2069,17 @@ public class MethodTranslator implements ITranslationConstants {
         } else {
             transCmd = transferCommand;
         }
+        BPLBasicBlock block = new BPLBasicBlock(
+                TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+                commands.toArray(new BPLCommand[commands.size()]),
+                transCmd
+                );
+        blocks.add(block);
+        blockLabel = null;
+    }
+    
+    private void rawEndBlock(String... labels) {
+        BPLTransferCommand transCmd = new BPLGotoCommand(labels);
         BPLBasicBlock block = new BPLBasicBlock(
                 TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
                 commands.toArray(new BPLCommand[commands.size()]),
@@ -3103,6 +3114,7 @@ public class MethodTranslator implements ITranslationConstants {
                 addAssignment(var(TranslationController.getStackPointer()), add(var(TranslationController.getStackPointer()), intLiteral(1)));
 
 
+//                rawEndBlock(TranslationController.getCheckLabel());
                 BPLTransferCommand transCmd = new BPLGotoCommand(TranslationController.getCheckLabel());
                 transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
                 transCmd.addComment("Sourceline: "+handle.getSourceLine());
@@ -3112,8 +3124,12 @@ public class MethodTranslator implements ITranslationConstants {
                         transCmd
                         );
                 blocks.add(block);
-                blockLabel = TranslationController.prefix(blockLabel+"_afterReturn");//TODO correct label
-
+                
+                String thisPlace = TranslationController.buildPlace(getProcedureName(method), getMethodName(invokedMethod));
+                startBlock(TranslationController.nextLabel());
+                addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
+                addAssume(isEqual(stack(var("place")), var(thisPlace)));
+                
                 callStatements++;
             }
         }

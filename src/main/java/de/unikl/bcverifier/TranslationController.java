@@ -33,6 +33,7 @@ public class TranslationController {
     private static HashSet<BCField> referencedFields = new HashSet<BCField>();
     private static HashSet<String> places = new HashSet<String>();
     private static String lastPlace = null;
+    private static String nextLabel = null;
     
     public static Set<String> declaredMethods() {
         return declaredMethods;
@@ -56,6 +57,10 @@ public class TranslationController {
     
     public static HashSet<String> places() {
         return places;
+    }
+    
+    public static String nextLabel() {
+        return nextLabel;
     }
     
     public static void activate() {
@@ -181,8 +186,12 @@ public class TranslationController {
         String placeName;
         for(int i=0; i<Integer.MAX_VALUE; i++){
             placeName = prefix(methodName + "_" + invocedMethod+i);
-            lastPlace = placeName;
-            places.add(placeName);
+            if(!places.contains(placeName)){
+                lastPlace = placeName;
+                places.add(placeName);
+                nextLabel = invocedMethod+i;
+                return placeName;
+            }
         }
         throw new RuntimeException("No possible places left for method invocation of "+ invocedMethod+" in method "+methodName);
     }
