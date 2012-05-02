@@ -24,9 +24,11 @@ import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLConstantDeclaration;
 import b2bpl.bpl.ast.BPLDeclaration;
+import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
+import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLModifiesClause;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
@@ -86,6 +88,18 @@ public class Library implements ITroubleReporter{
         } catch (CompileException e) {
             e.printStackTrace();
         }
+    }
+    
+    private BPLExpression stack1(BPLExpression exp){
+        return new BPLArrayExpression(new BPLArrayExpression(var("stack1"), var("sp1")), exp);
+    }
+    
+    private BPLExpression stack2(BPLExpression exp){
+        return new BPLArrayExpression(new BPLArrayExpression(var("stack2"), var("sp2")), exp);
+    }
+    
+    private BPLExpression related(BPLExpression exp1, BPLExpression exp2){
+        return new BPLArrayExpression(var("related"), exp1, exp2);
     }
     
     public void translate() throws TranslationException{
@@ -161,6 +175,16 @@ public class Library implements ITroubleReporter{
                 localVariables.add(new BPLVariableDeclaration(var));
             }
             
+            List<BPLCommand> procAssumes = new ArrayList<BPLCommand>();
+            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("isCall")), stack2(var("isCall")))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")), stack2(var("meth")))));
+            procAssumes.add(new BPLAssumeCommand(implies(stack1(var("isCall")), related(stack1(var("receiver")), stack2(var("receiver"))))));
+            procAssumes.add(new BPLAssumeCommand(implies(stack1(var("isCall")), logicalAnd(isEqual(var("sp1"), new BPLIntLiteral(0)), isEqual(var("sp2"), new BPLIntLiteral(0))))));
+            procAssumes.add(new BPLAssumeCommand(implies(logicalNot(stack1(var("isCall"))), logicalAnd(greaterEqual(var("sp1"), new BPLIntLiteral(0)), greaterEqual(var("sp2"), new BPLIntLiteral(0))))));
+            //TODO add parameters
+            
+            methodBlocks.add(0, new BPLBasicBlock("preconditions", procAssumes.toArray(new BPLCommand[procAssumes.size()]), new BPLGotoCommand(methodBlocks.get(0).getLabel())));
+            
             String methodName = "checkLibraries";
             BPLImplementationBody methodBody = new BPLImplementationBody(localVariables.toArray(new BPLVariableDeclaration[localVariables.size()]), methodBlocks.toArray(new BPLBasicBlock[methodBlocks.size()]));
             BPLImplementation methodImpl = new BPLImplementation(methodName, inParams, outParams, methodBody);
@@ -171,7 +195,8 @@ public class Library implements ITroubleReporter{
                             new BPLVariableExpression("stack1"),
                             new BPLVariableExpression("stack2"),
                             new BPLVariableExpression("sp1"),
-                            new BPLVariableExpression("sp2")
+                            new BPLVariableExpression("sp2"),
+                            new BPLVariableExpression("related")
                             )
                     ), methodImpl));
             BPLProgram program = new BPLProgram(programDecls.toArray(new BPLDeclaration[programDecls.size()]));
