@@ -164,8 +164,18 @@ public class Library implements ITroubleReporter{
             methodBlocks.add(new BPLBasicBlock(TranslationController.getCheckLabel(), new BPLCommand[0], new BPLReturnCommand()));
             
             
+            List<BPLCommand> procAssumes = new ArrayList<BPLCommand>();
+            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("isCall")), stack2(var("isCall")))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")), stack2(var("meth")))));
+            procAssumes.add(new BPLAssumeCommand(implies(stack1(var("isCall")), related(stack1(var("receiver")), stack2(var("receiver"))))));
+            procAssumes.add(new BPLAssumeCommand(implies(stack1(var("isCall")), logicalAnd(isEqual(var("sp1"), new BPLIntLiteral(0)), isEqual(var("sp2"), new BPLIntLiteral(0))))));
+            procAssumes.add(new BPLAssumeCommand(implies(logicalNot(stack1(var("isCall"))), logicalAnd(greaterEqual(var("sp1"), new BPLIntLiteral(0)), greaterEqual(var("sp2"), new BPLIntLiteral(0))))));
+            
             for(BPLVariable var : TranslationController.stackVariables().values()){
                 programDecls.add(new BPLConstantDeclaration(var));
+                if(var.getName().startsWith(PARAM_VAR_PREFIX)){
+                    procAssumes.add(new BPLAssumeCommand(related(stack1(var(var.getName())), stack2(var(var.getName())))));
+                }
             }
             
             for(String place : TranslationController.places()){
@@ -179,14 +189,6 @@ public class Library implements ITroubleReporter{
             for(BPLVariable var : TranslationController.usedVariables().values()){
                 localVariables.add(new BPLVariableDeclaration(var));
             }
-            
-            List<BPLCommand> procAssumes = new ArrayList<BPLCommand>();
-            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("isCall")), stack2(var("isCall")))));
-            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")), stack2(var("meth")))));
-            procAssumes.add(new BPLAssumeCommand(implies(stack1(var("isCall")), related(stack1(var("receiver")), stack2(var("receiver"))))));
-            procAssumes.add(new BPLAssumeCommand(implies(stack1(var("isCall")), logicalAnd(isEqual(var("sp1"), new BPLIntLiteral(0)), isEqual(var("sp2"), new BPLIntLiteral(0))))));
-            procAssumes.add(new BPLAssumeCommand(implies(logicalNot(stack1(var("isCall"))), logicalAnd(greaterEqual(var("sp1"), new BPLIntLiteral(0)), greaterEqual(var("sp2"), new BPLIntLiteral(0))))));
-            //TODO add parameters
             
             methodBlocks.add(0, new BPLBasicBlock("preconditions", procAssumes.toArray(new BPLCommand[procAssumes.size()]), new BPLGotoCommand(methodBlocks.get(0).getLabel())));
             
