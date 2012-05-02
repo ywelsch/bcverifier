@@ -1,7 +1,10 @@
 package de.unikl.bcverifier;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.KeyStore.Builder;
 import java.util.ArrayList;
@@ -12,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import b2bpl.CompilationAbortedException;
@@ -26,6 +30,7 @@ import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLConstantDeclaration;
 import b2bpl.bpl.ast.BPLDeclaration;
 import b2bpl.bpl.ast.BPLExpression;
+import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
@@ -161,10 +166,14 @@ public class Library implements ITroubleReporter{
             methodBlocks.addAll(libraryDefinition2.getMethodBlocks());
             
 
-            methodBlocks.add(new BPLBasicBlock(TranslationController.getCheckLabel(), new BPLCommand[0], new BPLReturnCommand()));
+            List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
+            checkingCommand.add(new BPLAssertCommand(inv()));
+            
+            methodBlocks.add(new BPLBasicBlock(TranslationController.getCheckLabel(), checkingCommand.toArray(new BPLCommand[checkingCommand.size()]), new BPLReturnCommand()));
             
             
             List<BPLCommand> procAssumes = new ArrayList<BPLCommand>();
+            procAssumes.add(new BPLAssumeCommand(inv()));
             procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("isCall")), stack2(var("isCall")))));
             procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")), stack2(var("meth")))));
             procAssumes.add(new BPLAssumeCommand(implies(stack1(var("isCall")), related(stack1(var("receiver")), stack2(var("receiver"))))));
@@ -211,6 +220,27 @@ public class Library implements ITroubleReporter{
             log.debug("Writing specification to file "+specificationFile);
             PrintWriter writer = new PrintWriter(specificationFile);
             program.accept(new BPLPrinter(writer));
+            
+            writer.println();
+            File invFile = new File(bplPath, "inv.bpl");
+            if(invFile.exists() && invFile.isFile()){
+                BufferedReader invReader = new BufferedReader(new FileReader(invFile));
+                try{
+                    String line;
+                    while((line = invReader.readLine()) != null){
+                        writer.println(line);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    IOUtils.closeQuietly(invReader);
+                }
+            } else {
+                writer.println("function Inv(heap1:Heap, heap2:Heap, stack1:Stack, stack2:Stack, sp1:StackPtr, sp2:StackPtr, related:Bij, place: Var Address) returns (bool) {");
+                writer.println("  true");
+                writer.println("}");
+            }
+            
             writer.close();
         } catch (FileNotFoundException e) {
             throw new TranslationException("Could not write boogie specification to file.", e);
