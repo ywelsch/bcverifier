@@ -270,14 +270,14 @@ public class Library implements ITroubleReporter{
             List<BPLCommand> procAssumes = new ArrayList<BPLCommand>();
             procAssumes.addAll(invAssumes);
             procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")), stack2(var("meth")))));
-            procAssumes.add(new BPLAssumeCommand(related(stack1(var("param0_r")), stack2(var("param0_r")))));
+//            procAssumes.add(new BPLAssumeCommand(related(stack1(var("param0_r")), stack2(var("param0_r")))));
 //            procAssumes.add(new BPLAssumeCommand(logicalAnd(isEqual(var("sp1"), new BPLIntLiteral(0)), isEqual(var("sp2"), new BPLIntLiteral(0)))));
 //            procAssumes.add(new BPLAssumeCommand(implies(logicalNot(stack1(var("isCall"))), logicalAnd(greaterEqual(var("sp1"), new BPLIntLiteral(0)), greaterEqual(var("sp2"), new BPLIntLiteral(0))))));
             
             for(BPLVariable var : TranslationController.stackVariables().values()){
                 programDecls.add(new BPLConstantDeclaration(var));
                 if(var.getName().matches(PARAM_VAR_PREFIX+"\\d+_r")){
-                    procAssumes.add(new BPLAssumeCommand(related(stack1(var(var.getName())), stack2(var(var.getName())))));
+                    procAssumes.add(new BPLAssumeCommand(relNull(stack1(var(var.getName())), stack2(var(var.getName())), var("related"))));
                 }
             }
             
