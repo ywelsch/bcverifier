@@ -63,4 +63,55 @@ public class BCField extends BCMember {
 
     return sb.toString();
   }
+
+@Override
+public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result
+            + ((descriptor == null) ? 0 : descriptor.hashCode());
+    result = prime * result + (isGhostField ? 1231 : 1237);
+    result = prime * result + ((name == null) ? 0 : name.hashCode());
+    result = prime * result + ((type == null) ? 0 : type.hashCode());
+    return result;
+}
+
+@Override
+public boolean equals(Object obj) {
+    if (this == obj) {
+        return true;
+    }
+    if (obj == null) {
+        return false;
+    }
+    if (getClass() != obj.getClass()) {
+        return false;
+    }
+    BCField other = (BCField) obj;
+    if (descriptor == null) {
+        if (other.descriptor != null) {
+            return false;
+        }
+    } else if (!descriptor.equals(other.descriptor)) {
+        return false;
+    }
+    if (isGhostField != other.isGhostField) {
+        return false;
+    }
+    if (name == null) {
+        if (other.name != null) {
+            return false;
+        }
+    } else if (!name.equals(other.name)) {
+        return false;
+    }
+    if (type == null) {
+        if (other.type != null) {
+            return false;
+        }
+    } else if (!type.equals(other.type)) {
+        return false;
+    }
+    return true;
+}
 }
