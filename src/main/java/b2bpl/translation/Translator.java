@@ -280,9 +280,17 @@ public class Translator implements ITranslationConstants {
                         declarations.add(new BPLConstantDeclaration(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE))));
                         TranslationController.declaredMethods().add(methodName);
                     }
-                    declarations.add(new BPLAxiom(new BPLFunctionApplication("definesMethod", typeRef(type), var(methodName))));
+//                    declarations.add(new BPLAxiom(new BPLFunctionApplication("definesMethod", typeRef(type), var(methodName))));
+                    TranslationController.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
                     if(method.isPublic()){
                         declarations.add(new BPLAxiom(new BPLFunctionApplication("isCallable", typeRef(type), var(methodName))));
+                    } else {
+                        declarations.add(new BPLAxiom(logicalNot(new BPLFunctionApplication("isCallable", typeRef(type), var(methodName)))));
+                    }
+                    if(method.isConstructor() || !method.isVoid()){
+                        declarations.add(new BPLAxiom(new BPLFunctionApplication("hasReturnValue", var(methodName))));
+                    } else {
+                        declarations.add(new BPLAxiom(logicalNot(new BPLFunctionApplication("hasReturnValue", var(methodName)))));
                     }
                     procedures.put(method.getQualifiedBoogiePLName(), proc);
                 } else if(method.isAbstract()){
@@ -1372,6 +1380,7 @@ public class Translator implements ITranslationConstants {
             addFunction("isPublic", new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addFunction("definesMethod", new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             addFunction("isCallable", new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction("hasReturnValue", new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
 
             addType(ADDRESS_TYPE);
 
@@ -1381,6 +1390,30 @@ public class Translator implements ITranslationConstants {
             addConstants(new BPLVariable("meth", new BPLTypeName(VAR_TYPE, new BPLTypeName(METHOD_TYPE))));
             addConstants(new BPLVariable("receiver", new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
 
+            {
+                // A helper function for converting int values to bool values.
+                addFunction(INT2BOOL_FUNC, BPLBuiltInType.INT, BPLBuiltInType.BOOL);
+
+                addAxiom(forall(
+                        iVar,
+                        isEquiv(
+                                isEqual(new BPLFunctionApplication(INT2BOOL_FUNC, var(i)), BPLBoolLiteral.FALSE),
+                                isEqual(var(i), intLiteral(0))
+                                ),
+                                trigger(new BPLFunctionApplication(INT2BOOL_FUNC, var(i)))
+                        ));
+
+                addAxiom(forall(
+                        iVar,
+                        isEquiv(
+                                isEqual(new BPLFunctionApplication(INT2BOOL_FUNC, var(i)), BPLBoolLiteral.TRUE),
+                                notEqual(var(i), intLiteral(0))
+                                ),
+                                trigger(new BPLFunctionApplication(INT2BOOL_FUNC, var(i)))
+                        ));
+            }
+            
+            
             flushPendingTheory(); //TODO this is needed at the moment to generate information about the long values (which should be printed into the program code directly)
         }
     }

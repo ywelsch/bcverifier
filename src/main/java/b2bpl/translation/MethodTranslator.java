@@ -1004,6 +1004,10 @@ public class MethodTranslator implements ITranslationConstants {
         } else {
             name = method.getQualifiedName();
         }
+        
+        if(!method.isVoid()){
+            name += "#" + method.getReturnType().getName();
+        }
 
         // Append the names of the method's parameters in order to correctly handle
         // overloaded methods.
@@ -1030,11 +1034,15 @@ public class MethodTranslator implements ITranslationConstants {
         // valid BoogiePL identifiers, so we give them different names which may
         // not clash with names of ordinary methods.
         if (method.isConstructor()) {
-            name = "." + CONSTRUCTOR_NAME;
+            name = "." + CONSTRUCTOR_NAME + "#" + method.getOwner().getName();
         } else if (method.isClassInitializer()) {
             name = "." + CLASS_INITIALIZER_NAME;
         } else {
             name = method.getName();
+        }
+        
+        if(!method.isVoid()){
+            name += "#" + method.getReturnType().getName();
         }
 
         // Append the names of the method's parameters in order to correctly handle
@@ -1290,6 +1298,7 @@ public class MethodTranslator implements ITranslationConstants {
                     } else {
                         //        addAssume(alive(ival(topElem), var(TranslationController.getHeap())));
                         //        addAssume(isOfType(topElem, var(VALUE_TYPE_PREFIX + JBaseType.INT.toString())));
+                        addAssume(isInRange(topElem, typeRef(retType)));
                     }
 
                     if(TranslationController.isActive()){
@@ -1300,6 +1309,9 @@ public class MethodTranslator implements ITranslationConstants {
 
         }
 
+        BPLExpression sp = var(TranslationController.getStackPointer());
+        addAssignment(sp, sub(sp, intLiteral(1)));
+        addAssignment(stack(var("place")), var(TranslationController.buildPlace(getProcedureName(method), true)));
         rawEndBlock(TranslationController.getCheckLabel());
     }
 
@@ -3110,8 +3122,10 @@ public class MethodTranslator implements ITranslationConstants {
 
                 //new code
 
+                String thisPlace = TranslationController.buildPlace(getProcedureName(method), getMethodName(invokedMethod));
+                addAssignment(stack(var("place")), var(thisPlace));
                 addAssignment(stack(spPlus1, var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod)));
-                addAssignment(var(TranslationController.getStackPointer()), add(var(TranslationController.getStackPointer()), intLiteral(1)));
+                addAssignment(var(TranslationController.getStackPointer()), spPlus1);
 
 
 //                rawEndBlock(TranslationController.getCheckLabel());
@@ -3125,7 +3139,6 @@ public class MethodTranslator implements ITranslationConstants {
                         );
                 blocks.add(block);
                 
-                String thisPlace = TranslationController.buildPlace(getProcedureName(method), getMethodName(invokedMethod));
                 startBlock(TranslationController.nextLabel());
                 addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
                 addAssume(isEqual(stack(var("place")), var(thisPlace)));

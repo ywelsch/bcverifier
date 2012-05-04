@@ -1,7 +1,9 @@
 package de.unikl.bcverifier;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,6 +34,8 @@ public class TranslationController {
     private static HashSet<JClassType> referencedTypes = new HashSet<JClassType>();
     private static HashSet<BCField> referencedFields = new HashSet<BCField>();
     private static HashSet<String> places = new HashSet<String>();
+    private static HashMap<String, Set<String>> methodDefinitions = new HashMap<String, Set<String>>();
+    
     private static String lastPlace = null;
     private static String nextLabel = null;
     
@@ -55,6 +59,19 @@ public class TranslationController {
         return referencedFields;
     }
     
+    public static HashMap<String, Set<String>> methodDefinitions() {
+        return methodDefinitions;
+    }
+    
+    public static void definesMethod(String className, String methodName) {
+        Set<String> definedMethods = methodDefinitions.get(className);
+        if(definedMethods==null){
+            definedMethods = new HashSet<String>();
+            methodDefinitions.put(className, definedMethods);
+        }
+        definedMethods.add(methodName);
+    }
+    
     public static HashSet<String> places() {
         return places;
     }
@@ -70,6 +87,7 @@ public class TranslationController {
         stackVariables.clear();
         referencedTypes.clear();
         referencedFields.clear();
+        methodDefinitions.clear();
     }
     
     public static void deactivate() {

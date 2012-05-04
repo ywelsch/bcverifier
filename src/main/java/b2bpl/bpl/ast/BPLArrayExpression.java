@@ -26,4 +26,18 @@ public class BPLArrayExpression extends BPLExpression {
   public <R> R accept(IBPLVisitor<R> visitor) {
     return visitor.visitArrayExpression(this);
   }
+  
+  @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append(prefix.toString());
+        sb.append('[');
+        for(BPLExpression exp : accessors){
+            sb.append(exp.toString());
+            sb.append(',');
+        }
+        sb.deleteCharAt(sb.length()-1);
+        sb.append(']');
+        return sb.toString();
+    }
 }

@@ -64,6 +64,7 @@ public class TypeLoader {
   }
 
   public static void setProjectTypes(String... types) {
+    loadedClassTypes.clear();
     projectTypes = new HashSet<String>();
     for (String type : types) {
       projectTypes.add(type.replace('/', '.'));
@@ -98,8 +99,8 @@ public class TypeLoader {
   
   private static ClassReader getClassReader(String typeName) {
     try {
-      // Create class reader from type name
-//System.out.println("Reading class from name:\t" + typeName);
+//      // Create class reader from type name
+////System.out.println("Reading class from name:\t" + typeName);
       return new ClassReader(typeName);
     } catch (IOException ioex) {
       // Create class reader from file stream

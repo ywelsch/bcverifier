@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -23,8 +24,11 @@ import b2bpl.Project;
 import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLAssertCommand;
+import b2bpl.bpl.ast.BPLAssignmentCommand;
 import b2bpl.bpl.ast.BPLAssumeCommand;
+import b2bpl.bpl.ast.BPLAxiom;
 import b2bpl.bpl.ast.BPLBasicBlock;
+import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLConstantDeclaration;
@@ -96,21 +100,70 @@ public class Library implements ITroubleReporter{
         }
     }
     
+    private BPLExpression heap1(BPLExpression exp1, BPLExpression exp2){
+        return new BPLArrayExpression(var("heap1"), exp1, exp2);
+    }
+    
+    private BPLExpression heap2(BPLExpression exp1, BPLExpression exp2){
+        return new BPLArrayExpression(var("heap2"), exp1, exp2);
+    }
+    
     private BPLExpression stack1(BPLExpression exp){
         return new BPLArrayExpression(new BPLArrayExpression(var("stack1"), var("sp1")), exp);
+    }
+    
+    private BPLExpression stack1old(BPLExpression exp){
+        return new BPLArrayExpression(new BPLArrayExpression(var("stack1"), add(var("sp1"), new BPLIntLiteral(1))), exp);
+    }
+    
+    private BPLExpression stack1calling(BPLExpression exp){
+        return new BPLArrayExpression(new BPLArrayExpression(var("stack1"), sub(var("sp1"), new BPLIntLiteral(1))), exp);
     }
     
     private BPLExpression stack2(BPLExpression exp){
         return new BPLArrayExpression(new BPLArrayExpression(var("stack2"), var("sp2")), exp);
     }
     
+    private BPLExpression stack2old(BPLExpression exp){
+        return new BPLArrayExpression(new BPLArrayExpression(var("stack2"), add(var("sp2"), new BPLIntLiteral(1))), exp);
+    }
+    
+    private BPLExpression stack2calling(BPLExpression exp){
+        return new BPLArrayExpression(new BPLArrayExpression(var("stack2"), sub(var("sp2"), new BPLIntLiteral(1))), exp);
+    }
+    
     private BPLExpression related(BPLExpression exp1, BPLExpression exp2){
         return new BPLArrayExpression(var("related"), exp1, exp2);
+    }
+    
+    private BPLExpression receiver(){
+        return var("param0_r");
     }
     
     public void translate() throws TranslationException{
         File bplPath = new File(libraryPath, "bpl");
         bplPath.mkdir();
+
+        File invFile = new File(bplPath, "inv.bpl");
+        List<String> invariants;
+        try {
+            invariants = FileUtils.readLines(invFile, "UTF-8");
+        } catch (IOException ex){
+            invariants = new ArrayList<String>();
+        }
+        ArrayList<BPLCommand> invAssertions = new ArrayList<BPLCommand>();
+        ArrayList<BPLCommand> invAssumes = new ArrayList<BPLCommand>();
+        BPLCommand cmd;
+        for(String inv : invariants){
+            if(inv.length()>0 && !inv.matches("\\/\\/.*")){
+                cmd = new BPLAssertCommand(var(inv));
+                cmd.addComment("invariant");
+                invAssertions.add(cmd);
+                cmd = new BPLAssumeCommand(var(inv));
+                cmd.addComment("invariant");
+                invAssumes.add(cmd);
+            }
+        }
         
         File specificationFile = new File(bplPath, "specification.bpl");
         
@@ -166,19 +219,60 @@ public class Library implements ITroubleReporter{
             methodBlocks.addAll(libraryDefinition2.getMethodBlocks());
             
 
-            List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
-            checkingCommand.add(new BPLAssertCommand(inv()));
+            // insert all method definition axioms
+            for(String className : TranslationController.methodDefinitions().keySet()){
+                Set<String> methodNames = TranslationController.methodDefinitions().get(className);
+                List<BPLExpression> methodExprs = new ArrayList<BPLExpression>();
+                
+                String m = "m";
+                BPLVariable mVar = new BPLVariable(m, new BPLTypeName(METHOD_TYPE));
+                for(String methodName : methodNames){
+                    methodExprs.add(isEqual(var(m), var(methodName)));
+                }
+                programDecls.add(new BPLAxiom(forall(
+                        mVar,
+                        isEquiv(new BPLFunctionApplication("definesMethod", var(className), var(m)),
+                        logicalOr(methodExprs.toArray(new BPLExpression[methodExprs.size()]))
+                        ))));
+            }
             
-            methodBlocks.add(new BPLBasicBlock(TranslationController.getCheckLabel(), checkingCommand.toArray(new BPLCommand[checkingCommand.size()]), new BPLReturnCommand()));
+            methodBlocks.add(new BPLBasicBlock(TranslationController.getCheckLabel(), new BPLCommand[0], new BPLGotoCommand("check_intern", "check_extern")));
+            
+            List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
+            checkingCommand.add(new BPLAssumeCommand(logicalAnd(isEqual(var("sp1"), new BPLIntLiteral(-1)), isEqual(var("sp2"), new BPLIntLiteral(-1)))));
+            checkingCommand.add(new BPLAssertCommand(isEqual(stack1old(var("meth")), stack2old(var("meth")))));
+            checkingCommand.add(new BPLAssertCommand(logicalAnd( nonNull(stack1old(receiver())), nonNull(stack2old(receiver())) )));
+            //TODO update for method call support
+            // UpdateM (without isCall)
+            checkingCommand.add(new BPLAssertCommand(logicalOr(
+                    relNull(stack1old(receiver()), stack2old(receiver()), var("related")),
+                    logicalAnd(
+                            logicalNot(exists(new BPLVariable("r", new BPLTypeName(REF_TYPE)), related(stack1old(receiver()), var("r")))),
+                            logicalNot(exists(new BPLVariable("r", new BPLTypeName(REF_TYPE)), related(var("r"), stack2old(receiver()))))
+                            )
+                    )));
+            checkingCommand.add(new BPLAssignmentCommand(heap1(stack1old(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
+            checkingCommand.add(new BPLAssignmentCommand(heap2(stack2old(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
+            checkingCommand.add(new BPLAssignmentCommand(related(stack1old(receiver()), stack2old(receiver())), BPLBoolLiteral.TRUE));
+            checkingCommand.add(new BPLAssertCommand(implies(new BPLFunctionApplication("hasReturnValue", stack1old(var("meth"))), logicalOr(relNull(stack1old(var(RESULT_VAR+REF_TYPE_ABBREV)), stack2old(var(RESULT_VAR+REF_TYPE_ABBREV)), var("related")), relNull(stack1old(var(RESULT_VAR+REF_TYPE_ABBREV)), stack2old(var(RESULT_VAR+REF_TYPE_ABBREV)), var("related"))))));
+            
+            
+            checkingCommand.addAll(invAssertions);
+            methodBlocks.add(new BPLBasicBlock("check_intern", checkingCommand.toArray(new BPLCommand[checkingCommand.size()]), new BPLReturnCommand()));
+            
+            checkingCommand.clear();
+            checkingCommand.add(new BPLAssumeCommand(logicalAnd(greater(var("sp1"), new BPLIntLiteral(0)), greater(var("sp2"), new BPLIntLiteral(0)))));
+            checkingCommand.add(new BPLAssertCommand(BPLBoolLiteral.FALSE));//TODO implement checking of method calls to extern
+            
+            methodBlocks.add(new BPLBasicBlock("check_extern", checkingCommand.toArray(new BPLCommand[checkingCommand.size()]), new BPLReturnCommand()));
             
             
             List<BPLCommand> procAssumes = new ArrayList<BPLCommand>();
-            procAssumes.add(new BPLAssumeCommand(inv()));
-            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("isCall")), stack2(var("isCall")))));
+            procAssumes.addAll(invAssumes);
             procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")), stack2(var("meth")))));
-            procAssumes.add(new BPLAssumeCommand(implies(stack1(var("isCall")), related(stack1(var("receiver")), stack2(var("receiver"))))));
-            procAssumes.add(new BPLAssumeCommand(implies(stack1(var("isCall")), logicalAnd(isEqual(var("sp1"), new BPLIntLiteral(0)), isEqual(var("sp2"), new BPLIntLiteral(0))))));
-            procAssumes.add(new BPLAssumeCommand(implies(logicalNot(stack1(var("isCall"))), logicalAnd(greaterEqual(var("sp1"), new BPLIntLiteral(0)), greaterEqual(var("sp2"), new BPLIntLiteral(0))))));
+            procAssumes.add(new BPLAssumeCommand(related(stack1(var("param0_r")), stack2(var("param0_r")))));
+//            procAssumes.add(new BPLAssumeCommand(logicalAnd(isEqual(var("sp1"), new BPLIntLiteral(0)), isEqual(var("sp2"), new BPLIntLiteral(0)))));
+//            procAssumes.add(new BPLAssumeCommand(implies(logicalNot(stack1(var("isCall"))), logicalAnd(greaterEqual(var("sp1"), new BPLIntLiteral(0)), greaterEqual(var("sp2"), new BPLIntLiteral(0))))));
             
             for(BPLVariable var : TranslationController.stackVariables().values()){
                 programDecls.add(new BPLConstantDeclaration(var));
@@ -220,27 +314,6 @@ public class Library implements ITroubleReporter{
             log.debug("Writing specification to file "+specificationFile);
             PrintWriter writer = new PrintWriter(specificationFile);
             program.accept(new BPLPrinter(writer));
-            
-            writer.println();
-            File invFile = new File(bplPath, "inv.bpl");
-            if(invFile.exists() && invFile.isFile()){
-                BufferedReader invReader = new BufferedReader(new FileReader(invFile));
-                try{
-                    String line;
-                    while((line = invReader.readLine()) != null){
-                        writer.println(line);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    IOUtils.closeQuietly(invReader);
-                }
-            } else {
-                writer.println("function Inv(heap1:Heap, heap2:Heap, stack1:Stack, stack2:Stack, sp1:StackPtr, sp2:StackPtr, related:Bij, place: Var Address) returns (bool) {");
-                writer.println("  true");
-                writer.println("}");
-            }
-            
             writer.close();
         } catch (FileNotFoundException e) {
             throw new TranslationException("Could not write boogie specification to file.", e);
@@ -300,17 +373,10 @@ public class Library implements ITroubleReporter{
                     methodLabels.add(methodLabel);
                     
                     List<BPLCommand> preMethodCommands = new ArrayList<BPLCommand>();
-                    preMethodCommands.add(new BPLAssumeCommand(
-                                        logicalAnd(
-                                        isEqual(stack(var("place")), var(TranslationController.buildPlace(proc.getName(), true))),
-                                        isEqual(
-                                                stack(var("meth")) ,
-                                                var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method))
-                                                ),
-                                        //the method is callable from the type of the "this" variable on the stack
-                                        isCallable(typ(stack(var(PARAM_VAR_PREFIX + "0" + REF_TYPE_ABBREV))), var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method)))
-                                        )
-                                    ));
+                    preMethodCommands.add(new BPLAssumeCommand(isEqual(stack(var("place")), var(TranslationController.buildPlace(proc.getName(), true)))));
+                    preMethodCommands.add(new BPLAssumeCommand(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method)))));
+//                    preMethodCommands.add(new BPLAssumeCommand(isCallable(typ(stack(var(PARAM_VAR_PREFIX + "0" + REF_TYPE_ABBREV))), var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method)))));
+                    
                     
                     methodBlocks.add(new BPLBasicBlock(methodLabel,
                             preMethodCommands.toArray(new BPLCommand[preMethodCommands.size()]),
@@ -320,7 +386,10 @@ public class Library implements ITroubleReporter{
             }
         }
         
-        methodBlocks.add(0, new BPLBasicBlock(TranslationController.getDispatchLabel(), new BPLCommand[0], new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]))));
+        List<BPLCommand> dispatchCommands = new ArrayList<BPLCommand>();
+        dispatchCommands.add(new BPLAssumeCommand(isCallable(typ(stack(receiver())), stack(var("meth")))));
+        dispatchCommands.add(new BPLAssumeCommand(isEqual(var(TranslationController.getStackPointer()), new BPLIntLiteral(0))));
+        methodBlocks.add(0, new BPLBasicBlock(TranslationController.getDispatchLabel(), dispatchCommands.toArray(new BPLCommand[dispatchCommands.size()]), new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]))));
         
         return new LibraryDefinition(programDecls, methodBlocks);
     }
