@@ -3370,7 +3370,7 @@ public class Translator implements ITranslationConstants {
          * <i>name</i>.
          */
         public BPLExpression translateFieldReference(BCField field) {
-            String fieldName = GLOBAL_VAR_PREFIX+field.getQualifiedName();
+            String fieldName = GLOBAL_VAR_PREFIX+field.getQualifiedName(); //TODO add type information to make field name unambiguous?
             if (!fieldReferences.contains(field)) {
                 fieldReferences.add(field);
 
