@@ -44,6 +44,7 @@ import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
+import b2bpl.bpl.ast.BPLTransferCommand;
 import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableDeclaration;
@@ -67,6 +68,8 @@ import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 
 public class Library implements ITroubleReporter{
+    private static final String CALLTABLE_LABEL = "calltable";
+
     public static class TranslationException extends Exception {
         private static final long serialVersionUID = 1501139187899875010L;
 
@@ -345,6 +348,7 @@ public class Library implements ITroubleReporter{
         List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
         BPLProcedure proc;
         List<String> methodLabels = new ArrayList<String>();
+        TranslationController.resetReturnLabels();
         String methodLabel;
         for(JClassType classType : projectTypes){
             for(BCMethod method : classType.getMethods()){
@@ -386,10 +390,30 @@ public class Library implements ITroubleReporter{
             }
         }
         
-        List<BPLCommand> dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(isCallable(typ(stack(receiver())), stack(var("meth")))));
+        String callTableLabel = TranslationController.prefix(CALLTABLE_LABEL);
+        String retTableLabel = TranslationController.prefix("rettable");
+        String[] returnLabels = TranslationController.returnLabels().toArray(new String[TranslationController.returnLabels().size()]);
+        
+        List<BPLCommand> dispatchCommands;
+        dispatchCommands = new ArrayList<BPLCommand>();
         dispatchCommands.add(new BPLAssumeCommand(isEqual(var(TranslationController.getStackPointer()), new BPLIntLiteral(0))));
-        methodBlocks.add(0, new BPLBasicBlock(TranslationController.getDispatchLabel(), dispatchCommands.toArray(new BPLCommand[dispatchCommands.size()]), new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]))));
+        methodBlocks.add(0, new BPLBasicBlock(callTableLabel, dispatchCommands.toArray(new BPLCommand[dispatchCommands.size()]), new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]))));
+        
+        BPLTransferCommand dispatchTransferCmd;
+
+        if(returnLabels.length>0){
+            dispatchTransferCmd = new BPLGotoCommand(returnLabels);
+        } else {
+            dispatchTransferCmd = new BPLReturnCommand();
+        }
+        
+        dispatchCommands = new ArrayList<BPLCommand>();
+        dispatchCommands.add(new BPLAssumeCommand(greater(var(TranslationController.getStackPointer()), new BPLIntLiteral(0))));
+        methodBlocks.add(0, new BPLBasicBlock(retTableLabel, dispatchCommands.toArray(new BPLCommand[dispatchCommands.size()]), dispatchTransferCmd));
+        
+        dispatchCommands = new ArrayList<BPLCommand>();
+        dispatchCommands.add(new BPLAssumeCommand(isCallable(typ(stack(receiver())), stack(var("meth")))));
+        methodBlocks.add(0, new BPLBasicBlock(TranslationController.getDispatchLabel(), dispatchCommands.toArray(new BPLCommand[dispatchCommands.size()]), new BPLGotoCommand(callTableLabel, retTableLabel)));
         
         return new LibraryDefinition(programDecls, methodBlocks);
     }

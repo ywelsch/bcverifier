@@ -280,7 +280,7 @@ public class Translator implements ITranslationConstants {
                         declarations.add(new BPLConstantDeclaration(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE))));
                         TranslationController.declaredMethods().add(methodName);
                     }
-//                    declarations.add(new BPLAxiom(new BPLFunctionApplication("definesMethod", typeRef(type), var(methodName))));
+//                    declarations.add(new BPLAxiom(new BPLFunctionApplication(DEFINES_METHOD, typeRef(type), var(methodName))));
                     TranslationController.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
                     if(method.isPublic()){
                         declarations.add(new BPLAxiom(new BPLFunctionApplication("isCallable", typeRef(type), var(methodName))));
@@ -288,9 +288,9 @@ public class Translator implements ITranslationConstants {
                         declarations.add(new BPLAxiom(logicalNot(new BPLFunctionApplication("isCallable", typeRef(type), var(methodName)))));
                     }
                     if(method.isConstructor() || !method.isVoid()){
-                        declarations.add(new BPLAxiom(new BPLFunctionApplication("hasReturnValue", var(methodName))));
+                        declarations.add(new BPLAxiom(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, var(methodName))));
                     } else {
-                        declarations.add(new BPLAxiom(logicalNot(new BPLFunctionApplication("hasReturnValue", var(methodName)))));
+                        declarations.add(new BPLAxiom(logicalNot(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, var(methodName)))));
                     }
                     procedures.put(method.getQualifiedBoogiePLName(), proc);
                 } else if(method.isAbstract()){
@@ -301,6 +301,7 @@ public class Translator implements ITranslationConstants {
                     }
                 }
             }
+            declarations.add(new BPLAxiom(new BPLFunctionApplication(LIB_TYPE_FUNC, typeRef(type))));
         }
 
         return procedures;
@@ -1377,10 +1378,12 @@ public class Translator implements ITranslationConstants {
 
             addFunction(FIELD_TYPE_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), new BPLTypeName(NAME_TYPE));
             
-            addFunction("isPublic", new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
-            addFunction("definesMethod", new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_PUBLIC_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(DEFINES_METHOD_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             addFunction("isCallable", new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
-            addFunction("hasReturnValue", new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction(HAS_RETURN_VALUE_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction(MEMBER_OF_FUNC, new BPLTypeName(METHOD_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(LIB_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
 
             addType(ADDRESS_TYPE);
 
@@ -3316,9 +3319,9 @@ public class Translator implements ITranslationConstants {
                 }
 
                 if(classType.isPublic()){
-                    addAxiom(new BPLFunctionApplication("isPublic", typeRef(classType)));
+                    addAxiom(new BPLFunctionApplication(IS_PUBLIC_FUNC, typeRef(classType)));
                 } else {
-                    addAxiom(logicalNot(new BPLFunctionApplication("isPublic", typeRef(classType))));
+                    addAxiom(logicalNot(new BPLFunctionApplication(IS_PUBLIC_FUNC, typeRef(classType))));
                 }
 
                 // Generate axioms for ruling out "wrong supertypes".

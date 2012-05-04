@@ -1311,8 +1311,21 @@ public class MethodTranslator implements ITranslationConstants {
 
         BPLExpression sp = var(TranslationController.getStackPointer());
         addAssignment(sp, sub(sp, intLiteral(1)));
+        String currentLabel = blockLabel;
+        
+        String noReturnLabel = currentLabel + "_noReturn";
+        String isReturnLabel = currentLabel + "_return";
+        endBlock(noReturnLabel, isReturnLabel);
+        
+        startBlock(noReturnLabel);
+        addAssume(isEqual(var(TranslationController.getStackPointer()), intLiteral(-1)));
         addAssignment(stack(var("place")), var(TranslationController.buildPlace(getProcedureName(method), true)));
         rawEndBlock(TranslationController.getCheckLabel());
+        
+        String retTableLabel = TranslationController.prefix("rettable");
+        startBlock(isReturnLabel);
+        addAssume(greater(var(TranslationController.getStackPointer()), intLiteral(-1)));
+        rawEndBlock(retTableLabel);
     }
 
     /**

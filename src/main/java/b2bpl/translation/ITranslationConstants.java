@@ -93,6 +93,16 @@ public interface ITranslationConstants {
   
   String WELLFORMED_STACK_FUNC = "WellformedStack";
   
+  String IS_PUBLIC_FUNC = "isPublic";
+  
+  String DEFINES_METHOD_FUNC = "definesMethod";
+  
+  String HAS_RETURN_VALUE_FUNC = "hasReturnValue";
+  
+  String MEMBER_OF_FUNC = "memberOf";
+  
+  String LIB_TYPE_FUNC = "libType";
+  
   String BEING_CONSTRUCTED_CONST = GLOBAL_VAR_PREFIX+"BeingConstructed";
 
   String STACK_PTR_TYPE = "StackPtr";

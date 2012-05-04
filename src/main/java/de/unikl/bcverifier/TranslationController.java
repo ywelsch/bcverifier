@@ -35,6 +35,7 @@ public class TranslationController {
     private static HashSet<BCField> referencedFields = new HashSet<BCField>();
     private static HashSet<String> places = new HashSet<String>();
     private static HashMap<String, Set<String>> methodDefinitions = new HashMap<String, Set<String>>();
+    private static Set<String> returnLabels = new HashSet<String>();
     
     private static String lastPlace = null;
     private static String nextLabel = null;
@@ -63,6 +64,14 @@ public class TranslationController {
         return methodDefinitions;
     }
     
+    public static Set<String> returnLabels() {
+        return returnLabels;
+    }
+    
+    public static void resetReturnLabels() {
+        returnLabels.clear();
+    }
+    
     public static void definesMethod(String className, String methodName) {
         Set<String> definedMethods = methodDefinitions.get(className);
         if(definedMethods==null){
@@ -88,6 +97,8 @@ public class TranslationController {
         referencedTypes.clear();
         referencedFields.clear();
         methodDefinitions.clear();
+        places.clear();
+        returnLabels.clear();
     }
     
     public static void deactivate() {
@@ -208,6 +219,7 @@ public class TranslationController {
                 lastPlace = placeName;
                 places.add(placeName);
                 nextLabel = invocedMethod+i;
+                returnLabels.add(nextLabel);
                 return placeName;
             }
         }
