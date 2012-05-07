@@ -103,46 +103,6 @@ public class Library implements ITroubleReporter{
         }
     }
     
-    private BPLExpression heap1(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var("heap1"), exp1, exp2);
-    }
-    
-    private BPLExpression heap2(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var("heap2"), exp1, exp2);
-    }
-    
-    private BPLExpression stack1(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack1"), var("sp1")), exp);
-    }
-    
-    private BPLExpression stack1old(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack1"), add(var("sp1"), new BPLIntLiteral(1))), exp);
-    }
-    
-    private BPLExpression stack1calling(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack1"), sub(var("sp1"), new BPLIntLiteral(1))), exp);
-    }
-    
-    private BPLExpression stack2(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack2"), var("sp2")), exp);
-    }
-    
-    private BPLExpression stack2old(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack2"), add(var("sp2"), new BPLIntLiteral(1))), exp);
-    }
-    
-    private BPLExpression stack2calling(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack2"), sub(var("sp2"), new BPLIntLiteral(1))), exp);
-    }
-    
-    private BPLExpression related(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var("related"), exp1, exp2);
-    }
-    
-    private BPLExpression receiver(){
-        return var("param0_r");
-    }
-    
     public void translate() throws TranslationException{
         File bplPath = new File(libraryPath, "bpl");
         bplPath.mkdir();
@@ -243,21 +203,55 @@ public class Library implements ITroubleReporter{
             
             List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
             checkingCommand.add(new BPLAssumeCommand(logicalAnd(isEqual(var("sp1"), new BPLIntLiteral(-1)), isEqual(var("sp2"), new BPLIntLiteral(-1)))));
+            
             checkingCommand.add(new BPLAssertCommand(isEqual(stack1old(var("meth")), stack2old(var("meth")))));
             checkingCommand.add(new BPLAssertCommand(logicalAnd( nonNull(stack1old(receiver())), nonNull(stack2old(receiver())) )));
-            //TODO update for method call support
-            // UpdateM (without isCall)
-            checkingCommand.add(new BPLAssertCommand(logicalOr(
-                    relNull(stack1old(receiver()), stack2old(receiver()), var("related")),
-                    logicalAnd(
-                            logicalNot(exists(new BPLVariable("r", new BPLTypeName(REF_TYPE)), related(stack1old(receiver()), var("r")))),
-                            logicalNot(exists(new BPLVariable("r", new BPLTypeName(REF_TYPE)), related(var("r"), stack2old(receiver()))))
-                            )
-                    )));
-            checkingCommand.add(new BPLAssignmentCommand(heap1(stack1old(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
-            checkingCommand.add(new BPLAssignmentCommand(heap2(stack2old(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
-            checkingCommand.add(new BPLAssignmentCommand(related(stack1old(receiver()), stack2old(receiver())), BPLBoolLiteral.TRUE));
+            
+//            //TODO only do this if it is a call (sp1 == -1?)
+//            checkingCommand.add(new BPLAssertCommand(logicalOr(
+//                    relNull(stack1old(receiver()), stack2old(receiver()), var("related")),
+//                    logicalAnd(
+//                            logicalNot(exists(new BPLVariable("r", new BPLTypeName(REF_TYPE)), related(stack1old(receiver()), var("r")))),
+//                            logicalNot(exists(new BPLVariable("r", new BPLTypeName(REF_TYPE)), related(var("r"), stack2old(receiver()))))
+//                            )
+//                    )));
+//            checkingCommand.add(new BPLAssignmentCommand(heap1(stack1old(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
+//            checkingCommand.add(new BPLAssignmentCommand(heap2(stack2old(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
+//            checkingCommand.add(new BPLAssignmentCommand(related(stack1old(receiver()), stack2old(receiver())), BPLBoolLiteral.TRUE));
+            
+            for(BPLVariable var : TranslationController.stackVariables().values()){
+                if(var.getName().matches(PARAM_VAR_PREFIX+"\\d+_r")){
+                    checkingCommand.add(new BPLAssertCommand(logicalOr(
+                            relNull(stack1old(var(var.getName())), stack2old(var(var.getName())), var("related")),
+                            logicalAnd(
+                                    logicalNot(exists(new BPLVariable("r", new BPLTypeName(REF_TYPE)), related(stack1old(var(var.getName())), var("r")))),
+                                    logicalNot(exists(new BPLVariable("r", new BPLTypeName(REF_TYPE)), related(var("r"), stack2old(var(var.getName())))))
+                                    )
+                            )));
+                    // if var != null ...
+                    checkingCommand.add(
+                            new BPLAssignmentCommand(heap1(stack1old(var(var.getName())), var("exposed")),
+                            ifThenElse(logicalAnd(nonNull(stack1old(var(var.getName()))), nonNull(stack2old(var(var.getName())))),
+                                    BPLBoolLiteral.TRUE,
+                                    heap1(stack1old(var(var.getName())), var("exposed"))
+                            )));
+                    checkingCommand.add(
+                            new BPLAssignmentCommand(heap2(stack2old(var(var.getName())), var("exposed")),
+                            ifThenElse(logicalAnd(nonNull(stack1old(var(var.getName()))), nonNull(stack2old(var(var.getName())))),
+                                    BPLBoolLiteral.TRUE,
+                                    heap2(stack2old(var(var.getName())), var("exposed"))
+                            )));
+                    checkingCommand.add(
+                            new BPLAssignmentCommand(related(stack1old(var(var.getName())), stack2old(var(var.getName()))), 
+                            ifThenElse(logicalAnd(nonNull(stack1old(var(var.getName()))), nonNull(stack2old(var(var.getName())))),        
+                                    BPLBoolLiteral.TRUE,
+                                    related(stack1old(var(var.getName())), stack2old(var(var.getName())))
+                            )));
+                }
+            }
+            
             checkingCommand.add(new BPLAssertCommand(implies(new BPLFunctionApplication("hasReturnValue", stack1old(var("meth"))), logicalOr(relNull(stack1old(var(RESULT_VAR+REF_TYPE_ABBREV)), stack2old(var(RESULT_VAR+REF_TYPE_ABBREV)), var("related")), relNull(stack1old(var(RESULT_VAR+REF_TYPE_ABBREV)), stack2old(var(RESULT_VAR+REF_TYPE_ABBREV)), var("related"))))));
+            
             
             
             checkingCommand.addAll(invAssertions);

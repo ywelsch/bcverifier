@@ -1,0 +1,1 @@
+( forall r: Ref :: IsAllocated(heap1, r) ==> heap1[r,$cb.A.g] % 2 == 0 )

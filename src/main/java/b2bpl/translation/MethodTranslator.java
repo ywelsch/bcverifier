@@ -41,6 +41,7 @@ import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.type;
 import static b2bpl.translation.CodeGenerator.var;
+import static b2bpl.translation.ITranslationConstants.GLOBAL_VAR_PREFIX;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1301,13 +1302,19 @@ public class MethodTranslator implements ITranslationConstants {
                         addAssume(isInRange(topElem, typeRef(retType)));
                     }
 
-                    if(TranslationController.isActive()){
+//                    if(TranslationController.isActive()){
+//                        addAssignment(stack(var(RESULT_PARAM + typeAbbrev(type(retType)))), stack(var(stackVar(0, retType))));
+//                    } else {
+//                        addAssignment(var(RESULT_PARAM + typeAbbrev(type(retType))), stack(var(stackVar(0, retType))));
+//                    }
+                    if(TranslationController.isActive() && method.isConstructor()){
                         addAssignment(stack(var(RESULT_PARAM + typeAbbrev(type(retType)))), stack(var(stackVar(0, retType))));
-                    } else {
-                        addAssignment(var(RESULT_PARAM + typeAbbrev(type(retType))), stack(var(stackVar(0, retType))));
                     }
 
         }
+        
+//        addCommand(new BPLAssumeCommand(isEqual(stack(var("place")), var(TranslationController.buildPlace(getProcedureName(method), true)))));
+        addCommand(new BPLAssumeCommand(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method)))));
 
         BPLExpression sp = var(TranslationController.getStackPointer());
         addAssignment(sp, sub(sp, intLiteral(1)));
@@ -3051,7 +3058,7 @@ public class MethodTranslator implements ITranslationConstants {
                 // Assume exceptional postcondition for all exceptions
                 // and jump to the appropriate exception handler defined below.
 
-                JClassType[] exceptions = invokedMethod.getExceptionTypes();
+//                JClassType[] exceptions = invokedMethod.getExceptionTypes();
                 //      
                 //      if (exceptions.length > 0) {
                 //        // For every exception thrown by the method call, we create a synthetic
@@ -3153,6 +3160,7 @@ public class MethodTranslator implements ITranslationConstants {
                 blocks.add(block);
                 
                 startBlock(TranslationController.nextLabel());
+                addAssume(isEqual(stack(spPlus1, var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod))));
                 addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
                 addAssume(isEqual(stack(var("place")), var(thisPlace)));
                 
