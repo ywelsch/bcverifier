@@ -419,21 +419,24 @@ public class MethodTranslator implements ITranslationConstants {
         // BPLVariable[] outParams = BPLVariable.EMPTY_ARRAY;
         List<BPLVariable> outParams = new ArrayList<BPLVariable>();
         //@deprecated outParams.add(new BPLVariable(RETURN_HEAP_PARAM, new BPLTypeName(HEAP_TYPE)));
-        if (provideReturnValue) {
-            if(TranslationController.isActive()){
-                if (method.isConstructor()) {
-                    vars.add(new BPLVariableDeclaration(new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)))));
-                } else {
-                    vars.add(new BPLVariableDeclaration(new BPLVariable(RESULT_PARAM + typeAbbrev(type(method.getReturnType())), new BPLTypeName(VAR_TYPE, type(method.getReturnType())))));
-                }
-            } else {
-                if (method.isConstructor()) {
-                    outParams.add(new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE)));
-                } else {
-                    outParams.add(new BPLVariable(RESULT_PARAM + typeAbbrev(type(method.getReturnType())), type(method.getReturnType())));
-                }
-            }
-        }
+//        if (provideReturnValue) {
+//            if(TranslationController.isActive()){
+//                if (method.isConstructor()) {
+//                    vars.add(new BPLVariableDeclaration(new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)))));
+//                } else {
+//                    vars.add(new BPLVariableDeclaration(new BPLVariable(RESULT_PARAM + typeAbbrev(type(method.getReturnType())), new BPLTypeName(VAR_TYPE, type(method.getReturnType())))));
+//                }
+//            } else {
+//                if (method.isConstructor()) {
+//                    outParams.add(new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(REF_TYPE)));
+//                } else {
+//                    outParams.add(new BPLVariable(RESULT_PARAM + typeAbbrev(type(method.getReturnType())), type(method.getReturnType())));
+//                }
+//            }
+//        }
+        // always provide the result variables (because we need them in the invariants
+        vars.add(new BPLVariableDeclaration(new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)))));
+        vars.add(new BPLVariableDeclaration(new BPLVariable(RESULT_PARAM + INT_TYPE_ABBREV, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT))));
         outParams.add(new BPLVariable(EXCEPTION_PARAM, new BPLTypeName(REF_TYPE)));
 
         // Build the different parts of the BoogiePL procedure.

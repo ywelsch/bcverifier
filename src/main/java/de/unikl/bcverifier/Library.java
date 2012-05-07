@@ -68,6 +68,8 @@ import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 
 public class Library implements ITroubleReporter{
+    private static final String RETTABLE_LABEL = "rettable";
+
     private static final String CALLTABLE_LABEL = "calltable";
 
     public static class TranslationException extends Exception {
@@ -258,7 +260,7 @@ public class Library implements ITroubleReporter{
                 }
             }
             
-            checkingCommand.add(new BPLAssertCommand(implies(new BPLFunctionApplication("hasReturnValue", stack1old(var("meth"))), logicalOr(relNull(stack1old(var(RESULT_VAR+REF_TYPE_ABBREV)), stack2old(var(RESULT_VAR+REF_TYPE_ABBREV)), var("related")), relNull(stack1old(var(RESULT_VAR+REF_TYPE_ABBREV)), stack2old(var(RESULT_VAR+REF_TYPE_ABBREV)), var("related"))))));
+            checkingCommand.add(new BPLAssertCommand(implies(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, stack1old(var("meth"))), logicalOr(relNull(stack1old(var(RESULT_VAR+REF_TYPE_ABBREV)), stack2old(var(RESULT_VAR+REF_TYPE_ABBREV)), var("related")), isEqual(stack1old(var(RESULT_VAR+INT_TYPE_ABBREV)), stack2old(var(RESULT_VAR+INT_TYPE_ABBREV)))))));
             
             checkingCommand.addAll(invAssertions);
             methodBlocks.add(new BPLBasicBlock("check_intern", checkingCommand.toArray(new BPLCommand[checkingCommand.size()]), new BPLReturnCommand()));
@@ -285,7 +287,7 @@ public class Library implements ITroubleReporter{
 //            checkingCommand.add(new BPLAssignmentCommand(related(stack1old(receiver()), stack2old(receiver())), BPLBoolLiteral.TRUE));
             
             for(BPLVariable var : TranslationController.stackVariables().values()){
-                if(var.getName().matches(PARAM_VAR_PREFIX+"\\d+_r") && !var.getName().equals(PARAM_VAR_PREFIX+"0_r")){ //do not relate receiver (param0_r) TODO:why?
+                if(var.getName().matches(PARAM_VAR_PREFIX+"\\d+_r")){
                     checkingCommand.add(new BPLAssertCommand(logicalOr(
                             relNull(stack1(var(var.getName())), stack2(var(var.getName())), var("related")),
                             logicalAnd(
@@ -457,7 +459,7 @@ public class Library implements ITroubleReporter{
         // callTable and returnTable
         ////////////////////////////////////////
         String callTableLabel = TranslationController.prefix(CALLTABLE_LABEL);
-        String retTableLabel = TranslationController.prefix("rettable");
+        String retTableLabel = TranslationController.prefix(RETTABLE_LABEL);
         String[] returnLabels = TranslationController.returnLabels().toArray(new String[TranslationController.returnLabels().size()]);
         
         ////////////////////////////////////////
