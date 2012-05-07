@@ -18,6 +18,7 @@ import static b2bpl.translation.CodeGenerator.heap;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
 import static b2bpl.translation.CodeGenerator.implies;
 import static b2bpl.translation.CodeGenerator.intToInt;
+import static b2bpl.translation.CodeGenerator.isAllocated;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isInRange;
 import static b2bpl.translation.CodeGenerator.isInstanceOf;
@@ -1171,7 +1172,7 @@ public class MethodTranslator implements ITranslationConstants {
                 } else if(params[i].isClassType()){
                     JClassType classType = (JClassType)params[i];
                     addAssume(isOfType(stack(var(paramVar(i, classType))), context.translateTypeReference(classType)));
-                    addAssume(heap(stack(var(paramVar(i, classType))), var("alloc")));
+                    addAssume(isAllocated(var(TranslationController.getHeap()), stack(var(paramVar(i, classType)))));
                 } else {
                     //TODO arrays
                 }

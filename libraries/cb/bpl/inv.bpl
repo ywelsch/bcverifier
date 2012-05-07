@@ -1,1 +1,1 @@
-( forall r: Ref :: IsAllocated(heap1, r) ==> heap1[r,$cb.A.g] % 2 == 0 )
+( forall r: Ref, heap: Heap :: isOfType(r, $cb.A) && IsAllocated(heap, r) ==> heap[r,$cb.A.g] % 2 == 0 )
