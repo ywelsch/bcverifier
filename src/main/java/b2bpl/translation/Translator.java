@@ -14,6 +14,7 @@ import static b2bpl.translation.CodeGenerator.bitShl;
 import static b2bpl.translation.CodeGenerator.bitShr;
 import static b2bpl.translation.CodeGenerator.classRepr;
 import static b2bpl.translation.CodeGenerator.classReprInv;
+import static b2bpl.translation.CodeGenerator.definesMethod;
 import static b2bpl.translation.CodeGenerator.divide;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldType;
@@ -41,6 +42,7 @@ import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
+import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.modulo;
 import static b2bpl.translation.CodeGenerator.multiply;
 import static b2bpl.translation.CodeGenerator.nonNull;
@@ -286,9 +288,9 @@ public class Translator implements ITranslationConstants {
 //                    declarations.add(new BPLAxiom(new BPLFunctionApplication(DEFINES_METHOD, typeRef(type), var(methodName))));
                     TranslationController.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
                     if(method.isPublic()){
-                        declarations.add(new BPLAxiom(new BPLFunctionApplication("isCallable", typeRef(type), var(methodName))));
+                        declarations.add(new BPLAxiom(new BPLFunctionApplication(IS_CALLABLE_FUNC, typeRef(type), var(methodName))));
                     } else {
-                        declarations.add(new BPLAxiom(logicalNot(new BPLFunctionApplication("isCallable", typeRef(type), var(methodName)))));
+                        declarations.add(new BPLAxiom(logicalNot(new BPLFunctionApplication(IS_CALLABLE_FUNC, typeRef(type), var(methodName)))));
                     }
                     if(method.isConstructor() || !method.isVoid()){
                         declarations.add(new BPLAxiom(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, var(methodName))));
@@ -1214,6 +1216,14 @@ public class Translator implements ITranslationConstants {
             BPLVariable xVar = new BPLVariable(x, new BPLTypeName("alpha"));
             final String y = "y";
             BPLVariable yVar = new BPLVariable(y, new BPLTypeName("alpha"));
+            final String m = "m";
+            BPLVariable mVar = new BPLVariable(m, new BPLTypeName(METHOD_TYPE));
+            final String c1 = "c1";
+            BPLVariable c1Var = new BPLVariable(c1, new BPLTypeName(NAME_TYPE));
+            final String c2 = "c2";
+            BPLVariable c2Var = new BPLVariable(c2, new BPLTypeName(NAME_TYPE));
+            final String c3 = "c3";
+            BPLVariable c3Var = new BPLVariable(c3, new BPLTypeName(NAME_TYPE));
             
             
             
@@ -1395,9 +1405,24 @@ public class Translator implements ITranslationConstants {
             
             addFunction(IS_PUBLIC_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addFunction(DEFINES_METHOD_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
-            addFunction("isCallable", new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_CALLABLE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             addFunction(HAS_RETURN_VALUE_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addComment("memberOf(m, t1, t2) <==> m is member of t2 (implementation is in t1)");
             addFunction(MEMBER_OF_FUNC, new BPLTypeName(METHOD_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            
+            addAxiom(forall(
+                    mVar, c1Var, c2Var,
+                    isEquiv(memberOf(var(m), var(c1), var(c2)),
+                            logicalOr(
+                                    logicalAnd(isEqual(var(c1), var(c2)), definesMethod(var(c2), var(m))),
+                                    logicalAnd(logicalNot(definesMethod(var(c2), var(m))), 
+                                            forall(c3Var, implies(isSubtype(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) //TODO do we have to use classExtends-function instead of isSubtype?
+                                    )
+                            )
+                    ),
+                    new BPLTrigger(memberOf(var(m), var(c1), var(c2)))
+                    ));
+            
             addFunction(LIB_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
 
             addType(ADDRESS_TYPE);

@@ -1004,7 +1004,7 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression isCallable(BPLExpression exp1, BPLExpression exp2){
-        return new BPLFunctionApplication("isCallable", exp1, exp2);
+        return new BPLFunctionApplication(IS_CALLABLE_FUNC, exp1, exp2);
     }
     
     public static BPLExpression relNull(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
@@ -1037,6 +1037,14 @@ public final class CodeGenerator implements ITranslationConstants {
     
     public static BPLExpression obj(BPLExpression heap, BPLExpression ref){
         return new BPLFunctionApplication(OBJ_FUNC, heap, ref);
+    }
+    
+    public static BPLExpression memberOf(BPLExpression meth, BPLExpression c1, BPLExpression c2){
+        return new BPLFunctionApplication(MEMBER_OF_FUNC, meth, c1, c2);
+    }
+    
+    public static BPLExpression definesMethod(BPLExpression c, BPLExpression m){
+        return new BPLFunctionApplication(DEFINES_METHOD_FUNC, c, m);
     }
     
     

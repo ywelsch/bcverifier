@@ -349,7 +349,9 @@ public interface ITranslationConstants {
 
   String ADDRESS_TYPE = "Address";
 
-public static final String OBJ_FUNC = "Obj";
+  String OBJ_FUNC = "Obj";
+  
+  String IS_CALLABLE_FUNC = "isCallable";
 
 //public static final String ALLOC_OBJ = "AllocObj";
 }
