@@ -35,6 +35,7 @@ import static b2bpl.translation.CodeGenerator.neg;
 import static b2bpl.translation.CodeGenerator.nonNull;
 import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.nullLiteral;
+import static b2bpl.translation.CodeGenerator.obj;
 import static b2bpl.translation.CodeGenerator.old;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.stack;
@@ -42,6 +43,7 @@ import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.type;
 import static b2bpl.translation.CodeGenerator.var;
+import static b2bpl.translation.CodeGenerator.wellformedHeap;
 import static b2bpl.translation.ITranslationConstants.GLOBAL_VAR_PREFIX;
 
 import java.util.ArrayList;
@@ -1175,7 +1177,7 @@ public class MethodTranslator implements ITranslationConstants {
                 } else if(params[i].isClassType()){
                     JClassType classType = (JClassType)params[i];
                     addAssume(isOfType(stack(var(paramVar(i, classType))), context.translateTypeReference(classType)));
-                    addAssume(isAllocated(var(TranslationController.getHeap()), stack(var(paramVar(i, classType)))));
+//                    addAssume(obj(var(TranslationController.getHeap()), stack(var(paramVar(i, classType))))); //TODO this would mean all parameters are non-null
                 } else {
                     //TODO arrays
                 }
@@ -2826,6 +2828,7 @@ public class MethodTranslator implements ITranslationConstants {
             BPLExpression heapLocation = new BPLArrayExpression(var(TranslationController.getHeap()), stack(lhs), context.translateFieldReference(field));
             BPLCommand cmd = new BPLAssignmentCommand(heapLocation, stack(rhs));
             addCommand(cmd);
+            addCommand(new BPLAssumeCommand(wellformedHeap(var(TranslationController.getHeap()))));
         }
 
         //@ requires insn != null;

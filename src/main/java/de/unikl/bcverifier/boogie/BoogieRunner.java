@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 
 import org.apache.commons.io.IOUtils;
@@ -59,6 +58,8 @@ public class BoogieRunner {
             Collections.addAll(parameters, BOOGIE_COMMAND.split(" "));
             parameters.add("/nologo");
 //            parameters.add("/timeLimit:30"); //limit time spent to verify each procedure to 30 seconds
+//            parameters.add("/smoke");
+            parameters.add("/mv:boogie.model");
             if(!verify){
                 parameters.add("/noVerify");
             }

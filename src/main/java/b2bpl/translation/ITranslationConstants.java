@@ -349,5 +349,7 @@ public interface ITranslationConstants {
 
   String ADDRESS_TYPE = "Address";
 
+public static final String OBJ_FUNC = "Obj";
+
 //public static final String ALLOC_OBJ = "AllocObj";
 }
