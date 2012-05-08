@@ -56,6 +56,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane.RestoreAction;
+
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLAssertCommand;
@@ -3170,6 +3172,9 @@ public class MethodTranslator implements ITranslationConstants {
                 addAssume(isEqual(stack(spPlus1, var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod))));
                 addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
                 addAssume(isEqual(stack(var("place")), var(thisPlace)));
+                if(hasReturnValue){
+                    addAssignment(stack(var(stackVar(first, retType))), stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))));
+                }
                 
                 callStatements++;
             }
