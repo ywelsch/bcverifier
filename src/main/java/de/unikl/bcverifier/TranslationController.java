@@ -219,7 +219,7 @@ public class TranslationController {
                 lastPlace = placeName;
                 places.add(placeName);
                 nextLabel = invocedMethod+i;
-                returnLabels.add(nextLabel);
+                returnLabels.add(prefix(methodName + "_" + nextLabel));
                 return placeName;
             }
         }

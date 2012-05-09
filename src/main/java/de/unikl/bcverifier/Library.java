@@ -576,6 +576,8 @@ public class Library implements ITroubleReporter {
 
     private LibraryDefinition compileSpecification(String[] fileNames)
             throws FileNotFoundException {
+        TranslationController.resetReturnLabels();
+        
         Project project = Project.fromCommandLine(fileNames, new PrintWriter(
                 System.out));
         CodeGenerator.setProject(project);
@@ -602,7 +604,6 @@ public class Library implements ITroubleReporter {
         List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
         BPLProcedure proc;
         List<String> methodLabels = new ArrayList<String>();
-        TranslationController.resetReturnLabels();
         String methodLabel;
         for (JClassType classType : projectTypes) {
             for (BCMethod method : classType.getMethods()) {
@@ -676,7 +677,9 @@ public class Library implements ITroubleReporter {
         // callTable and returnTable
         // //////////////////////////////////////
         String callTableLabel = TranslationController.prefix(ITranslationConstants.CALLTABLE_LABEL);
+        String callTableInitLabel = callTableLabel + "_init";
         String retTableLabel = TranslationController.prefix(ITranslationConstants.RETTABLE_LABEL);
+        String retTableInitLabel = retTableLabel + "_init";
         String[] returnLabels = TranslationController.returnLabels().toArray(
                 new String[TranslationController.returnLabels().size()]);
 
@@ -685,9 +688,6 @@ public class Library implements ITroubleReporter {
         // /////////////////////////////////////
         List<BPLCommand> dispatchCommands;
         dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(isEqual(
-                var(TranslationController.getStackPointer()),
-                new BPLIntLiteral(0))));
         methodBlocks.add(
                 0,
                 new BPLBasicBlock(callTableLabel, dispatchCommands
@@ -702,19 +702,47 @@ public class Library implements ITroubleReporter {
         } else {
             dispatchTransferCmd = new BPLReturnCommand();
         }
+        
+        ///////////////////////////////////////////
+        // commands before callTableInit (preconditions of the calltable)
+        ///////////////////////////////////////////
+        
+        dispatchCommands = new ArrayList<BPLCommand>();
+        dispatchCommands.add(new BPLAssumeCommand(isEqual(
+                var(TranslationController.getStackPointer()),
+                new BPLIntLiteral(0))));
+        methodBlocks.add(
+                0,
+                new BPLBasicBlock(callTableInitLabel, dispatchCommands
+                        .toArray(new BPLCommand[dispatchCommands.size()]),
+                        new BPLGotoCommand(callTableLabel)));
+        
+        
 
         // ///////////////////////////////////////
         // commands before returnTable
         // ///////////////////////////////////////
+        dispatchCommands = new ArrayList<BPLCommand>();
+        methodBlocks.add(
+                0,
+                new BPLBasicBlock(retTableLabel, dispatchCommands
+                        .toArray(new BPLCommand[dispatchCommands.size()]),
+                        dispatchTransferCmd));
+        
+        ///////////////////////////////////////////
+        // commands before returnTableInit (preconditions of the calltable)
+        ///////////////////////////////////////////
+        
         dispatchCommands = new ArrayList<BPLCommand>();
         dispatchCommands.add(new BPLAssumeCommand(greater(
                 var(TranslationController.getStackPointer()),
                 new BPLIntLiteral(0))));
         methodBlocks.add(
                 0,
-                new BPLBasicBlock(retTableLabel, dispatchCommands
-                        .toArray(new BPLCommand[dispatchCommands.size()]),
-                        dispatchTransferCmd));
+                new BPLBasicBlock(retTableInitLabel, dispatchCommands
+                          .toArray(new BPLCommand[dispatchCommands.size()]),
+                          new BPLGotoCommand(retTableLabel)));
+        
 
         // //////////////////////////////////////
         // commands before dispatch
@@ -731,7 +759,7 @@ public class Library implements ITroubleReporter {
                                 dispatchCommands
                                         .toArray(new BPLCommand[dispatchCommands
                                                 .size()]), new BPLGotoCommand(
-                                        callTableLabel, retTableLabel)));
+                                        callTableInitLabel, retTableInitLabel)));
 
         return new LibraryDefinition(programDecls, methodBlocks);
     }

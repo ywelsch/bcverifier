@@ -3162,51 +3162,63 @@ public class MethodTranslator implements ITranslationConstants {
                 addAssignment(var(TranslationController.getStackPointer()), spPlus1);
 
 
-//                rawEndBlock(TranslationController.getCheckLabel());
-                String boundaryLabel = blockLabel + "_boundary";
-                String internLabel =  blockLabel + "_intern";
-                
-                BPLTransferCommand transCmd = new BPLGotoCommand(
-                        TranslationController.prefix(getProcedureName(method) + "_" + boundaryLabel),
-                        TranslationController.prefix(getProcedureName(method) + "_" + internLabel));
-                transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
-                transCmd.addComment("Sourceline: "+handle.getSourceLine());
-                BPLBasicBlock block = new BPLBasicBlock(
-                        TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
-                        commands.toArray(new BPLCommand[commands.size()]),
-                        transCmd
-                        );
-                blocks.add(block);
-                
-                
-                startBlock(internLabel);
-                String t = "t";
-                BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-                addAssume(exists(tVar, 
-                        logicalAnd(
-                        memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()))),
-                        libType(var(t))
-                        )
-                        ));
-//                block = new BPLBasicBlock(
-//                        TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
-//                        commands.toArray(new BPLCommand[commands.size()]),
-//                        transCmd
-//                        );
-//                blocks.add(block);
-                rawEndBlock(TranslationController.prefix(CALLTABLE_LABEL));
-                
-                
-                startBlock(boundaryLabel);
-                addAssume(exists(tVar, 
-                        logicalAnd(
-                        memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()))),
-                        logicalNot(libType(var(t)))
-                        )
-                        ));
-                //TODO more detailed information about the type here
-                rawEndBlock(TranslationController.getCheckLabel());
-                
+                if(!invokedMethod.isConstructor()){
+                    //                rawEndBlock(TranslationController.getCheckLabel());
+                    String boundaryLabel = blockLabel + "_boundary";
+                    String internLabel =  blockLabel + "_intern";
+
+                    BPLTransferCommand transCmd = new BPLGotoCommand(
+                            TranslationController.prefix(getProcedureName(method) + "_" + boundaryLabel),
+                            TranslationController.prefix(getProcedureName(method) + "_" + internLabel));
+                    transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
+                    transCmd.addComment("Sourceline: "+handle.getSourceLine());
+                    BPLBasicBlock block = new BPLBasicBlock(
+                            TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+                            commands.toArray(new BPLCommand[commands.size()]),
+                            transCmd
+                            );
+                    blocks.add(block);
+
+
+                    startBlock(internLabel);
+                    String t = "t";
+                    BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+                    addAssume(exists(tVar, 
+                            logicalAnd(
+                                    memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()))),
+                                    libType(var(t))
+                                    )
+                            ));
+                    //                block = new BPLBasicBlock(
+                    //                        TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+                    //                        commands.toArray(new BPLCommand[commands.size()]),
+                    //                        transCmd
+                    //                        );
+                    //                blocks.add(block);
+                    rawEndBlock(TranslationController.prefix(CALLTABLE_LABEL));
+
+
+                    startBlock(boundaryLabel);
+                    addAssume(exists(tVar, 
+                            logicalAnd(
+                                    memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()))),
+                                    logicalNot(libType(var(t)))
+                                    )
+                            ));
+                    //TODO more detailed information about the type here
+                    rawEndBlock(TranslationController.getCheckLabel());
+                } else {
+                    //the invoked method is a constructor of an internal type
+                    BPLTransferCommand transCmd = new BPLGotoCommand(TranslationController.prefix(CALLTABLE_LABEL));
+                    transCmd.addComment("constructor call: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
+                    transCmd.addComment("Sourceline: "+handle.getSourceLine());
+                    BPLBasicBlock block = new BPLBasicBlock(
+                            TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+                            commands.toArray(new BPLCommand[commands.size()]),
+                            transCmd
+                            );
+                    blocks.add(block);
+                }
                 
                 startBlock(TranslationController.nextLabel());
                 addAssume(isEqual(stack(spPlus1, var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod))));

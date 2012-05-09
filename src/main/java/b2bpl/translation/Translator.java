@@ -593,6 +593,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable xVar = new BPLVariable(x, new BPLTypeName("alpha"));
             final String y = "y";
             BPLVariable yVar = new BPLVariable(y, new BPLTypeName("alpha"));
+            final String dynType = "dynType";
 
 
             // axiomatization
@@ -615,6 +616,7 @@ public class Translator implements ITranslationConstants {
             addDeclaration(new BPLVariableDeclaration(new BPLVariable("ActivityIndicator", new BPLTypeName(ACTIVITY_TYPE))));
 
 
+            addComment("Modified heap, coupling, relation (not origianl SscBoogie)");
             addFunction(WELLFORMED_HEAP_FUNC, new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heapVar,
@@ -626,7 +628,9 @@ public class Translator implements ITranslationConstants {
                                     forall(refVar, fieldIntVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
                                     forall(refVar, fieldBoolVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), BPLBoolLiteral.FALSE))),
                                     forall(refVar, fieldRefVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(t)))),
-                                    forall(refVar, fieldIntVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), var(t))))
+                                    forall(refVar, fieldIntVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), var(t)))),
+                                    //TODO does that make sense: typ(r) <==> heap[r, dynType]
+                                    forall(refVar, isEqual(typ(var(r)), new BPLArrayExpression(var(heap), var(r), var(dynType))))
                                     ))
                     ));
 
@@ -660,10 +664,14 @@ public class Translator implements ITranslationConstants {
                                     isEquiv(isEqual(var(r1), var(r3)), isEqual(var(r2), var(r4)))))
                     ));
 
-            addDeclaration(new BPLConstantDeclaration(new BPLVariable(alloc, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL))));
-            addDeclaration(new BPLConstantDeclaration(new BPLVariable(exposed, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL))));
-            addDeclaration(new BPLConstantDeclaration(new BPLVariable(createdByCtxt, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL))));
-
+            addConstants(new BPLVariable(alloc, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL)));
+            addConstants(new BPLVariable(exposed, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL)));
+            addConstants(new BPLVariable(createdByCtxt, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL)));
+            addConstants(new BPLVariable(dynType, new BPLTypeName(FIELD_TYPE, new BPLTypeName(NAME_TYPE))));
+            
+            addComment("end custom part (below: original SscBoogie)");
+            
+            
             addComment("mapping from class names to their representatives for static access");
             addFunction(CLASS_REPR_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(REF_TYPE));
             addFunction(CLASS_REPR_INV_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(NAME_TYPE));
@@ -1188,7 +1196,6 @@ public class Translator implements ITranslationConstants {
             BPLVariable r3Var = new BPLVariable(r3, new BPLTypeName(REF_TYPE));
             final String r4 = "r4";
             BPLVariable r4Var = new BPLVariable(r4, new BPLTypeName(REF_TYPE));
-            final String dynType = "dynType";
             final String a = "a";
             BPLVariable aVar = new BPLVariable(a, new BPLTypeName(NAME_TYPE));
             final String b = "b";
@@ -1230,10 +1237,8 @@ public class Translator implements ITranslationConstants {
             BPLVariable c2Var = new BPLVariable(c2, new BPLTypeName(NAME_TYPE));
             final String c3 = "c3";
             BPLVariable c3Var = new BPLVariable(c3, new BPLTypeName(NAME_TYPE));
+            final String dynType = "dynType";
             
-            
-            
-            addConstants(new BPLVariable(dynType, new BPLTypeName(FIELD_TYPE, new BPLTypeName(NAME_TYPE))));
             
             addFunction(IS_CLASS_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             
