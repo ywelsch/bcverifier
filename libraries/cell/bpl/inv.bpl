@@ -1,2 +1,2 @@
-( forall o1,o2:Ref :: isOfType(o1, $cell.Cell) && isOfType(o2, $cell.Cell) && related[o1,o2] && int2bool(heap1[o1,$cell.Cell.f]) ==> RelNull(heap1[o1,$cell.Cell.c1], heap2[o2,$cell.Cell.c], related) )
-( forall o1,o2:Ref :: isOfType(o1, $cell.Cell) && isOfType(o2, $cell.Cell) && related[o1,o2] && !int2bool(heap1[o1,$cell.Cell.f]) ==> RelNull(heap1[o1, $cell.Cell.c2], heap2[o2,$cell.Cell.c], related) )
+( forall o1,o2:Ref :: isOfType(o1, $cell.Cell) && isOfType(o2, $cell.Cell) && related[o1,o2] && int2bool(heap2[o2,$cell.Cell.f]) ==> RelNull(heap1[o1,$cell.Cell.c], heap2[o2,$cell.Cell.c1], related) )
+( forall o1,o2:Ref :: isOfType(o1, $cell.Cell) && isOfType(o2, $cell.Cell) && related[o1,o2] && !int2bool(heap2[o2,$cell.Cell.f]) ==> RelNull(heap1[o1, $cell.Cell.c], heap2[o2,$cell.Cell.c2], related) )

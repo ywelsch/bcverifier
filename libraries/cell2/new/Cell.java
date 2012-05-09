@@ -7,7 +7,7 @@ public class Cell {
         c2 = o;
     }
     Object get(){
-        n = n +1;
+        n = n + 1;
         return n % 2 == 0 ? c1 : c2;
     }
 }
