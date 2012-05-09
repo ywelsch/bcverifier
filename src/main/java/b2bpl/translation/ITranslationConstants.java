@@ -353,5 +353,9 @@ public interface ITranslationConstants {
   
   String IS_CALLABLE_FUNC = "isCallable";
 
+  String CALLTABLE_LABEL = "calltable";
+ 
+  String RETTABLE_LABEL = "rettable";
+
 //public static final String ALLOC_OBJ = "AllocObj";
 }

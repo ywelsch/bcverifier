@@ -10,6 +10,7 @@ import static b2bpl.translation.CodeGenerator.bitXor;
 import static b2bpl.translation.CodeGenerator.bool2int;
 import static b2bpl.translation.CodeGenerator.cast;
 import static b2bpl.translation.CodeGenerator.divide;
+import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldAccess;
 import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.greater;
@@ -26,9 +27,11 @@ import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isOfType;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
+import static b2bpl.translation.CodeGenerator.libType;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
+import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.modulo;
 import static b2bpl.translation.CodeGenerator.multiply;
 import static b2bpl.translation.CodeGenerator.neg;
@@ -38,6 +41,7 @@ import static b2bpl.translation.CodeGenerator.nullLiteral;
 import static b2bpl.translation.CodeGenerator.obj;
 import static b2bpl.translation.CodeGenerator.old;
 import static b2bpl.translation.CodeGenerator.quantVarName;
+import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.stack;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.typ;
@@ -56,6 +60,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.sound.midi.Receiver;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane.RestoreAction;
 
 import b2bpl.Project;
@@ -3158,7 +3163,12 @@ public class MethodTranslator implements ITranslationConstants {
 
 
 //                rawEndBlock(TranslationController.getCheckLabel());
-                BPLTransferCommand transCmd = new BPLGotoCommand(TranslationController.getCheckLabel());
+                String boundaryLabel = blockLabel + "_boundary";
+                String internLabel =  blockLabel + "_intern";
+                
+                BPLTransferCommand transCmd = new BPLGotoCommand(
+                        TranslationController.prefix(getProcedureName(method) + "_" + boundaryLabel),
+                        TranslationController.prefix(getProcedureName(method) + "_" + internLabel));
                 transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
                 transCmd.addComment("Sourceline: "+handle.getSourceLine());
                 BPLBasicBlock block = new BPLBasicBlock(
@@ -3167,6 +3177,36 @@ public class MethodTranslator implements ITranslationConstants {
                         transCmd
                         );
                 blocks.add(block);
+                
+                
+                startBlock(boundaryLabel);
+                String t = "t";
+                BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+                addAssume(exists(tVar, 
+                        logicalAnd(
+                        memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()))),
+                        libType(var(t))
+                        )
+                        ));
+//                block = new BPLBasicBlock(
+//                        TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+//                        commands.toArray(new BPLCommand[commands.size()]),
+//                        transCmd
+//                        );
+//                blocks.add(block);
+                rawEndBlock(TranslationController.prefix(CALLTABLE_LABEL));
+                
+                
+                startBlock(internLabel);
+                addAssume(exists(tVar, 
+                        logicalAnd(
+                        memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()))),
+                        logicalNot(libType(var(t)))
+                        )
+                        ));
+                //TODO more detailed information about the type here
+                rawEndBlock(TranslationController.getCheckLabel());
+                
                 
                 startBlock(TranslationController.nextLabel());
                 addAssume(isEqual(stack(spPlus1, var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod))));

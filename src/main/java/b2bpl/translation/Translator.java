@@ -39,6 +39,7 @@ import static b2bpl.translation.CodeGenerator.isSubtype;
 import static b2bpl.translation.CodeGenerator.isValueType;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
+import static b2bpl.translation.CodeGenerator.libType;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
@@ -62,10 +63,8 @@ import static b2bpl.translation.CodeGenerator.var;
 import static b2bpl.translation.CodeGenerator.wellfomredCoupling;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
 import static b2bpl.translation.CodeGenerator.wellformedStack;
-import static b2bpl.translation.ITranslationConstants.OBJ_FUNC;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -102,12 +101,10 @@ import b2bpl.bpl.ast.BPLVariableDeclaration;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import b2bpl.bytecode.BCField;
 import b2bpl.bytecode.BCMethod;
-import b2bpl.bytecode.JArrayType;
 import b2bpl.bytecode.JBaseType;
 import b2bpl.bytecode.JClassType;
 import b2bpl.bytecode.JType;
 import b2bpl.bytecode.TypeLoader;
-import b2bpl.bytecode.bml.ast.BMLExpression;
 import de.unikl.bcverifier.TranslationController;
 
 
@@ -272,6 +269,11 @@ public class Translator implements ITranslationConstants {
         MethodTranslator methodTranslator = new MethodTranslator(project);
 
         BPLProcedure proc;
+        
+
+        List<BPLExpression> libTypeExpressions = new ArrayList<BPLExpression>();
+        String t = "t";
+        BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
         for (JClassType type : types) {
             for (BCMethod method : type.getMethods()) {
                 final String methodName = GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method);
@@ -282,32 +284,34 @@ public class Translator implements ITranslationConstants {
                     proc = methodTranslator.translate(context, method);
                     if(!TranslationController.declaredMethods().contains(methodName)){
                         Logger.getLogger(Translator.class).debug("Adding method "+methodName);
-                        declarations.add(new BPLConstantDeclaration(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE))));
+                        addConstants(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE)));
                         TranslationController.declaredMethods().add(methodName);
                     }
 //                    declarations.add(new BPLAxiom(new BPLFunctionApplication(DEFINES_METHOD, typeRef(type), var(methodName))));
                     TranslationController.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
                     if(method.isPublic()){
-                        declarations.add(new BPLAxiom(new BPLFunctionApplication(IS_CALLABLE_FUNC, typeRef(type), var(methodName))));
+                        addAxiom(new BPLFunctionApplication(IS_CALLABLE_FUNC, typeRef(type), var(methodName)));
                     } else {
-                        declarations.add(new BPLAxiom(logicalNot(new BPLFunctionApplication(IS_CALLABLE_FUNC, typeRef(type), var(methodName)))));
+                        addAxiom(logicalNot(new BPLFunctionApplication(IS_CALLABLE_FUNC, typeRef(type), var(methodName))));
                     }
                     if(method.isConstructor() || !method.isVoid()){
-                        declarations.add(new BPLAxiom(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, var(methodName))));
+                        addAxiom(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, var(methodName)));
                     } else {
-                        declarations.add(new BPLAxiom(logicalNot(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, var(methodName)))));
+                        addAxiom(logicalNot(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, var(methodName))));
                     }
                     procedures.put(method.getQualifiedBoogiePLName(), proc);
                 } else if(method.isAbstract()){
                     if(!TranslationController.declaredMethods().contains(methodName)){
                         Logger.getLogger(Translator.class).debug("Adding abstract method "+methodName);
-                        declarations.add(new BPLConstantDeclaration(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE))));
+                        addConstants(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE)));
                         TranslationController.declaredMethods().add(methodName);
                     }
                 }
             }
-            declarations.add(new BPLAxiom(new BPLFunctionApplication(LIB_TYPE_FUNC, typeRef(type))));
+//            declarations.add(new BPLAxiom(libType(typeRef(type))));
+            libTypeExpressions.add(isEqual(var(t), typeRef(type)));
         }
+        addAxiom(forall(tVar, isEquiv(libType(var(t)), logicalOr(libTypeExpressions.toArray(new BPLExpression[libTypeExpressions.size()])))));
 
         return procedures;
     }
