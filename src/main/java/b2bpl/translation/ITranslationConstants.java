@@ -99,6 +99,8 @@ public interface ITranslationConstants {
   
   String HAS_RETURN_VALUE_FUNC = "hasReturnValue";
   
+  String CLASS_EXTENDS_FUNC = "classExtends";
+  
   String MEMBER_OF_FUNC = "memberOf";
   
   String LIB_TYPE_FUNC = "libType";

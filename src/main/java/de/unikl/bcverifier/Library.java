@@ -13,6 +13,7 @@ import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
+import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.nonNull;
 import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.relNull;
@@ -41,6 +42,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -634,6 +636,9 @@ public class Library implements ITroubleReporter {
                     methodLabel = TranslationController.prefix(proc.getName());
                     methodLabels.add(methodLabel);
 
+                    ///////////////////////////////
+                    // commands before method block
+                    ///////////////////////////////
                     List<BPLCommand> preMethodCommands = new ArrayList<BPLCommand>();
                     preMethodCommands.add(new BPLAssumeCommand(isEqual(
                             stack(var("place")), var(TranslationController
@@ -644,6 +649,12 @@ public class Library implements ITroubleReporter {
                                     var(GLOBAL_VAR_PREFIX
                                             + MethodTranslator
                                                     .getMethodName(method)))));
+                    preMethodCommands.add(new BPLAssumeCommand(
+                            memberOf(var(GLOBAL_VAR_PREFIX
+                                    + MethodTranslator
+                                    .getMethodName(method)), var(GLOBAL_VAR_PREFIX + classType.getName()), typ(stack(receiver())))
+                            ));
+                    
                     // preMethodCommands.add(new
                     // BPLAssumeCommand(isCallable(typ(stack(var(PARAM_VAR_PREFIX
                     // + "0" + REF_TYPE_ABBREV))),

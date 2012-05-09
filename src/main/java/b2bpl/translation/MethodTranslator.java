@@ -3179,7 +3179,7 @@ public class MethodTranslator implements ITranslationConstants {
                 blocks.add(block);
                 
                 
-                startBlock(boundaryLabel);
+                startBlock(internLabel);
                 String t = "t";
                 BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
                 addAssume(exists(tVar, 
@@ -3197,7 +3197,7 @@ public class MethodTranslator implements ITranslationConstants {
                 rawEndBlock(TranslationController.prefix(CALLTABLE_LABEL));
                 
                 
-                startBlock(internLabel);
+                startBlock(boundaryLabel);
                 addAssume(exists(tVar, 
                         logicalAnd(
                         memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()))),

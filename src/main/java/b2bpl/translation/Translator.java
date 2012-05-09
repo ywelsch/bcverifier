@@ -12,6 +12,7 @@ import static b2bpl.translation.CodeGenerator.bitAnd;
 import static b2bpl.translation.CodeGenerator.bitOr;
 import static b2bpl.translation.CodeGenerator.bitShl;
 import static b2bpl.translation.CodeGenerator.bitShr;
+import static b2bpl.translation.CodeGenerator.classExtends;
 import static b2bpl.translation.CodeGenerator.classRepr;
 import static b2bpl.translation.CodeGenerator.classReprInv;
 import static b2bpl.translation.CodeGenerator.definesMethod;
@@ -310,6 +311,7 @@ public class Translator implements ITranslationConstants {
             }
 //            declarations.add(new BPLAxiom(libType(typeRef(type))));
             libTypeExpressions.add(isEqual(var(t), typeRef(type)));
+            addAxiom(forall(tVar, isEquiv(classExtends(typeRef(type), var(t)), isEqual(var(t), typeRef(type.getSupertype())))));
         }
         addAxiom(forall(tVar, isEquiv(libType(var(t)), logicalOr(libTypeExpressions.toArray(new BPLExpression[libTypeExpressions.size()])))));
 
@@ -1413,6 +1415,8 @@ public class Translator implements ITranslationConstants {
             addFunction(HAS_RETURN_VALUE_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             addComment("memberOf(m, t1, t2) <==> m is member of t2 (implementation is in t1)");
             addFunction(MEMBER_OF_FUNC, new BPLTypeName(METHOD_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(LIB_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(CLASS_EXTENDS_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             
             addAxiom(forall(
                     mVar, c1Var, c2Var,
@@ -1420,14 +1424,14 @@ public class Translator implements ITranslationConstants {
                             logicalOr(
                                     logicalAnd(isEqual(var(c1), var(c2)), definesMethod(var(c2), var(m))),
                                     logicalAnd(logicalNot(definesMethod(var(c2), var(m))), 
-                                            forall(c3Var, implies(isSubtype(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) //TODO do we have to use classExtends-function instead of isSubtype?
+                                            exists(c3Var, implies(isSubtype(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) //TODO do we have to use classExtends-function instead of isSubtype?
+//                                            forall(c3Var, implies(classExtends(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) 
                                     )
                             )
                     ),
                     new BPLTrigger(memberOf(var(m), var(c1), var(c2)))
                     ));
             
-            addFunction(LIB_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
 
             addType(ADDRESS_TYPE);
 

@@ -1051,6 +1051,10 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(LIB_TYPE_FUNC, c);
     }
     
+    public static BPLExpression classExtends(BPLExpression c1, BPLExpression c2){
+        return new BPLFunctionApplication(CLASS_EXTENDS_FUNC, c1, c2);
+    }
+    
     
     
     public static BPLExpression heap1(BPLExpression exp1, BPLExpression exp2){
