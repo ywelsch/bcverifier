@@ -132,6 +132,15 @@ public class Library implements ITroubleReporter {
         }
     }
 
+    /**
+     * @throws TranslationException
+     */
+    /**
+     * @throws TranslationException
+     */
+    /**
+     * @throws TranslationException
+     */
     public void translate() throws TranslationException {
         File bplPath = new File(libraryPath, "bpl");
         bplPath.mkdir();
@@ -475,6 +484,11 @@ public class Library implements ITroubleReporter {
                     .toArray(new BPLCommand[checkingCommand.size()]),
                     new BPLReturnCommand()));
 
+            
+            
+            /////////////////////////////////////
+            // preconditions of before checking
+            ////////////////////////////////////
             List<BPLCommand> procAssumes = new ArrayList<BPLCommand>();
             procAssumes.addAll(invAssumes);
             procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")),
@@ -506,8 +520,15 @@ public class Library implements ITroubleReporter {
                             relNull(stack1(var("sp"), var(var.getName())),
                                     stack2(var("sp"), var(var.getName())),
                                     var("related"))));
-                    assumeCmd
-                            .addComment("initially, all parameters to method calls can be assumed to be related");
+                    assumeCmd.addComment("initially, all parameters to method calls can be assumed to be related");
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(heap1(stack1(var(var.getName())), var("exposed")));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(heap2(stack2(var(var.getName())), var("exposed")));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(heap1(stack1(var(var.getName())), var("createdByCtxt")));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(heap2(stack2(var(var.getName())), var("createdByCtxt")));
                     procAssumes.add(assumeCmd);
                 } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
                     BPLCommand assumeCmd = new BPLAssumeCommand(forall(
@@ -654,7 +675,7 @@ public class Library implements ITroubleReporter {
                     preMethodCommands.add(new BPLAssumeCommand(
                             memberOf(var(GLOBAL_VAR_PREFIX
                                     + MethodTranslator
-                                    .getMethodName(method)), var(GLOBAL_VAR_PREFIX + classType.getName()), typ(stack(receiver())))
+                                    .getMethodName(method)), var(GLOBAL_VAR_PREFIX + classType.getName()), typ(stack(receiver()), var(TranslationController.getHeap())))
                             ));
                     
                     // preMethodCommands.add(new
@@ -750,9 +771,9 @@ public class Library implements ITroubleReporter {
         // //////////////////////////////////////
         dispatchCommands = new ArrayList<BPLCommand>();
         dispatchCommands.add(new BPLAssumeCommand(new BPLFunctionApplication(
-                IS_PUBLIC_FUNC, typ(stack(receiver())))));
+                IS_PUBLIC_FUNC, typ(stack(receiver()), var(TranslationController.getHeap())))));
         dispatchCommands.add(new BPLAssumeCommand(isCallable(
-                typ(stack(receiver())), stack(var("meth")))));
+                typ(stack(receiver()), var(TranslationController.getHeap())), stack(var("meth")))));
         methodBlocks
                 .add(0,
                         new BPLBasicBlock(

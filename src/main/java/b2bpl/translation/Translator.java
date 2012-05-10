@@ -627,10 +627,9 @@ public class Translator implements ITranslationConstants {
                                     forall(refVar, fieldRefVar, implies(logicalNot(obj(var(heap), var(r))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), nullLiteral()))),
                                     forall(refVar, fieldIntVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
                                     forall(refVar, fieldBoolVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), BPLBoolLiteral.FALSE))),
-                                    forall(refVar, fieldRefVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(t)))),
+                                    forall(refVar, fieldRefVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(heap), var(t)))),
                                     forall(refVar, fieldIntVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), var(t)))),
-                                    //TODO does that make sense: typ(r) <==> heap[r, dynType]
-                                    forall(refVar, isEqual(typ(var(r)), new BPLArrayExpression(var(heap), var(r), var(dynType))))
+                                    forall(refVar, isEqual(typ(var(r), var(heap)), new BPLArrayExpression(var(heap), var(r), var(dynType))))
                                     ))
                     ));
 
@@ -677,8 +676,8 @@ public class Translator implements ITranslationConstants {
             addFunction(CLASS_REPR_INV_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(NAME_TYPE));
             addAxiom(forall(cVar, isEqual(classReprInv(classRepr(var(c))), var(c)), new BPLTrigger(classRepr(var(c)))));
             addAxiom(forall(
-                    tVar,
-                    logicalNot(isSubtype(typ(classRepr(var(t))), var(GLOBAL_VAR_PREFIX+"java.lang.Object")))
+                    tVar, heapVar,
+                    logicalNot(isSubtype(typ(classRepr(var(t)), var(heap)), var(GLOBAL_VAR_PREFIX+"java.lang.Object")))
                     ));
             addAxiom(forall(tVar, notEqual(classRepr(var(t)), var("null"))));
 
@@ -690,7 +689,7 @@ public class Translator implements ITranslationConstants {
 
 
             addComment("Encode type information");
-            addFunction(TYP_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(NAME_TYPE));
+            addFunction(TYP_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE));
 
             addFunction(BASE_CLASS_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
             addAxiom(forall(tVar, 
@@ -724,28 +723,28 @@ public class Translator implements ITranslationConstants {
             //TODO no reflection, please!!!!!
 
 
-            addFunction(IS_OF_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_OF_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
-                    oVar, tVar,
-                    isEquiv(isOfType(var(o), var(t)), logicalOr(isNull(var(o)), isSubtype(typ(var(o)), var(t)))),
-                    new BPLTrigger(isOfType(var(o), var(t)))
+                    oVar, heapVar, tVar,
+                    isEquiv(isOfType(var(o), var(heap), var(t)), logicalOr(isNull(var(o)), isSubtype(typ(var(o), var(heap)), var(t)))),
+                    new BPLTrigger(isOfType(var(o), var(heap), var(t)))
                     ));
 
-            addFunction(IS_INSTANCE_OF_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_INSTANCE_OF_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
-                    oVar, tVar,
-                    isEquiv(isInstanceOf(var(o), var(t)), logicalAnd(nonNull(var(o)), isOfType(var(o), var(t)))),
-                    new BPLTrigger(isInstanceOf(var(o), var(t)))
+                    oVar, heapVar, tVar,
+                    isEquiv(isInstanceOf(var(o), var(heap), var(t)), logicalAnd(nonNull(var(o)), isOfType(var(o), var(heap), var(t)))),
+                    new BPLTrigger(isInstanceOf(var(o), var(heap), var(t)))
                     ));
 
-            addFunction(AS_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(REF_TYPE));
+            addFunction(AS_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(REF_TYPE));
             addAxiom(forall(
-                    oVar, tVar,
-                    implies(isOfType(var(o), var(t)), isEqual(asType(var(o), var(t)), var(o)))
+                    oVar, heapVar, tVar,
+                    implies(isOfType(var(o), var(heap), var(t)), isEqual(asType(var(o), var(heap), var(t)), var(o)))
                     ));
             addAxiom(forall(
-                    oVar, tVar,
-                    implies(logicalNot(isOfType(var(o), var(t))), isNull(asType(var(o), var(t))))
+                    oVar, heapVar, tVar,
+                    implies(logicalNot(isOfType(var(o), var(heap), var(t))), isNull(asType(var(o), var(heap), var(t))))
                     ));
 
             addFunction(IS_ALLOCATED_FUNC+"<alpha>", new BPLTypeName(HEAP_TYPE), new BPLTypeName("alpha"), BPLBuiltInType.BOOL);
@@ -781,7 +780,7 @@ public class Translator implements ITranslationConstants {
 
             addAxiom(forall(
                     new BPLVariable[]{heapVar, oVar, fieldRefVar, tVar},
-                    implies(wellformedHeap(var(heap)), isOfType(new BPLArrayExpression(var(heap), var(o), asRefField(var(f), var(t))), var(t))),
+                    implies(wellformedHeap(var(heap)), isOfType(new BPLArrayExpression(var(heap), var(o), asRefField(var(f), var(t))), var(heap), var(t))),
                     new BPLTrigger(new BPLArrayExpression(var(heap), var(o), asRefField(var(f), var(t))))
                     ));
             //TODO axiom for AsNonNullField
@@ -793,9 +792,9 @@ public class Translator implements ITranslationConstants {
 
             addFunction(IS_MEMBERLESS_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
-                    oVar,
-                    logicalNot(isMemberlessType(typ(var(o)))),
-                    new BPLTrigger(isMemberlessType(typ(var(o))))
+                    oVar, heapVar,
+                    logicalNot(isMemberlessType(typ(var(o), var(heap)))),
+                    new BPLTrigger(isMemberlessType(typ(var(o), var(heap))))
                     ));
 
             addFunction(AS_INTERFACE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
@@ -1429,8 +1428,8 @@ public class Translator implements ITranslationConstants {
                             logicalOr(
                                     logicalAnd(isEqual(var(c1), var(c2)), definesMethod(var(c2), var(m))),
                                     logicalAnd(logicalNot(definesMethod(var(c2), var(m))), 
-                                            exists(c3Var, implies(isSubtype(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) //TODO do we have to use classExtends-function instead of isSubtype?
-//                                            forall(c3Var, implies(classExtends(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) 
+//                                            exists(c3Var, implies(isSubtype(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) //TODO do we have to use classExtends-function instead of isSubtype?
+                                            forall(c3Var, implies(classExtends(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) 
                                     )
                             )
                     ),
@@ -3448,7 +3447,7 @@ public class Translator implements ITranslationConstants {
                     addAxiom(forall(
                             oVar, hVar,
                             isSubtype(
-                                    typ(new BPLArrayExpression(var(h), var(o), var(fieldName))),
+                                    typ(new BPLArrayExpression(var(h), var(o), var(fieldName)), var(h)),
                                     translateTypeReference(field.getType())
                                     )
                             ));

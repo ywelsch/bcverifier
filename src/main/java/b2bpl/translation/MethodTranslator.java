@@ -1183,7 +1183,7 @@ public class MethodTranslator implements ITranslationConstants {
                     addAssume(isInRange(stack(var(paramVar(i, baseType))), typeRef(baseType)));
                 } else if(params[i].isClassType()){
                     JClassType classType = (JClassType)params[i];
-                    addAssume(isOfType(stack(var(paramVar(i, classType))), context.translateTypeReference(classType)));
+                    addAssume(isOfType(stack(var(paramVar(i, classType))), var(TranslationController.getHeap()), context.translateTypeReference(classType)));
 //                    addAssume(obj(var(TranslationController.getHeap()), stack(var(paramVar(i, classType))))); //TODO this would mean all parameters are non-null
                 } else {
                     //TODO arrays
@@ -1271,7 +1271,7 @@ public class MethodTranslator implements ITranslationConstants {
             startBlock(postXBlockLabel(exception));
 
             // addAssume(isInstanceOf(rval(var(refStackVar(0))), typeRef(exception)));
-            addAssume(isOfType(var(EXCEPTION_PARAM), typeRef(exception)));
+            addAssume(isOfType(var(EXCEPTION_PARAM), var(TranslationController.getHeap()), typeRef(exception)));
             //      addAssume(alive(rval(var(EXCEPTION_PARAM)), var(TranslationController.getHeap())));
 
             /*
@@ -1308,7 +1308,7 @@ public class MethodTranslator implements ITranslationConstants {
 
                     if (method.getReturnType().isReferenceType() || method.isConstructor()) {
                         //        addAssume(alive(rval(topElem), var(TranslationController.getHeap())));
-                        addAssume(isOfType(topElem, typeRef(retType)));
+                        addAssume(isOfType(topElem, var(TranslationController.getHeap()), typeRef(retType)));
                     } else {
                         //        addAssume(alive(ival(topElem), var(TranslationController.getHeap())));
                         //        addAssume(isOfType(topElem, var(VALUE_TYPE_PREFIX + JBaseType.INT.toString())));
@@ -1562,7 +1562,7 @@ public class MethodTranslator implements ITranslationConstants {
                     if (type.isBaseType()) {
                         //            addAssume(isOfType(var(localVar(i, type)), typeRef(type)));
                     } else if (type != JNullType.NULL) {
-                        addAssume(isEqual(typ(var(localVar(i, type))), typeRef(type)));
+                        addAssume(isEqual(typ(var(localVar(i, type)), var(TranslationController.getHeap())), typeRef(type)));
                     }
                 }
             }
@@ -1573,7 +1573,7 @@ public class MethodTranslator implements ITranslationConstants {
                     if (type.isBaseType()) {
                         //            addAssume(isOfType(var(stackVar(i, type)), typeRef(type)));
                     } else if (type != JNullType.NULL) {
-                        addAssume(isEqual(typ(stack(var(stackVar(i, type)))), typeRef(type)));
+                        addAssume(isEqual(typ(stack(var(stackVar(i, type))), var(TranslationController.getHeap())), typeRef(type)));
                     }
                 }
             }
@@ -3002,7 +3002,7 @@ public class MethodTranslator implements ITranslationConstants {
                     if(params[i].isBaseType()){
                         addAssert(isInRange(stack(var(args[i])), typeRef(params[i])));
                     } else if(params[i].isClassType()){
-                        addAssert(isOfType(stack(var(args[i])), typeRef(params[i])));
+                        addAssert(isOfType(stack(var(args[i])), var(TranslationController.getHeap()), typeRef(params[i])));
                     } else {
                         //TODO array type
                     }
@@ -3185,7 +3185,7 @@ public class MethodTranslator implements ITranslationConstants {
                     BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
                     addAssume(exists(tVar, 
                             logicalAnd(
-                                    memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()))),
+                                    memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()), var(TranslationController.getHeap()))),
                                     libType(var(t))
                                     )
                             ));
@@ -3201,7 +3201,7 @@ public class MethodTranslator implements ITranslationConstants {
                     startBlock(boundaryLabel);
                     addAssume(exists(tVar, 
                             logicalAnd(
-                                    memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()))),
+                                    memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()), var(TranslationController.getHeap()))),
                                     logicalNot(libType(var(t)))
                                     )
                             ));
@@ -3672,7 +3672,7 @@ public class MethodTranslator implements ITranslationConstants {
             addHavoc(var(swapVar(JNullType.NULL)));
             addAssignment(stack(var(refStackVar(stack))), var(swapVar(JNullType.NULL)));
             addAssume(nonNull(stack(var(refStackVar(stack)))));
-            addAssume(isEqual(typ(stack(var(refStackVar(stack)))), typeRef(insn.getType())));
+            addAssume(isEqual(typ(stack(var(refStackVar(stack))), var(TranslationController.getHeap())), typeRef(insn.getType())));
             String r = "r";
             BPLVariable rVar = new BPLVariable(r, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
             String sp = "sp";
@@ -3808,6 +3808,7 @@ public class MethodTranslator implements ITranslationConstants {
 
             addAssignment(stack(var(intStackVar(stack))), bool2int(isInstanceOf(
                     stack(var(refStackVar(stack))),
+                    var(TranslationController.getHeap()),
                     type)));
         }
 

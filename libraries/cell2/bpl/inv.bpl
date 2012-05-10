@@ -1,2 +1,2 @@
-( forall r:Ref :: isOfType(r, $Cell) && Obj(heap2, r) ==> heap2[r,$Cell.c1] == heap2[r,$Cell.c2] )
-( forall r1,r2: Ref :: isOfType(r1, $Cell) && isOfType(r2, $Cell) && related[r1,r2] ==> RelNull(heap1[r1,$Cell.c], heap2[r2,$Cell.c1], related) )
+( forall r:Ref :: isOfType(r, heap2, $Cell) && Obj(heap2, r) ==> heap2[r,$Cell.c1] == heap2[r,$Cell.c2] )
+( forall r1,r2: Ref :: isOfType(r1, heap1, $Cell) && isOfType(r2, heap2, $Cell) && related[r1,r2] ==> RelNull(heap1[r1,$Cell.c], heap2[r2,$Cell.c1], related) )

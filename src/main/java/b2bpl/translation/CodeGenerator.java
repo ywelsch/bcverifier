@@ -362,8 +362,8 @@ public final class CodeGenerator implements ITranslationConstants {
 
     // @ requires value != null;
     // @ ensures \result != null;
-    public static BPLExpression typ(BPLExpression value) {
-        return new BPLFunctionApplication(TYP_FUNC, value);
+    public static BPLExpression typ(BPLExpression value, BPLExpression heap) {
+        return new BPLFunctionApplication(TYP_FUNC, value, heap);
     }
 
 //    // @ requires value != null;
@@ -380,9 +380,9 @@ public final class CodeGenerator implements ITranslationConstants {
 
     // @ requires object != null && type != null;
     // @ ensures \result != null;
-    public static BPLExpression isOfType(BPLExpression object,
+    public static BPLExpression isOfType(BPLExpression object, BPLExpression heap,
             BPLExpression type) {
-        return new BPLFunctionApplication(IS_OF_TYPE_FUNC, object, type);
+        return new BPLFunctionApplication(IS_OF_TYPE_FUNC, object, heap, type);
     }
 
     // @ requires integer != null && type != null;
@@ -410,9 +410,9 @@ public final class CodeGenerator implements ITranslationConstants {
 
     // @ requires value != null && type != null;
     // @ ensures \result != null;
-    public static BPLExpression isInstanceOf(BPLExpression value,
+    public static BPLExpression isInstanceOf(BPLExpression value, BPLExpression heap,
             BPLExpression type) {
-        return new BPLFunctionApplication(IS_INSTANCE_OF_FUNC, value, type);
+        return new BPLFunctionApplication(IS_INSTANCE_OF_FUNC, value, heap, type);
     }
 
     // @ requires value != null;
@@ -886,8 +886,8 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(ONE_CLASS_DOWN_FUNC, exp1, exp2);
     }
     
-    public static BPLExpression asType(BPLExpression exp1, BPLExpression exp2){
-        return new BPLFunctionApplication(AS_TYPE_FUNC, exp1, exp2);
+    public static BPLExpression asType(BPLExpression exp1, BPLExpression heap, BPLExpression exp2){
+        return new BPLFunctionApplication(AS_TYPE_FUNC, exp1, heap, exp2);
     }
     
     public static BPLExpression isAllocated(BPLExpression exp1, BPLExpression exp2){
