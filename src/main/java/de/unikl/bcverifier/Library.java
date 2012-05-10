@@ -522,13 +522,13 @@ public class Library implements ITroubleReporter {
                                     var("related"))));
                     assumeCmd.addComment("initially, all parameters to method calls can be assumed to be related");
                     procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(heap1(stack1(var(var.getName())), var("exposed")));
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(var(var.getName()))), heap1(stack1(var(var.getName())), var("exposed"))));
                     procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(heap2(stack2(var(var.getName())), var("exposed")));
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack2(var(var.getName()))), heap2(stack2(var(var.getName())), var("exposed"))));
                     procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(heap1(stack1(var(var.getName())), var("createdByCtxt")));
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(var(var.getName()))), heap1(stack1(var(var.getName())), var("createdByCtxt"))));
                     procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(heap2(stack2(var(var.getName())), var("createdByCtxt")));
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack2(var(var.getName()))), heap2(stack2(var(var.getName())), var("createdByCtxt"))));
                     procAssumes.add(assumeCmd);
                 } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
                     BPLCommand assumeCmd = new BPLAssumeCommand(forall(
@@ -541,6 +541,10 @@ public class Library implements ITroubleReporter {
                     procAssumes.add(assumeCmd);
                 }
             }
+            BPLCommand assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(var("sp1 + 1"), var(RESULT_VAR+"_r"))), heap1(stack1(var("sp1 + 1"), var(RESULT_VAR+"_r")), var("exposed"))));
+            procAssumes.add(assumeCmd);
+            assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(var("sp1 + 1"), var(RESULT_VAR+"_r"))), heap1(stack1(var("sp1 + 1"), var(RESULT_VAR+"_r")), var("createdByCtxt"))));
+            procAssumes.add(assumeCmd);
 
             for (String place : TranslationController.places()) {
                 programDecls.add(new BPLConstantDeclaration(new BPLVariable(

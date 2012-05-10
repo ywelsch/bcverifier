@@ -3225,7 +3225,18 @@ public class MethodTranslator implements ITranslationConstants {
                 addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
                 addAssume(isEqual(stack(var("place")), var(thisPlace)));
                 addAssume(nonNull(stack(receiver())));
+                if(invokedMethod.isConstructor()){
+                    addAssume(nonNull(stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
+                    addAssume(logicalNot(heap(stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))), var("createdByCtxt")))); //we hace constructed the object on our own
+                }
                 if(hasReturnValue){
+                    if(retType.isBaseType()){
+                        addAssume(isInRange(stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))), typeRef(retType)));
+                    } else if(retType.isClassType()){
+                        addAssume(isOfType(stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))), var(TranslationController.getHeap()), typeRef(retType)));
+                    } else {
+                        //TODO array
+                    }
                     addAssignment(stack(var(stackVar(first, retType))), stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))));
                 }
                 
@@ -3671,13 +3682,11 @@ public class MethodTranslator implements ITranslationConstants {
             int stack = handle.getFrame().getStackSize();
             addHavoc(var(swapVar(JNullType.NULL)));
             addAssignment(stack(var(refStackVar(stack))), var(swapVar(JNullType.NULL)));
+            addAssume(logicalNot(heap(stack(var(refStackVar(stack))), var("alloc"))));
+            addAssignment(heap(stack(var(refStackVar(stack))), var("alloc")), BPLBoolLiteral.TRUE);
             addAssume(nonNull(stack(var(refStackVar(stack)))));
             addAssume(isEqual(typ(stack(var(refStackVar(stack))), var(TranslationController.getHeap())), typeRef(insn.getType())));
-            String r = "r";
-            BPLVariable rVar = new BPLVariable(r, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
-            String sp = "sp";
-            BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
-            addAssume(forall(spVar, rVar, notEqual(stack(var(sp), var(r)), stack(var(refStackVar(stack))))));
+            
             //      addHavoc(var(refStackVar(stack)));
             //TODO do we need to do anything to reserve the memory space on the heap?
             //      addAssume(isEqual(
