@@ -3224,6 +3224,7 @@ public class MethodTranslator implements ITranslationConstants {
                 addAssume(isEqual(stack(spPlus1, var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod))));
                 addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
                 addAssume(isEqual(stack(var("place")), var(thisPlace)));
+                addAssume(nonNull(stack(receiver())));
                 if(hasReturnValue){
                     addAssignment(stack(var(stackVar(first, retType))), stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))));
                 }

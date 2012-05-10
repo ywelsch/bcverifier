@@ -3,6 +3,7 @@ package de.unikl.bcverifier;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.greater;
+import static b2bpl.translation.CodeGenerator.greaterEqual;
 import static b2bpl.translation.CodeGenerator.heap1;
 import static b2bpl.translation.CodeGenerator.heap2;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
@@ -734,7 +735,7 @@ public class Library implements ITroubleReporter {
         ///////////////////////////////////////////
         
         dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(greater(
+        dispatchCommands.add(new BPLAssumeCommand(greaterEqual(
                 var(TranslationController.getStackPointer()),
                 new BPLIntLiteral(0))));
         methodBlocks.add(
