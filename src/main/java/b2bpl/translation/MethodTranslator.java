@@ -3672,6 +3672,11 @@ public class MethodTranslator implements ITranslationConstants {
             addAssignment(stack(var(refStackVar(stack))), var(swapVar(JNullType.NULL)));
             addAssume(nonNull(stack(var(refStackVar(stack)))));
             addAssume(isEqual(typ(stack(var(refStackVar(stack)))), typeRef(insn.getType())));
+            String r = "r";
+            BPLVariable rVar = new BPLVariable(r, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
+            String sp = "sp";
+            BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
+            addAssume(forall(spVar, rVar, notEqual(stack(var(sp), var(r)), stack(var(refStackVar(stack))))));
             //      addHavoc(var(refStackVar(stack)));
             //TODO do we need to do anything to reserve the memory space on the heap?
             //      addAssume(isEqual(
