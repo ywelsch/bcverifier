@@ -89,6 +89,6 @@ public class BoogieRunner {
     private static boolean parseLastOutputLine(String result) {
         String[] lines = result.split("\n");
         String lastLine = lines[lines.length-1];
-        return lastLine.matches("Boogie program verifier finished with \\d* verified, \\d* errors");
+        return lastLine.matches("Boogie program verifier finished with \\d* verified, 0 errors");
     }
 }
