@@ -40,6 +40,7 @@ public class BoogieRunner {
     
     private static boolean verify = true;
     private static boolean lastRunSuccess;
+    private static String lastMessage = "";
     
     public static void setVerify(boolean b){
         verify = b;
@@ -49,7 +50,11 @@ public class BoogieRunner {
         return lastRunSuccess;
     }
     
-    public static String runBoogie(File boogieFile) throws BoogieRunException{
+    public static String getLastMessage(){
+    	return lastMessage;
+    }
+    
+    public static void runBoogie(File boogieFile) throws BoogieRunException{
         Runtime runtime = Runtime.getRuntime();
         File workingDir = boogieFile.getParentFile();
         InputStream processOutput = null;
@@ -71,7 +76,7 @@ public class BoogieRunner {
             String result = IOUtils.toString(processOutput).trim();
 //            String errors = IOUtils.toString(p.getErrorStream());
             lastRunSuccess = parseLastOutputLine(result);
-            return result;
+            lastMessage = result;
         } catch (IOException e) {
             throw new BoogieRunException("Boogie could not be started.", e);
         } finally {

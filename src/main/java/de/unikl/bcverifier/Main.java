@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import de.unikl.bcverifier.Library.TranslationException;
+import de.unikl.bcverifier.boogie.BoogieRunner;
 
 public class Main {
     private static final Logger log = Logger.getLogger(Main.class);
@@ -61,7 +62,7 @@ public class Main {
         }
     }
     
-    public static void main(String[] args) {
+    public static void main(String... args) {
         PropertyConfigurator.configure("log4j.properties");
         
         Configuration config = new Configuration();
@@ -109,6 +110,7 @@ public class Main {
         if(config.isCheck()){
             library.check(config.isVerify());
         }
+        System.out.println(BoogieRunner.getLastMessage());
     }
 
     private static File parseParames(String[] args, Configuration config) throws ConfigurationException {

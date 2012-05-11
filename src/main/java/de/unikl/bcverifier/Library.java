@@ -796,8 +796,8 @@ public class Library implements ITroubleReporter {
 
         BoogieRunner.setVerify(verify);
         try {
-            log.info("Checking " + specificationFile);
-            System.out.println(BoogieRunner.runBoogie(specificationFile));
+        	log.debug("Checking " + specificationFile);
+            BoogieRunner.runBoogie(specificationFile);
             if (BoogieRunner.getLastReturn()) {
                 log.debug("Success");
             } else {
