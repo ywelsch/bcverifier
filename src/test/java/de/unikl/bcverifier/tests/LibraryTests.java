@@ -13,7 +13,9 @@ import org.apache.commons.io.filefilter.AndFileFilter;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.HiddenFileFilter;
 import org.apache.commons.io.filefilter.NotFileFilter;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -23,7 +25,12 @@ import de.unikl.bcverifier.boogie.BoogieRunner;
 
 @RunWith(JUnitParamsRunner.class)
 public class LibraryTests {	
-	File libpath = new File("libraries/");
+	File libpath = new File("libraries");
+	
+	@BeforeClass
+	public static void oneTimeSetup() {
+		Logger.getRootLogger().setLevel(Level.WARN);
+	}
 	
 	Object[] parametersForVerifyLibrary() {
 		List<File> dirs = new ArrayList<File>();
@@ -41,5 +48,4 @@ public class LibraryTests {
 		library.check(true);
 		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastReturn());
 	}
-
 }
