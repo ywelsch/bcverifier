@@ -1,9 +1,11 @@
 package de.unikl.bcverifier;
 
+import static b2bpl.translation.CodeGenerator.add;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.greater;
 import static b2bpl.translation.CodeGenerator.greaterEqual;
+import static b2bpl.translation.CodeGenerator.heap;
 import static b2bpl.translation.CodeGenerator.heap1;
 import static b2bpl.translation.CodeGenerator.heap2;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
@@ -760,9 +762,15 @@ public class Library implements ITroubleReporter {
         ///////////////////////////////////////////
         
         dispatchCommands = new ArrayList<BPLCommand>();
+        BPLExpression sp = var(TranslationController.getStackPointer());
+        // sp >= 0
         dispatchCommands.add(new BPLAssumeCommand(greaterEqual(
-                var(TranslationController.getStackPointer()),
+                sp,
                 new BPLIntLiteral(0))));
+        // heap[stack[sp + 1][param0_r], createdByCtxt]
+        dispatchCommands.add(new BPLAssumeCommand(
+                heap(stack(add(sp, new BPLIntLiteral(1)), receiver()), var("createdByCtxt"))
+                ));
         methodBlocks.add(
                 0,
                 new BPLBasicBlock(retTableInitLabel, dispatchCommands
@@ -798,6 +806,7 @@ public class Library implements ITroubleReporter {
         try {
         	log.debug("Checking " + specificationFile);
             BoogieRunner.runBoogie(specificationFile);
+            log.debug(BoogieRunner.getLastMessage());
             if (BoogieRunner.getLastReturn()) {
                 log.debug("Success");
             } else {

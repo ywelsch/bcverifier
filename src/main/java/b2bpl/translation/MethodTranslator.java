@@ -333,11 +333,13 @@ public class MethodTranslator implements ITranslationConstants {
 
         // The local variables.
         for (int i = 0; i < method.getMaxLocals(); i++) {
-            BPLVariable regr = new BPLVariable(refLocalVar(i), new BPLTypeName(REF_TYPE));
-            BPLVariable regi = new BPLVariable(intLocalVar(i), BPLBuiltInType.INT);
+            BPLVariable regr = new BPLVariable(refLocalVar(i), new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
+            BPLVariable regi = new BPLVariable(intLocalVar(i), new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT));
 
             // vars.add(new BPLVariableDeclaration(regr, regi));
-            vars.add(filterVariableDeclarations(blocks, regr, regi));
+//            vars.add(filterVariableDeclarations(blocks, regr, regi));
+            vars.add(new BPLVariableDeclaration(regr));
+            vars.add(new BPLVariableDeclaration(regi));
         }
 
         // The stack variables.
@@ -1188,7 +1190,7 @@ public class MethodTranslator implements ITranslationConstants {
                 } else {
                     //TODO arrays
                 }
-                addAssignment(var(localVar(i, params[i])), stack(var(paramVar(i, params[i]))));
+                addAssignment(stack(var(localVar(i, params[i]))), stack(var(paramVar(i, params[i]))));
             } else {
                 addAssignment(var(localVar(i, params[i])), var(paramVar(i, params[i])));
             }
@@ -1562,7 +1564,7 @@ public class MethodTranslator implements ITranslationConstants {
                     if (type.isBaseType()) {
                         //            addAssume(isOfType(var(localVar(i, type)), typeRef(type)));
                     } else if (type != JNullType.NULL) {
-                        addAssume(isEqual(typ(var(localVar(i, type)), var(TranslationController.getHeap())), typeRef(type)));
+                        addAssume(isEqual(typ(stack(var(localVar(i, type))), var(TranslationController.getHeap())), typeRef(type)));
                     }
                 }
             }
@@ -1730,24 +1732,24 @@ public class MethodTranslator implements ITranslationConstants {
 //        return translator.translate(context, project.getSpecificationDesugarer().getExceptionalPostcondition(method, exception));
 //    }
 
-    /**
-     * Convenience method which returns the names of the local variables in the
-     * stack frame of the given bytecode instruction.
-     * 
-     * @param insn The instruction for which to return the names of the stack
-     *          frame's local variables.
-     * @return The names of the stack frame's local variables.
-     */
-    private static String[] getLocalVariablesAt(InstructionHandle insn) {
-        StackFrame frame = insn.getFrame();
-        String[] localVariables = new String[frame.getLocalCount()];
-        for (int i = 0; i < localVariables.length; i++) {
-            if (frame.getLocal(i) != null) {
-                localVariables[i] = localVar(i, frame.getLocal(i));
-            }
-        }
-        return localVariables;
-    }
+//    /**
+//     * Convenience method which returns the names of the local variables in the
+//     * stack frame of the given bytecode instruction.
+//     * 
+//     * @param insn The instruction for which to return the names of the stack
+//     *          frame's local variables.
+//     * @return The names of the stack frame's local variables.
+//     */
+//    private static String[] getLocalVariablesAt(InstructionHandle insn) {
+//        StackFrame frame = insn.getFrame();
+//        String[] localVariables = new String[frame.getLocalCount()];
+//        for (int i = 0; i < localVariables.length; i++) {
+//            if (frame.getLocal(i) != null) {
+//                localVariables[i] = localVar(i, frame.getLocal(i));
+//            }
+//        }
+//        return localVariables;
+//    }
 
     /**
      * Convenience method which returns the names of the stack variables in the
@@ -2716,42 +2718,42 @@ public class MethodTranslator implements ITranslationConstants {
         public void visitILoadInstruction(ILoadInstruction insn) {
             int stack = handle.getFrame().getStackSize();
             int local = insn.getIndex();
-            addAssignment(stack(var(intStackVar(stack))), var(intLocalVar(local)));
+            addAssignment(stack(var(intStackVar(stack))), stack(var(intLocalVar(local))));
         }
 
         //@ requires insn != null;
         public void visitLLoadInstruction(LLoadInstruction insn) {
             int stack = handle.getFrame().getStackSize();
             int local = insn.getIndex();
-            addAssignment(stack(var(intStackVar(stack))), var(intLocalVar(local)));
+            addAssignment(stack(var(intStackVar(stack))), stack(var(intLocalVar(local))));
         }
 
         //@ requires insn != null;
         public void visitALoadInstruction(ALoadInstruction insn) {
             int stack = handle.getFrame().getStackSize();
             int local = insn.getIndex();
-            addAssignment(stack(var(refStackVar(stack))), var(refLocalVar(local)));
+            addAssignment(stack(var(refStackVar(stack))), stack(var(refLocalVar(local))));
         }
 
         //@ requires insn != null;
         public void visitIStoreInstruction(IStoreInstruction insn) {
             int stack = handle.getFrame().getStackSize() - 1;
             int local = insn.getIndex();
-            addAssignment(var(intLocalVar(local)), stack(var(intStackVar(stack))));
+            addAssignment(stack(var(intLocalVar(local))), stack(var(intStackVar(stack))));
         }
 
         //@ requires insn != null;
         public void visitLStoreInstruction(LStoreInstruction insn) {
             int stack = handle.getFrame().getStackSize() - 1;
             int local = insn.getIndex();
-            addAssignment(var(intLocalVar(local)), stack(var(intStackVar(stack))));
+            addAssignment(stack(var(intLocalVar(local))), stack(var(intStackVar(stack))));
         }
 
         //@ requires insn != null;
         public void visitAStoreInstruction(AStoreInstruction insn) {
             int stack = handle.getFrame().getStackSize() - 1;
             int local = insn.getIndex();
-            addAssignment(var(refLocalVar(local)), stack(var(refStackVar(stack))));
+            addAssignment(stack(var(refLocalVar(local))), stack(var(refStackVar(stack))));
         }
 
         //@ requires insn != null;
@@ -3205,10 +3207,13 @@ public class MethodTranslator implements ITranslationConstants {
                                     logicalNot(libType(var(t)))
                                     )
                             ));
+                    addAssume(heap(stack(receiver()), var("createdByCtxt")));
                     //TODO more detailed information about the type here
                     rawEndBlock(TranslationController.getCheckLabel());
                 } else {
                     //the invoked method is a constructor of an internal type
+                    first = first - 1; //the stack index is one off if we have a constructor
+                    
                     BPLTransferCommand transCmd = new BPLGotoCommand(TranslationController.prefix(CALLTABLE_LABEL));
                     transCmd.addComment("constructor call: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
                     transCmd.addComment("Sourceline: "+handle.getSourceLine());
@@ -3221,14 +3226,30 @@ public class MethodTranslator implements ITranslationConstants {
                 }
                 
                 startBlock(TranslationController.nextLabel());
+//                addAssignment(stack(receiver()), var("reg0_r"));//TODO correct expression here
+                
+                // type informations of the stack
+                StackFrame stackFrame = handle.getFrame();
+                JType elemType;
+                for(int i=0; i<first; i++){
+                    elemType = stackFrame.getLocal(i);
+                    addAssume(isOfType(stack(var(stackVar(i, elemType))), var(TranslationController.getHeap()), typeRef(elemType)));
+                }
+                
+                addAssume(nonNull(stack(receiver())));
+                addAssume(nonNull(stack(spPlus1, receiver())));
+                if(!invokedMethod.isConstructor()){
+                    addAssume(isOfType(stack(spPlus1, receiver()), var(TranslationController.getHeap()), typeRef(insn.getMethodOwner())));
+                }
                 addAssume(isEqual(stack(spPlus1, var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod))));
+                
                 addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
                 addAssume(isEqual(stack(var("place")), var(thisPlace)));
-                addAssume(nonNull(stack(receiver())));
                 if(invokedMethod.isConstructor()){
                     addAssume(nonNull(stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
                     addAssume(logicalNot(heap(stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))), var("createdByCtxt")))); //we hace constructed the object on our own
                 }
+                
                 if(hasReturnValue){
                     if(retType.isBaseType()){
                         addAssume(isInRange(stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))), typeRef(retType)));
@@ -3376,8 +3397,8 @@ public class MethodTranslator implements ITranslationConstants {
         public void visitIIncInstruction(IIncInstruction insn) {
             int local = insn.getIndex();
             int constant = insn.getConstant();
-            BPLExpression iinc = add(var(intLocalVar(local)), intLiteral(constant));
-            addAssignment(var(intLocalVar(local)), iinc);
+            BPLExpression iinc = add(stack(var(intLocalVar(local))), intLiteral(constant));
+            addAssignment(stack(var(intLocalVar(local))), iinc);
         }
 
         /**

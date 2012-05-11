@@ -1300,7 +1300,7 @@ public class Translator implements ITranslationConstants {
                     isEquiv(refOfType(var(o), var(heap), var(t)),
                             implies(
                                     obj(var(heap), var(o)),
-                                    isEqual(new BPLArrayExpression(var(heap), var(o), var(dynType)), var(t)) //TODO implement subtyping here
+                                    isSubtype(new BPLArrayExpression(var(heap), var(o), var(dynType)), var(t))
                                     )
                             )
                     ));
