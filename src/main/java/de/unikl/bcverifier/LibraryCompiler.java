@@ -24,7 +24,7 @@ public class LibraryCompiler {
         StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(null, null, null);
         Collection<File> javaFiles = FileUtils.listFiles(libraryPath, new String[]{"java"}, true);
         Iterable<? extends JavaFileObject> javaFileObjectsFromFiles = standardFileManager.getJavaFileObjectsFromFiles(javaFiles);
-        CompilationTask compilationTask = compiler.getTask(null, standardFileManager, null, null, null, javaFileObjectsFromFiles);
+        CompilationTask compilationTask = compiler.getTask(null, standardFileManager, null, Arrays.asList("-g"), null, javaFileObjectsFromFiles);
         if(!compilationTask.call()){
             throw new CompileException("Files could not be compiled.");
         }

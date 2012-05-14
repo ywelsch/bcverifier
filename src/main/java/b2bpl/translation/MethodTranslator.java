@@ -2066,6 +2066,10 @@ public class MethodTranslator implements ITranslationConstants {
 //            }
 //        }    
     }
+    
+    private void addAssignment(BPLExpression lhs, BPLExpression rhs, String comment) {
+        addCommentedCommand(new BPLAssignmentCommand(lhs, rhs), comment);
+    }
 
     /**
      * Adds an assertion for the given {@code expression} to the currently active
@@ -2718,42 +2722,42 @@ public class MethodTranslator implements ITranslationConstants {
         public void visitILoadInstruction(ILoadInstruction insn) {
             int stack = handle.getFrame().getStackSize();
             int local = insn.getIndex();
-            addAssignment(stack(var(intStackVar(stack))), stack(var(intLocalVar(local))));
+            addAssignment(stack(var(intStackVar(stack))), stack(var(intLocalVar(local))), "loading "+insn.getVariableName());
         }
 
         //@ requires insn != null;
         public void visitLLoadInstruction(LLoadInstruction insn) {
             int stack = handle.getFrame().getStackSize();
             int local = insn.getIndex();
-            addAssignment(stack(var(intStackVar(stack))), stack(var(intLocalVar(local))));
+            addAssignment(stack(var(intStackVar(stack))), stack(var(intLocalVar(local))), "loading "+insn.getVariableName());
         }
 
         //@ requires insn != null;
         public void visitALoadInstruction(ALoadInstruction insn) {
             int stack = handle.getFrame().getStackSize();
             int local = insn.getIndex();
-            addAssignment(stack(var(refStackVar(stack))), stack(var(refLocalVar(local))));
+            addAssignment(stack(var(refStackVar(stack))), stack(var(refLocalVar(local))), "loading "+insn.getVariableName());
         }
 
         //@ requires insn != null;
         public void visitIStoreInstruction(IStoreInstruction insn) {
             int stack = handle.getFrame().getStackSize() - 1;
             int local = insn.getIndex();
-            addAssignment(stack(var(intLocalVar(local))), stack(var(intStackVar(stack))));
+            addAssignment(stack(var(intLocalVar(local))), stack(var(intStackVar(stack))), "storing "+insn.getVariableName());
         }
 
         //@ requires insn != null;
         public void visitLStoreInstruction(LStoreInstruction insn) {
             int stack = handle.getFrame().getStackSize() - 1;
             int local = insn.getIndex();
-            addAssignment(stack(var(intLocalVar(local))), stack(var(intStackVar(stack))));
+            addAssignment(stack(var(intLocalVar(local))), stack(var(intStackVar(stack))), "storing "+insn.getVariableName());
         }
 
         //@ requires insn != null;
         public void visitAStoreInstruction(AStoreInstruction insn) {
             int stack = handle.getFrame().getStackSize() - 1;
             int local = insn.getIndex();
-            addAssignment(stack(var(refLocalVar(local))), stack(var(refStackVar(stack))));
+            addAssignment(stack(var(refLocalVar(local))), stack(var(refStackVar(stack))), "storing "+insn.getVariableName());
         }
 
         //@ requires insn != null;

@@ -10,6 +10,7 @@ import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LineNumberNode;
+import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
@@ -32,6 +33,7 @@ import b2bpl.bytecode.instructions.AThrowInstruction;
 import b2bpl.bytecode.instructions.Instruction;
 import b2bpl.bytecode.instructions.InvokeInstruction;
 import b2bpl.bytecode.instructions.InvokeSpecialInstruction;
+import b2bpl.bytecode.instructions.LocalVariableInstruction;
 
 
 /**
@@ -132,10 +134,12 @@ public class FlowAnalyzer extends Analyzer {
     // Let the ASM bytecode library perform the actual dataflow analysis.
     Frame[] asmFrames = super.analyze(owner, asmMethod);
 
+    InstructionHandle insn;
     for (int i = 0; i < asmFrames.length; i++) {
       // Convert the ASM stack frames to the representation used in the
       // translator and associate them to the individual bytecode instructions.
-      insns.get(map[i]).setFrame(
+      insn = insns.get(map[i]);
+      insn.setFrame(
           convertFrame(asmFrames[i], asmMethod.maxLocals, asmMethod.maxStack));
     }
 
