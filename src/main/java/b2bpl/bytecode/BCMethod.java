@@ -42,6 +42,8 @@ public class BCMethod extends BCMember implements IOpCodes {
   private ControlFlowGraph cfg;
   
   private Set<BPLExpression> modifiedObjectes = new HashSet<BPLExpression>(); // references to potentially modified objects
+  
+  private String[] parameterNames;
 
   public BCMethod(
       int accessModifiers,
@@ -56,6 +58,11 @@ public class BCMethod extends BCMember implements IOpCodes {
     this.parameterTypes = parameterTypes;
     this.exceptionTypes = exceptionTypes;
     this.descriptor = JType.computeMethodDescriptor(returnType, parameterTypes);
+    if(isStatic()){
+        this.parameterNames = new String[parameterTypes.length];
+    } else {
+        this.parameterNames = new String[parameterTypes.length + 1];
+    }
   }
 
   public String getName() {
@@ -269,5 +276,9 @@ public class BCMethod extends BCMember implements IOpCodes {
   public void addModifiedObjectRef(BPLExpression ref) { this.modifiedObjectes.add(ref); }
   
   public boolean isModifiedObjectRef(BPLExpression ref) { return this.modifiedObjectes.contains(ref); }
+  
+  public String[] getParameterNames(){
+      return this.parameterNames;
+  }
   
 }

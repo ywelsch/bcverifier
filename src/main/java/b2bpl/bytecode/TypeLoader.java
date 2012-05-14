@@ -635,7 +635,12 @@ public class TypeLoader {
         // set the name of the local variable for all LocalVariableInstructions in the segment between start and end label
         InstructionHandle startHandle = getHandleFor(start);
         InstructionHandle endHandle = getHandleFor(end);
-        InstructionHandle insnHandle = startHandle;
+        InstructionHandle insnHandle;        
+        if(startHandle.getPrevious() != null){
+            insnHandle = startHandle.getPrevious();
+        } else {
+            insnHandle = startHandle;
+        }
         Instruction insn;
         while(insnHandle != null && insnHandle != endHandle){
             insn = insnHandle.getInstruction();
@@ -647,6 +652,13 @@ public class TypeLoader {
             }
             insnHandle = insnHandle.getNext();
         }
+        
+//        if(startHandle.getPrevious() == null){ //TODO this is no indication of the original parameters
+            int parameterCount = method.getParameterNames().length;
+            if(index < parameterCount){
+                method.getParameterNames()[index] = name;
+            }
+//        }
     }
 
     public void visitLineNumber(int line, Label start) {
