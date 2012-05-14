@@ -37,6 +37,7 @@ import b2bpl.bytecode.bml.ast.BMLConstraint;
 import b2bpl.bytecode.bml.ast.BMLInvariant;
 import b2bpl.bytecode.bml.ast.BMLLoopSpecification;
 import b2bpl.bytecode.instructions.Instruction;
+import b2bpl.bytecode.instructions.LocalVariableInstruction;
 
 
 public class TypeLoader {
@@ -631,7 +632,21 @@ public class TypeLoader {
         Label start,
         Label end,
         int index) {
-      // do nothing
+        // set the name of the local variable for all LocalVariableInstructions in the segment between start and end label
+        InstructionHandle startHandle = getHandleFor(start);
+        InstructionHandle endHandle = getHandleFor(end);
+        InstructionHandle insnHandle = startHandle;
+        Instruction insn;
+        while(insnHandle != null && insnHandle != endHandle){
+            insn = insnHandle.getInstruction();
+            if(insn instanceof LocalVariableInstruction){
+                LocalVariableInstruction lvInsn = (LocalVariableInstruction)insn;
+                if(lvInsn.getIndex() == index){
+                    lvInsn.setVariableName(name);
+                }
+            }
+            insnHandle = insnHandle.getNext();
+        }
     }
 
     public void visitLineNumber(int line, Label start) {
