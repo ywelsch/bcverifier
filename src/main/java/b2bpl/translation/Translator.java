@@ -22,6 +22,7 @@ import static b2bpl.translation.CodeGenerator.fieldType;
 import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.ftype;
 import static b2bpl.translation.CodeGenerator.greater;
+import static b2bpl.translation.CodeGenerator.hasReturnValue;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
 import static b2bpl.translation.CodeGenerator.implies;
 import static b2bpl.translation.CodeGenerator.intToInt;
@@ -74,6 +75,7 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayAssignment;
@@ -296,9 +298,9 @@ public class Translator implements ITranslationConstants {
                         addAxiom(logicalNot(new BPLFunctionApplication(IS_CALLABLE_FUNC, typeRef(type), var(methodName))));
                     }
                     if(method.isConstructor() || !method.isVoid()){
-                        addAxiom(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, var(methodName)));
+                        addAxiom(hasReturnValue(var(methodName)));
                     } else {
-                        addAxiom(logicalNot(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, var(methodName))));
+                        addAxiom(logicalNot(hasReturnValue(var(methodName))));
                     }
                     procedures.put(method.getQualifiedBoogiePLName(), proc);
                 } else if(method.isAbstract()){

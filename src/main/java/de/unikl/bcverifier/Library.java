@@ -1,11 +1,9 @@
 package de.unikl.bcverifier;
 
-import static b2bpl.translation.CodeGenerator.add;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.greater;
-import static b2bpl.translation.CodeGenerator.greaterEqual;
-import static b2bpl.translation.CodeGenerator.heap;
+import static b2bpl.translation.CodeGenerator.hasReturnValue;
 import static b2bpl.translation.CodeGenerator.heap1;
 import static b2bpl.translation.CodeGenerator.heap2;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
@@ -23,30 +21,14 @@ import static b2bpl.translation.CodeGenerator.relNull;
 import static b2bpl.translation.CodeGenerator.related;
 import static b2bpl.translation.CodeGenerator.stack;
 import static b2bpl.translation.CodeGenerator.stack1;
-import static b2bpl.translation.CodeGenerator.stack1old;
 import static b2bpl.translation.CodeGenerator.stack2;
-import static b2bpl.translation.CodeGenerator.stack2old;
-import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.var;
-import static b2bpl.translation.ITranslationConstants.ADDRESS_TYPE;
-import static b2bpl.translation.ITranslationConstants.GLOBAL_VAR_PREFIX;
-import static b2bpl.translation.ITranslationConstants.HAS_RETURN_VALUE_FUNC;
-import static b2bpl.translation.ITranslationConstants.INT_TYPE_ABBREV;
-import static b2bpl.translation.ITranslationConstants.IS_PUBLIC_FUNC;
-import static b2bpl.translation.ITranslationConstants.METHOD_TYPE;
-import static b2bpl.translation.ITranslationConstants.PARAM_VAR_PREFIX;
-import static b2bpl.translation.ITranslationConstants.REF_TYPE;
-import static b2bpl.translation.ITranslationConstants.REF_TYPE_ABBREV;
-import static b2bpl.translation.ITranslationConstants.RESULT_VAR;
-import static b2bpl.translation.ITranslationConstants.STACK_PTR_TYPE;
-import static b2bpl.translation.ITranslationConstants.VAR_TYPE;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -66,7 +48,6 @@ import b2bpl.bpl.ast.BPLAssumeCommand;
 import b2bpl.bpl.ast.BPLAxiom;
 import b2bpl.bpl.ast.BPLBasicBlock;
 import b2bpl.bpl.ast.BPLBoolLiteral;
-import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLConstantDeclaration;
 import b2bpl.bpl.ast.BPLDeclaration;
@@ -342,8 +323,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             }
 
             checkingCommand.add(new BPLAssertCommand(
-                    implies(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC,
-                            stack1(var("meth"))),
+                    implies(hasReturnValue(stack1(var("meth"))),
                             logicalOr(
                                     relNull(stack1(var(RESULT_VAR
                                             + REF_TYPE_ABBREV)),
@@ -456,9 +436,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     .values()) {
                 localVariables.add(new BPLVariableDeclaration(var));
             }
-            
-            // add variable to distinguish between a call and a return
-            localVariables.add(new BPLVariableDeclaration(new BPLVariable("isCall", BPLBuiltInType.BOOL)));
 
             
             List<BPLCommand> procAssumes;
@@ -581,6 +558,21 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     procAssumes.add(assumeCmd);
                 }
             }
+            
+            // the method has to be overridden -> receiver was created by context
+            assumeCmd = new BPLAssumeCommand(heap1(stack1(receiver()), var("createdByCtxt")));
+            procAssumes.add(assumeCmd);
+            assumeCmd = new BPLAssumeCommand(heap2(stack2(receiver()), var("createdByCtxt")));
+            procAssumes.add(assumeCmd);
+            
+            assumeCmd = new BPLAssumeCommand(
+                    implies(hasReturnValue(stack1(var("meth"))),
+                            logicalAnd(
+                                    heap1(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)), var("exposed")),
+                                    heap2(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)), var("exposed"))
+                            )
+                    ));
+            procAssumes.add(assumeCmd);
             
             methodBlocks.add(2, new BPLBasicBlock("preconditions_return",
             procAssumes.toArray(new BPLCommand[procAssumes.size()]),
@@ -759,9 +751,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 sp,
                 new BPLIntLiteral(0))));
         
-        // this is a call
-        dispatchCommands.add(new BPLAssumeCommand(var("isCall")));
-        
         methodBlocks.add(
                 0,
                 new BPLBasicBlock(callTableInitLabel, dispatchCommands
@@ -789,9 +778,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         dispatchCommands.add(new BPLAssumeCommand(greater(
                 sp,
                 new BPLIntLiteral(0))));
-        
-        // this is not a call
-        dispatchCommands.add(new BPLAssumeCommand(logicalNot(var("isCall"))));
         
         methodBlocks.add(
                 0,

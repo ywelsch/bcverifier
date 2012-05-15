@@ -3254,6 +3254,7 @@ public class MethodTranslator implements ITranslationConstants {
                 } else {
                     addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
                     addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("createdByCtxt")))); //we hace constructed the object on our own
+                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("exposed")))); //the object did not yet cross the boundary
                 }
                 addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod))));
                 
@@ -3274,13 +3275,21 @@ public class MethodTranslator implements ITranslationConstants {
                 JType elemType;
                 for(int i=0; i<first; i++){
                     elemType = stackFrame.getLocal(i);
-                    addAssume(isOfType(stack(var(stackVar(i, elemType))), var(TranslationController.getHeap()), typeRef(elemType)));
+                    if(elemType.isBaseType()){
+                        addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
+                    } else {
+                        addAssume(isOfType(stack(var(stackVar(i, elemType))), var(TranslationController.getHeap()), typeRef(elemType)));
+                    }
                 }
                 
                 // type information of the method parameters
                 for(int i=0; i<method.getRealParameterTypes().length; i++){
                     elemType = method.getRealParameterTypes()[i];
-                    addAssume(isOfType(stack(var(localVar(i, elemType))), var(TranslationController.getHeap()), typeRef(elemType)));
+                    if(elemType.isBaseType()){
+                        addAssume(isInRange(stack(var(localVar(i, elemType))), typeRef(elemType)));
+                    } else {
+                        addAssume(isOfType(stack(var(localVar(i, elemType))), var(TranslationController.getHeap()), typeRef(elemType)));
+                    }
                 }
                 
                 addAssume(nonNull(stack(receiver())));
