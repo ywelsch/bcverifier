@@ -1350,8 +1350,6 @@ public class MethodTranslator implements ITranslationConstants {
 //        addCommand(new BPLAssumeCommand(isEqual(stack(var("place")), var(TranslationController.buildPlace(getProcedureName(method), true)))));
         addCommand(new BPLAssumeCommand(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method)))));
 
-        BPLExpression sp = var(TranslationController.getStackPointer());
-        addAssignment(sp, sub(sp, intLiteral(1)));
         String currentLabel = blockLabel;
         
         String noReturnLabel = currentLabel + "_noReturn";
@@ -1359,13 +1357,13 @@ public class MethodTranslator implements ITranslationConstants {
         endBlock(noReturnLabel, isReturnLabel);
         
         startBlock(noReturnLabel);
-        addAssume(isEqual(var(TranslationController.getStackPointer()), intLiteral(-1)));
+        addAssume(isEqual(var(TranslationController.getStackPointer()), intLiteral(0)));
         addAssignment(stack(var("place")), var(TranslationController.buildPlace(getProcedureName(method), true)));
         rawEndBlock(TranslationController.getCheckLabel());
         
         String retTableLabel = TranslationController.prefix("rettable");
         startBlock(isReturnLabel);
-        addAssume(greater(var(TranslationController.getStackPointer()), intLiteral(-1)));
+        addAssume(greater(var(TranslationController.getStackPointer()), intLiteral(0)));
         rawEndBlock(retTableLabel);
     }
 
@@ -3017,7 +3015,9 @@ public class MethodTranslator implements ITranslationConstants {
             boolean isSuperConstructor = isSuperConstructorCall(invokedMethod, handle);
 
             if(!isSuperConstructor){
-                BPLExpression spPlus1 = add(var(TranslationController.getStackPointer()), intLiteral(1)); 
+                BPLExpression sp = var(TranslationController.getStackPointer());
+                BPLExpression spMinus1 = sub(sp, intLiteral(1)); 
+                addAssignment(sp, add(sp, intLiteral(1)), "create new stack frame");
                 // Pass all other method arguments (the first of which refers to the "this" object
                 // if the method is not static).
                 String[] args = new String[params.length];
@@ -3025,13 +3025,13 @@ public class MethodTranslator implements ITranslationConstants {
                     args[i] = stackVar(first + i, params[i]);
                     methodParams.add(new BPLVariableExpression(args[i]));
                     if(params[i].isBaseType()){
-                        addAssert(isInRange(stack(var(args[i])), typeRef(params[i])));
+                        addAssert(isInRange(stack(spMinus1, var(args[i])), typeRef(params[i])));
                     } else if(params[i].isClassType()){
-                        addAssert(isOfType(stack(var(args[i])), var(TranslationController.getHeap()), typeRef(params[i])));
+                        addAssert(isOfType(stack(spMinus1, var(args[i])), var(TranslationController.getHeap()), typeRef(params[i])));
                     } else {
                         //TODO array type
                     }
-                    addAssignment(stack(spPlus1, var(paramVar(i, params[i]))), stack(var(args[i])));
+                    addAssignment(stack(var(paramVar(i, params[i]))), stack(spMinus1, var(args[i])));
                 }
 
                 /*
@@ -3182,10 +3182,8 @@ public class MethodTranslator implements ITranslationConstants {
                 //new code
 
                 String thisPlace = TranslationController.buildPlace(getProcedureName(method), getMethodName(invokedMethod));
-                addAssignment(stack(var("place")), var(thisPlace));
-                addAssignment(stack(spPlus1, var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod)));
-                addAssignment(var(TranslationController.getStackPointer()), spPlus1);
-
+                addAssignment(stack(spMinus1, var("place")), var(thisPlace));
+                addAssignment(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod)));
 
                 if(!invokedMethod.isConstructor()){
                     //                rawEndBlock(TranslationController.getCheckLabel());
@@ -3250,6 +3248,26 @@ public class MethodTranslator implements ITranslationConstants {
                 
                 startBlock(TranslationController.nextLabel());
 //                addAssignment(stack(receiver()), var("reg0_r"));//TODO correct expression here
+
+                if(!invokedMethod.isConstructor()){
+                    addAssume(isOfType(stack(receiver()), var(TranslationController.getHeap()), typeRef(insn.getMethodOwner())));
+                } else {
+                    addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
+                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("createdByCtxt")))); //we hace constructed the object on our own
+                }
+                addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod))));
+                
+                if(hasReturnValue){
+                    if(retType.isBaseType()){
+                        addAssume(isInRange(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), typeRef(retType)));
+                    } else if(retType.isClassType()){
+                        addAssume(isOfType(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(TranslationController.getHeap()), typeRef(retType)));
+                    } else {
+                        //TODO array
+                    }
+                    addAssignment(stack(spMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
+                }
+                addAssignment(sp, sub(sp, intLiteral(1)));
                 
                 // type informations of the stack
                 StackFrame stackFrame = handle.getFrame();
@@ -3260,29 +3278,9 @@ public class MethodTranslator implements ITranslationConstants {
                 }
                 
                 addAssume(nonNull(stack(receiver())));
-                addAssume(nonNull(stack(spPlus1, receiver())));
-                if(!invokedMethod.isConstructor()){
-                    addAssume(isOfType(stack(spPlus1, receiver()), var(TranslationController.getHeap()), typeRef(insn.getMethodOwner())));
-                }
-                addAssume(isEqual(stack(spPlus1, var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod))));
                 
                 addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
                 addAssume(isEqual(stack(var("place")), var(thisPlace)));
-                if(invokedMethod.isConstructor()){
-                    addAssume(nonNull(stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
-                    addAssume(logicalNot(heap(stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))), var("createdByCtxt")))); //we hace constructed the object on our own
-                }
-                
-                if(hasReturnValue){
-                    if(retType.isBaseType()){
-                        addAssume(isInRange(stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))), typeRef(retType)));
-                    } else if(retType.isClassType()){
-                        addAssume(isOfType(stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))), var(TranslationController.getHeap()), typeRef(retType)));
-                    } else {
-                        //TODO array
-                    }
-                    addAssignment(stack(var(stackVar(first, retType))), stack(spPlus1, var(RESULT_PARAM+typeAbbrev(type(retType)))));
-                }
                 
                 callStatements++;
             }

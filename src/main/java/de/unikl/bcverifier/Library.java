@@ -26,6 +26,7 @@ import static b2bpl.translation.CodeGenerator.stack1;
 import static b2bpl.translation.CodeGenerator.stack1old;
 import static b2bpl.translation.CodeGenerator.stack2;
 import static b2bpl.translation.CodeGenerator.stack2old;
+import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.var;
 import static b2bpl.translation.ITranslationConstants.ADDRESS_TYPE;
@@ -65,6 +66,7 @@ import b2bpl.bpl.ast.BPLAssumeCommand;
 import b2bpl.bpl.ast.BPLAxiom;
 import b2bpl.bpl.ast.BPLBasicBlock;
 import b2bpl.bpl.ast.BPLBoolLiteral;
+import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLConstantDeclaration;
 import b2bpl.bpl.ast.BPLDeclaration;
@@ -100,7 +102,7 @@ import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 
-public class Library implements ITroubleReporter {
+public class Library implements ITroubleReporter, ITranslationConstants {
     public static class TranslationException extends Exception {
         private static final long serialVersionUID = 1501139187899875010L;
 
@@ -209,11 +211,7 @@ public class Library implements ITroubleReporter {
             TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, this));
             TypeLoader.setTroubleReporter(this);
 
-            programDecls.addAll(new Translator(project).getPrelude()); // TODO
-                                                                       // workaround
-                                                                       // to
-                                                                       // generate
-                                                                       // Prelude
+            programDecls.addAll(new Translator(project).getPrelude()); // TODO workaround to generate Prelude
 
             TranslationController.activate();
 
@@ -248,6 +246,11 @@ public class Library implements ITroubleReporter {
                                         .toArray(new BPLExpression[methodExprs
                                                 .size()]))))));
             }
+            
+            for (BPLVariable var : TranslationController.stackVariables()
+                    .values()) {
+                programDecls.add(new BPLConstantDeclaration(var));
+            }
 
             // ///////////////////////////////////
             // checking blocks (intern and extern)
@@ -261,37 +264,14 @@ public class Library implements ITroubleReporter {
             // ///////////////////////////////
             List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
             checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-                    isEqual(var("sp1"), new BPLIntLiteral(-1)),
-                    isEqual(var("sp2"), new BPLIntLiteral(-1)))));
+                    isEqual(var("sp1"), new BPLIntLiteral(0)),
+                    isEqual(var("sp2"), new BPLIntLiteral(0)))));
 
             checkingCommand.add(new BPLAssertCommand(isEqual(
-                    stack1old(var("meth")), stack2old(var("meth")))));
+                    stack1(var("meth")), stack2(var("meth")))));
             checkingCommand.add(new BPLAssertCommand(logicalAnd(
-                    nonNull(stack1old(receiver())),
-                    nonNull(stack2old(receiver())))));
-
-            // //TODO only do this if it is a call (sp1 == -1?)
-            // checkingCommand.add(new BPLAssertCommand(logicalOr(
-            // relNull(stack1old(receiver()), stack2old(receiver()),
-            // var("related")),
-            // logicalAnd(
-            // logicalNot(exists(new BPLVariable("r", new
-            // BPLTypeName(REF_TYPE)), related(stack1old(receiver()),
-            // var("r")))),
-            // logicalNot(exists(new BPLVariable("r", new
-            // BPLTypeName(REF_TYPE)), related(var("r"),
-            // stack2old(receiver()))))
-            // )
-            // )));
-            // checkingCommand.add(new
-            // BPLAssignmentCommand(heap1(stack1old(receiver()),
-            // var("exposed")), BPLBoolLiteral.TRUE));
-            // checkingCommand.add(new
-            // BPLAssignmentCommand(heap2(stack2old(receiver()),
-            // var("exposed")), BPLBoolLiteral.TRUE));
-            // checkingCommand.add(new
-            // BPLAssignmentCommand(related(stack1old(receiver()),
-            // stack2old(receiver())), BPLBoolLiteral.TRUE));
+                    nonNull(stack1(receiver())),
+                    nonNull(stack2(receiver())))));
 
             for (BPLVariable var : TranslationController.stackVariables()
                     .values()) {
@@ -299,8 +279,8 @@ public class Library implements ITroubleReporter {
                     checkingCommand
                             .add(new BPLAssertCommand(
                                     logicalOr(
-                                            relNull(stack1old(var(var.getName())),
-                                                    stack2old(var(var.getName())),
+                                            relNull(stack1(var(var.getName())),
+                                                    stack2(var(var.getName())),
                                                     var("related")),
                                             logicalAnd(
                                                     logicalNot(exists(
@@ -308,7 +288,7 @@ public class Library implements ITroubleReporter {
                                                                     "r",
                                                                     new BPLTypeName(
                                                                             REF_TYPE)),
-                                                            related(stack1old(var(var
+                                                            related(stack1(var(var
                                                                     .getName())),
                                                                     var("r")))),
                                                     logicalNot(exists(
@@ -317,62 +297,62 @@ public class Library implements ITroubleReporter {
                                                                     new BPLTypeName(
                                                                             REF_TYPE)),
                                                             related(var("r"),
-                                                                    stack2old(var(var
+                                                                    stack2(var(var
                                                                             .getName())))))))));
                     // if var != null ...
                     checkingCommand
                             .add(new BPLAssignmentCommand(
-                                    heap1(stack1old(var(var.getName())),
+                                    heap1(stack1(var(var.getName())),
                                             var("exposed")),
                                     ifThenElse(
                                             logicalAnd(
-                                                    nonNull(stack1old(var(var
+                                                    nonNull(stack1(var(var
                                                             .getName()))),
-                                                    nonNull(stack2old(var(var
+                                                    nonNull(stack2(var(var
                                                             .getName())))),
                                             BPLBoolLiteral.TRUE,
-                                            heap1(stack1old(var(var.getName())),
+                                            heap1(stack1(var(var.getName())),
                                                     var("exposed")))));
                     checkingCommand
                             .add(new BPLAssignmentCommand(
-                                    heap2(stack2old(var(var.getName())),
+                                    heap2(stack2(var(var.getName())),
                                             var("exposed")),
                                     ifThenElse(
                                             logicalAnd(
-                                                    nonNull(stack1old(var(var
+                                                    nonNull(stack1(var(var
                                                             .getName()))),
-                                                    nonNull(stack2old(var(var
+                                                    nonNull(stack2(var(var
                                                             .getName())))),
                                             BPLBoolLiteral.TRUE,
-                                            heap2(stack2old(var(var.getName())),
+                                            heap2(stack2(var(var.getName())),
                                                     var("exposed")))));
                     checkingCommand.add(new BPLAssignmentCommand(related(
-                            stack1old(var(var.getName())),
-                            stack2old(var(var.getName()))), ifThenElse(
-                            logicalAnd(nonNull(stack1old(var(var.getName()))),
-                                    nonNull(stack2old(var(var.getName())))),
+                            stack1(var(var.getName())),
+                            stack2(var(var.getName()))), ifThenElse(
+                            logicalAnd(nonNull(stack1(var(var.getName()))),
+                                    nonNull(stack2(var(var.getName())))),
                             BPLBoolLiteral.TRUE,
-                            related(stack1old(var(var.getName())),
-                                    stack2old(var(var.getName()))))));
+                            related(stack1(var(var.getName())),
+                                    stack2(var(var.getName()))))));
                 } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
                     checkingCommand.add(new BPLAssertCommand(isEqual(
-                            stack1old(var(var.getName())),
-                            stack2old(var(var.getName())))));
+                            stack1(var(var.getName())),
+                            stack2(var(var.getName())))));
                 }
             }
 
             checkingCommand.add(new BPLAssertCommand(
                     implies(new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC,
-                            stack1old(var("meth"))),
+                            stack1(var("meth"))),
                             logicalOr(
-                                    relNull(stack1old(var(RESULT_VAR
+                                    relNull(stack1(var(RESULT_VAR
                                             + REF_TYPE_ABBREV)),
-                                            stack2old(var(RESULT_VAR
+                                            stack2(var(RESULT_VAR
                                                     + REF_TYPE_ABBREV)),
                                             var("related")),
-                                    isEqual(stack1old(var(RESULT_VAR
+                                    isEqual(stack1(var(RESULT_VAR
                                             + INT_TYPE_ABBREV)),
-                                            stack2old(var(RESULT_VAR
+                                            stack2(var(RESULT_VAR
                                                     + INT_TYPE_ABBREV)))))));
 
             checkingCommand.addAll(invAssertions);
@@ -390,29 +370,6 @@ public class Library implements ITroubleReporter {
 
             checkingCommand.add(new BPLAssertCommand(isEqual(
                     stack1(var("meth")), stack2(var("meth")))));
-
-            // //TODO only do this if it is a call (sp1 == -1?)
-            // checkingCommand.add(new BPLAssertCommand(logicalOr(
-            // relNull(stack1old(receiver()), stack2old(receiver()),
-            // var("related")),
-            // logicalAnd(
-            // logicalNot(exists(new BPLVariable("r", new
-            // BPLTypeName(REF_TYPE)), related(stack1old(receiver()),
-            // var("r")))),
-            // logicalNot(exists(new BPLVariable("r", new
-            // BPLTypeName(REF_TYPE)), related(var("r"),
-            // stack2old(receiver()))))
-            // )
-            // )));
-            // checkingCommand.add(new
-            // BPLAssignmentCommand(heap1(stack1old(receiver()),
-            // var("exposed")), BPLBoolLiteral.TRUE));
-            // checkingCommand.add(new
-            // BPLAssignmentCommand(heap2(stack2old(receiver()),
-            // var("exposed")), BPLBoolLiteral.TRUE));
-            // checkingCommand.add(new
-            // BPLAssignmentCommand(related(stack1old(receiver()),
-            // stack2old(receiver())), BPLBoolLiteral.TRUE));
 
             for (BPLVariable var : TranslationController.stackVariables()
                     .values()) {
@@ -486,68 +443,6 @@ public class Library implements ITroubleReporter {
                     .toArray(new BPLCommand[checkingCommand.size()]),
                     new BPLReturnCommand()));
 
-            
-            
-            /////////////////////////////////////
-            // preconditions of before checking
-            ////////////////////////////////////
-            List<BPLCommand> procAssumes = new ArrayList<BPLCommand>();
-            procAssumes.addAll(invAssumes);
-            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")),
-                    stack2(var("meth")))));
-            // procAssumes.add(new
-            // BPLAssumeCommand(related(stack1(var("param0_r")),
-            // stack2(var("param0_r")))));
-            // procAssumes.add(new
-            // BPLAssumeCommand(logicalAnd(isEqual(var("sp1"), new
-            // BPLIntLiteral(0)), isEqual(var("sp2"), new BPLIntLiteral(0)))));
-            // procAssumes.add(new
-            // BPLAssumeCommand(implies(logicalNot(stack1(var("isCall"))),
-            // logicalAnd(greaterEqual(var("sp1"), new BPLIntLiteral(0)),
-            // greaterEqual(var("sp2"), new BPLIntLiteral(0))))));
-
-            // ///////////////////////////////////////
-            // relate all parameters from the outside
-            // ///////////////////////////////////////
-            for (BPLVariable var : TranslationController.stackVariables()
-                    .values()) {
-                programDecls.add(new BPLConstantDeclaration(var));
-                if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
-                    // procAssumes.add(new
-                    // BPLAssumeCommand(relNull(stack1(var(var.getName())),
-                    // stack2(var(var.getName())), var("related"))));
-                    BPLCommand assumeCmd = new BPLAssumeCommand(forall(
-                            new BPLVariable("sp", new BPLTypeName(
-                                    STACK_PTR_TYPE)),
-                            relNull(stack1(var("sp"), var(var.getName())),
-                                    stack2(var("sp"), var(var.getName())),
-                                    var("related"))));
-                    assumeCmd.addComment("initially, all parameters to method calls can be assumed to be related");
-                    procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(var(var.getName()))), heap1(stack1(var(var.getName())), var("exposed"))));
-                    procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack2(var(var.getName()))), heap2(stack2(var(var.getName())), var("exposed"))));
-                    procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(var(var.getName()))), heap1(stack1(var(var.getName())), var("createdByCtxt"))));
-                    procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack2(var(var.getName()))), heap2(stack2(var(var.getName())), var("createdByCtxt"))));
-                    procAssumes.add(assumeCmd);
-                } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
-                    BPLCommand assumeCmd = new BPLAssumeCommand(forall(
-                            new BPLVariable("sp", new BPLTypeName(
-                                    STACK_PTR_TYPE)),
-                            isEqual(stack1(var("sp"), var(var.getName())),
-                                    stack2(var("sp"), var(var.getName())))));
-                    assumeCmd
-                            .addComment("initially, all parameters to method calls can be assumed to be related");
-                    procAssumes.add(assumeCmd);
-                }
-            }
-            BPLCommand assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(var("sp1 + 1"), var(RESULT_VAR+"_r"))), heap1(stack1(var("sp1 + 1"), var(RESULT_VAR+"_r")), var("exposed"))));
-            procAssumes.add(assumeCmd);
-            assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(var("sp1 + 1"), var(RESULT_VAR+"_r"))), heap1(stack1(var("sp1 + 1"), var(RESULT_VAR+"_r")), var("createdByCtxt"))));
-            procAssumes.add(assumeCmd);
-
             for (String place : TranslationController.places()) {
                 programDecls.add(new BPLConstantDeclaration(new BPLVariable(
                         place, new BPLTypeName(ADDRESS_TYPE))));
@@ -561,15 +456,148 @@ public class Library implements ITroubleReporter {
                     .values()) {
                 localVariables.add(new BPLVariableDeclaration(var));
             }
+            
+            // add variable to distinguish between a call and a return
+            localVariables.add(new BPLVariableDeclaration(new BPLVariable("isCall", BPLBuiltInType.BOOL)));
 
-            methodBlocks
-                    .add(0,
-                            new BPLBasicBlock("preconditions",
-                                    procAssumes
-                                            .toArray(new BPLCommand[procAssumes
-                                                    .size()]),
-                                    new BPLGotoCommand(methodBlocks.get(0)
-                                            .getLabel())));
+            
+            List<BPLCommand> procAssumes;
+            
+            // ///////////////////////////////////
+            // preconditions of before checking
+            // //////////////////////////////////
+            procAssumes = new ArrayList<BPLCommand>();
+            methodBlocks.add(0,new BPLBasicBlock("preconditions",
+                    procAssumes.toArray(new BPLCommand[procAssumes.size()]),
+                    new BPLGotoCommand( "preconditions_call", "preconditions_return" )));
+            
+            
+            BPLCommand assumeCmd;
+            
+            ////////////////////////////////////
+            // preconditions of a call
+            ///////////////////////////////////
+            procAssumes = new ArrayList<BPLCommand>();
+            procAssumes.add(new BPLAssumeCommand(isEqual(var("sp1"), new BPLIntLiteral(0))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(var("sp2"), new BPLIntLiteral(0))));
+            
+            // invariant
+            procAssumes.addAll(invAssumes);
+            
+            /////////////////////////////////////////////
+            // relation between lib1 and lib2
+            /////////////////////////////////////////////
+            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")), stack2(var("meth")))));
+
+            // ///////////////////////////////////////
+            // relate all parameters from the outside
+            // ///////////////////////////////////////
+            for (BPLVariable var : TranslationController.stackVariables()
+                    .values()) {
+                if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
+                    assumeCmd = new BPLAssumeCommand(relNull(stack1(var(var.getName())), stack2(var(var.getName())), var("related")));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(var(var.getName()))), heap1(stack1(var(var.getName())), var("exposed"))));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack2(var(var.getName()))), heap2(stack2(var(var.getName())), var("exposed"))));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(var(var.getName()))), heap1(stack1(var(var.getName())), var("createdByCtxt"))));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack2(var(var.getName()))), heap2(stack2(var(var.getName())), var("createdByCtxt"))));
+                    procAssumes.add(assumeCmd);
+                } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
+                    assumeCmd = new BPLAssumeCommand(isEqual(stack1(var(var.getName())), stack2(var(var.getName()))));
+                    procAssumes.add(assumeCmd);
+                }
+            }
+            
+            methodBlocks.add(1, new BPLBasicBlock("preconditions_call",
+                    procAssumes.toArray(new BPLCommand[procAssumes.size()]),
+                    new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
+            
+            
+            
+            ////////////////////////////////////
+            // preconditions of a return
+            ///////////////////////////////////
+            procAssumes = new ArrayList<BPLCommand>();
+            procAssumes.add(new BPLAssumeCommand(greater(var("sp1"), new BPLIntLiteral(0))));
+            procAssumes.add(new BPLAssumeCommand(greater(var("sp2"), new BPLIntLiteral(0))));
+
+            BPLExpression zero = new BPLIntLiteral(0);
+            /////////////////////////////////////////////
+            // relation of the called methods (context)
+            /////////////////////////////////////////////
+            assumeCmd = new BPLAssumeCommand(isEqual(stack1(var("meth")), stack2(var("meth"))));
+            assumeCmd.addComment("The methods called on the context have to be the same.");
+            procAssumes.add(assumeCmd);
+            assumeCmd = new BPLAssumeCommand(isEqual(stack1(zero, var("meth")), stack2(zero, var("meth"))));
+            assumeCmd.addComment("Relate the methods that where originally called on the library.");
+            procAssumes.add(assumeCmd);
+            
+            assumeCmd = new BPLAssumeCommand(related(stack1(zero, receiver()), stack2(zero, receiver())));
+            assumeCmd.addComment("The receiver and all parameters where initially related.");
+            // ///////////////////////////////////////
+            // relate all parameters from the outside
+            // ///////////////////////////////////////
+            for (BPLVariable var : TranslationController.stackVariables()
+                    .values()) {
+                if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
+                    assumeCmd = new BPLAssumeCommand(relNull(stack1(zero, var(var.getName())), stack2(zero, var(var.getName())), var("related")));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(zero, var(var.getName()))), heap1(stack1(zero, var(var.getName())), var("exposed"))));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack2(zero, var(var.getName()))), heap2(stack2(zero, var(var.getName())), var("exposed"))));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(zero, var(var.getName()))), heap1(stack1(zero, var(var.getName())), var("createdByCtxt"))));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack2(zero, var(var.getName()))), heap2(stack2(zero, var(var.getName())), var("createdByCtxt"))));
+                    procAssumes.add(assumeCmd);
+                } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
+                    assumeCmd = new BPLAssumeCommand(isEqual(stack1(zero, var(var.getName())), stack2(zero, var(var.getName()))));
+                    procAssumes.add(assumeCmd);
+                }
+            }
+            
+            
+            
+            //decrement stack pointer to reach the stack frame of the caller
+            procAssumes.add(new BPLAssignmentCommand(var("sp1"), sub(var("sp1"), new BPLIntLiteral(1))));
+            procAssumes.add(new BPLAssignmentCommand(var("sp2"), sub(var("sp2"), new BPLIntLiteral(1))));
+            
+            // invariant
+            procAssumes.addAll(invAssumes);
+
+            //TODO add information about the initial state of the stack in caller
+            
+            //increment stack pointer again to reach the stack frame of the callee
+            procAssumes.add(new BPLAssignmentCommand(var("sp1"), add(var("sp1"), new BPLIntLiteral(1))));
+            procAssumes.add(new BPLAssignmentCommand(var("sp2"), add(var("sp2"), new BPLIntLiteral(1))));
+            
+            // ///////////////////////////////////////
+            // relate all parameters from the outside
+            // ///////////////////////////////////////
+            for (BPLVariable var : TranslationController.stackVariables()
+                    .values()) {
+                if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
+                    assumeCmd = new BPLAssumeCommand(relNull(stack1(var(var.getName())), stack2(var(var.getName())), var("related")));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack1(var(var.getName()))), heap1(stack1(var(var.getName())), var("exposed"))));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(nonNull(stack2(var(var.getName()))), heap2(stack2(var(var.getName())), var("exposed"))));
+                    procAssumes.add(assumeCmd);
+                } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
+                    assumeCmd = new BPLAssumeCommand(isEqual(stack1(var(var.getName())), stack2(var(var.getName()))));
+                    procAssumes.add(assumeCmd);
+                }
+            }
+            
+            methodBlocks.add(2, new BPLBasicBlock("preconditions_return",
+            procAssumes.toArray(new BPLCommand[procAssumes.size()]),
+            new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
+            
+            
+
 
             String methodName = "checkLibraries";
             BPLImplementationBody methodBody = new BPLImplementationBody(
@@ -734,11 +762,16 @@ public class Library implements ITroubleReporter {
         ///////////////////////////////////////////
         // commands before callTableInit (preconditions of the calltable)
         ///////////////////////////////////////////
+        BPLExpression sp = var(TranslationController.getStackPointer());
         
         dispatchCommands = new ArrayList<BPLCommand>();
         dispatchCommands.add(new BPLAssumeCommand(isEqual(
-                var(TranslationController.getStackPointer()),
+                sp,
                 new BPLIntLiteral(0))));
+        
+        // this is a call
+        dispatchCommands.add(new BPLAssumeCommand(var("isCall")));
+        
         methodBlocks.add(
                 0,
                 new BPLBasicBlock(callTableInitLabel, dispatchCommands
@@ -762,15 +795,14 @@ public class Library implements ITroubleReporter {
         ///////////////////////////////////////////
         
         dispatchCommands = new ArrayList<BPLCommand>();
-        BPLExpression sp = var(TranslationController.getStackPointer());
-        // sp >= 0
-        dispatchCommands.add(new BPLAssumeCommand(greaterEqual(
+        // sp > 0
+        dispatchCommands.add(new BPLAssumeCommand(greater(
                 sp,
                 new BPLIntLiteral(0))));
-        // heap[stack[sp + 1][param0_r], createdByCtxt]
-        dispatchCommands.add(new BPLAssumeCommand(
-                heap(stack(add(sp, new BPLIntLiteral(1)), receiver()), var("createdByCtxt"))
-                ));
+        
+        // this is not a call
+        dispatchCommands.add(new BPLAssumeCommand(logicalNot(var("isCall"))));
+        
         methodBlocks.add(
                 0,
                 new BPLBasicBlock(retTableInitLabel, dispatchCommands

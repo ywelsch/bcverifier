@@ -608,14 +608,11 @@ public class Translator implements ITranslationConstants {
 
             addDeclaration(new BPLTypeAlias(HEAP_TYPE, new BPLParameterizedType(new BPLArrayType(new BPLType[]{new BPLTypeName("Ref"), new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha"))}, new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
 
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE), new BPLFunctionApplication("WellformedHeap", var(heap1)))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE), new BPLFunctionApplication("WellformedHeap", var(heap2)))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName("Bij"), new BPLFunctionApplication("WellformedCoupling", var(heap1), var(heap2), var(related)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(heap1)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(heap2)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName("Bij"), wellfomredCoupling(var(heap1), var(heap2), var(related)))));
 
-            addType(ACTIVITY_TYPE);
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable("ActivityIndicator", new BPLTypeName(ACTIVITY_TYPE))));
-
-
+            
             addComment("Modified heap, coupling, relation (not origianl SscBoogie)");
             addFunction(WELLFORMED_HEAP_FUNC, new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
@@ -718,9 +715,6 @@ public class Translator implements ITranslationConstants {
                     tVar, 
                     implies(isSubtype(var(t), var(GLOBAL_VAR_PREFIX+"java.lang.Object")), logicalNot(isValueType(var(t))))
                     ));
-
-
-            //TODO no reflection, please!!!!!
 
 
             addFunction(IS_OF_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
