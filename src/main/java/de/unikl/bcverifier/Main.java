@@ -109,8 +109,9 @@ public class Main {
         library.translate();
         if(config.isCheck()){
             library.check(config.isVerify());
+            System.out.println(BoogieRunner.getLastMessage());
+            System.out.println("Found unreachable code points: "+BoogieRunner.getLastUnreachalbeCodeCount());
         }
-        System.out.println(BoogieRunner.getLastMessage());
     }
 
     private static File parseParames(String[] args, Configuration config) throws ConfigurationException {

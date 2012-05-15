@@ -41,6 +41,7 @@ public class BoogieRunner {
     private static boolean verify = true;
     private static boolean lastRunSuccess;
     private static String lastMessage = "";
+    private static int lastUnreachableCodeCount = 0;
     
     public static void setVerify(boolean b){
         verify = b;
@@ -54,6 +55,10 @@ public class BoogieRunner {
     	return lastMessage;
     }
     
+    public static int getLastUnreachalbeCodeCount(){
+        return lastUnreachableCodeCount;
+    }
+    
     public static void runBoogie(File boogieFile) throws BoogieRunException{
         Runtime runtime = Runtime.getRuntime();
         File workingDir = boogieFile.getParentFile();
@@ -63,7 +68,7 @@ public class BoogieRunner {
             Collections.addAll(parameters, BOOGIE_COMMAND.split(" "));
             parameters.add("/nologo");
             parameters.add("/loopUnroll:5");
-//            parameters.add("/smoke");
+            parameters.add("/smoke");
 //            parameters.add("/timeLimit:30"); //limit time spent to verify each procedure to 30 seconds
 //            parameters.add("/mv:boogie.model");
 //            parameters.add("/errorTrace:2");
@@ -75,6 +80,7 @@ public class BoogieRunner {
             processOutput = p.getInputStream();
             String result = IOUtils.toString(processOutput).trim();
 //            String errors = IOUtils.toString(p.getErrorStream());
+            lastUnreachableCodeCount = parseUnreachableMessages(result);
             lastRunSuccess = parseLastOutputLine(result);
             lastMessage = result;
         } catch (IOException e) {
@@ -84,6 +90,17 @@ public class BoogieRunner {
                 IOUtils.closeQuietly(processOutput);
             }
         }
+    }
+
+    private static int parseUnreachableMessages(String result) {
+        int count = 0;
+        String[] lines = result.split("\n");
+        for(String line : lines){
+            if(line.matches("found unreachable code:")){
+                count++;
+            }
+        }
+        return count;
     }
 
     private static boolean parseLastOutputLine(String result) {
