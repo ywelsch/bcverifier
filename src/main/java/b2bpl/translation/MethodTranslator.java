@@ -3277,6 +3277,12 @@ public class MethodTranslator implements ITranslationConstants {
                     addAssume(isOfType(stack(var(stackVar(i, elemType))), var(TranslationController.getHeap()), typeRef(elemType)));
                 }
                 
+                // type information of the method parameters
+                for(int i=0; i<method.getRealParameterTypes().length; i++){
+                    elemType = method.getRealParameterTypes()[i];
+                    addAssume(isOfType(stack(var(localVar(i, elemType))), var(TranslationController.getHeap()), typeRef(elemType)));
+                }
+                
                 addAssume(nonNull(stack(receiver())));
                 
                 addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(method))));

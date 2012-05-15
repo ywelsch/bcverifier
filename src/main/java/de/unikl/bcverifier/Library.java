@@ -559,20 +559,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 }
             }
             
-            
-            
-            //decrement stack pointer to reach the stack frame of the caller
-            procAssumes.add(new BPLAssignmentCommand(var("sp1"), sub(var("sp1"), new BPLIntLiteral(1))));
-            procAssumes.add(new BPLAssignmentCommand(var("sp2"), sub(var("sp2"), new BPLIntLiteral(1))));
-            
             // invariant
             procAssumes.addAll(invAssumes);
 
             //TODO add information about the initial state of the stack in caller
-            
-            //increment stack pointer again to reach the stack frame of the callee
-            procAssumes.add(new BPLAssignmentCommand(var("sp1"), add(var("sp1"), new BPLIntLiteral(1))));
-            procAssumes.add(new BPLAssignmentCommand(var("sp2"), add(var("sp2"), new BPLIntLiteral(1))));
             
             // ///////////////////////////////////////
             // relate all parameters from the outside
