@@ -79,10 +79,10 @@ public class Main {
             }
             
             if(config.isWorkOnAll()){
-                log.debug("Parsing all libraries in "+givenPath);
+                log.info("Parsing all libraries in "+givenPath);
                 File libraryPath;
                 for(String path : givenPath.list(new AndFileFilter(DirectoryFileFilter.DIRECTORY, new NotFileFilter(HiddenFileFilter.HIDDEN)))){
-                    log.debug("Parsing library in "+path);
+                    log.info("Parsing library in "+path);
                     libraryPath = new File(givenPath, path);
                     workOnLibrary(config, libraryPath);
                 }

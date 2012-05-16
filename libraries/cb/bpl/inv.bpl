@@ -1,1 +1,2 @@
-( forall r: Ref :: isOfType(r, heap1, $cb.A) && Obj(heap1, r) ==> heap1[r,$cb.A.g] % 2 == 0 )
+//( forall r: Ref :: isOfType(r, heap1, $cb.A) && Obj(heap1, r) ==> heap1[r,$cb.A.g] % 2 == 0 )
+isOfType(stack1[0][param0_r], heap1, $cb.A) && Obj(heap1, stack1[0][param0_r]) ==> heap1[stack1[0][param0_r],$cb.A.g] % 2 == 0

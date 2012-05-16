@@ -10,8 +10,9 @@ import java.util.Set;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bytecode.BCField;
 import b2bpl.bytecode.JClassType;
+import b2bpl.translation.ITranslationConstants;
 
-public class TranslationController {
+public class TranslationController implements ITranslationConstants {
     private static boolean isActive = false;
     private static int round;
     public static final String HEAP1 = "heap1";
@@ -27,6 +28,8 @@ public class TranslationController {
     public static final String VERIFY_LABEL = "check";
     public static final String CHECK_LABEL1 = DISPATCH_LABEL2;
     public static final String CHECK_LABEL2 = VERIFY_LABEL;
+    public static final String CONSTRUCTOR_LABEL1 = LABEL_PREFIX2 + CONSTRUCTOR_TABLE_LABEL;
+    public static final String CONSTRUCTOR_LABEL2 = VERIFY_LABEL;
     
     private static Set<String> declaredMethods = new HashSet<String>();
     private static Map<String, BPLVariable> usedVariables = new HashMap<String, BPLVariable>();
@@ -180,6 +183,17 @@ public class TranslationController {
             return CHECK_LABEL2;
         default:
             return "check";
+        }
+    }
+    
+    public static String getNextConstructorLabel(){
+        switch(round){
+        case 1:
+            return CONSTRUCTOR_LABEL1;
+        case 2:
+            return CONSTRUCTOR_LABEL2;
+        default:
+            return CONSTRUCTOR_TABLE_LABEL;
         }
     }
     

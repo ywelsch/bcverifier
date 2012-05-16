@@ -358,6 +358,8 @@ public interface ITranslationConstants {
   String CALLTABLE_LABEL = "calltable";
  
   String RETTABLE_LABEL = "rettable";
+  
+  String CONSTRUCTOR_TABLE_LABEL = "constructortable";
 
 //public static final String ALLOC_OBJ = "AllocObj";
 }

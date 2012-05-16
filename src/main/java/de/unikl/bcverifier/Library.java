@@ -11,6 +11,7 @@ import static b2bpl.translation.CodeGenerator.implies;
 import static b2bpl.translation.CodeGenerator.isCallable;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
+import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
@@ -48,6 +49,7 @@ import b2bpl.bpl.ast.BPLAssumeCommand;
 import b2bpl.bpl.ast.BPLAxiom;
 import b2bpl.bpl.ast.BPLBasicBlock;
 import b2bpl.bpl.ast.BPLBoolLiteral;
+import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLConstantDeclaration;
 import b2bpl.bpl.ast.BPLDeclaration;
@@ -468,7 +470,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     new BPLBasicBlock("preconditions", procAssumes
                             .toArray(new BPLCommand[procAssumes.size()]),
                             new BPLGotoCommand("preconditions_call",
-                                    "preconditions_return")));
+                                    "preconditions_return", "preconditions_constructor")));
 
             BPLCommand assumeCmd;
 
@@ -530,6 +532,82 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     procAssumes.toArray(new BPLCommand[procAssumes.size()]),
                     new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
 
+            
+            // //////////////////////////////////
+            // preconditions of a constructor call
+            // /////////////////////////////////
+            procAssumes = new ArrayList<BPLCommand>();
+            procAssumes.add(new BPLAssumeCommand(isEqual(var("sp1"),
+                    new BPLIntLiteral(0))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(var("sp2"),
+                    new BPLIntLiteral(0))));
+
+            // ///////////////////////////////////////////
+            // relation between lib1 and lib2
+            // ///////////////////////////////////////////
+            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")),
+                    stack2(var("meth")))));
+
+            // the object is not yet initialized (so the fields have their default value)
+            procAssumes.add(
+                    new BPLAssumeCommand(logicalAnd(
+                            forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT)),
+                                    logicalAnd(
+                                            isEqual(heap1(stack1(receiver()), var("f")), new BPLIntLiteral(0)),
+                                            isEqual(heap2(stack2(receiver()), var("f")), new BPLIntLiteral(0))
+                                            )
+                                    ),
+                            forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE))),
+                                    logicalAnd(
+                                            isNull(heap1(stack1(receiver()), var("f"))),
+                                            isNull(heap2(stack2(receiver()), var("f")))
+                                            )
+                                    )
+                            )
+                    ));
+            
+            // ///////////////////////////////////////
+            // relate all parameters from the outside
+            // ///////////////////////////////////////
+            for (BPLVariable var : TranslationController.stackVariables()
+                    .values()) {
+                if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
+                    assumeCmd = new BPLAssumeCommand(relNull(
+                            stack1(var(var.getName())),
+                            stack2(var(var.getName())), var("related")));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(
+                            nonNull(stack1(var(var.getName()))),
+                            heap1(stack1(var(var.getName())), var("exposed"))));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(
+                            nonNull(stack2(var(var.getName()))),
+                            heap2(stack2(var(var.getName())), var("exposed"))));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(
+                            nonNull(stack1(var(var.getName()))),
+                            heap1(stack1(var(var.getName())),
+                                    var("createdByCtxt"))));
+                    procAssumes.add(assumeCmd);
+                    assumeCmd = new BPLAssumeCommand(implies(
+                            nonNull(stack2(var(var.getName()))),
+                            heap2(stack2(var(var.getName())),
+                                    var("createdByCtxt"))));
+                    procAssumes.add(assumeCmd);
+                } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
+                    assumeCmd = new BPLAssumeCommand(isEqual(
+                            stack1(var(var.getName())),
+                            stack2(var(var.getName()))));
+                    procAssumes.add(assumeCmd);
+                }
+            }
+
+            methodBlocks.add(1, new BPLBasicBlock("preconditions_constructor",
+                    procAssumes.toArray(new BPLCommand[procAssumes.size()]),
+                    new BPLGotoCommand(TranslationController.LABEL_PREFIX1 + CONSTRUCTOR_TABLE_LABEL)));
+            
+            
+            
             // //////////////////////////////////
             // preconditions of a return
             // /////////////////////////////////
@@ -711,6 +789,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
         BPLProcedure proc;
         List<String> methodLabels = new ArrayList<String>();
+        List<String> constructorLabels = new ArrayList<String>();
         String methodLabel;
         for (JClassType classType : projectTypes) {
             for (BCMethod method : classType.getMethods()) {
@@ -742,7 +821,13 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     }
 
                     methodLabel = TranslationController.prefix(proc.getName());
-                    methodLabels.add(methodLabel);
+                    
+                    // add label of the method to the method label list
+                    if(!method.isConstructor()){
+                        methodLabels.add(methodLabel);
+                    } else {
+                        constructorLabels.add(methodLabel);
+                    }
 
                     // /////////////////////////////
                     // commands before method block
@@ -784,14 +869,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // //////////////////////////////////////
         // callTable and returnTable
         // //////////////////////////////////////
-        String callTableLabel = TranslationController
-                .prefix(ITranslationConstants.CALLTABLE_LABEL);
+        String callTableLabel = TranslationController.prefix(CALLTABLE_LABEL);
         String callTableInitLabel = callTableLabel + "_init";
-        String retTableLabel = TranslationController
-                .prefix(ITranslationConstants.RETTABLE_LABEL);
+        
+        String retTableLabel = TranslationController.prefix(RETTABLE_LABEL);
         String retTableInitLabel = retTableLabel + "_init";
         String[] returnLabels = TranslationController.returnLabels().toArray(
                 new String[TranslationController.returnLabels().size()]);
+        
+        String constTableLabel = TranslationController.prefix(CONSTRUCTOR_TABLE_LABEL);
 
         // //////////////////////////////////////
         // commands before callTable
@@ -852,6 +938,24 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 new BPLBasicBlock(retTableInitLabel, dispatchCommands
                         .toArray(new BPLCommand[dispatchCommands.size()]),
                         new BPLGotoCommand(retTableLabel)));
+        
+        // ///////////////////////////////////////////
+        // commands before constructor table
+        // //////////////////////////////////////////
+        
+        dispatchCommands = new ArrayList<BPLCommand>();
+        dispatchCommands.add(new BPLAssumeCommand(new BPLFunctionApplication(
+                IS_PUBLIC_FUNC, typ(stack(receiver()),
+                        var(TranslationController.getHeap())))));
+        dispatchCommands.add(new BPLAssumeCommand(isCallable(
+                typ(stack(receiver()), var(TranslationController.getHeap())),
+                stack(var("meth")))));
+        methodBlocks.add(
+                0,
+                new BPLBasicBlock(constTableLabel, dispatchCommands.toArray(new BPLCommand[dispatchCommands.size()]),
+                        new BPLGotoCommand(constructorLabels.toArray(new String[constructorLabels.size()])))
+                );
+        
 
         // //////////////////////////////////////
         // commands before dispatch

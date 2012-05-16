@@ -1359,7 +1359,11 @@ public class MethodTranslator implements ITranslationConstants {
         startBlock(noReturnLabel);
         addAssume(isEqual(var(TranslationController.getStackPointer()), intLiteral(0)));
         addAssignment(stack(var("place")), var(TranslationController.buildPlace(getProcedureName(method), true)));
-        rawEndBlock(TranslationController.getCheckLabel());
+        if(method.isConstructor()){
+            rawEndBlock(TranslationController.getNextConstructorLabel());
+        } else {
+            rawEndBlock(TranslationController.getCheckLabel());
+        }
         
         String retTableLabel = TranslationController.prefix("rettable");
         startBlock(isReturnLabel);
@@ -3291,9 +3295,11 @@ public class MethodTranslator implements ITranslationConstants {
                 for(int i=0; i<method.getRealParameterTypes().length; i++){
                     elemType = method.getRealParameterTypes()[i];
                     if(elemType.isBaseType()){
-                        addAssume(isInRange(stack(var(localVar(i, elemType))), typeRef(elemType)));
+                        addAssume(isInRange(stack(var(paramVar(i, elemType))), typeRef(elemType)));
+                        addAssignment(stack(var(localVar(i, elemType))), stack(var(paramVar(i, elemType))));
                     } else {
-                        addAssume(isOfType(stack(var(localVar(i, elemType))), var(TranslationController.getHeap()), typeRef(elemType)));
+                        addAssume(isOfType(stack(var(paramVar(i, elemType))), var(TranslationController.getHeap()), typeRef(elemType)));
+                        addAssignment(stack(var(localVar(i, elemType))), stack(var(paramVar(i, elemType))));
                     }
                 }
                 
