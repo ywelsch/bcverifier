@@ -324,7 +324,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
           checkingCommand.add(new BPLAssignmentCommand(
                   heap1(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                           var("exposed")), ifThenElse(
-                          logicalAnd(nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
+                          logicalAnd(hasReturnValue(stack1(var("meth"))),
+                                  nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
                                   nonNull(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)))),
                           BPLBoolLiteral.TRUE,
                           heap1(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
@@ -332,12 +333,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
           checkingCommand.add(new BPLAssignmentCommand(
                   heap2(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                           var("exposed")), ifThenElse(
-                          logicalAnd(nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
+                          logicalAnd(hasReturnValue(stack2(var("meth"))),
+                                  nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
                                   nonNull(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)))),
                           BPLBoolLiteral.TRUE,
                           heap2(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                                   var("exposed")))));
 
+          checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellfomredCoupling(var(TranslationController.HEAP1), var(TranslationController.HEAP2), var("related"))));
+          
             checkingCommand.add(new BPLAssertCommand(
                     implies(hasReturnValue(stack1(var("meth"))),
                             logicalOr(
