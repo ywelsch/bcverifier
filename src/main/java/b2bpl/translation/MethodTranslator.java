@@ -3235,9 +3235,14 @@ public class MethodTranslator implements ITranslationConstants {
                     //the invoked method is a constructor of an internal type
                     first = first - 1; //the stack index is one off if we have a constructor
                     
-                    BPLTransferCommand transCmd = new BPLGotoCommand(TranslationController.prefix(CALLTABLE_LABEL));
+                    BPLTransferCommand transCmd = new BPLGotoCommand(TranslationController.prefix(getProcedureName(invokedMethod))); //this is a static call
                     transCmd.addComment("constructor call: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
                     transCmd.addComment("Sourceline: "+handle.getSourceLine());
+                    
+                    // we created the object, so it is not createdByCtxt and not exposed
+                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("createdByCtxt")))); //we hace constructed the object on our own
+                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("exposed")))); //the object did not yet cross the boundary
+                    
                     BPLBasicBlock block = new BPLBasicBlock(
                             TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
                             commands.toArray(new BPLCommand[commands.size()]),
