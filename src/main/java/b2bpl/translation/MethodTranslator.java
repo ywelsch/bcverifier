@@ -1352,11 +1352,11 @@ public class MethodTranslator implements ITranslationConstants {
 
         String currentLabel = blockLabel;
         
-        String noReturnLabel = currentLabel + "_noReturn";
-        String isReturnLabel = currentLabel + "_return";
-        endBlock(noReturnLabel, isReturnLabel);
+        String boundaryReturnLabel = currentLabel + "_boudary_return";
+        String internReturnLabel = currentLabel + "_intern_return";
+        endBlock(boundaryReturnLabel, internReturnLabel);
         
-        startBlock(noReturnLabel);
+        startBlock(boundaryReturnLabel);
         addAssume(isEqual(var(TranslationController.getStackPointer()), intLiteral(0)));
         addAssignment(stack(var("place")), var(TranslationController.buildPlace(getProcedureName(method), true)));
         if(method.isConstructor()){
@@ -1366,7 +1366,7 @@ public class MethodTranslator implements ITranslationConstants {
         }
         
         String retTableLabel = TranslationController.prefix("rettable");
-        startBlock(isReturnLabel);
+        startBlock(internReturnLabel);
         addAssume(greater(var(TranslationController.getStackPointer()), intLiteral(0)));
         rawEndBlock(retTableLabel);
     }

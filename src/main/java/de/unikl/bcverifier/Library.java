@@ -36,6 +36,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -244,7 +246,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             // ///////////////////////////////////
             methodBlocks.add(new BPLBasicBlock(TranslationController
                     .getCheckLabel(), new BPLCommand[0], new BPLGotoCommand(
-                    "check_return", "check_call")));
+                    "check_boundary_return", "check_boundary_call")));
 
             // ////////////////////////////////
             // assertions of the check return block
@@ -358,7 +360,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                                     + INT_TYPE_ABBREV)))))));
 
             checkingCommand.addAll(invAssertions);
-            methodBlocks.add(new BPLBasicBlock("check_return", checkingCommand
+            methodBlocks.add(new BPLBasicBlock("check_boundary_return", checkingCommand
                     .toArray(new BPLCommand[checkingCommand.size()]),
                     new BPLReturnCommand()));
 
@@ -441,7 +443,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             // BPLAssertCommand(BPLBoolLiteral.FALSE));//TODO implement checking
             // of method calls to extern
 
-            methodBlocks.add(new BPLBasicBlock("check_call", checkingCommand
+            methodBlocks.add(new BPLBasicBlock("check_boundary_call", checkingCommand
                     .toArray(new BPLCommand[checkingCommand.size()]),
                     new BPLReturnCommand()));
 
@@ -510,16 +512,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                             nonNull(stack2(var(var.getName()))),
                             heap2(stack2(var(var.getName())), var("exposed"))));
                     procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(implies(
-                            nonNull(stack1(var(var.getName()))),
-                            heap1(stack1(var(var.getName())),
-                                    var("createdByCtxt"))));
-                    procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(implies(
-                            nonNull(stack2(var(var.getName()))),
-                            heap2(stack2(var(var.getName())),
-                                    var("createdByCtxt"))));
-                    procAssumes.add(assumeCmd);
                 } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
                     assumeCmd = new BPLAssumeCommand(isEqual(
                             stack1(var(var.getName())),
@@ -548,30 +540,56 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")),
                     stack2(var("meth")))));
 
-            // the object is not yet initialized (so the fields have their default value)
+//            // the object is not yet initialized (so the fields have their default value)
+//            procAssumes.add(
+//                    new BPLAssumeCommand(logicalAnd(
+//                            forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT)),
+//                                    logicalAnd(
+//                                            isEqual(heap1(stack1(receiver()), var("f")), new BPLIntLiteral(0)),
+//                                            isEqual(heap2(stack2(receiver()), var("f")), new BPLIntLiteral(0))
+//                                            )
+//                                    ),
+//                            forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE))),
+//                                    logicalAnd(
+//                                            isNull(heap1(stack1(receiver()), var("f"))),
+//                                            isNull(heap2(stack2(receiver()), var("f")))
+//                                            )
+//                                    )
+//                            )
+//                    ));
+            
+            // invariant
+            procAssumes.addAll(invAssumes);
+            
+            // "this" is created by context and not yet exposed
+            // the two "this" objects are related
             procAssumes.add(
-                    new BPLAssumeCommand(logicalAnd(
-                            forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT)),
-                                    logicalAnd(
-                                            isEqual(heap1(stack1(receiver()), var("f")), new BPLIntLiteral(0)),
-                                            isEqual(heap2(stack2(receiver()), var("f")), new BPLIntLiteral(0))
-                                            )
-                                    ),
-                            forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE))),
-                                    logicalAnd(
-                                            isNull(heap1(stack1(receiver()), var("f"))),
-                                            isNull(heap2(stack2(receiver()), var("f")))
-                                            )
-                                    )
+                    new BPLAssumeCommand(
+                                logicalAnd(heap1(stack1(receiver()), var("createdByCtxt")),
+                                        logicalNot(heap1(stack1(receiver()), var("exposed"))))
                             )
-                    ));
+                    );
+            procAssumes.add(
+                    new BPLAssumeCommand(
+                                logicalAnd(heap2(stack2(receiver()), var("createdByCtxt")),
+                                        logicalNot(heap2(stack2(receiver()), var("exposed"))))
+                            )
+                    );
+            procAssumes.add(
+                    new BPLAssumeCommand(relNull(
+                            stack1(receiver()),
+                            stack2(receiver()), var("related")))
+                    );
             
             // ///////////////////////////////////////
             // relate all parameters from the outside
             // ///////////////////////////////////////
+            Pattern paramRefPattern = Pattern.compile(PARAM_VAR_PREFIX + "(\\d+)_r");
+            Matcher matcher;
             for (BPLVariable var : TranslationController.stackVariables()
                     .values()) {
-                if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
+                matcher = paramRefPattern.matcher(var.getName());
+                if (matcher.matches() && !matcher.group(1).equals("0")) { //special assumes for receiver (param0_r)
                     assumeCmd = new BPLAssumeCommand(relNull(
                             stack1(var(var.getName())),
                             stack2(var(var.getName())), var("related")));
@@ -583,16 +601,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     assumeCmd = new BPLAssumeCommand(implies(
                             nonNull(stack2(var(var.getName()))),
                             heap2(stack2(var(var.getName())), var("exposed"))));
-                    procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(implies(
-                            nonNull(stack1(var(var.getName()))),
-                            heap1(stack1(var(var.getName())),
-                                    var("createdByCtxt"))));
-                    procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(implies(
-                            nonNull(stack2(var(var.getName()))),
-                            heap2(stack2(var(var.getName())),
-                                    var("createdByCtxt"))));
                     procAssumes.add(assumeCmd);
                 } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
                     assumeCmd = new BPLAssumeCommand(isEqual(
@@ -655,16 +663,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                             nonNull(stack2(zero, var(var.getName()))),
                             heap2(stack2(zero, var(var.getName())),
                                     var("exposed"))));
-                    procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(implies(
-                            nonNull(stack1(zero, var(var.getName()))),
-                            heap1(stack1(zero, var(var.getName())),
-                                    var("createdByCtxt"))));
-                    procAssumes.add(assumeCmd);
-                    assumeCmd = new BPLAssumeCommand(implies(
-                            nonNull(stack2(zero, var(var.getName()))),
-                            heap2(stack2(zero, var(var.getName())),
-                                    var("createdByCtxt"))));
                     procAssumes.add(assumeCmd);
                 } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
                     assumeCmd = new BPLAssumeCommand(isEqual(

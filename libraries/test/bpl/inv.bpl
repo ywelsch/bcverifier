@@ -1,4 +1,2 @@
-//(forall o1, o2: Ref :: isOfType(o1, heap1, $Test) && isOfType(o2, heap2, $Test) && related[o1,o2] ==> heap1[o1, $Test.i] == heap2[o2, $Test.i])
-//(forall o1, o2: Ref :: isOfType(o1, heap1, $Test) && isOfType(o2, heap2, $Test) && related[o1,o2] ==> RelNull(heap1[o1, $Test.worker], heap2[o2, $Test.worker], related))
-isOfType(stack1[0][param0_r], heap1, $Test) && isOfType(stack2[0][param0_r], heap2, $Test) && related[stack1[0][param0_r],stack2[0][param0_r]] ==> heap1[stack1[0][param0_r], $Test.i] == heap2[stack2[0][param0_r], $Test.i]
-isOfType(stack1[0][param0_r], heap1, $Test) && isOfType(stack2[0][param0_r], heap2, $Test) && related[stack1[0][param0_r],stack2[0][param0_r]] ==> RelNull(heap1[stack1[0][param0_r], $Test.worker], heap2[stack2[0][param0_r], $Test.worker], related)
+(forall o1, o2: Ref :: Obj(heap1, o1) && Obj(heap2, o2) && isOfType(o1, heap1, $Test) && isOfType(o2, heap2, $Test) && related[o1,o2] ==> heap1[o1, $Test.i] == heap2[o2, $Test.i])
+(forall o1, o2: Ref :: Obj(heap1, o1) && Obj(heap2, o2) && isOfType(o1, heap1, $Test) && isOfType(o2, heap2, $Test) && related[o1,o2] ==> RelNull(heap1[o1, $Test.worker], heap2[o2, $Test.worker], related))

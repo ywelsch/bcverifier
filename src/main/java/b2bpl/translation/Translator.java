@@ -1306,12 +1306,16 @@ public class Translator implements ITranslationConstants {
             addFunction(OBJ_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heapVar, refVar,
-                    isEquiv(CodeGenerator.obj(var(heap), var(r)), 
+                    isEquiv(obj(var(heap), var(r)), 
                             logicalAnd(
-                            nonNull(var(r)),
-                            new BPLArrayExpression(var(heap), var(r), var("alloc")))
+                                    nonNull(var(r)),
+                                    new BPLArrayExpression(var(heap), var(r), var("alloc")),
+                                    logicalOr(
+                                            new BPLArrayExpression(var(heap), var(r), var("exposed")),
+                                            logicalNot(new BPLArrayExpression(var(heap), var(r), var("createdByCtxt")))
+                                    )
                             )
-                    ));
+                    )));
 
 
 
