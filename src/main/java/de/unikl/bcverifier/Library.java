@@ -561,6 +561,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             // invariant
             procAssumes.addAll(invAssumes);
             
+            
+            // now pass the receiver over the boundary
+            procAssumes.add(new BPLAssignmentCommand(heap1(stack1(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
+            procAssumes.add(new BPLAssignmentCommand(heap2(stack2(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
+            
             // "this" is created by context and not yet exposed
             // the two "this" objects are related
             procAssumes.add(
