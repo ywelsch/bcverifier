@@ -62,7 +62,7 @@ import static b2bpl.translation.CodeGenerator.trigger;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.unique;
 import static b2bpl.translation.CodeGenerator.var;
-import static b2bpl.translation.CodeGenerator.wellfomredCoupling;
+import static b2bpl.translation.CodeGenerator.wellformedCoupling;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
 import static b2bpl.translation.CodeGenerator.wellformedStack;
 
@@ -612,7 +612,7 @@ public class Translator implements ITranslationConstants {
 
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(heap1)))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(heap2)))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName("Bij"), wellfomredCoupling(var(heap1), var(heap2), var(related)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName("Bij"), wellformedCoupling(var(heap1), var(heap2), var(related)))));
 
             
             addComment("Modified heap, coupling, relation (not origianl SscBoogie)");
@@ -635,7 +635,7 @@ public class Translator implements ITranslationConstants {
             addFunction(WELLFORMED_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
-                    isEquiv(wellfomredCoupling(var(heap1), var(heap2), var(related)),
+                    isEquiv(wellformedCoupling(var(heap1), var(heap2), var(related)),
                             logicalAnd(
                                     bijective(var(related)),
                                     objectCoupling(var(heap1), var(heap2), var(related)),
