@@ -1,0 +1,58 @@
+\documentclass[
+final,
+draft=false,%final,%draft, % draft / final
+pdftex,%
+fontsize=12pt,
+paper=a4,
+pagesize=pdftex,
+headinclude=false,% Kopfzeile zum Seitenformat dazuzählen, oder nicht
+footinclude=false,
+%mpinclude,
+]{scrbook}
+
+\usepackage{pifont}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage[american]{babel}
+\usepackage{fixltx2e}
+\usepackage{microtype}
+\usepackage[cmyk, dvipsnames,svgnames,pdftex]{xcolor}
+\usepackage{amsmath}
+%\usepackage[overload]{empheq} % substitute for amsmath
+
+%% Include entire AMS Theorem package, just because we want to use the
+%% unnumbered \newtheorem* environment it provides.
+\usepackage{amsthm}
+\usepackage{amssymb}
+
+%% additional mathematical symbols
+\usepackage{stmaryrd}
+
+\usepackage{graphicx}
+
+\newif\ifprint
+\printtrue
+\newif\iffinal
+\finaltrue % enable final
+\newif\ifbook
+\booktrue
+
+% \input{../header/fonts}
+% \input{../header/colordefs}
+% \input{../header/tikzdefs}
+%\input{../header/listings}
+\usepackage{pgfpages}
+\usepackage{tikz}
+\usetikzlibrary{matrix,arrows,shadows,positioning,fit,calc,decorations.pathreplacing,decorations.pathmorphing,decorations.shapes,decorations.text,automata}
+\tikzset{math mode/.style = {execute at begin node=$, execute at end node=$}}
+
+
+%\renewcommand{\diagramfont}{\small\sffamily} %{\sourcefont\footnotesize}
+
+\usepackage[active,tightpage]{preview}
+\PreviewEnvironment{tikzpicture}
+\setlength\PreviewBorder{0pt}%
+
+
+\begin{document}

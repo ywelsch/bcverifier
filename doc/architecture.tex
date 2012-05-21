@@ -1,0 +1,111 @@
+\input{imageheader}
+
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background,main,foreground}
+%\tikzstyle{object}=[draw, rounded corners=3pt, font=\sffamily]
+%
+%\tikzstyle{reference}=[->, >=stealth', thick, shorten <=0.2mm, shorten >=0.2mm,draw=gray]
+%\tikzstyle{far}=[reference, dashed]
+%\tikzstyle{near}=[reference]
+%\tikzstyle{legendtext}=[right,text depth=0,font=\sffamily\footnotesize]
+
+\tikzstyle{group}=[inner sep=10pt,draw=gray, very thick, dotted, rounded corners=4pt]
+\tikzstyle{arr}=[->, >=stealth', thick, shorten <=0.2mm, shorten >=0.2mm,gray]
+\tikzstyle{file}=[draw, draw=blue!75,fill=blue!20, text width=5em, 
+    text centered, minimum height=2.5em]
+\tikzstyle{ann} = [above, text width=5em, text centered]
+\tikzstyle{tool} = [file, text width=10em, draw=green!75,fill=green!20, 
+    minimum height=3em, rounded corners]
+\tikzstyle{mytool} = [tool, draw=red!75,fill=red!20]
+%\tikzstyle{sc} = [tool, text width=13em, fill=red!20, 
+%    minimum height=10em, rounded corners, drop shadow]
+    
+\begin{tikzpicture}[scale=0.4, transform shape]
+\coordinate (center);
+\node[mytool] (bcv) at (0,-1) {BCVerifier};
+\node[tool] (javac1) at (-4,4) {Java Compiler};
+\node[ann,above=2cm] (jfc1) at (javac1) {$\dots$};
+\node[file,left=0.5cm] (jfa1) at (jfc1) {A.java};
+\node[file,right=0.5cm] (jfb1) at (jfc1) {Z.java};
+\node[ann,below=2cm] (cfc1) at (javac1) {$\dots$};
+\node[file,left=0.5cm] (cfa1) at (cfc1) {A.class};
+\node[file,right=0.5cm] (cfb1) at (cfc1) {Z.class};
+\node[tool] (javac2) at (4,4) {Java Compiler};
+\node[ann,above=2cm] (jfc2) at (javac2) {$\dots$};
+\node[file,left=0.5cm] (jfa2) at (jfc2) {A.java};
+\node[file,right=0.5cm] (jfb2) at (jfc2) {Z.java};
+\node[ann,below=2cm] (cfc2) at (javac2) {$\dots$};
+\node[file,left=0.5cm] (cfa2) at (cfc2) {A.class};
+\node[file,right=0.5cm] (cfb2) at (cfc2) {Z.class};
+\node[tool] (bg) at (0,-4.6) {Boogie.exe};
+\node[file,above=1.3cm] (bf) at (bg) {check.bpl};
+\node[file,below=1.3cm] (vrc) at (bg) {check.smt2};
+\node[tool,below=1.3cm] (z3) at (vrc) {SMT Solver (Z3)};
+\node[ann,below=1.3cm] (vc) at (z3) {\Large\color{green}\ding{51} \color{black}or \color{red}\ding{55}};
+\node[file,right=4.5cm] (ci) at (bcv) {Coupling Invariant};
+
+\begin{pgfonlayer}{background}
+\node[group, fit=(jfa1) (jfb1) (jfc1), label={60:\color{gray}Lib 1 (Sources)}] (jfbox1) {};
+\node[group, fit=(cfa1) (cfb1) (cfc1), label={60:\color{gray}Lib 1 (Classes)}] (cfbox1) {};
+\node[group, fit=(jfa2) (jfb2) (jfc2), label={60:\color{gray}Lib 2 (Sources)}] (jfbox2) {};
+\node[group, fit=(cfa2) (cfb2) (cfc2), label={60:\color{gray}Lib 2 (Classes)}] (cfbox2) {};
+%\filldraw [line width=4mm,join=round,black!10] (jfa1.north  -| jfa1.west)  rectangle (vc.south  -| jfb2.east);
+\end{pgfonlayer}
+
+\draw[arr] (jfbox1) -- (javac1);
+\draw[arr] (javac1) -- (cfbox1);
+\draw[arr] (cfbox1.south) node{} to[out=270,in=110] (bcv.130);
+\draw[arr] (jfbox2) -- (javac2);
+\draw[arr] (javac2) -- (cfbox2);
+\draw[arr] (cfbox2.south) node{} to[out=270,in=70] (bcv.50);
+\draw[arr] (bcv) -- (bf);
+\draw[arr] (bf) -- (bg);
+\draw[arr] (bg) -- (vrc);
+\draw[arr] (vrc) -- (z3);
+\draw[arr] (z3) -- (vc);
+\draw[arr] (ci) -- (bcv);
+
+%\node[file] at (2.1,1.9) {};
+%\node[file] (cf2) at (2,2) {Java .class files Lib 2};
+%\node[file] (jf2) at (2,4) {Java .java files Lib 2};
+%\path (bcv.west)+(-3.2,1.5) node (asr1) [file] {Java .class files};
+%\path [draw, ->] (asr1.east) -- node [above] {} 
+%        (bcv.160) ;
+%\node[object, left=1cm] (v1) at (agent) {\lstinline!gui!};
+%\node[object, above=0.7cm] (v2) at (agent) {\lstinline!logoffView!};
+%\node[object, left=1cm] (v3) at (v2) {\lstinline!airlineView!};
+%\node[object, right=1cm] (v4) at (v2) {\lstinline!destinationView!};
+%\node[object, right=4.5cm] (server) at (agent) {\lstinline!server!};
+%\node[object, above=0.7cm] (s1) at (server) {\lstinline!session!};
+%\node[object, left=2cm] (user) at (v1) {\lstinline!user!};
+%
+%\draw[far, bend angle=5,->] (user) edge[bend left] (v1);
+%\draw[far, bend angle=5,->] (agent) edge[bend left] (server) (agent) edge[bend right] (s1);
+%\draw[near, bend angle=5,->] (agent) edge[bend left] (v1);
+%\draw[near, bend angle=5,<->] (server) edge[bend left] (s1);
+%\draw[near, bend angle=5,->] (v1) edge[bend left] (v3);
+%\draw[near, bend angle=5,<->] (v2) edge[bend right] (agent);
+%\draw[near, bend angle=5,<->] (v3) edge[bend left] (agent) (v4) edge[bend right] (agent);
+
+%\begin{pgfonlayer}{background}
+%\node[cog, fit=(v1) (v2) (v3) (v4) (agent)] (agentbox) {};
+%\node[cog, fit=(s1) (server)] (serverbox) {};
+%\node[cog, fit=(user)] (userbox) {};
+%\end{pgfonlayer}
+
+%\node[inner sep=0, fit=(serverbox) (userbox) (agentbox)] (picture) {};
+
+%\matrix[column sep=0.5ex, below=0.2cm] (legend) at (picture.south) {
+%\node[legendtext, cog, rounded corners=2pt, semithick, inner sep=3pt] {~}; & \node[legendtext] {COG}; &
+%\node[legendtext, object, rounded corners=2pt] {~}; & \node[legendtext] {object}; &
+%\draw[far] (0,0) -- (0.5cm,0); & \node[legendtext] {far reference}; &
+%\draw[near] (0,0) -- (0.5cm,0); & \node[legendtext] {near reference}; \\
+%};
+%\draw
+%  (legend.north west) edge node[fill=white] {Legend} (legend.north east);
+%;
+\end{tikzpicture}
+
+
+\end{document}
