@@ -12,6 +12,8 @@ import static b2bpl.translation.CodeGenerator.isCallable;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isNull;
+import static b2bpl.translation.CodeGenerator.less;
+import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
@@ -343,12 +345,21 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                           BPLBoolLiteral.TRUE,
                           heap2(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                                   var("exposed")))));
+          checkingCommand.add(new BPLAssignmentCommand(related(
+                  stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
+                  stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))), ifThenElse(
+                  logicalAnd(nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
+                          nonNull(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)))),
+                  BPLBoolLiteral.TRUE,
+                  related(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
+                          stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))))));
 
-          checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellfomredCoupling(var(TranslationController.HEAP1), var(TranslationController.HEAP2), var("related"))));
+//          checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedCoupling(var(TranslationController.HEAP1), var(TranslationController.HEAP2), var("related"))));
+          //TODO this assumption is would be needed at the moment to verify the subtypes example, but it destroys constructor checking somehow
           
             checkingCommand.add(new BPLAssertCommand(
                     implies(hasReturnValue(stack1(var("meth"))),
-                            logicalOr(
+                            logicalAnd(
                                     relNull(stack1(var(RESULT_VAR
                                             + REF_TYPE_ABBREV)),
                                             stack2(var(RESULT_VAR
@@ -484,6 +495,13 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     new BPLIntLiteral(0))));
             procAssumes.add(new BPLAssumeCommand(isEqual(var("sp2"),
                     new BPLIntLiteral(0))));
+            
+
+            // assume the result of the method is not yet set
+            procAssumes.add(new BPLAssumeCommand(isNull(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)))));
+            procAssumes.add(new BPLAssumeCommand(isNull(stack2(var(RESULT_PARAM + REF_TYPE_ABBREV)))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(stack2(var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
 
             // invariant
             procAssumes.addAll(invAssumes);
@@ -534,6 +552,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             procAssumes.add(new BPLAssumeCommand(isEqual(var("sp2"),
                     new BPLIntLiteral(0))));
 
+            // initialize int return values to be zero, so the relation check of the check_boundary_return block only checks the ref-result
+            procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(stack2(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
+            
             // ///////////////////////////////////////////
             // relation between lib1 and lib2
             // ///////////////////////////////////////////
@@ -541,22 +563,43 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     stack2(var("meth")))));
 
 //            // the object is not yet initialized (so the fields have their default value)
+            procAssumes.add(
+                    new BPLAssumeCommand(logicalAnd(
+                            forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT)),
+                                    logicalAnd(
+                                            isEqual(heap1(stack1(receiver()), var("f")), new BPLIntLiteral(0)),
+                                            isEqual(heap2(stack2(receiver()), var("f")), new BPLIntLiteral(0))
+                                            )
+                                    ),
+                            forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE))),
+                                    logicalAnd(
+                                            isNull(heap1(stack1(receiver()), var("f"))),
+                                            isNull(heap2(stack2(receiver()), var("f")))
+                                            )
+                                    )
+                            )
+                    ));
+            
+            // "this" is created by context and not yet exposed
+            // the two "this" objects are related
+            procAssumes.add(
+                    new BPLAssumeCommand(
+                            logicalAnd(heap1(stack1(receiver()), var("createdByCtxt")),
+                                    logicalNot(heap1(stack1(receiver()), var("exposed"))))
+                            )
+                    );
+            procAssumes.add(
+                    new BPLAssumeCommand(
+                            logicalAnd(heap2(stack2(receiver()), var("createdByCtxt")),
+                                    logicalNot(heap2(stack2(receiver()), var("exposed"))))
+                            )
+                    );
 //            procAssumes.add(
-//                    new BPLAssumeCommand(logicalAnd(
-//                            forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT)),
-//                                    logicalAnd(
-//                                            isEqual(heap1(stack1(receiver()), var("f")), new BPLIntLiteral(0)),
-//                                            isEqual(heap2(stack2(receiver()), var("f")), new BPLIntLiteral(0))
-//                                            )
-//                                    ),
-//                            forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE))),
-//                                    logicalAnd(
-//                                            isNull(heap1(stack1(receiver()), var("f"))),
-//                                            isNull(heap2(stack2(receiver()), var("f")))
-//                                            )
-//                                    )
-//                            )
-//                    ));
+//                    new BPLAssumeCommand(relNull(
+//                            stack1(receiver()),
+//                            stack2(receiver()), var("related")))
+//                    );
+            //TODO does not work, because related objects have to be exposed, but these objects are not yet exposed
             
             // invariant
             procAssumes.addAll(invAssumes);
@@ -565,26 +608,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             // now pass the receiver over the boundary
             procAssumes.add(new BPLAssignmentCommand(heap1(stack1(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
             procAssumes.add(new BPLAssignmentCommand(heap2(stack2(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
+//            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellfomredCoupling(var("heap1"), var("heap2"), var("related"))));
             
-            // "this" is created by context and not yet exposed
-            // the two "this" objects are related
-            procAssumes.add(
-                    new BPLAssumeCommand(
-                                logicalAnd(heap1(stack1(receiver()), var("createdByCtxt")),
-                                        logicalNot(heap1(stack1(receiver()), var("exposed"))))
-                            )
-                    );
-            procAssumes.add(
-                    new BPLAssumeCommand(
-                                logicalAnd(heap2(stack2(receiver()), var("createdByCtxt")),
-                                        logicalNot(heap2(stack2(receiver()), var("exposed"))))
-                            )
-                    );
-            procAssumes.add(
-                    new BPLAssumeCommand(relNull(
-                            stack1(receiver()),
-                            stack2(receiver()), var("related")))
-                    );
             
             // ///////////////////////////////////////
             // relate all parameters from the outside
@@ -676,6 +701,18 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     procAssumes.add(assumeCmd);
                 }
             }
+            
+            // assume the result of the method is not yet set
+            String sp = "sp";
+            BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
+            procAssumes.add(new BPLAssumeCommand(
+                    forall(spVar, 
+                            implies(less(var(sp), var("sp1")), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                    )));
+            procAssumes.add(new BPLAssumeCommand(
+                    forall(spVar, 
+                            implies(less(var(sp), var("sp2")), logicalAnd(isNull(stack2(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                    )));
 
             // invariant
             procAssumes.addAll(invAssumes);

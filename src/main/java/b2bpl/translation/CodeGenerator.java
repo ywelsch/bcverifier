@@ -850,7 +850,7 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(WELLFORMED_HEAP_FUNC, exp1);
     }
     
-    public static BPLExpression wellfomredCoupling(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+    public static BPLExpression wellformedCoupling(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
         return new BPLFunctionApplication(WELLFORMED_COUPLING_FUNC, exp1, exp2, exp3);
     }
     
