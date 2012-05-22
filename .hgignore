@@ -3,3 +3,11 @@ syntax: glob
 libraries/**/*.class
 syntax: glob
 libraries/**/specification.bpl
+syntax: glob
+doc/*.aux
+syntax: glob
+doc/*.synctex.gz
+syntax: glob
+doc/*.log
+syntax: glob
+doc/*.fdb_latexmk
