@@ -608,8 +608,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             // now pass the receiver over the boundary
             procAssumes.add(new BPLAssignmentCommand(heap1(stack1(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
             procAssumes.add(new BPLAssignmentCommand(heap2(stack2(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
-//            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellfomredCoupling(var("heap1"), var("heap2"), var("related"))));
-            
+            procAssumes.add(new BPLAssignmentCommand(related(stack1(receiver()), stack2(receiver())), BPLBoolLiteral.TRUE));
+            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var("heap1"))));
+            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var("heap2"))));
             
             // ///////////////////////////////////////
             // relate all parameters from the outside
