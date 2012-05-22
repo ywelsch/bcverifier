@@ -27,6 +27,7 @@ import static b2bpl.translation.CodeGenerator.stack1;
 import static b2bpl.translation.CodeGenerator.stack2;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.var;
+import static b2bpl.translation.CodeGenerator.wellformedHeap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -246,14 +247,25 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             // ///////////////////////////////////
             // checking blocks (intern and extern)
             // ///////////////////////////////////
+            List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
+            checkingCommand.add(new BPLAssertCommand(logicalOr(
+                    logicalAnd(
+                            isEqual(var("sp1"), new BPLIntLiteral(0)),
+                            isEqual(var("sp2"), new BPLIntLiteral(0))
+                            ),
+                    logicalAnd(
+                            greater(var("sp1"), new BPLIntLiteral(0)),
+                            greater(var("sp2"), new BPLIntLiteral(0))
+                            )
+                    )));
             methodBlocks.add(new BPLBasicBlock(TranslationController
-                    .getCheckLabel(), new BPLCommand[0], new BPLGotoCommand(
+                    .getCheckLabel(), checkingCommand.toArray(new BPLCommand[checkingCommand.size()]), new BPLGotoCommand(
                     "check_boundary_return", "check_boundary_call")));
 
             // ////////////////////////////////
             // assertions of the check return block
             // ///////////////////////////////
-            List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
+            checkingCommand = new ArrayList<BPLCommand>();
             checkingCommand.add(new BPLAssumeCommand(logicalAnd(
                     isEqual(var("sp1"), new BPLIntLiteral(0)),
                     isEqual(var("sp2"), new BPLIntLiteral(0)))));
@@ -353,6 +365,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                   BPLBoolLiteral.TRUE,
                   related(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                           stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))))));
+          
+          checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap1"))));
+          checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap2"))));
 
 //          checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedCoupling(var(TranslationController.HEAP1), var(TranslationController.HEAP2), var("related"))));
           //TODO this assumption is would be needed at the moment to verify the subtypes example, but it destroys constructor checking somehow
@@ -443,6 +458,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                             BPLBoolLiteral.TRUE,
                             related(stack1(var(var.getName())),
                                     stack2(var(var.getName()))))));
+                    
+                    checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap1"))));
+                    checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap2"))));
                 } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
                     checkingCommand.add(new BPLAssertCommand(isEqual(
                             stack1(var(var.getName())),
@@ -555,6 +573,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             // initialize int return values to be zero, so the relation check of the check_boundary_return block only checks the ref-result
             procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
             procAssumes.add(new BPLAssumeCommand(isEqual(stack2(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
+            
+            procAssumes.add(new BPLAssumeCommand(nonNull(stack1(receiver()))));
+            procAssumes.add(new BPLAssumeCommand(nonNull(stack2(receiver()))));
             
             // ///////////////////////////////////////////
             // relation between lib1 and lib2
