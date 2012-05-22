@@ -1235,6 +1235,20 @@ public class Translator implements ITranslationConstants {
             final String dynType = "dynType";
             
             
+            addAxiom(forall(tVar, uVar, oVar, heapVar,
+                    implies(
+                            logicalAnd(
+                                    logicalNot(isSubtype(var(t), var(u))),
+                                    logicalNot(isSubtype(var(u), var(t))),
+                                    nonNull(var(o))
+                                    ),
+                                    isEqual(
+                                            isOfType(var(o), var(heap), var(t)),
+                                            logicalNot(isOfType(var(o), var(heap), var(u))))
+                            )
+                    
+                    ));
+            
             addFunction(IS_CLASS_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             
             addDeclaration(new BPLTypeAlias(BIJ_TYPE, new BPLArrayType(new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL)));

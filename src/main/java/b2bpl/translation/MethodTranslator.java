@@ -3754,6 +3754,7 @@ public class MethodTranslator implements ITranslationConstants {
             addAssignment(heap(stack(var(refStackVar(stack))), var("alloc")), BPLBoolLiteral.TRUE);
             addAssume(nonNull(stack(var(refStackVar(stack)))));
             addAssume(isEqual(typ(stack(var(refStackVar(stack))), var(TranslationController.getHeap())), typeRef(insn.getType())));
+            addAssume(wellformedHeap(var(TranslationController.getHeap())));
             
             //      addHavoc(var(refStackVar(stack)));
             //TODO do we need to do anything to reserve the memory space on the heap?
