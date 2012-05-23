@@ -32,7 +32,7 @@ public class LibraryTests {
 		Logger.getRootLogger().setLevel(Level.WARN);
 	}
 	
-	Object[] parametersForVerifyLibrary() {
+	Object[] params() {
 		List<File> dirs = new ArrayList<File>();
 		for(String path : libpath.list(new AndFileFilter(DirectoryFileFilter.DIRECTORY, new NotFileFilter(HiddenFileFilter.HIDDEN)))){
             dirs.add(new File(libpath, path));
@@ -40,12 +40,29 @@ public class LibraryTests {
 		return dirs.toArray();
 	}
 	
-	@Test @Parameters
+	@Test @Parameters(method = "params")
 	public void verifyLibrary(File dir) throws TranslationException {
-		Library library = new Library(dir);
+		File invFile = new File(dir, "bpl/inv.bpl");
+		File specificationFile = new File(dir, "bpl/specification.bpl");
+		File lib1 = new File(dir, "old");
+		File lib2 = new File(dir, "new");
+		Library library = new Library(invFile, lib1, lib2, specificationFile);
 		library.compile();
 		library.translate();
 		library.check(true);
+		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastReturn());
+	}
+	
+	@Test @Parameters(method = "params")
+	public void genLibrary(File dir) throws TranslationException {
+		File invFile = new File(dir, "bpl/inv.bpl");
+		File specificationFile = new File(dir, "bpl/specification.bpl");
+		File lib1 = new File(dir, "old");
+		File lib2 = new File(dir, "new");
+		Library library = new Library(invFile, lib1, lib2, specificationFile);
+		library.compile();
+		library.translate();
+		library.check(false);
 		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastReturn());
 	}
 }

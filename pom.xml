@@ -57,5 +57,10 @@
 			<artifactId>JUnitParams</artifactId>
 			<version>0.4.0</version>
 		</dependency>
+		<dependency>
+			<groupId>com.beust</groupId>
+			<artifactId>jcommander</artifactId>
+			<version>1.25</version>
+		</dependency>
 	</dependencies>
 </project>

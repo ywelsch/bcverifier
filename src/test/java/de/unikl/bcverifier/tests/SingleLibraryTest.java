@@ -14,7 +14,7 @@ import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 
 public class SingleLibraryTest {
-	File libpath = new File("libraries/cbext");
+	File dir = new File("libraries/cbext");
 	
 	@BeforeClass
 	public static void oneTimeSetup() {
@@ -23,7 +23,11 @@ public class SingleLibraryTest {
 	
 	@Test
 	public void verifySingleLibrary() throws TranslationException {
-		Library library = new Library(libpath);
+		File invFile = new File(dir, "bpl/inv.bpl");
+		File specificationFile = new File(dir, "bpl/specification.bpl");
+		File lib1 = new File(dir, "old");
+		File lib2 = new File(dir, "new");
+		Library library = new Library(invFile, lib1, lib2, specificationFile);
 		library.compile();
 		library.translate();
 		library.check(true);

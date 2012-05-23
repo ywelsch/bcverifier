@@ -1,154 +1,109 @@
 package de.unikl.bcverifier;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import org.apache.commons.io.filefilter.AndFileFilter;
-import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.apache.commons.io.filefilter.HiddenFileFilter;
-import org.apache.commons.io.filefilter.NotFileFilter;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+
+import com.beust.jcommander.IParameterValidator;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 
 public class Main {
-    private static final Logger log = Logger.getLogger(Main.class);
+    public enum VerifyAction {
+    	NONE, TYPECHECK, VERIFY;
+    	public static final String allValues = Arrays.toString(VerifyAction.values()); 
+    }
     
-    private static class Configuration {
+    public static class Configuration {
+    	@Parameter(names = {"-d", "--debug"}, description = "Debug mode")
         private boolean debug = false;
+    	@Parameter(names = {"-c", "--compile"}, description = "Compile .java files in library directory before generating Boogie specification")
         private boolean compileFirst = false;
-        private boolean check = false;
-        private boolean workOnAll = false;
-        private boolean verify = true;
+        @Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])")
+        private VerifyAction action = VerifyAction.VERIFY;
+        @Parameter(names = {"-i" , "--invariant"}, description = "Path to the file containing the coupling invariant", required = true)
+        private File invariant;
+        @Parameter(names = {"-o" , "--output"}, description = "Path to generated Boogie file")
+        private File output;
+        @Parameter(names = {"-l", "--libs"}, description = "Path to the libraries to compare", arity = 2, required = true, validateWith = DirectoryValidator.class)
+        private List<File> dirs = new ArrayList<File>();
+        
+        public static class DirectoryValidator implements IParameterValidator {
+    		public void validate(String name, String value) throws ParameterException {
+    			if (value.equals(new ArrayList<File>().toString())) {
+    				return;
+    			}
+    			File f = new File(value);
+    			if (!f.isDirectory()) {
+    				throw new ParameterException("Value " + value + " for parameter " + name + " must be a valid directory");
+    			}
+    		}
+        }
+        
         public boolean isDebug() {
             return debug;
-        }
-        public void setDebug(boolean debug) {
-            this.debug = debug;
         }
         public boolean isCompileFirst() {
             return compileFirst;
         }
-        public void setCompileFirst(boolean compileFirst) {
-            this.compileFirst = compileFirst;
-        }
         public boolean isCheck() {
-            return check;
-        }
-        public void setCheck(boolean check) {
-            this.check = check;
-        }
-        public boolean isWorkOnAll() {
-            return workOnAll;
-        }
-        public void setWorkOnAll(boolean workOnAll) {
-            this.workOnAll = workOnAll;
+            return !action.equals(VerifyAction.NONE);
         }
         public boolean isVerify() {
-            return verify;
+            return action.equals(VerifyAction.VERIFY);
         }
-        public void setVerify(boolean verify) {
-            this.verify = verify;
+        public File library1() {
+        	return dirs.get(0);
+        }
+        public File library2() {
+        	return dirs.get(1);
+        }
+        public File invariant() {
+        	return invariant;
+        }
+        public File output() {
+        	return output;
         }
     }
     
-    public static class ConfigurationException extends Exception {
-        private static final long serialVersionUID = 6582774819912175668L;
-
-        public ConfigurationException(String msg) {
-            super(msg);
-        }
-    }
-    
-    public static void main(String... args) {
+   public static void main(String... args) {
         PropertyConfigurator.configure("log4j.properties");
         
         Configuration config = new Configuration();
+        JCommander parser = new JCommander();
+        parser.addObject(config);
+    	parser.setProgramName("Main");
         try {
-            File givenPath = parseParames(args, config);
-            if(givenPath == null){
-                printUsage();
-                return;
+        	parser.parse(args);
+        } catch (ParameterException e) {
+        	System.err.println("Error parsing command line parameters " + e.getMessage());
+        	parser.usage();
+        	return;
+        }
+        Logger.getRootLogger().setLevel(config.isDebug() ? Level.DEBUG : Level.INFO);
+        try {
+        	Library library = new Library(config.invariant(), config.library1(), config.library2(), config.output() != null ? config.output() : new File(config.invariant().getParentFile(), "specification.bpl"));
+            if(config.isCompileFirst()){
+                library.compile();
             }
-            if(config.isDebug()){
-                Logger.getRootLogger().setLevel(Level.DEBUG);
-            } else {
-                Logger.getRootLogger().setLevel(Level.INFO);
+            library.translate();
+            if(config.isCheck()){
+                library.check(config.isVerify());
+                System.out.println(BoogieRunner.getLastMessage());
+                System.out.println("Found unreachable code points: "+BoogieRunner.getLastUnreachalbeCodeCount());
             }
-            
-            if(config.isWorkOnAll()){
-                log.info("Parsing all libraries in "+givenPath);
-                File libraryPath;
-                for(String path : givenPath.list(new AndFileFilter(DirectoryFileFilter.DIRECTORY, new NotFileFilter(HiddenFileFilter.HIDDEN)))){
-                    log.info("Parsing library in "+path);
-                    libraryPath = new File(givenPath, path);
-                    workOnLibrary(config, libraryPath);
-                }
-            } else {
-                log.debug("Working Directory = " + givenPath);
-                workOnLibrary(config, givenPath);
-            }
-        } catch (ConfigurationException e) {
-            System.out.println(e.getMessage());
-            System.out.println();
-            printUsage();
         } catch (TranslationException e) {
             System.out.println("Error while translating to Boogie:");
             e.printStackTrace();
         }
-    }
-
-    private static void workOnLibrary(Configuration config, File libraryPath)
-            throws TranslationException {
-        Library library = new Library(libraryPath);
-        if(config.isCompileFirst()){
-            library.compile();
-        }
-        library.translate();
-        if(config.isCheck()){
-            library.check(config.isVerify());
-            System.out.println(BoogieRunner.getLastMessage());
-            System.out.println("Found unreachable code points: "+BoogieRunner.getLastUnreachalbeCodeCount());
-        }
-    }
-
-    private static File parseParames(String[] args, Configuration config) throws ConfigurationException {
-        File givenPath = null;
-        for(String arg : args){
-            if(arg.equals("-a")){
-                config.setWorkOnAll(true);
-            } else if(arg.equals("-d")){
-                config.setDebug(true);
-            } else if(arg.equals("-c")){
-                config.setCheck(true);
-            } else if(arg.equals("-nv")){
-                config.setCheck(true);
-                config.setVerify(false);
-            } else if(arg.equals("-cf")){
-                config.setCompileFirst(true);
-            } else {
-                if(givenPath != null){
-                    throw new ConfigurationException("Wrong usage: Specify only one library path");
-                }
-                givenPath = new File(arg);
-                if(!givenPath.exists()){
-                    throw new ConfigurationException("Given directory does not exist.");
-                }
-            }
-        }
-        return givenPath;
-    }
-    
-    private static void printUsage(){
-        System.out.println(
-                "Usage: Main [options] libraryPath\n" +
-                "  -a   given path is the root of a collection of libraries (work on all of them)\n" +
-                "  -d   debug\n" +
-                "  -c   check generated Boogie files after generation\n" +
-                "  -nv  do not verify while checking generated Boogie files\n" +
-                "  -cf  compile .java files in library directory before generating Boogie specification"
-        );
-    }
+   }
 }

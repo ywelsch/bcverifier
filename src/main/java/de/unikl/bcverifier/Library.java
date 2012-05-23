@@ -105,14 +105,16 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
     private static final Logger log = Logger.getLogger(Library.class);
 
-    private File libraryPath;
-    private File oldVersionPath;
-    private File newVersionPath;
-
-    public Library(File libPath) {
-        this.libraryPath = libPath;
-        this.oldVersionPath = new File(libPath, "old");
-        this.newVersionPath = new File(libPath, "new");
+    private final File invFile;
+    private final File specificationFile;
+    private final File oldVersionPath;
+    private final File newVersionPath;
+    
+    public Library(File invFile, File oldVersionPath, File newVersionPath, File specificationFile) {
+        this.invFile = invFile;
+        this.oldVersionPath = oldVersionPath;
+        this.newVersionPath = newVersionPath;
+        this.specificationFile = specificationFile;
     }
 
     public void compile() {
@@ -127,17 +129,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     /**
      * @throws TranslationException
      */
-    /**
-     * @throws TranslationException
-     */
-    /**
-     * @throws TranslationException
-     */
     public void translate() throws TranslationException {
-        File bplPath = new File(libraryPath, "bpl");
-        bplPath.mkdir();
-
-        File invFile = new File(bplPath, "inv.bpl");
         List<String> invariants;
         try {
             invariants = FileUtils.readLines(invFile, "UTF-8");
@@ -157,8 +149,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 invAssumes.add(cmd);
             }
         }
-
-        File specificationFile = new File(bplPath, "specification.bpl");
 
         Collection<File> oldClassFiles = FileUtils.listFiles(oldVersionPath,
                 new String[] { "class" }, true);
@@ -1042,9 +1032,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     }
 
     public void check(boolean verify) {
-        File bplPath = new File(libraryPath, "bpl");
-        File specificationFile = new File(bplPath, "specification.bpl");
-
         BoogieRunner.setVerify(verify);
         try {
             log.debug("Checking " + specificationFile);
