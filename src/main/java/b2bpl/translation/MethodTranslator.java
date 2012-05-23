@@ -2866,7 +2866,9 @@ public class MethodTranslator implements ITranslationConstants {
             BPLExpression heapLocation = new BPLArrayExpression(var(TranslationController.getHeap()), stack(lhs), context.translateFieldReference(field));
             BPLCommand cmd = new BPLAssignmentCommand(heapLocation, stack(rhs));
             addCommand(cmd);
-            addCommand(new BPLAssumeCommand(wellformedHeap(var(TranslationController.getHeap()))));
+            if(TranslationController.isAssumeWellformedHeap()){
+                addCommand(new BPLAssumeCommand(wellformedHeap(var(TranslationController.getHeap()))));
+            }
         }
 
         //@ requires insn != null;
@@ -3758,7 +3760,9 @@ public class MethodTranslator implements ITranslationConstants {
             addAssignment(heap(stack(var(refStackVar(stack))), var("alloc")), BPLBoolLiteral.TRUE);
             addAssume(nonNull(stack(var(refStackVar(stack)))));
             addAssume(isEqual(typ(stack(var(refStackVar(stack))), var(TranslationController.getHeap())), typeRef(insn.getType())));
-            addAssume(wellformedHeap(var(TranslationController.getHeap())));
+            if(TranslationController.isAssumeWellformedHeap()){
+                addAssume(wellformedHeap(var(TranslationController.getHeap())));
+            }
             
             //      addHavoc(var(refStackVar(stack)));
             //TODO do we need to do anything to reserve the memory space on the heap?

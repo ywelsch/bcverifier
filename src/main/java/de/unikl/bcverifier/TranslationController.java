@@ -14,6 +14,7 @@ import b2bpl.translation.ITranslationConstants;
 
 public class TranslationController implements ITranslationConstants {
     private static boolean isActive = false;
+    private static boolean assumeWellformedHeap = false;
     private static int round;
     public static final String HEAP1 = "heap1";
     public static final String HEAP2 = "heap2";
@@ -118,6 +119,14 @@ public class TranslationController implements ITranslationConstants {
     
     public static void enterRound2() {
         round = 2;
+    }
+    
+    public static void setAssumeWellformedHeap(boolean value) {
+        assumeWellformedHeap = value;
+    }
+    
+    public static boolean isAssumeWellformedHeap() {
+        return assumeWellformedHeap;
     }
     
     public static String getHeap() {
