@@ -1325,7 +1325,7 @@ public class MethodTranslator implements ITranslationConstants {
                     ? method.getOwner()
                             : method.getReturnType();
 
-                    BPLExpression topElem = stack(var(stackVar(0, retType)));
+                    BPLExpression topElem = stack(var(resVar(retType)));
 
                     if (method.getReturnType().isReferenceType() || method.isConstructor()) {
                         //        addAssume(alive(rval(topElem), var(TranslationController.getHeap())));
@@ -2433,6 +2433,10 @@ public class MethodTranslator implements ITranslationConstants {
 
     private static String stackVar(int index, JType type) {
         return STACK_VAR_PREFIX + index + typeAbbrev(type(type));
+    }
+    
+    private static String resVar(JType type) {
+        return RESULT_PARAM + typeAbbrev(type(type));
     }
 
     private static String intStackVar(int index) {
