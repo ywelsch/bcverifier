@@ -228,6 +228,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                         .toArray(new BPLExpression[methodExprs
                                                 .size()]))))));
             }
+            
+            /////////////////////////////////////
+            // add method definition for java.lang.Object default constructor
+            /////////////////////////////////////
+            String objectConstructorName = GLOBAL_VAR_PREFIX+"."+CONSTRUCTOR_NAME+"#"+Object.class.getName();
+            programDecls.add(new BPLConstantDeclaration(new BPLVariable(objectConstructorName, new BPLTypeName(METHOD_TYPE))));
 
             for (BPLVariable var : TranslationController.stackVariables()
                     .values()) {
@@ -917,6 +923,17 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 }
             }
         }
+        
+        ///////////////////////////////////////////////
+        // add default constructor for java.lang.Object in case it is called inside the methods/constructors of the library
+        ////////////////////////////////////////////////
+        String constructorLabelObject = TranslationController.prefix(Object.class.getName()+"."+CONSTRUCTOR_NAME);
+        methodBlocks.add(
+                0,
+                new BPLBasicBlock(constructorLabelObject, new BPLCommand[0],
+                        new BPLGotoCommand(TranslationController.prefix(RETTABLE_LABEL)))
+                );
+        
 
         // //////////////////////////////////////
         // callTable and returnTable

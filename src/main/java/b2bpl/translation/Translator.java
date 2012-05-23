@@ -722,7 +722,7 @@ public class Translator implements ITranslationConstants {
             addFunction(IS_OF_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     oVar, heapVar, tVar,
-                    isEquiv(isOfType(var(o), var(heap), var(t)), logicalOr(isNull(var(o)), isSubtype(typ(var(o), var(heap)), var(t)))),
+                    isEquiv(isOfType(var(o), var(heap), var(t)), logicalOr(isNull(var(o)), refOfType(var(o), var(heap), var(t)))),
                     new BPLTrigger(isOfType(var(o), var(heap), var(t)))
                     ));
 
@@ -1180,6 +1180,9 @@ public class Translator implements ITranslationConstants {
             BPLVariable fieldRefVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)));
             BPLVariable fieldIntVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT));
             BPLVariable fieldBoolVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL));
+            BPLVariable fieldAlphaVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")));
+            String vAlpha = "v";
+            BPLVariable vAlphaVar = new BPLVariable(vAlpha, new BPLTypeName("alpha"));
             BPLVariable heap1Var = new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE));
             BPLVariable heap2Var = new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE));
             BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName("Bij"));
@@ -1240,13 +1243,16 @@ public class Translator implements ITranslationConstants {
                             logicalAnd(
                                     logicalNot(isSubtype(var(t), var(u))),
                                     logicalNot(isSubtype(var(u), var(t))),
-                                    nonNull(var(o))
+                                    nonNull(var(o)),
+                                    isOfType(var(o), var(heap), var(t))
                                     ),
-                                    isEqual(
-                                            isOfType(var(o), var(heap), var(t)),
-                                            logicalNot(isOfType(var(o), var(heap), var(u))))
+                                    logicalNot(isOfType(var(o), var(heap), var(u)))
                             )
                     
+                    ));
+            
+            addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")}, new BPLVariable[]{oVar, heapVar, tVar, fieldAlphaVar, vAlphaVar},
+                    isEquiv(isOfType(var(o), var(heap), var(t)), isOfType(var(o), new BPLArrayExpression(var(heap), new BPLArrayAssignment(new BPLExpression[]{var(o), var(f)}, var(v))), var(t)))
                     ));
             
             addFunction(IS_CLASS_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
@@ -1384,7 +1390,6 @@ public class Translator implements ITranslationConstants {
                     ));
 
             addComment("Extensionality for heaps");
-            BPLVariable fieldAlphaVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")));
             addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
                     new BPLVariable[]{refVar, fieldAlphaVar, heapVar},
                     isEqual(new BPLArrayExpression(var(heap), new BPLArrayAssignment(new BPLVariableExpression[]{var(r), var(f)}, new BPLArrayExpression(var(heap), var(r), var(f)))), var(heap))
