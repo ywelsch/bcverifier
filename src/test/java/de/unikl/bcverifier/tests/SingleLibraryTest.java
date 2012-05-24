@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import de.unikl.bcverifier.Configuration;
 import de.unikl.bcverifier.Library;
+import de.unikl.bcverifier.Configuration.VerifyAction;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 
@@ -32,10 +33,11 @@ public class SingleLibraryTest {
 		config.setInvariant(invFile);
 		config.setLibraries(lib1, lib2);
 		config.setOutput(specificationFile);
+        config.setAction(VerifyAction.VERIFY);
 		Library library = new Library(config);
 		library.compile();
 		library.translate();
-		library.check(true);
+		library.check();
 		System.out.println(BoogieRunner.getLastMessage());
 		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastReturn());
 	}
