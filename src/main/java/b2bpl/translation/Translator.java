@@ -1391,17 +1391,19 @@ public class Translator implements ITranslationConstants {
                             )
                     ));
 
-            addComment("Extensionality for simulations");
-            addAxiom(forall(
-                    r1Var, r2Var, relatedVar,
-                    isEqual(new BPLArrayExpression(var(related), new BPLArrayAssignment(new BPLVariableExpression[]{var(r1), var(r2)}, new BPLArrayExpression(var(related), var(r1), var(r2)))), var(related))
-                    ));
+            if (TranslationController.getConfig().extensionalityEnabled()) { 
+            	addComment("Extensionality for simulations");
+            	addAxiom(forall(
+            			r1Var, r2Var, relatedVar,
+            			isEqual(new BPLArrayExpression(var(related), new BPLArrayAssignment(new BPLVariableExpression[]{var(r1), var(r2)}, new BPLArrayExpression(var(related), var(r1), var(r2)))), var(related))
+            			));
 
-            addComment("Extensionality for heaps");
-            addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
-                    new BPLVariable[]{refVar, fieldAlphaVar, heapVar},
-                    isEqual(new BPLArrayExpression(var(heap), new BPLArrayAssignment(new BPLVariableExpression[]{var(r), var(f)}, new BPLArrayExpression(var(heap), var(r), var(f)))), var(heap))
-                    ));
+            	addComment("Extensionality for heaps");
+            	addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
+            			new BPLVariable[]{refVar, fieldAlphaVar, heapVar},
+            			isEqual(new BPLArrayExpression(var(heap), new BPLArrayAssignment(new BPLVariableExpression[]{var(r), var(f)}, new BPLArrayExpression(var(heap), var(r), var(f)))), var(heap))
+            			));
+            }
 
             addType(VAR_TYPE, "_");
             addDeclaration(new BPLTypeAlias(STACK_PTR_TYPE, BPLBuiltInType.INT));
