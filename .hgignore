@@ -11,3 +11,5 @@ syntax: glob
 doc/*.log
 syntax: glob
 doc/*.fdb_latexmk
+syntax: glob
+target/**
