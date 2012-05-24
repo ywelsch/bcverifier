@@ -28,6 +28,8 @@ public class Main {
         private boolean debug = false;
     	@Parameter(names = {"-c", "--compile"}, description = "Compile .java files in library directory before generating Boogie specification")
         private boolean compileFirst = false;
+    	@Parameter(names = {"-H", "--heapassumes"}, description = "Add assume WellformedHeap after every heap assignment")
+    	private boolean assumeWellformedHeap = false;
         @Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])")
         private VerifyAction action = VerifyAction.VERIFY;
         @Parameter(names = {"-i" , "--invariant"}, description = "Path to the file containing the coupling invariant", required = true)
@@ -54,6 +56,9 @@ public class Main {
         }
         public boolean isCompileFirst() {
             return compileFirst;
+        }
+        public boolean isAssumeWellformedHeap() {
+            return assumeWellformedHeap;
         }
         public boolean isCheck() {
             return !action.equals(VerifyAction.NONE);
@@ -95,7 +100,7 @@ public class Main {
             if(config.isCompileFirst()){
                 library.compile();
             }
-            library.translate();
+            library.translate(config.isAssumeWellformedHeap());
             if(config.isCheck()){
                 library.check(config.isVerify());
                 System.out.println(BoogieRunner.getLastMessage());

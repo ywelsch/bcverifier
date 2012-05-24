@@ -129,7 +129,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     /**
      * @throws TranslationException
      */
-    public void translate() throws TranslationException {
+    public void translate(boolean assumeWellformedHeap) throws TranslationException {
         List<String> invariants;
         try {
             invariants = FileUtils.readLines(invFile, "UTF-8");
@@ -195,6 +195,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                                                        // generate
                                                                        // Prelude
 
+            TranslationController.setAssumeWellformedHeap(assumeWellformedHeap);
             TranslationController.activate();
 
             TranslationController.enterRound1();
@@ -362,8 +363,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                   related(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                           stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))))));
           
-          checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap1"))));
-          checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap2"))));
+          if(TranslationController.isAssumeWellformedHeap()){
+              checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap1"))));
+              checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap2"))));
+          }
 
 //          checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedCoupling(var(TranslationController.HEAP1), var(TranslationController.HEAP2), var("related"))));
           //TODO this assumption is would be needed at the moment to verify the subtypes example, but it destroys constructor checking somehow
@@ -455,8 +458,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                             related(stack1(var(var.getName())),
                                     stack2(var(var.getName()))))));
                     
-                    checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap1"))));
-                    checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap2"))));
+                    if(TranslationController.isAssumeWellformedHeap()){
+                        checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap1"))));
+                        checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap2"))));
+                    }
                 } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
                     checkingCommand.add(new BPLAssertCommand(isEqual(
                             stack1(var(var.getName())),
@@ -626,8 +631,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             procAssumes.add(new BPLAssignmentCommand(heap1(stack1(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
             procAssumes.add(new BPLAssignmentCommand(heap2(stack2(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
             procAssumes.add(new BPLAssignmentCommand(related(stack1(receiver()), stack2(receiver())), BPLBoolLiteral.TRUE));
-            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var("heap1"))));
-            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var("heap2"))));
+            if(TranslationController.isAssumeWellformedHeap()){
+                procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var("heap1"))));
+                procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var("heap2"))));
+            }
             
             // ///////////////////////////////////////
             // relate all parameters from the outside
