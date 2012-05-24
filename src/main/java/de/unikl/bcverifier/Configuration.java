@@ -23,7 +23,9 @@ public class Configuration {
 	private boolean assumeWellformedHeap = false;
 	@Parameter(names = {"-X", "--extensionality"}, description = "Add extensionality axioms")
 	private boolean extensionality = false;
-    @Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])")
+	@Parameter(names = {"-S", "--smoketest"}, description = "Perform smoke test during verification")
+    private boolean smoke = false;
+	@Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])")
     private VerifyAction action = VerifyAction.VERIFY;
     @Parameter(names = {"-i" , "--invariant"}, description = "Path to the file containing the coupling invariant", required = true)
     private File invariant;
@@ -101,6 +103,12 @@ public class Configuration {
 		return extensionality;
 	}
 	public void setExtensionality(boolean b) {
-		extensionality = b;
+	    extensionality = b;
 	}
+    public boolean isSmokeTestOn() {
+        return smoke;
+    }
+    public void setSmokeTestOn(boolean smoke) {
+        this.smoke = smoke;
+    }
 }

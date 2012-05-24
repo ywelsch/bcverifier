@@ -189,7 +189,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                                                        // to
                                                                        // generate
                                                                        // Prelude
-            
+
             TranslationController.activate();
 
             TranslationController.enterRound1();
@@ -1049,8 +1049,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         return new LibraryDefinition(programDecls, methodBlocks);
     }
 
-    public void check(boolean verify) {
-        BoogieRunner.setVerify(verify);
+    public void check() {
+        BoogieRunner.setVerify(config.isVerify());
+        BoogieRunner.setSmokeTest(config.isSmokeTestOn());
         try {
             log.debug("Checking " + config.output());
             BoogieRunner.runBoogie(config.output());
