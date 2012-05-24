@@ -29,7 +29,7 @@ public class SingleLibraryTest {
 		File lib2 = new File(dir, "new");
 		Library library = new Library(invFile, lib1, lib2, specificationFile);
 		library.compile();
-		library.translate(true);
+		library.translate(false);
 		library.check(true);
 		System.out.println(BoogieRunner.getLastMessage());
 		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastReturn());

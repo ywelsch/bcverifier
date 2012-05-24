@@ -722,7 +722,9 @@ public class Translator implements ITranslationConstants {
             addFunction(IS_OF_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     oVar, heapVar, tVar,
+                    //TODO use isSubtype or use refOfType here
                     isEquiv(isOfType(var(o), var(heap), var(t)), logicalOr(isNull(var(o)), refOfType(var(o), var(heap), var(t)))),
+//                    isEquiv(isOfType(var(o), var(heap), var(t)), logicalOr(isNull(var(o)), isSubtype(typ(var(o), var(heap)), var(t)))),
                     new BPLTrigger(isOfType(var(o), var(heap), var(t)))
                     ));
 
@@ -1249,6 +1251,12 @@ public class Translator implements ITranslationConstants {
                                     logicalNot(isOfType(var(o), var(heap), var(u)))
                             )
                     
+                    ));
+            
+            addAxiom(forall(tVar, oVar, heapVar,
+                    implies(
+                            refOfType(var(o), var(heap), var(t)), 
+                            isOfType(var(o), var(heap), var(t)))
                     ));
             
             addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")}, new BPLVariable[]{oVar, heapVar, tVar, fieldAlphaVar, vAlphaVar},
