@@ -1,8 +1,5 @@
 package de.unikl.bcverifier;
 
-import java.io.File;
-import java.util.Arrays;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -16,8 +13,6 @@ import de.unikl.bcverifier.boogie.BoogieRunner;
 public class Main {
     
     public static void main(String... args) {
-        PropertyConfigurator.configure("log4j.properties");
-        
         Configuration config = new Configuration();
         JCommander parser = new JCommander();
         parser.addObject(config);
