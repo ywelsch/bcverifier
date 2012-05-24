@@ -21,8 +21,8 @@ public class Configuration {
     private boolean compileFirst = false;
 	@Parameter(names = {"-H", "--heapassumes"}, description = "Add assume WellformedHeap after every heap assignment")
 	private boolean assumeWellformedHeap = false;
-	@Parameter(names = {"-X", "--extensionality"}, arity = 1, description = "Add extensionality axioms")
-	private boolean extensionality = true;
+	@Parameter(names = {"-X", "--extensionality"}, description = "Add extensionality axioms")
+	private boolean extensionality = false;
     @Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])")
     private VerifyAction action = VerifyAction.VERIFY;
     @Parameter(names = {"-i" , "--invariant"}, description = "Path to the file containing the coupling invariant", required = true)
@@ -99,5 +99,8 @@ public class Configuration {
 	}
 	public boolean extensionalityEnabled() {
 		return extensionality;
+	}
+	public void setExtensionality(boolean b) {
+		extensionality = b;
 	}
 }
