@@ -1433,12 +1433,13 @@ public class Translator implements ITranslationConstants {
                     )
                     ));
 
-            addComment("Extensionality for stacks");
-            addAxiom(forall(
-                    spVar, stackVar,
-                    isEqual(new BPLArrayExpression(var(stack), new BPLArrayAssignment(new BPLVariableExpression[]{var(sp)}, new BPLArrayExpression(var(stack), var(sp)))), var(stack))
-                    ));
-
+            if (TranslationController.getConfig().extensionalityEnabled()) {
+            	addComment("Extensionality for stacks");
+            	addAxiom(forall(
+            			spVar, stackVar,
+            			isEqual(new BPLArrayExpression(var(stack), new BPLArrayAssignment(new BPLVariableExpression[]{var(sp)}, new BPLArrayExpression(var(stack), var(sp)))), var(stack))
+            			));
+            }
 
             addFunction(FIELD_TYPE_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), new BPLTypeName(NAME_TYPE));
             

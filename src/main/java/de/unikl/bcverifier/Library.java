@@ -183,13 +183,13 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, this));
             TypeLoader.setTroubleReporter(this);
 
+            TranslationController.setConfig(config);
             programDecls.addAll(new Translator(project).getPrelude()); // TODO
                                                                        // workaround
                                                                        // to
                                                                        // generate
                                                                        // Prelude
-
-            TranslationController.setConfig(config);
+            
             TranslationController.activate();
 
             TranslationController.enterRound1();
