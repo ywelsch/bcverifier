@@ -1,0 +1,5 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+FIRSTARG="$1"
+shift
+$DIR/bcv -l $FIRSTARG/old $FIRSTARG/new -i $FIRSTARG/bpl/inv.bpl $@

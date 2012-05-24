@@ -1,0 +1,3 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+mvn -q -f $DIR/../pom.xml exec:java -Dexec.mainClass="de.unikl.bcverifier.Main" -Dexec.args="$*"
