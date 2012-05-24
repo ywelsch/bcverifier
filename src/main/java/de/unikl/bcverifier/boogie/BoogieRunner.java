@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -42,6 +44,8 @@ public class BoogieRunner {
     private static boolean lastRunSuccess;
     private static String lastMessage = "";
     private static int lastUnreachableCodeCount = 0;
+    private static int lastErrorCount = 0;
+    private static int lastVerified = 0;
     
     public static void setVerify(boolean b){
         verify = b;
@@ -49,6 +53,14 @@ public class BoogieRunner {
     
     public static boolean getLastReturn(){
         return lastRunSuccess;
+    }
+    
+    public static int getLastErrorCount() {
+        return lastErrorCount;
+    }
+    
+    public static int getLastVerifiedCount() {
+        return lastVerified;
     }
     
     public static String getLastMessage(){
@@ -106,6 +118,16 @@ public class BoogieRunner {
     private static boolean parseLastOutputLine(String result) {
         String[] lines = result.split("\n");
         String lastLine = lines[lines.length-1];
-        return lastLine.matches("Boogie program verifier finished with \\d* verified, 0 errors");
+        Pattern lastLinePattern = Pattern.compile("Boogie program verifier finished with (\\d+) verified, (\\d+) error(s)?");
+        Matcher errorMatcher = lastLinePattern.matcher(lastLine);
+        if(errorMatcher.matches()){
+            lastVerified = Integer.parseInt(errorMatcher.group(1));
+            lastErrorCount = Integer.parseInt(errorMatcher.group(2));
+            return lastErrorCount == 0;
+        } else {
+            lastErrorCount = 0;
+            lastVerified = 0;
+            return false;
+        }
     }
 }

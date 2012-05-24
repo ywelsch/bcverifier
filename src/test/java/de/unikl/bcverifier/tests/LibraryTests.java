@@ -1,6 +1,7 @@
 package de.unikl.bcverifier.tests;
 
 import static org.junit.Assert.*;
+import static junitparams.JUnitParamsRunner.$;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -41,8 +42,28 @@ public class LibraryTests {
 		return dirs.toArray();
 	}
 	
-	@Test @Parameters(method = "params")
-	public void verifyLibrary(File dir) throws TranslationException {
+	File lib(String name){
+	    return new File(libpath, name);
+	}
+	
+	Object[] librariesToCheck() {
+	    // library name, expected errors, expected dead code points
+	    return $(
+	            $(lib("callTest")   , 0, 0),
+	            $(lib("cb")         , 0, 0),
+	            $(lib("cbext")      , 0, 0),
+	            $(lib("cell")       , 0, 0),
+	            $(lib("cell2")      , 0, 0),
+	            $(lib("constructor"), 0, 0),
+	            $(lib("freshnames") , 0, 0),
+	            $(lib("list")       , 1, 0),
+	            $(lib("subtypes")   , 1, 0),
+	            $(lib("test")       , 0, 0)
+	            );
+	}
+	
+	@Test @Parameters(method = "librariesToCheck")
+	public void verifyLibrary(File dir, int expectedErrorCount, int expectedDeadCodePoints) throws TranslationException {
 		Configuration config = new Configuration();
 		File invFile = new File(dir, "bpl/inv.bpl");
 		File specificationFile = new File(dir, "bpl/specification.bpl");
@@ -55,7 +76,8 @@ public class LibraryTests {
 		library.compile();
 		library.translate();
 		library.check(true);
-		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastReturn());
+		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastErrorCount() == expectedErrorCount);
+		assertTrue(String.format("Expected %d dead code points, but got %d", expectedDeadCodePoints, BoogieRunner.getLastUnreachalbeCodeCount()), BoogieRunner.getLastUnreachalbeCodeCount() == expectedDeadCodePoints);
 	}
 	
 	@Test @Parameters(method = "params")
