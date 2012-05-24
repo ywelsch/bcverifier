@@ -2824,10 +2824,10 @@ public class MethodTranslator implements ITranslationConstants {
             int stack = handle.getFrame().getStackSize() - 1;
             BCField field = insn.getField();
 
-            if(!TranslationController.isActive()){
-                translateRuntimeException(
-                        "java.lang.NullPointerException",
-                        nonNull(stack(var(refStackVar(stack)))));
+            if(TranslationController.getConfig().isNullChecks()){
+                addAssert(nonNull(stack(var(refStackVar(stack)))));
+            } else {
+                addAssume(nonNull(stack(var(refStackVar(stack)))));
             }
 
             BPLExpression ref = stack(var(refStackVar(stack)));
@@ -2841,10 +2841,10 @@ public class MethodTranslator implements ITranslationConstants {
             int stackRhs = handle.getFrame().getStackSize() - 1;
             BCField field = insn.getField();
 
-            if(!TranslationController.isActive()){
-                translateRuntimeException(
-                        "java.lang.NullPointerException",
-                        nonNull(stack(var(refStackVar(stackLhs)))));
+            if(TranslationController.getConfig().isNullChecks()){
+                addAssert(nonNull(stack(var(refStackVar(stackLhs)))));
+            } else {
+                addAssume(nonNull(stack(var(refStackVar(stackLhs)))));
             }
 
             BPLExpression lhs = var(refStackVar(stackLhs));
@@ -3024,6 +3024,15 @@ public class MethodTranslator implements ITranslationConstants {
             //   - every constructors calls a super-constructor, the most general is Object..init()
             boolean isSuperConstructor = isSuperConstructorCall(invokedMethod, handle);
 
+
+            // Non-static method calls may throw a NullPointerException.
+                    
+            if (TranslationController.getConfig().isNullChecks() && !invokedMethod.isStatic() && !invokedMethod.isConstructor()) {
+                addAssert(nonNull(stack(var(refStackVar(first)))));
+            } else {
+                addAssume(nonNull(stack(var(refStackVar(first)))));
+            }
+            
             if(!isSuperConstructor){
                 BPLExpression sp = var(TranslationController.getStackPointer());
                 BPLExpression spMinus1 = sub(sp, intLiteral(1)); 
@@ -3057,14 +3066,7 @@ public class MethodTranslator implements ITranslationConstants {
                                 : invokedMethod.getReturnType()
                         );
 
-                // Non-static method calls may throw a NullPointerException.
-                /*
-      if (!invokedMethod.isStatic() && !invokedMethod.isConstructor()) {
-        translateRuntimeException(
-            "java.lang.NullPointerException",
-            nonNull(var(refStackVar(first))));
-      }
-                 */
+                 
                 //
                 //      // Prepare return values of method call
                 //      List<BPLVariableExpression> resultVars = new ArrayList<BPLVariableExpression>();
@@ -3359,19 +3361,21 @@ public class MethodTranslator implements ITranslationConstants {
                 break;
             case IOpCodes.IDIV:
             case IOpCodes.LDIV:
-                if(!TranslationController.isActive()){
-                    translateRuntimeException("java.lang.ArithmeticException", notEqual(
-                            stack(var(right)),
-                            intLiteral(0)));
+                if(TranslationController.getConfig().isNullChecks()){
+                    addAssert(notEqual(stack(var(right)), intLiteral(0)));
+                } else {
+                    addAssume(notEqual(stack(var(right)), intLiteral(0)));
                 }
                 expr = divide(stack(var(left)), stack(var(right)));
                 break;
             case IOpCodes.IREM:
             case IOpCodes.LREM:
             default:
-                translateRuntimeException("java.lang.ArithmeticException", notEqual(
-                        stack(var(right)),
-                        intLiteral(0)));
+                if(TranslationController.getConfig().isNullChecks()){
+                    addAssert(notEqual(stack(var(right)), intLiteral(0)));
+                } else {
+                    addAssume(notEqual(stack(var(right)), intLiteral(0)));
+                }
                 expr = modulo(stack(var(left)), stack(var(right)));
                 break;
             }

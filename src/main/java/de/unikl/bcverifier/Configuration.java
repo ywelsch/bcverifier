@@ -28,6 +28,8 @@ public class Configuration {
 	private boolean extensionality = false;
 	@Parameter(names = {"-S", "--smoketest"}, description = "Perform smoke test during verification")
     private boolean smoke = false;
+	@Parameter(names = {"-N", "--nullchecks"}, description = "Disable null checks to field accesses and method calls as well as !=0 checks to division/modulo")
+	private boolean disableNullChecks = false;
 	@Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])")
     private VerifyAction action = VerifyAction.VERIFY;
     @Parameter(names = {"-i" , "--invariant"}, description = "Path to the file containing the coupling invariant", required = true)
@@ -113,6 +115,12 @@ public class Configuration {
     }
     public void setSmokeTestOn(boolean smoke) {
         this.smoke = smoke;
+    }
+    public boolean isNullChecks() {
+        return !disableNullChecks;
+    }
+    public void setNullChecks(boolean nullChecks) {
+        this.disableNullChecks = !nullChecks;
     }
     public boolean isHelp() {
 		return help;
