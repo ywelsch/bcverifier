@@ -2866,7 +2866,7 @@ public class MethodTranslator implements ITranslationConstants {
             BPLExpression heapLocation = new BPLArrayExpression(var(TranslationController.getHeap()), stack(lhs), context.translateFieldReference(field));
             BPLCommand cmd = new BPLAssignmentCommand(heapLocation, stack(rhs));
             addCommand(cmd);
-            if(TranslationController.isAssumeWellformedHeap()){
+            if(TranslationController.getConfig().isAssumeWellformedHeap()){
                 addCommand(new BPLAssumeCommand(wellformedHeap(var(TranslationController.getHeap()))));
             }
         }
@@ -3760,7 +3760,7 @@ public class MethodTranslator implements ITranslationConstants {
             addAssignment(heap(stack(var(refStackVar(stack))), var("alloc")), BPLBoolLiteral.TRUE);
             addAssume(nonNull(stack(var(refStackVar(stack)))));
             addAssume(isEqual(typ(stack(var(refStackVar(stack))), var(TranslationController.getHeap())), typeRef(insn.getType())));
-            if(TranslationController.isAssumeWellformedHeap()){
+            if(TranslationController.getConfig().isAssumeWellformedHeap()){
                 addAssume(wellformedHeap(var(TranslationController.getHeap())));
             }
             

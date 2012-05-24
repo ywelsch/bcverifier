@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bytecode.BCField;
 import b2bpl.bytecode.JClassType;
@@ -14,7 +15,7 @@ import b2bpl.translation.ITranslationConstants;
 
 public class TranslationController implements ITranslationConstants {
     private static boolean isActive = false;
-    private static boolean assumeWellformedHeap = false;
+    private static Configuration config;
     private static int round;
     public static final String HEAP1 = "heap1";
     public static final String HEAP2 = "heap2";
@@ -121,12 +122,12 @@ public class TranslationController implements ITranslationConstants {
         round = 2;
     }
     
-    public static void setAssumeWellformedHeap(boolean value) {
-        assumeWellformedHeap = value;
+    public static void setConfig(Configuration c) {
+        config = c;
     }
     
-    public static boolean isAssumeWellformedHeap() {
-        return assumeWellformedHeap;
+    public static Configuration getConfig() {
+        return config;
     }
     
     public static String getHeap() {

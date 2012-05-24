@@ -104,23 +104,17 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     }
 
     private static final Logger log = Logger.getLogger(Library.class);
-
-    private final File invFile;
-    private final File specificationFile;
-    private final File oldVersionPath;
-    private final File newVersionPath;
     
-    public Library(File invFile, File oldVersionPath, File newVersionPath, File specificationFile) {
-        this.invFile = invFile;
-        this.oldVersionPath = oldVersionPath;
-        this.newVersionPath = newVersionPath;
-        this.specificationFile = specificationFile;
+    private final Configuration config;
+    
+    public Library(Configuration config) {
+        this.config = config;
     }
 
     public void compile() {
         try {
-            LibraryCompiler.compile(oldVersionPath);
-            LibraryCompiler.compile(newVersionPath);
+            LibraryCompiler.compile(config.library1());
+            LibraryCompiler.compile(config.library2());
         } catch (CompileException e) {
             e.printStackTrace();
         }
@@ -129,10 +123,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     /**
      * @throws TranslationException
      */
-    public void translate(boolean assumeWellformedHeap) throws TranslationException {
+    public void translate() throws TranslationException {
         List<String> invariants;
         try {
-            invariants = FileUtils.readLines(invFile, "UTF-8");
+            invariants = FileUtils.readLines(config.invariant(), "UTF-8");
         } catch (IOException ex) {
             invariants = new ArrayList<String>();
         }
@@ -150,26 +144,26 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             }
         }
 
-        Collection<File> oldClassFiles = FileUtils.listFiles(oldVersionPath,
+        Collection<File> oldClassFiles = FileUtils.listFiles(config.library1(),
                 new String[] { "class" }, true);
         String[] oldFileNames = new String[oldClassFiles.size() + 2];
         oldFileNames[0] = "-basedir";
-        oldFileNames[1] = oldVersionPath.getAbsolutePath();
+        oldFileNames[1] = config.library1().getAbsolutePath();
         int i = 2;
         for (File file : oldClassFiles) {
-            oldFileNames[i] = oldVersionPath.toURI().relativize(file.toURI())
+            oldFileNames[i] = config.library1().toURI().relativize(file.toURI())
                     .getPath();
             i++;
         }
 
-        Collection<File> newClassFiles = FileUtils.listFiles(newVersionPath,
+        Collection<File> newClassFiles = FileUtils.listFiles(config.library2(),
                 new String[] { "class" }, true);
         String[] newFileNames = new String[newClassFiles.size() + 2];
         newFileNames[0] = "-basedir";
-        newFileNames[1] = newVersionPath.getAbsolutePath();
+        newFileNames[1] = config.library2().getAbsolutePath();
         i = 2;
         for (File file : newClassFiles) {
-            newFileNames[i] = newVersionPath.toURI().relativize(file.toURI())
+            newFileNames[i] = config.library2().toURI().relativize(file.toURI())
                     .getPath();
             i++;
         }
@@ -195,7 +189,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                                                        // generate
                                                                        // Prelude
 
-            TranslationController.setAssumeWellformedHeap(assumeWellformedHeap);
+            TranslationController.setConfig(config);
             TranslationController.activate();
 
             TranslationController.enterRound1();
@@ -363,7 +357,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                   related(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                           stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))))));
           
-          if(TranslationController.isAssumeWellformedHeap()){
+          if(config.isAssumeWellformedHeap()){
               checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap1"))));
               checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap2"))));
           }
@@ -458,7 +452,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                             related(stack1(var(var.getName())),
                                     stack2(var(var.getName()))))));
                     
-                    if(TranslationController.isAssumeWellformedHeap()){
+                    if(config.isAssumeWellformedHeap()){
                         checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap1"))));
                         checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var("heap2"))));
                     }
@@ -631,7 +625,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             procAssumes.add(new BPLAssignmentCommand(heap1(stack1(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
             procAssumes.add(new BPLAssignmentCommand(heap2(stack2(receiver()), var("exposed")), BPLBoolLiteral.TRUE));
             procAssumes.add(new BPLAssignmentCommand(related(stack1(receiver()), stack2(receiver())), BPLBoolLiteral.TRUE));
-            if(TranslationController.isAssumeWellformedHeap()){
+            if(config.isAssumeWellformedHeap()){
                 procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var("heap1"))));
                 procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var("heap2"))));
             }
@@ -814,8 +808,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             BPLProgram program = new BPLProgram(
                     programDecls.toArray(new BPLDeclaration[programDecls.size()]));
 
-            log.debug("Writing specification to file " + specificationFile);
-            PrintWriter writer = new PrintWriter(specificationFile);
+            log.debug("Writing specification to file " + config.output());
+            PrintWriter writer = new PrintWriter(config.output());
             program.accept(new BPLPrinter(writer));
             writer.close();
         } catch (FileNotFoundException e) {
@@ -1058,8 +1052,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     public void check(boolean verify) {
         BoogieRunner.setVerify(verify);
         try {
-            log.debug("Checking " + specificationFile);
-            BoogieRunner.runBoogie(specificationFile);
+            log.debug("Checking " + config.output());
+            BoogieRunner.runBoogie(config.output());
             log.debug(BoogieRunner.getLastMessage());
             if (BoogieRunner.getLastReturn()) {
                 log.debug("Success");
