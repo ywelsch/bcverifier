@@ -32,7 +32,7 @@ public class Main {
             }
             library.translate();
             if(config.isCheck()){
-                library.check(config);
+                library.check();
                 System.out.println(BoogieRunner.getLastMessage());
                 System.out.println("Found unreachable code points: "+BoogieRunner.getLastUnreachalbeCodeCount());
             }
