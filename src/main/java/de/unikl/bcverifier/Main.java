@@ -1,8 +1,12 @@
 package de.unikl.bcverifier;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
@@ -16,14 +20,22 @@ public class Main {
         Configuration config = new Configuration();
         JCommander parser = new JCommander();
         parser.addObject(config);
-    	parser.setProgramName("Main");
+    	parser.setProgramName("bcv");
         try {
         	parser.parse(args);
         } catch (ParameterException e) {
-        	System.err.println("Error parsing command line parameters " + e.getMessage());
-        	parser.usage();
-        	return;
+        	if (config.showVersion()) printVersion();
+        	if (!config.isHelp()) {
+        		System.err.println("Error parsing command line parameters: " + e.getMessage());
+        		parser.usage();
+        		return;
+        	}
         }
+        if (config.showVersion()) printVersion();
+    	if (config.isHelp()) {
+    		parser.usage();
+    		return;
+    	}
         Logger.getRootLogger().setLevel(config.isDebug() ? Level.DEBUG : Level.INFO);
         try {
         	Library library = new Library(config);
@@ -41,4 +53,19 @@ public class Main {
             e.printStackTrace();
         }
    }
+    private static void printVersion() {
+    	Properties prop = new Properties();
+		InputStream in = Main.class.getResourceAsStream("/project.properties");
+		if (in != null) {
+			try {
+				prop.load(in);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				IOUtils.closeQuietly(in);
+			}
+		}
+		String version = prop.getProperty("version", "unknown");
+		System.out.println("BCVerifier version " + version);
+    }
 }

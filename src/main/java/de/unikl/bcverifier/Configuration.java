@@ -14,7 +14,10 @@ public class Configuration {
     	NONE, TYPECHECK, VERIFY;
     	public static final String allValues = Arrays.toString(VerifyAction.values()); 
     }
-    
+	@Parameter(names = {"-h", "--help"}, description = "Show this help screen and return")
+    private boolean help = false;
+	@Parameter(names = {"-v", "--version"}, description = "Show version String")
+	private boolean showVersion = false;
 	@Parameter(names = {"-d", "--debug"}, description = "Debug mode")
     private boolean debug = false;
 	@Parameter(names = {"-c", "--compile"}, description = "Compile .java files in library directory before generating Boogie specification")
@@ -111,4 +114,10 @@ public class Configuration {
     public void setSmokeTestOn(boolean smoke) {
         this.smoke = smoke;
     }
+    public boolean isHelp() {
+		return help;
+	}
+    public boolean showVersion() {
+		return showVersion;
+	}
 }
