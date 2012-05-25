@@ -70,7 +70,7 @@ public class LibraryTests {
         File thisLibPath;
         File testsFile;
         File invFile;
-        String generatorFlags;
+        String[] generatorFlags;
         int expectedErrorCount;
         int deadCodePoints;
         int loopUnrollCap;
@@ -82,7 +82,7 @@ public class LibraryTests {
             parser = new LabeledCSVParser(new CSVParser(FileUtils.openInputStream(testsFile)));
             while(parser.getLine() != null){
                 invFile = new File(thisLibPath, parser.getValueByLabel("invariant_file"));
-                generatorFlags = parser.getValueByLabel("flags");
+                generatorFlags = parser.getValueByLabel("flags").split("[ ]+");
                 expectedErrorCount = Integer.parseInt(parser.getValueByLabel("expected_errors"));
                 deadCodePoints = Integer.parseInt(parser.getValueByLabel("dead_code_points"));
                 loopUnrollCap = Integer.parseInt(parser.getValueByLabel("loop_unroll_cap"));
@@ -95,7 +95,7 @@ public class LibraryTests {
     }
 	
 	@Test @Parameters(method = "librariesToCheck")
-	public void verifyLibrary(File dir, File invariant, String generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException {
+	public void verifyLibrary(File dir, File invariant, String[] generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException {
 		Configuration config = new Configuration();
 		JCommander parser = new JCommander();
 		parser.addObject(config);
@@ -123,7 +123,7 @@ public class LibraryTests {
 	}
 	
 	@Test @Parameters(method = "librariesToCheck")
-    public void smokeTestLibrary(File dir, File invariant, String generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException, IOException {
+    public void smokeTestLibrary(File dir, File invariant, String[] generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException, IOException {
         Configuration config = new Configuration();
         JCommander parser = new JCommander();
         parser.addObject(config);
