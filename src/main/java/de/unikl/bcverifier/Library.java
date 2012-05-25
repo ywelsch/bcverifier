@@ -1052,6 +1052,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     public void check() {
         BoogieRunner.setVerify(config.isVerify());
         BoogieRunner.setSmokeTest(config.isSmokeTestOn());
+        BoogieRunner.setLoopUnroll(config.getLoopUnroll());
         try {
             log.debug("Checking " + config.output());
             BoogieRunner.runBoogie(config.output());

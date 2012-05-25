@@ -42,12 +42,17 @@ public class BoogieRunner {
     
     private static boolean verify = true;
     private static boolean smokeTest = false;
+    private static int loopUnroll = 5;
     private static boolean lastRunSuccess;
     private static String lastMessage = "";
     private static int lastUnreachableCodeCount = 0;
     private static int lastErrorCount = 0;
     private static int lastVerified = 0;
     
+    public static void setLoopUnroll(int loopUnroll) {
+        BoogieRunner.loopUnroll = loopUnroll;
+    }
+
     public static void setVerify(boolean b){
         verify = b;
     }
@@ -84,7 +89,7 @@ public class BoogieRunner {
             ArrayList<String> parameters = new ArrayList<String>();
             Collections.addAll(parameters, BOOGIE_COMMAND.split(" "));
             parameters.add("/nologo");
-            parameters.add("/loopUnroll:5");
+            parameters.add("/loopUnroll:" + loopUnroll);
             if(smokeTest){
                 parameters.add("/smoke");
             }
