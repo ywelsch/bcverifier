@@ -66,6 +66,14 @@
 			<artifactId>jcommander</artifactId>
 			<version>1.25</version>
 		</dependency>
+		
+		<dependency>
+            <groupId>com.ostermiller</groupId>
+            <artifactId>utilities</artifactId>
+            <version>1.08.02</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/ostermillerutils-1.08.02.jar</systemPath>
+        </dependency>
 	</dependencies>
 
 	<build>

@@ -23,6 +23,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.Ostermiller.util.CSVParser;
+import com.Ostermiller.util.LabeledCSVParser;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
+
 import de.unikl.bcverifier.Configuration;
 import de.unikl.bcverifier.Configuration.VerifyAction;
 import de.unikl.bcverifier.Library;
@@ -51,31 +56,62 @@ public class LibraryTests {
 	}
 	
 	Object[] librariesToCheck() {
-	    return $(
-	            // library name     , expected errors, expected dead code points, loop unroll cap
-	            $(lib("callTest")   , 0              , 3                        , 3),
-	            $(lib("cb")         , 0              , 2                        , 3),
-	            $(lib("cbext")      , 0              , 1                        , 3),    //takes long to smoke
-	            $(lib("cell")       , 0              , 8                        , 2),
-	            $(lib("cell2")      , 0              , 9                        , 2),
-	            $(lib("constructor"), 0              , 5                        , 3),
-	            $(lib("freshnames") , 0              , 11                       , 3),
-	            $(lib("list")       , 1              , 0                        , 3),
-	            $(lib("subtypes")   , 1              , 0                        , 3),
-	            $(lib("test")       , 0              , 2                        , 3)
-	            );
+	    List<Object> testSets = new ArrayList<Object>();
+	    List<Object[]> libTestCases;
+        for(String path : libpath.list(new AndFileFilter(DirectoryFileFilter.DIRECTORY, new NotFileFilter(HiddenFileFilter.HIDDEN)))){
+            libTestCases = buildTestCase(path);
+            testSets.addAll(libTestCases);
+        }
+        return testSets.toArray();
 	}
+
+    private List<Object[]> buildTestCase(String path) {
+        LabeledCSVParser parser;
+        File thisLibPath;
+        File testsFile;
+        File invFile;
+        String generatorFlags;
+        int expectedErrorCount;
+        int deadCodePoints;
+        int loopUnrollCap;
+        thisLibPath = new File(libpath, path);
+        testsFile = new File(thisLibPath, "tests.csv");
+        
+        List<Object[]> libTestCases = new ArrayList<Object[]>();
+        try{
+            parser = new LabeledCSVParser(new CSVParser(FileUtils.openInputStream(testsFile)));
+            while(parser.getLine() != null){
+                invFile = new File(thisLibPath, parser.getValueByLabel("invariant_file"));
+                generatorFlags = parser.getValueByLabel("flags");
+                expectedErrorCount = Integer.parseInt(parser.getValueByLabel("expected_errors"));
+                deadCodePoints = Integer.parseInt(parser.getValueByLabel("dead_code_points"));
+                loopUnrollCap = Integer.parseInt(parser.getValueByLabel("loop_unroll_cap"));
+                libTestCases.add($(thisLibPath, invFile, generatorFlags, expectedErrorCount, deadCodePoints, loopUnrollCap));
+            }
+        } catch(IOException e){
+            Logger.getLogger(LibraryTests.class).warn("Could not open tests file for library "+path);
+        }
+        return libTestCases;
+    }
 	
 	@Test @Parameters(method = "librariesToCheck")
-	public void verifyLibrary(File dir, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException {
+	public void verifyLibrary(File dir, File invariant, String generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException {
 		Configuration config = new Configuration();
-		File invFile = new File(dir, "bpl/inv.bpl");
+		JCommander parser = new JCommander();
+		parser.addObject(config);
+		parser.setProgramName("Main");
+		
+		try {
+            parser.parseWithoutValidation(generatorFlags);
+        } catch (ParameterException e) {
+            Logger.getLogger(LibraryTests.class).warn(e);
+        }
+		
 		File specificationFile = new File(dir, "bpl/output.bpl");
 		File lib1 = new File(dir, "old");
 		File lib2 = new File(dir, "new");
-		config.setInvariant(invFile);
+		config.setInvariant(invariant);
 		config.setLibraries(lib1, lib2);
-		config.setNullChecks(false);
 		config.setOutput(specificationFile);
 		config.setAction(VerifyAction.VERIFY);
         config.setLoopUnrollCap(loopUnrollCap);
@@ -87,8 +123,18 @@ public class LibraryTests {
 	}
 	
 	@Test @Parameters(method = "librariesToCheck")
-    public void smokeTestLibrary(File dir, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException, IOException {
+    public void smokeTestLibrary(File dir, File invariant, String generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException, IOException {
         Configuration config = new Configuration();
+        JCommander parser = new JCommander();
+        parser.addObject(config);
+        parser.setProgramName("Main");
+        
+        try {
+            parser.parseWithoutValidation(generatorFlags);
+        } catch (ParameterException e) {
+            Logger.getLogger(LibraryTests.class).warn(e);
+        }
+        
         File invFile = new File(dir, "bpl/inv.bpl");
         File specificationFile = new File(dir, "bpl/output.bpl");
         File lib1 = new File(dir, "old");
