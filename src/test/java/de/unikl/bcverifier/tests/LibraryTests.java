@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -56,40 +57,43 @@ public class LibraryTests {
 	}
 	
 	Object[] librariesToCheck() {
-	    List<Object> testSets = new ArrayList<Object>();
-	    List<Object[]> libTestCases;
-        for(String path : libpath.list(new AndFileFilter(DirectoryFileFilter.DIRECTORY, new NotFileFilter(HiddenFileFilter.HIDDEN)))){
-            libTestCases = buildTestCase(path);
-            testSets.addAll(libTestCases);
-        }
-        return testSets.toArray();
+	    String libraryToCheck = System.getProperty("library");
+	    if(libraryToCheck!=null){
+	        return buildTestCase(new File(libraryToCheck)).toArray();
+	    } else {
+	        List<Object> testSets = new ArrayList<Object>();
+	        List<Object[]> libTestCases;
+	        for(String path : libpath.list(new AndFileFilter(DirectoryFileFilter.DIRECTORY, new NotFileFilter(HiddenFileFilter.HIDDEN)))){
+	            libTestCases = buildTestCase(new File(libpath, path));
+	            testSets.addAll(libTestCases);
+	        }
+	        return testSets.toArray();
+	    }
 	}
 
-    private List<Object[]> buildTestCase(String path) {
+    private List<Object[]> buildTestCase(File libDir) {
         LabeledCSVParser parser;
-        File thisLibPath;
         File testsFile;
         File invFile;
         String[] generatorFlags;
         int expectedErrorCount;
         int deadCodePoints;
         int loopUnrollCap;
-        thisLibPath = new File(libpath, path);
-        testsFile = new File(thisLibPath, "tests.csv");
+        testsFile = new File(libDir, "tests.csv");
         
         List<Object[]> libTestCases = new ArrayList<Object[]>();
         try{
             parser = new LabeledCSVParser(new CSVParser(FileUtils.openInputStream(testsFile)));
             while(parser.getLine() != null){
-                invFile = new File(thisLibPath, parser.getValueByLabel("invariant_file"));
+                invFile = new File(libDir, parser.getValueByLabel("invariant_file"));
                 generatorFlags = parser.getValueByLabel("flags").split("[ ]+");
                 expectedErrorCount = Integer.parseInt(parser.getValueByLabel("expected_errors"));
                 deadCodePoints = Integer.parseInt(parser.getValueByLabel("dead_code_points"));
                 loopUnrollCap = Integer.parseInt(parser.getValueByLabel("loop_unroll_cap"));
-                libTestCases.add($(thisLibPath, invFile, generatorFlags, expectedErrorCount, deadCodePoints, loopUnrollCap));
+                libTestCases.add($(libDir, invFile, generatorFlags, expectedErrorCount, deadCodePoints, loopUnrollCap));
             }
         } catch(IOException e){
-            Logger.getLogger(LibraryTests.class).warn("Could not open tests file for library "+path);
+            Logger.getLogger(LibraryTests.class).warn("Could not open tests file for library "+libDir.getName());
         }
         return libTestCases;
     }
