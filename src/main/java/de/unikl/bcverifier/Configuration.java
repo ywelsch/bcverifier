@@ -79,7 +79,7 @@ public class Configuration {
     }
     public File output() {
     	if (output == null) {
-    		output = new File(invariant().getParentFile(), "specification.bpl");
+    		output = new File(invariant().getParentFile(), "output.bpl");
     	}
     	return output;
     }

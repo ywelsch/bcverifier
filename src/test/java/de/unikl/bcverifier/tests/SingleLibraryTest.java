@@ -27,7 +27,7 @@ public class SingleLibraryTest {
 	public void verifySingleLibrary() throws TranslationException {
 		Configuration config = new Configuration();
 		File invFile = new File(dir, "bpl/inv.bpl");
-		File specificationFile = new File(dir, "bpl/specification.bpl");
+		File specificationFile = new File(dir, "bpl/output.bpl");
 		File lib1 = new File(dir, "old");
 		File lib2 = new File(dir, "new");
 		config.setInvariant(invFile);

@@ -70,7 +70,7 @@ public class LibraryTests {
 	public void verifyLibrary(File dir, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException {
 		Configuration config = new Configuration();
 		File invFile = new File(dir, "bpl/inv.bpl");
-		File specificationFile = new File(dir, "bpl/specification.bpl");
+		File specificationFile = new File(dir, "bpl/output.bpl");
 		File lib1 = new File(dir, "old");
 		File lib2 = new File(dir, "new");
 		config.setInvariant(invFile);
@@ -90,7 +90,7 @@ public class LibraryTests {
     public void smokeTestLibrary(File dir, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException, IOException {
         Configuration config = new Configuration();
         File invFile = new File(dir, "bpl/inv.bpl");
-        File specificationFile = new File(dir, "bpl/specification.bpl");
+        File specificationFile = new File(dir, "bpl/output.bpl");
         File lib1 = new File(dir, "old");
         File lib2 = new File(dir, "new");
         config.setInvariant(invFile);
@@ -116,7 +116,7 @@ public class LibraryTests {
 	public void genLibrary(File dir) throws TranslationException {
 		Configuration config = new Configuration();
 		File invFile = new File(dir, "bpl/inv.bpl");
-		File specificationFile = new File(dir, "bpl/specification.bpl");
+		File specificationFile = new File(dir, "bpl/output.bpl");
 		File lib1 = new File(dir, "old");
 		File lib2 = new File(dir, "new");
 		config.setInvariant(invFile);
