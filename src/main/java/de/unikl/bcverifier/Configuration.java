@@ -28,8 +28,8 @@ public class Configuration {
 	private boolean extensionality = false;
 	@Parameter(names = {"-S", "--smoketest"}, description = "Perform smoke test during verification")
     private boolean smoke = false;
-	@Parameter(names = {"-L", "--loopUnroll"}, description = "The amount of loops that will be unrolled")
-	private int loopUnroll = 5;
+	@Parameter(names = {"-L", "--loopUnroll"}, description = "The cap for loop unrolling")
+	private int loopUnrollCap = 5;
 	@Parameter(names = {"-N", "--nullchecks"}, description = "Disable null checks to field accesses and method calls as well as !=0 checks to division/modulo")
 	private boolean disableNullChecks = false;
 	@Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])")
@@ -130,10 +130,10 @@ public class Configuration {
     public boolean showVersion() {
 		return showVersion;
 	}
-    public int getLoopUnroll() {
-        return loopUnroll;
+    public int getLoopUnrollCap() {
+        return loopUnrollCap;
     }
-    public void setLoopUnroll(int loopUnroll) {
-        this.loopUnroll = loopUnroll;
+    public void setLoopUnrollCap(int loopUnroll) {
+        this.loopUnrollCap = loopUnroll;
     }
 }

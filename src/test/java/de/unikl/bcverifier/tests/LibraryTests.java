@@ -51,23 +51,23 @@ public class LibraryTests {
 	}
 	
 	Object[] librariesToCheck() {
-	    // library name, expected errors, expected dead code points
 	    return $(
-	            $(lib("callTest")   , 0, 3),
-	            $(lib("cb")         , 0, 3),
-	            $(lib("cbext")      , 0, 2),    //takes low to smoke
-	            $(lib("cell")       , 0, 9),
-	            $(lib("cell2")      , 0, 9),
-	            $(lib("constructor"), 0, 5),
-	            $(lib("freshnames") , 0, 9),
-	            $(lib("list")       , 1, 0),
-	            $(lib("subtypes")   , 1, 0),
-	            $(lib("test")       , 0, 3)
+	            // library name     , expected errors, expected dead code points, loop unroll cap
+	            $(lib("callTest")   , 0              , 3                        , 3),
+	            $(lib("cb")         , 0              , 2                        , 3),
+	            $(lib("cbext")      , 0              , 1                        , 3),    //takes long to smoke
+	            $(lib("cell")       , 0              , 8                        , 2),
+	            $(lib("cell2")      , 0              , 9                        , 2),
+	            $(lib("constructor"), 0              , 5                        , 3),
+	            $(lib("freshnames") , 0              , 11                       , 3),
+	            $(lib("list")       , 1              , 0                        , 3),
+	            $(lib("subtypes")   , 1              , 0                        , 3),
+	            $(lib("test")       , 0              , 2                        , 3)
 	            );
 	}
 	
 	@Test @Parameters(method = "librariesToCheck")
-	public void verifyLibrary(File dir, int expectedErrorCount, int expectedDeadCodePoints) throws TranslationException {
+	public void verifyLibrary(File dir, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException {
 		Configuration config = new Configuration();
 		File invFile = new File(dir, "bpl/inv.bpl");
 		File specificationFile = new File(dir, "bpl/specification.bpl");
@@ -75,8 +75,10 @@ public class LibraryTests {
 		File lib2 = new File(dir, "new");
 		config.setInvariant(invFile);
 		config.setLibraries(lib1, lib2);
+		config.setNullChecks(false);
 		config.setOutput(specificationFile);
 		config.setAction(VerifyAction.VERIFY);
+        config.setLoopUnrollCap(loopUnrollCap);
 		Library library = new Library(config);
 		library.compile();
 		library.translate();
@@ -85,7 +87,7 @@ public class LibraryTests {
 	}
 	
 	@Test @Parameters(method = "librariesToCheck")
-    public void smokeTestLibrary(File dir, int expectedErrorCount, int expectedDeadCodePoints) throws TranslationException, IOException {
+    public void smokeTestLibrary(File dir, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException, IOException {
         Configuration config = new Configuration();
         File invFile = new File(dir, "bpl/inv.bpl");
         File specificationFile = new File(dir, "bpl/specification.bpl");
@@ -93,8 +95,10 @@ public class LibraryTests {
         File lib2 = new File(dir, "new");
         config.setInvariant(invFile);
         config.setLibraries(lib1, lib2);
+        config.setNullChecks(false);
         config.setOutput(specificationFile);
         config.setAction(VerifyAction.VERIFY);
+        config.setLoopUnrollCap(loopUnrollCap);
         config.setSmokeTestOn(true);
         Library library = new Library(config);
         library.compile();
