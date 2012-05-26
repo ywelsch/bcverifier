@@ -46,7 +46,9 @@ public class Main {
             if(config.isCheck()){
                 library.check();
                 System.out.println(BoogieRunner.getLastMessage());
-                System.out.println("Found unreachable code points: "+BoogieRunner.getLastUnreachalbeCodeCount());
+                if (config.isSmokeTestOn()) {
+                	System.out.println("Found unreachable code points: "+BoogieRunner.getLastUnreachalbeCodeCount());
+                }
             }
         } catch (TranslationException e) {
             System.out.println("Error while translating to Boogie:");
