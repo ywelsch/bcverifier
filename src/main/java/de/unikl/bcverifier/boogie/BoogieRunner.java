@@ -28,10 +28,17 @@ public class BoogieRunner {
             BOOGIE_COMMAND = System.getenv("BOOGIE_CMD");
             if(BOOGIE_COMMAND == null || BOOGIE_COMMAND.equals("")){
                 log.debug("Could not get boogie cmd from environment");
-                Process p = Runtime.getRuntime().exec(new String[]{"/bin/bash", "-l",  "-c", "which boogie"});
+                String os = System.getProperty("os.name");
+                String[] cmdArgs;
+                if (os.toLowerCase().indexOf("win") >= 0) {
+                	cmdArgs = new String[]{"where", "boogie"};
+                } else {
+                	cmdArgs = new String[]{"/bin/bash", "-l",  "-c", "which boogie"};
+                }
+                Process p = Runtime.getRuntime().exec(new String[]{"where", "boogie"});
                 BOOGIE_COMMAND = IOUtils.toString(p.getInputStream()).trim();
                 log.debug("Which returned "+BOOGIE_COMMAND);
-                log.debug(IOUtils.toString(p.getErrorStream()));   
+            	log.debug(IOUtils.toString(p.getErrorStream()));
             } else {
                 log.debug("Got boogie cmd from environment: "+BOOGIE_COMMAND);
             }
