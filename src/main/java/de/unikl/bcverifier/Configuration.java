@@ -34,7 +34,7 @@ public class Configuration {
 	private boolean disableNullChecks = false;
 	@Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])")
     private VerifyAction action = VerifyAction.VERIFY;
-    @Parameter(names = {"-i" , "--invariant"}, description = "Path to the file containing the coupling invariant", required = true)
+    @Parameter(names = {"-i" , "--invariant"}, description = "Path to the file containing the coupling invariant", required = true, validateWith = Configuration.FileValidator.class)
     private File invariant;
     @Parameter(names = {"-o" , "--output"}, description = "Path to generated Boogie file")
     private File output;
@@ -49,6 +49,18 @@ public class Configuration {
 			File f = new File(value);
 			if (!f.isDirectory()) {
 				throw new ParameterException("Value " + value + " for parameter " + name + " must be a valid directory");
+			}
+		}
+    }
+    
+    public static class FileValidator implements IParameterValidator {
+		public void validate(String name, String value) throws ParameterException {
+			if (value == null) {
+				return;
+			}
+			File f = new File(value);
+			if (!f.isFile()) {
+				throw new ParameterException("Value " + value + " for parameter " + name + " must be a valid file");
 			}
 		}
     }
