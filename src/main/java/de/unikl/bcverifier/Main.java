@@ -27,7 +27,7 @@ public class Main {
         	if (config.showVersion()) printVersion();
         	if (!config.isHelp()) {
         		System.err.println("Error parsing command line parameters: " + e.getMessage());
-        		parser.usage();
+        		System.err.println("Use --help to get a list of all available options.");
         		return;
         	}
         }
@@ -51,7 +51,7 @@ public class Main {
                 }
             }
         } catch (TranslationException e) {
-            System.out.println("Error while translating to Boogie:");
+            System.err.println("Error while translating to Boogie:");
             e.printStackTrace();
         }
    }
