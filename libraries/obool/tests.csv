@@ -1,0 +1,7 @@
+"invariant_file","flags","expected_errors","dead_code_points","loop_unroll_cap"
+"bpl/inv.bpl"   ,""     ,4                ,0                 ,2
+"bpl/inv.bpl"   ,""     ,2                ,0                 ,3
+"bpl/inv.bpl"   ,""     ,0                ,0                 ,4
+"bpl/inv2.bpl"  ,""     ,2                ,0                 ,2
+"bpl/inv2.bpl"  ,""     ,2                ,0                 ,3
+"bpl/inv2.bpl"  ,""     ,0                ,0                 ,4
