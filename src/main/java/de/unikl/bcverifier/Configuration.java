@@ -148,4 +148,7 @@ public class Configuration {
     public void setLoopUnrollCap(int loopUnroll) {
         this.loopUnrollCap = loopUnroll;
     }
+    public File configFile() {
+        return new File(invariant.getParentFile(), "preconditions.bpl");
+    }
 }

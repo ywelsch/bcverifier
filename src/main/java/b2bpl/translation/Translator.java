@@ -1314,7 +1314,10 @@ public class Translator implements ITranslationConstants {
                     isEquiv(internal(var(c), var(f), var(heap)), 
                             forall(refVar, implies(
                                     logicalAnd(obj(var(heap), var(r)), refOfType(var(r), var(heap), var(c))),
-                                    logicalNot(new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(createdByCtxt)))
+                                    logicalAnd(
+                                            logicalNot(new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(createdByCtxt))),
+                                            logicalNot(new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(exposed)))
+                                    )
                                     ))
                             )));
 
@@ -1497,6 +1500,8 @@ public class Translator implements ITranslationConstants {
                                 trigger(new BPLFunctionApplication(INT2BOOL_FUNC, var(i)))
                         ));
             }
+            
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(ITranslationConstants.USE_HAVOC, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
             
             
             flushPendingTheory(); //TODO this is needed at the moment to generate information about the long values (which should be printed into the program code directly)

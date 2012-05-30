@@ -361,5 +361,7 @@ public interface ITranslationConstants {
   
   String CONSTRUCTOR_TABLE_LABEL = "constructortable";
 
+static final String USE_HAVOC = "useHavoc";
+
 //public static final String ALLOC_OBJ = "AllocObj";
 }

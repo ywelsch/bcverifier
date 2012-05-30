@@ -26,7 +26,9 @@ import static b2bpl.translation.CodeGenerator.related;
 import static b2bpl.translation.CodeGenerator.stack;
 import static b2bpl.translation.CodeGenerator.stack1;
 import static b2bpl.translation.CodeGenerator.stack2;
+import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.typ;
+import static b2bpl.translation.CodeGenerator.useHavoc;
 import static b2bpl.translation.CodeGenerator.var;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
 
@@ -62,12 +64,14 @@ import b2bpl.bpl.ast.BPLDeclaration;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLGotoCommand;
+import b2bpl.bpl.ast.BPLHavocCommand;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLModifiesClause;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
+import b2bpl.bpl.ast.BPLRawCommand;
 import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
 import b2bpl.bpl.ast.BPLTransferCommand;
@@ -412,13 +416,23 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 }
             }
             checkingCommand.addAll(invAssertions);
-            // checkingCommand.add(new
-            // BPLAssertCommand(BPLBoolLiteral.FALSE));//TODO implement checking
-            // of method calls to extern
+            
+            // check if we want to use havoc to handle boudary call
+            /////////////////////////////////////////////////////////
+            BPLExpression sp1MinusOne = sub(var("sp1"), new BPLIntLiteral(1));
+            BPLExpression sp2MinusOne = sub(var("sp2"), new BPLIntLiteral(1));
+            checkingCommand.add(new BPLAssertCommand(
+                    isEquiv(useHavoc(stack1(sp1MinusOne, var("place"))), useHavoc(stack2(sp2MinusOne, var("place")))))
+                    );
+            checkingCommand.add(new BPLAssumeCommand(
+                    logicalAnd(useHavoc(stack1(sp1MinusOne, var("place"))), useHavoc(stack2(sp2MinusOne, var("place")))))
+                    );
+            checkingCommand.add(new BPLHavocCommand(var("heap1"), var("heap2")));
+            checkingCommand.addAll(invAssumes);
 
             methodBlocks.add(new BPLBasicBlock("check_boundary_call", checkingCommand
                     .toArray(new BPLCommand[checkingCommand.size()]),
-                    new BPLReturnCommand()));
+                    new BPLGotoCommand(TranslationController.LABEL_PREFIX1 + RETTABLE_LABEL)));
 
             for (String place : TranslationController.places()) {
                 programDecls.add(new BPLConstantDeclaration(new BPLVariable(
@@ -448,6 +462,26 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             procAssumes = new ArrayList<BPLCommand>();
             procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1), new BPLIntLiteral(0))));
             procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2), new BPLIntLiteral(0))));
+            
+            String address = "address";
+            BPLVariable addressVar = new BPLVariable(address, new BPLTypeName(ADDRESS_TYPE));
+            procAssumes.add(new BPLAssumeCommand(forall(
+                    addressVar,
+                        isEqual(useHavoc(var(address)), BPLBoolLiteral.FALSE)
+                    )));
+            //TODO refactor
+            if(config.configFile().exists()){
+                List<String> lines;
+                try {
+                    lines = FileUtils.readLines(config.configFile());
+                    for(String line : lines){
+                        procAssumes.add(new BPLRawCommand(line));
+                    }
+                } catch (IOException e) {
+                    log.warn("Can not read config file", e);
+                }
+            }
+            
             methodBlocks.add(
                     0,
                     new BPLBasicBlock("preconditions", procAssumes
@@ -630,6 +664,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     new BPLIntLiteral(0))));
             procAssumes.add(new BPLAssumeCommand(greater(var("sp2"),
                     new BPLIntLiteral(0))));
+            
+            // this return path may not be taken if havoc is used to handle it
+            /////////////////////////////////////////////////////////////////
+            //TODO maybe add consistency check useHavoc[stack1[sp1][place]] <=> useHavoc[stack2[sp2][place]] 
+            procAssumes.add(new BPLAssumeCommand(logicalNot(useHavoc(stack1(sp1MinusOne, var("place"))))));
+            procAssumes.add(new BPLAssumeCommand(logicalNot(useHavoc(stack2(sp2MinusOne, var("place"))))));
 
             BPLExpression zero = new BPLIntLiteral(0);
             // ///////////////////////////////////////////
@@ -692,9 +732,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
             // invariant
             procAssumes.addAll(invAssumes);
-
-            // TODO add information about the initial state of the stack in
-            // caller
 
             // ///////////////////////////////////////
             // relate all parameters from the outside
@@ -760,7 +797,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                     new BPLVariableExpression("stack2"),
                                     new BPLVariableExpression("sp1"),
                                     new BPLVariableExpression("sp2"),
-                                    new BPLVariableExpression("related"))),
+                                    new BPLVariableExpression("related"),
+                                    new BPLVariableExpression(USE_HAVOC))),
                             methodImpl));
             BPLProgram program = new BPLProgram(
                     programDecls.toArray(new BPLDeclaration[programDecls.size()]));
