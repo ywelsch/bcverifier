@@ -14,7 +14,6 @@ import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.less;
-import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
@@ -467,7 +466,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             BPLVariable addressVar = new BPLVariable(address, new BPLTypeName(ADDRESS_TYPE));
             procAssumes.add(new BPLAssumeCommand(forall(
                     addressVar,
-                        isEqual(useHavoc(var(address)), BPLBoolLiteral.FALSE)
+                        isEqual(useHavoc(var(address)), BPLBoolLiteral.TRUE)
                     )));
 
             if(config.configFile() != null){
