@@ -1,9 +1,14 @@
 package de.unikl.bcverifier;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
+
+import org.apache.commons.io.IOUtils;
 
 import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.Parameter;
@@ -42,6 +47,7 @@ public class Configuration {
     private File places;
     @Parameter(names = {"-l", "--libs"}, description = "Path to the libraries to compare", arity = 2, required = true, validateWith = Configuration.DirectoryValidator.class)
     private List<File> dirs = new ArrayList<File>();
+	private String versionString;
     
     public static class DirectoryValidator implements IParameterValidator {
 		public void validate(String name, String value) throws ParameterException {
@@ -153,4 +159,21 @@ public class Configuration {
     public File configFile() {
     	return places;
     }
+    public String getVersionString() {
+    	if (versionString == null) {
+    		Properties prop = new Properties();
+    		InputStream in = Configuration.class.getResourceAsStream("/project.properties");
+    		if (in != null) {
+    			try {
+    				prop.load(in);
+    			} catch (IOException e) {
+    				e.printStackTrace();
+    			} finally {
+    				IOUtils.closeQuietly(in);
+    			}
+    		}
+    		versionString = prop.getProperty("version", "unknown");
+    	}
+		return versionString;
+	}
 }
