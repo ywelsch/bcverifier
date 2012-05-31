@@ -38,6 +38,8 @@ public class Configuration {
     private File invariant;
     @Parameter(names = {"-o" , "--output"}, description = "Path to generated Boogie file")
     private File output;
+    @Parameter(names = {"-p" , "--places"}, description = "Path to places configuration file", validateWith = Configuration.FileValidator.class)
+    private File places;
     @Parameter(names = {"-l", "--libs"}, description = "Path to the libraries to compare", arity = 2, required = true, validateWith = Configuration.DirectoryValidator.class)
     private List<File> dirs = new ArrayList<File>();
     
@@ -149,6 +151,6 @@ public class Configuration {
         this.loopUnrollCap = loopUnroll;
     }
     public File configFile() {
-        return new File(invariant.getParentFile(), "preconditions.bpl");
+    	return places;
     }
 }

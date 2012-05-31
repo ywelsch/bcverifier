@@ -469,8 +469,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     addressVar,
                         isEqual(useHavoc(var(address)), BPLBoolLiteral.FALSE)
                     )));
-            //TODO refactor
-            if(config.configFile().exists()){
+
+            if(config.configFile() != null){
                 List<String> lines;
                 try {
                     lines = FileUtils.readLines(config.configFile());
