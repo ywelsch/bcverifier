@@ -1054,6 +1054,8 @@ public class MethodTranslator implements ITranslationConstants {
             name = "." + CONSTRUCTOR_NAME + "#" + method.getOwner().getName();
         } else if (method.isClassInitializer()) {
             name = "." + CLASS_INITIALIZER_NAME;
+        } else if(method.isStatic()) {
+            name = method.getOwner().getName() + "." + method.getName();
         } else {
             name = method.getName();
         }
@@ -1174,7 +1176,9 @@ public class MethodTranslator implements ITranslationConstants {
         //@deprecated addAssume(notEqual(var(thisVar()), BPLNullLiteral.NULL));
         //@deprecated addAssume(alive(rval(var(thisVar())), var(TranslationController.getHeap())));
 
-        JType[] params = method.getRealParameterTypes();
+        JType[] params = new JType[method.getParameterCount() + 1];
+        params[0] = method.getOwner(); //for static methods the class object, for non-static the receiver
+        System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
         if(TranslationController.isActive()){
             addAssume(nonNull(stack(var(thisVar()))));
         }
@@ -1191,7 +1195,14 @@ public class MethodTranslator implements ITranslationConstants {
                 } else {
                     //TODO arrays
                 }
-                addAssignment(stack(var(localVar(i, params[i]))), stack(var(paramVar(i, params[i]))), "init " + localVarName(i));
+                // special case static methods. reg_i == param_(i+1)
+                if(method.isStatic()){
+                    if(i>0){
+                        addAssignment(stack(var(localVar(i-1, params[i]))), stack(var(paramVar(i, params[i]))), "init " + localVarName(i-1));
+                    }
+                } else {
+                    addAssignment(stack(var(localVar(i, params[i]))), stack(var(paramVar(i, params[i]))), "init " + localVarName(i));
+                }
             } else {
                 addAssignment(var(localVar(i, params[i])), var(paramVar(i, params[i])));
             }
@@ -1347,8 +1358,9 @@ public class MethodTranslator implements ITranslationConstants {
 
         }
         
+        String methodName = MethodTranslator.getMethodName(method);
 //        addCommand(new BPLAssumeCommand(isEqual(stack(var("place")), var(TranslationController.buildPlace(getProcedureName(method), true)))));
-        addCommand(new BPLAssumeCommand(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method)))));
+        addCommand(new BPLAssumeCommand(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX+methodName))));
 
         String currentLabel = blockLabel;
         
@@ -3007,9 +3019,9 @@ public class MethodTranslator implements ITranslationConstants {
          */
         private void translateInvokeInstruction(InvokeInstruction insn) {
             BCMethod invokedMethod = insn.getMethod();
-            JType[] params = invokedMethod.getRealParameterTypes();
+            JType[] invokedMethodParams = invokedMethod.getRealParameterTypes();
 
-            int first = handle.getFrame().getStackSize() - params.length; // first method argument on the stack
+            int first = handle.getFrame().getStackSize() - invokedMethodParams.length; // first method argument on the stack
             int stack = handle.getFrame().getStackSize();                 // stack size
 
             // Prepare arguments of method call
@@ -3037,20 +3049,29 @@ public class MethodTranslator implements ITranslationConstants {
                 BPLExpression sp = var(TranslationController.getStackPointer());
                 BPLExpression spMinus1 = sub(sp, intLiteral(1)); 
                 addAssignment(sp, add(sp, intLiteral(1)), "create new stack frame");
+                
+                // if the method is static, pass the class object as param0
+                if(invokedMethod.isStatic()){
+                    addAssignment(stack(var(paramVar(0, invokedMethod.getOwner()))), CodeGenerator.classRepr(typeRef(invokedMethod.getOwner())));
+                }
                 // Pass all other method arguments (the first of which refers to the "this" object
                 // if the method is not static).
-                String[] args = new String[params.length];
-                for (int i = 0; i < params.length; i++) {
-                    args[i] = stackVar(first + i, params[i]);
+                String[] args = new String[invokedMethodParams.length];
+                for (int i = 0; i < invokedMethodParams.length; i++) {
+                    args[i] = stackVar(first + i, invokedMethodParams[i]);
                     methodParams.add(new BPLVariableExpression(args[i]));
-                    if(params[i].isBaseType()){
-                        addAssert(isInRange(stack(spMinus1, var(args[i])), typeRef(params[i])));
-                    } else if(params[i].isClassType()){
-                        addAssert(isOfType(stack(spMinus1, var(args[i])), var(TranslationController.getHeap()), typeRef(params[i])));
+                    if(invokedMethodParams[i].isBaseType()){
+                        addAssert(isInRange(stack(spMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                    } else if(invokedMethodParams[i].isClassType()){
+                        addAssert(isOfType(stack(spMinus1, var(args[i])), var(TranslationController.getHeap()), typeRef(invokedMethodParams[i])));
                     } else {
                         //TODO array type
                     }
-                    addAssignment(stack(var(paramVar(i, params[i]))), stack(spMinus1, var(args[i])));
+                    if(invokedMethod.isStatic()){
+                        addAssignment(stack(var(paramVar(i+1, invokedMethodParams[i]))), stack(spMinus1, var(args[i])));
+                    } else {
+                        addAssignment(stack(var(paramVar(i, invokedMethodParams[i]))), stack(spMinus1, var(args[i])));
+                    }
                 }
 
                 /*
@@ -3192,12 +3213,12 @@ public class MethodTranslator implements ITranslationConstants {
                 //      }
 
                 //new code
-
-                String thisPlace = TranslationController.buildPlace(getProcedureName(method), getMethodName(invokedMethod));
+                String invokedMethodName = getMethodName(invokedMethod);
+                String thisPlace = TranslationController.buildPlace(getProcedureName(method), invokedMethodName);
                 addAssignment(stack(spMinus1, var("place")), var(thisPlace));
-                addAssignment(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod)));
+                addAssignment(stack(var("meth")), var(GLOBAL_VAR_PREFIX + invokedMethodName));
 
-                if(!invokedMethod.isConstructor()){
+                if(!invokedMethod.isConstructor() && !invokedMethod.isStatic()){
                     //                rawEndBlock(TranslationController.getCheckLabel());
                     String boundaryLabel = blockLabel + "_boundary";
                     String internLabel =  blockLabel + "_intern";
@@ -3220,7 +3241,7 @@ public class MethodTranslator implements ITranslationConstants {
                     BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
                     addAssume(exists(tVar, 
                             logicalAnd(
-                                    memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()), var(TranslationController.getHeap()))),
+                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(TranslationController.getHeap()))),
                                     libType(var(t))
                                     )
                             ));
@@ -3236,14 +3257,14 @@ public class MethodTranslator implements ITranslationConstants {
                     startBlock(boundaryLabel);
                     addAssume(exists(tVar, 
                             logicalAnd(
-                                    memberOf(var(GLOBAL_VAR_PREFIX+getMethodName(invokedMethod)), var(t), typ(stack(receiver()), var(TranslationController.getHeap()))),
+                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(TranslationController.getHeap()))),
                                     logicalNot(libType(var(t)))
                                     )
                             ));
                     addAssume(heap(stack(receiver()), var("createdByCtxt")));
                     //TODO more detailed information about the type here
                     rawEndBlock(TranslationController.getCheckLabel());
-                } else {
+                } else if(invokedMethod.isConstructor()) {
                     //the invoked method is a constructor of an internal type
                     first = first - 1; //the stack index is one off if we have a constructor
                     
@@ -3255,6 +3276,16 @@ public class MethodTranslator implements ITranslationConstants {
                     addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("createdByCtxt")))); //we hace constructed the object on our own
                     addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("exposed")))); //the object did not yet cross the boundary
                     
+                    BPLBasicBlock block = new BPLBasicBlock(
+                            TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+                            commands.toArray(new BPLCommand[commands.size()]),
+                            transCmd
+                            );
+                    blocks.add(block);
+                } else { //method is static
+                    BPLTransferCommand transCmd = new BPLGotoCommand(TranslationController.prefix(getProcedureName(invokedMethod)));
+                    transCmd.addComment("static methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
+                    transCmd.addComment("Sourceline: "+handle.getSourceLine());
                     BPLBasicBlock block = new BPLBasicBlock(
                             TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
                             commands.toArray(new BPLCommand[commands.size()]),
@@ -3273,7 +3304,7 @@ public class MethodTranslator implements ITranslationConstants {
                     addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("createdByCtxt")))); //we hace constructed the object on our own
                     addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("exposed")))); //the object did not yet cross the boundary
                 }
-                addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(invokedMethod))));
+                addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + invokedMethodName)));
                 
                 if(hasReturnValue){
                     if(retType.isBaseType()){
@@ -3300,14 +3331,21 @@ public class MethodTranslator implements ITranslationConstants {
                 }
                 
                 // type information of the method parameters
-                for(int i=0; i<method.getRealParameterTypes().length; i++){
-                    elemType = method.getRealParameterTypes()[i];
-                    if(elemType.isBaseType()){
-                        addAssume(isInRange(stack(var(paramVar(i, elemType))), typeRef(elemType)));
-                        addAssignment(stack(var(localVar(i, elemType))), stack(var(paramVar(i, elemType))));
+                JType[] params = new JType[method.getParameterCount() + 1];
+                params[0] = method.getOwner();
+                System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
+                for(int i=0; i<params.length; i++){
+                    if(params[i].isBaseType()){
+                        addAssume(isInRange(stack(var(paramVar(i, params[i]))), typeRef(params[i])));
                     } else {
-                        addAssume(isOfType(stack(var(paramVar(i, elemType))), var(TranslationController.getHeap()), typeRef(elemType)));
-                        addAssignment(stack(var(localVar(i, elemType))), stack(var(paramVar(i, elemType))));
+                        addAssume(isOfType(stack(var(paramVar(i, params[i]))), var(TranslationController.getHeap()), typeRef(params[i])));
+                    }
+                    if(method.isStatic()){
+                        if(i>0){
+                            addAssignment(stack(var(localVar(i-1, params[i]))), stack(var(paramVar(i, params[i]))));
+                        }
+                    } else {
+                        addAssignment(stack(var(localVar(i, params[i]))), stack(var(paramVar(i, params[i]))));
                     }
                 }
                 

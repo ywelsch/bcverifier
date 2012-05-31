@@ -219,6 +219,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             methodBlocks.addAll(libraryDefinition2.getMethodBlocks());
 
             // insert all method definition axioms
+            ///////////////////////////////////////
             for (String className : TranslationController.methodDefinitions()
                     .keySet()) {
                 Set<String> methodNames = TranslationController
@@ -448,7 +449,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 localVariables.add(new BPLVariableDeclaration(var));
             }
             
-            ///////////////////////////////////////
             // add variables for loop unroll checking
             //////////////////////////////////////
             localVariables.add(new BPLVariableDeclaration(unrollCount1Var));
@@ -510,13 +510,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             // invariant
             procAssumes.addAll(invAssumes);
 
-            // ///////////////////////////////////////////
             // relation between lib1 and lib2
             // ///////////////////////////////////////////
             procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")),
                     stack2(var("meth")))));
 
-            // ///////////////////////////////////////
             // relate all parameters from the outside
             // ///////////////////////////////////////
             for (BPLVariable var : TranslationController.stackVariables()
@@ -563,7 +561,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             procAssumes.add(new BPLAssumeCommand(nonNull(stack1(receiver()))));
             procAssumes.add(new BPLAssumeCommand(nonNull(stack2(receiver()))));
             
-            // ///////////////////////////////////////////
             // relation between lib1 and lib2
             // ///////////////////////////////////////////
             procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var("meth")),
@@ -601,12 +598,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                     logicalNot(heap2(stack2(receiver()), var("exposed"))))
                             )
                     );
-//            procAssumes.add(
-//                    new BPLAssumeCommand(relNull(
-//                            stack1(receiver()),
-//                            stack2(receiver()), var("related")))
-//                    );
-            //TODO does not work, because related objects have to be exposed, but these objects are not yet exposed
             
             // invariant
             procAssumes.addAll(invAssumes);
@@ -621,7 +612,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var("heap2"))));
             }
             
-            // ///////////////////////////////////////
             // relate all parameters from the outside
             // ///////////////////////////////////////
             Pattern paramRefPattern = Pattern.compile(PARAM_VAR_PREFIX + "(\\d+)_r");
@@ -670,9 +660,13 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             //TODO maybe add consistency check useHavoc[stack1[sp1][place]] <=> useHavoc[stack2[sp2][place]] 
             procAssumes.add(new BPLAssumeCommand(logicalNot(useHavoc(stack1(sp1MinusOne, var("place"))))));
             procAssumes.add(new BPLAssumeCommand(logicalNot(useHavoc(stack2(sp2MinusOne, var("place"))))));
+            
+            // can not return to a static method call site
+            //////////////////////////////////////////////
+            procAssumes.add(new BPLAssumeCommand(logicalNot(CodeGenerator.isStaticMethod(stack1(var("meth"))))));
 
             BPLExpression zero = new BPLIntLiteral(0);
-            // ///////////////////////////////////////////
+            
             // relation of the called methods (context)
             // ///////////////////////////////////////////
             assumeCmd = new BPLAssumeCommand(isEqual(stack1(var("meth")),
@@ -690,7 +684,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     stack2(zero, receiver())));
             assumeCmd
                     .addComment("The receiver and all parameters where initially related.");
-            // ///////////////////////////////////////
+            
             // relate all parameters from the outside
             // ///////////////////////////////////////
             for (BPLVariable var : TranslationController.stackVariables()
@@ -733,7 +727,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             // invariant
             procAssumes.addAll(invAssumes);
 
-            // ///////////////////////////////////////
             // relate all parameters from the outside
             // ///////////////////////////////////////
             for (BPLVariable var : TranslationController.stackVariables()
@@ -890,18 +883,21 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     preMethodCommands.add(new BPLAssumeCommand(isEqual(
                             stack(var("place")), var(TranslationController
                                     .buildPlace(proc.getName(), true)))));
+                    
                     preMethodCommands
-                            .add(new BPLAssumeCommand(isEqual(
-                                    stack(var("meth")),
-                                    var(GLOBAL_VAR_PREFIX
-                                            + MethodTranslator
-                                                    .getMethodName(method)))));
-                    preMethodCommands.add(new BPLAssumeCommand(memberOf(
+                    .add(new BPLAssumeCommand(isEqual(
+                            stack(var("meth")),
                             var(GLOBAL_VAR_PREFIX
-                                    + MethodTranslator.getMethodName(method)),
-                            var(GLOBAL_VAR_PREFIX + classType.getName()),
-                            typ(stack(receiver()),
-                                    var(TranslationController.getHeap())))));
+                                    + MethodTranslator
+                                    .getMethodName(method)))));
+                    if(!method.isStatic()){
+                        preMethodCommands.add(new BPLAssumeCommand(memberOf(
+                                var(GLOBAL_VAR_PREFIX
+                                        + MethodTranslator.getMethodName(method)),
+                                        var(GLOBAL_VAR_PREFIX + classType.getName()),
+                                        typ(stack(receiver()),
+                                                var(TranslationController.getHeap())))));
+                    }
 
                     // preMethodCommands.add(new
                     // BPLAssumeCommand(isCallable(typ(stack(var(PARAM_VAR_PREFIX
