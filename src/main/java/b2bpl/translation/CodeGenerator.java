@@ -1059,7 +1059,15 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, meth);
     }
     
+    public static BPLExpression isStaticMethod(BPLExpression meth){
+        return new BPLFunctionApplication(IS_STATIC_METHOD_FUNC, meth);
+    }
     
+    
+    
+    public static BPLExpression useHavoc(BPLExpression address){
+        return new BPLArrayExpression(var(USE_HAVOC), address);
+    }
     
     public static BPLExpression heap1(BPLExpression exp1, BPLExpression exp2){
         return new BPLArrayExpression(var("heap1"), exp1, exp2);

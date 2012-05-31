@@ -22,7 +22,6 @@ import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLFunctionParameter;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLHavocCommand;
-import b2bpl.bpl.ast.BPLIfCommand;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
@@ -35,6 +34,7 @@ import b2bpl.bpl.ast.BPLPartialOrderExpression;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLQuantifierExpression;
+import b2bpl.bpl.ast.BPLRawCommand;
 import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLRequiresClause;
 import b2bpl.bpl.ast.BPLReturnCommand;
@@ -143,7 +143,7 @@ public interface IBPLVisitor<R> {
 
   R visitParameterizedType(BPLParameterizedType type);
 
-  R visitIfCommand(BPLIfCommand cmd);
-
   R visitArrayAssignment(BPLArrayAssignment bplArrayAssignment);
+
+  R visitRawCommand(BPLRawCommand bplRawCommand);
 }

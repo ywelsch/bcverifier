@@ -1,0 +1,3 @@
+(forall o1,o2: Ref :: Obj(heap1, o1) && Obj(heap2, o2) && RefOfType(o1, heap1, $CallTest) && RefOfType(o2, heap2, $CallTest) && related[o1, o2] ==> RelNull(heap1[o1, $CallTest.w], heap2[o2, $CallTest.w], related))
+(sp1 > 0 && stack1[sp1 - 1][place] == lib1_CallTest.set_get#java.lang.Object0) ==> (stack1[sp1 - 1][stack0_r] != null) // "this" was loaded on the stack before call
+(sp2 > 0 && stack2[sp2 - 1][place] == lib2_CallTest.set_get#java.lang.Object0) ==> (stack2[sp2 - 1][stack0_r] != null) // "this" was loaded on the stack before call

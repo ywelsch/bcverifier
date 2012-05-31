@@ -29,7 +29,6 @@ import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLFunctionParameter;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLHavocCommand;
-import b2bpl.bpl.ast.BPLIfCommand;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
@@ -43,6 +42,7 @@ import b2bpl.bpl.ast.BPLPartialOrderExpression;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLQuantifierExpression;
+import b2bpl.bpl.ast.BPLRawCommand;
 import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLRequiresClause;
 import b2bpl.bpl.ast.BPLReturnCommand;
@@ -678,33 +678,15 @@ public class BPLPrinter implements IBPLVisitor<Object> {
     return null;
   }
 
-public Object visitIfCommand(BPLIfCommand cmd) {
-    print("if ");
-    print('(');
-    cmd.getPredicate().accept(this);
-    print(") {");
-    printNewLine();
-    for(BPLCommand c : cmd.getThenBranch()){
-        c.accept(this);
-        printNewLine();
-    }
-    print('}');
-    if(cmd.getElseBranch().size()>0) {
-        print(" else {");
-        printNewLine();
-        for(BPLCommand c : cmd.getThenBranch()){
-            c.accept(this);
-            printNewLine();
-        }
-        print('}');
-    }
-    return null;
-}
-
 public Object visitArrayAssignment(BPLArrayAssignment bplArrayAssignment) {
     printList(bplArrayAssignment.getIndices());
     print(" := ");
     bplArrayAssignment.getRight().accept(this);
+    return null;
+}
+
+public Object visitRawCommand(BPLRawCommand bplRawCommand) {
+    print(bplRawCommand.getCommandString());
     return null;
 }
 }

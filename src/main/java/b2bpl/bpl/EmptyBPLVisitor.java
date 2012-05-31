@@ -22,7 +22,6 @@ import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLFunctionParameter;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLHavocCommand;
-import b2bpl.bpl.ast.BPLIfCommand;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
@@ -35,6 +34,7 @@ import b2bpl.bpl.ast.BPLPartialOrderExpression;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLQuantifierExpression;
+import b2bpl.bpl.ast.BPLRawCommand;
 import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLRequiresClause;
 import b2bpl.bpl.ast.BPLReturnCommand;
@@ -277,12 +277,12 @@ public R visitTypeAlias(BPLTypeAlias declaration) {
     return null;
 }
 
-public R visitIfCommand(BPLIfCommand cmd) {
+public R visitArrayAssignment(BPLArrayAssignment bplArrayAssignment) {
     // do nothing
     return null;
 }
 
-public R visitArrayAssignment(BPLArrayAssignment bplArrayAssignment) {
+public R visitRawCommand(BPLRawCommand bplRawCommand) {
     // do nothing
     return null;
 }

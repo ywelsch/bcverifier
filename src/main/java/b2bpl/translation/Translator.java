@@ -37,6 +37,7 @@ import static b2bpl.translation.CodeGenerator.isMemberlessType;
 import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isOfType;
 import static b2bpl.translation.CodeGenerator.isStaticField;
+import static b2bpl.translation.CodeGenerator.isStaticMethod;
 import static b2bpl.translation.CodeGenerator.isSubtype;
 import static b2bpl.translation.CodeGenerator.isValueType;
 import static b2bpl.translation.CodeGenerator.less;
@@ -279,7 +280,8 @@ public class Translator implements ITranslationConstants {
         BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
         for (JClassType type : types) {
             for (BCMethod method : type.getMethods()) {
-                final String methodName = GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method);
+                final String methodName;
+                methodName = GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method);
                 if (!method.isAbstract()
                         && !method.isNative()
                         && !method.isSynthetic()) {
@@ -292,6 +294,11 @@ public class Translator implements ITranslationConstants {
                     }
 //                    declarations.add(new BPLAxiom(new BPLFunctionApplication(DEFINES_METHOD, typeRef(type), var(methodName))));
                     TranslationController.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
+                    if(method.isStatic()){
+                        addAxiom(isStaticMethod(var(methodName)));
+                    } else {
+                        addAxiom(logicalNot(isStaticMethod(var(methodName))));
+                    }
                     if(method.isPublic()){
                         addAxiom(new BPLFunctionApplication(IS_CALLABLE_FUNC, typeRef(type), var(methodName)));
                     } else {
@@ -684,6 +691,9 @@ public class Translator implements ITranslationConstants {
 
             addFunction(IS_STATIC_FIELD_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), BPLBuiltInType.BOOL);
             addAxiom(logicalNot(isStaticField(var(alloc))));
+            addAxiom(logicalNot(isStaticField(var(exposed))));
+            addAxiom(logicalNot(isStaticField(var(createdByCtxt))));
+            addAxiom(logicalNot(isStaticField(var(dynType))));
 
 
 
@@ -1314,7 +1324,10 @@ public class Translator implements ITranslationConstants {
                     isEquiv(internal(var(c), var(f), var(heap)), 
                             forall(refVar, implies(
                                     logicalAnd(obj(var(heap), var(r)), refOfType(var(r), var(heap), var(c))),
-                                    logicalNot(new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(createdByCtxt)))
+                                    logicalAnd(
+                                            logicalNot(new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(createdByCtxt))),
+                                            logicalNot(new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(exposed)))
+                                    )
                                     ))
                             )));
 
@@ -1498,6 +1511,9 @@ public class Translator implements ITranslationConstants {
                         ));
             }
             
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(ITranslationConstants.USE_HAVOC, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
+            
+            addFunction(ITranslationConstants.IS_STATIC_METHOD_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             
             flushPendingTheory(); //TODO this is needed at the moment to generate information about the long values (which should be printed into the program code directly)
         }
