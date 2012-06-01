@@ -33,7 +33,7 @@ public class HomePage extends WebPage {
 		add(new Label("version", new Configuration().getVersionString()));
 		add(new LibForm("libForm"));
 		add(new Label("output", new PropertyModel(this, "output")));
-		add(new TextArea<String>("boogieinput", new PropertyModel(HomePage.this, "boogieinput")).setType(String.class));
+		add(new AceTextArea<String>("boogieinput", "taboogieinput", "connectInv", new PropertyModel(HomePage.this, "boogieinput")).setType(String.class));
     }
     
     public String getOutput() {
@@ -79,9 +79,9 @@ public class HomePage extends WebPage {
 	public class LibForm extends Form {
 		public LibForm(String id) {
 			super(id);
-			add(new TextArea<String>("lib1", new PropertyModel(HomePage.this, "lib1")).setType(String.class));
-			add(new TextArea<String>("lib2", new PropertyModel(HomePage.this, "lib2")).setType(String.class));
-			add(new TextArea<String>("inv", new PropertyModel(HomePage.this, "inv")).setType(String.class));
+			add(new AceTextArea<String>("lib1", "talib1", "connectLib", new PropertyModel(HomePage.this, "lib1")).setType(String.class));
+			add(new AceTextArea<String>("lib2", "talib2", "connectLib", new PropertyModel(HomePage.this, "lib2")).setType(String.class));
+			add(new AceTextArea<String>("inv",  "tainv", "connectInv", new PropertyModel(HomePage.this, "inv")).setType(String.class));
 		}
 		
 		@Override
