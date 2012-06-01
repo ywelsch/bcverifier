@@ -322,7 +322,9 @@ public class Translator implements ITranslationConstants {
             libTypeExpressions.add(isEqual(var(t), typeRef(type)));
             addAxiom(forall(tVar, isEquiv(classExtends(typeRef(type), var(t)), isEqual(var(t), typeRef(type.getSupertype())))));
         }
-        addAxiom(forall(tVar, isEquiv(libType(var(t)), logicalOr(libTypeExpressions.toArray(new BPLExpression[libTypeExpressions.size()])))));
+        if(libTypeExpressions.size() > 0){
+            addAxiom(forall(tVar, isEquiv(libType(var(t)), logicalOr(libTypeExpressions.toArray(new BPLExpression[libTypeExpressions.size()])))));
+        }
 
         return procedures;
     }
@@ -1430,15 +1432,12 @@ public class Translator implements ITranslationConstants {
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack1, new BPLTypeName(STACK_TYPE), wellformedStack(var(stack1), var(sp1), var(heap1)))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack2, new BPLTypeName(STACK_TYPE), wellformedStack(var(stack2), var(sp2), var(heap2)))));
 
-            addConstants(new BPLVariable(thisName, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
-
             addFunction(WELLFORMED_STACK_FUNC, new BPLTypeName(STACK_TYPE), new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     stackVar, spVar, heapVar,
                     isEquiv(wellformedStack(var(stack), var(sp), var(heap)),
                     logicalAnd(
                             forall(pVar, vVar, implies(logicalAnd(lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp))), new BPLArrayExpression(var(heap), new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), var(alloc)))),
-                            forall(pVar, implies( logicalAnd( lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp)) ), obj(var(heap), new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(thisName)) ) )),
                             forall(pVar, vVar, implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), nullLiteral()))),
                             forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), intLiteral(0)))),
                             forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.BOOL)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), BPLBoolLiteral.FALSE)))
