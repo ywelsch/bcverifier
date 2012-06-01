@@ -8,6 +8,36 @@
 	rel='stylesheet' type='text/css' />
 <link rel="stylesheet" href="style.css" type="text/css" media="screen"
 	title="Stylesheet" />
+<script src="ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="theme-cobalt.js" type="text/javascript" charset="utf-8"></script>
+<script src="mode-java.js" type="text/javascript" charset="utf-8"></script>
+<script>
+function connectLib(libname,talibname) {
+	var lib1editor = ace.edit(libname);
+	lib1editor.setTheme("ace/theme/cobalt");
+	 var JavaMode = require("ace/mode/java").Mode;
+	    lib1editor.getSession().setMode(new JavaMode());
+	    lib1editor.renderer.setShowGutter(false);
+	    var lib1textarea = document.getElementById(talibname);
+	    lib1editor.getSession().setValue(lib1textarea.value);
+	    lib1editor.getSession().on('change', function(){
+	      lib1textarea.value = lib1editor.getSession().getValue();
+	      lib1editor.getSession().getDocument().getLength() * lib1editor.renderer.lineHeight + lib1editor.renderer.scrollBar.getWidth() 
+	    });
+}
+function connectInv(libname,talibname) {
+	var lib1editor = ace.edit(libname);
+	lib1editor.setTheme("ace/theme/cobalt");
+	 //var JavaMode = require("ace/mode/java").Mode; // https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode
+	    //lib1editor.getSession().setMode(new JavaMode());
+	    lib1editor.renderer.setShowGutter(false);
+	    var lib1textarea = document.getElementById(talibname);
+	    lib1editor.getSession().setValue(lib1textarea.value);
+	    lib1editor.getSession().on('change', function(){
+	      lib1textarea.value = lib1editor.getSession().getValue();
+	    });
+}
+</script>
 </head>
 <body>
 	<div id="hd">
@@ -21,23 +51,49 @@
 	</div>
 	<div id="bd">
 		<form wicket:id="libForm" id="libForm">
+		<div id="lib1col">
 			<h2>First library:</h2>
 			<p>
-				<textarea wicket:id="lib1">This is a comment</textarea>
+				<textarea class="hiddeninput" id="talib1" wicket:id="lib1">public class C { }</textarea>
+				<div id="lib1"></div>
 			</p>
+		</div>
+		<div id="lib2col">
 			<h2>Second library:</h2>
 			<p>
-				<textarea wicket:id="lib2">This is a comment</textarea>
+				<textarea class="hiddeninput" id="talib2" wicket:id="lib2">public class C { }</textarea>
+				<div id="lib2"></div>
 			</p>
+		</div>
+		<div id="invcol">
 			<h2>Invariant:</h2>
 			<p>
-				<textarea wicket:id="inv">This is a comment</textarea>
+				<textarea class="hiddeninput" id="tainv" wicket:id="inv">true</textarea>
+				<div id="inv"></div>
 			</p>
-			<br /> <input type="submit" value="Submit" id="formsubmit" />
+		</div>
+		<div id ="check">
+			<input type="submit" value="Check" id="formsubmit" />
+		</div>
 		</form>
+		<div id ="output">
+		<h2>Output:</h2>
 		<p>
+			<h3>Output message:</h3>
 			<textfield wicket:id="output">Output</textfield>
+			<h3>Generated BPL file:</h3>
+			<textarea class="hiddeninput" id="taboogieinput" wicket:id="boogieinput">true</textarea>
+			<div id="boogieinput"></div>
 		</p>
+		</div>
+		<script>
+		window.onload = function() {
+				connectLib("lib1","talib1");
+				connectLib("lib2","talib2");
+				connectInv("inv","tainv");
+				connectInv("boogieinput","taboogieinput");
+			};
+			</script>
 	</div>
 	<div id="ft"></div>
 </body>

@@ -7,6 +7,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
@@ -26,11 +27,13 @@ public class HomePage extends WebPage {
 	private String lib1;
 	private String lib2;
 	private String inv;
+	private String boogieinput;
 
     public HomePage(final PageParameters parameters) {
 		add(new Label("version", new Configuration().getVersionString()));
 		add(new LibForm("libForm"));
 		add(new Label("output", new PropertyModel(this, "output")));
+		add(new TextArea<String>("boogieinput", new PropertyModel(HomePage.this, "boogieinput")).setType(String.class));
     }
     
     public String getOutput() {
@@ -65,6 +68,14 @@ public class HomePage extends WebPage {
 		this.inv = inv;
 	}
 
+	public String getBoogieinput() {
+		return boogieinput;
+	}
+
+	public void setBoogieinput(String boogieinput) {
+		this.boogieinput = boogieinput;
+	}
+
 	public class LibForm extends Form {
 		public LibForm(String id) {
 			super(id);
@@ -76,6 +87,8 @@ public class HomePage extends WebPage {
 		@Override
 		protected void onSubmit() {
 			try {
+				HomePage.this.setOutput("");
+				HomePage.this.setBoogieinput("");
 				compile();
 				HomePage.this.setOutput(BoogieRunner.getLastMessage());
 			} catch (IOException e) {
@@ -101,13 +114,16 @@ public class HomePage extends WebPage {
 			File bplDir = new File(dir, "bpl");
 			File invFile = new File(bplDir, "inv.bpl");
 			FileUtils.writeStringToFile(invFile, getInv());
+			File output = new File(bplDir, "output.bpl");
 			Configuration config = new Configuration();
 			config.setLibraries(oldDir, newDir);
 			config.setInvariant(invFile);
+			config.setOutput(output);
 			Library library = new Library(config);
 			LibraryCompiler.compile(config.library1());
 			LibraryCompiler.compile(config.library2());
 			library.translate();
+			HomePage.this.setBoogieinput(FileUtils.readFileToString(output));
 			library.check();
 		}
     }
