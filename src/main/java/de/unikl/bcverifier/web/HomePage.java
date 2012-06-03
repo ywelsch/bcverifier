@@ -113,7 +113,7 @@ public class HomePage extends WebPage {
 		private String linkify(String lastMessage) {
 			StringBuilder result = new StringBuilder(Strings.escapeMarkup(lastMessage));
 			Matcher m = PATTERN.matcher(result.toString());
-    		return m.replaceAll("<a href=\"#\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$2,$3);\">$1($2,$3):</a>");
+    		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$2,$3);\">$1($2,$3):</a>");
 		}
 
 		private void compile() throws IOException, TranslationException, CompileException {

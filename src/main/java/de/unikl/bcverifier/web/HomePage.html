@@ -12,41 +12,58 @@
 <script src="theme-cobalt.js" type="text/javascript" charset="utf-8"></script>
 <script src="mode-java.js" type="text/javascript" charset="utf-8"></script>
 <script>
-function connectLib(libname,talibname) {
+function updateEditorSize(editor,editorwrap,container) {
+	var newHeight = editor.getSession().getDocument().getLength() * editor.renderer.lineHeight + editor.renderer.scrollBar.getWidth();
+    editorwrap.style.height = newHeight + "px";
+    container.style.height = newHeight + "px";
+    editor.resize();
+}
+function connectLib(libname,talibname,container) {
 	var editor = ace.edit(libname);
+	var editorwrap = document.getElementById(libname);
+	var containerid = document.getElementById(container);
+	//var initialheight = editorwrap.style.height;
 	editor.setTheme("ace/theme/cobalt");
 	 var JavaMode = require("ace/mode/java").Mode;
 	    editor.getSession().setMode(new JavaMode());
 	    editor.renderer.setShowGutter(false);
-	    var lib1textarea = document.getElementById(talibname);
-	    editor.getSession().setValue(lib1textarea.value);
+	    var textarea = document.getElementById(talibname);
+	    editor.getSession().setValue(textarea.value);
+	    updateEditorSize(editor,editorwrap,textarea);
 	    editor.getSession().on('change', function(){
-	      lib1textarea.value = editor.getSession().getValue();
-	      editor.getSession().getDocument().getLength() * editor.renderer.lineHeight + editor.renderer.scrollBar.getWidth() 
+	      textarea.value = editor.getSession().getValue();
+	      updateEditorSize(editor,editorwrap,textarea);
 	    });
 }
-function connectInv(libname,talibname) {
+function connectInv(libname,talibname,container) {
 	var editor = ace.edit(libname);
+	var editorwrap = document.getElementById(libname);
+	var containerid = document.getElementById(container);
 	editor.setTheme("ace/theme/cobalt");
 	 //var JavaMode = require("ace/mode/java").Mode; // https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode
 	    //editor.getSession().setMode(new JavaMode());
 	    editor.renderer.setShowGutter(false);
-	    var lib1textarea = document.getElementById(talibname);
-	    editor.getSession().setValue(lib1textarea.value);
+	    var textarea = document.getElementById(talibname);
+	    editor.getSession().setValue(textarea.value);
+	    updateEditorSize(editor,editorwrap,textarea);
 	    editor.getSession().on('change', function(){
-	      lib1textarea.value = editor.getSession().getValue();
+	      textarea.value = editor.getSession().getValue();
+	      updateEditorSize(editor,editorwrap,textarea);
 	    });
 }
-function connectBoogieInput(libname,talibname) {
+function connectBoogieInput(libname,talibname,container) {
 	var editor = ace.edit(libname);
+	var editorwrap = document.getElementById(libname);
 	editor.setTheme("ace/theme/cobalt");
 	 //var JavaMode = require("ace/mode/java").Mode; // https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode
 	    //editor.getSession().setMode(new JavaMode());
 	    editor.renderer.setShowGutter(false);
-	    var lib1textarea = document.getElementById(talibname);
-	    editor.getSession().setValue(lib1textarea.value);
+	    var textarea = document.getElementById(talibname);
+	    editor.getSession().setValue(textarea.value);
+	    //updateEditorSize(editor,editorwrap);
 	    editor.getSession().on('change', function(){
-	      lib1textarea.value = editor.getSession().getValue();
+	      textarea.value = editor.getSession().getValue();
+	      //updateEditorSize(editor,editorwrap);
 	    });
 	 window.boogieinput = editor;
 }
@@ -67,37 +84,37 @@ function acegoto(editor,line,column) {
 	</div>
 	<div id="bd">
 		<form wicket:id="libForm" id="libForm">
-		<div id="lib1col">
+		<table id="maintable">
+		<tr>
+			<td>
 			<h2>First library:</h2>
-			<p>
-				<span wicket:id="lib1"></span>
-			</p>
-		</div>
-		<div id="lib2col">
+			</td>
+			<td>
 			<h2>Second library:</h2>
-			<p>
+			</td>
+		</tr>
+		<tr>
+			<td id="lib1td">
+				<span wicket:id="lib1" height="300px"></span>
+			</td>
+			<td id="lib2td">
 				<span wicket:id="lib2"></span>
-			</p>
-		</div>
-		<div id="invcol">
-			<h2>Invariant:</h2>
-			<p>
+			</td>
+		</tr>
+		</table>
+		<br/>
+			<h2 align="center">Coupling invariant:</h2>
 				<span wicket:id="inv"></span>
-			</p>
-		</div>
 		<div id ="check">
 			<input type="submit" value="Check" id="formsubmit" />
 		</div>
 		</form>
-		<div id ="output">
+		<br/>
 		<h2>Output:</h2>
-		<p>
-			<h3>Output message:</h3>
 			<span wicket:id="output">Output</span>
-			<h3>Generated BPL file:</h3>
+			<a name="boogieinputbegin"><h3>Generated BPL file:</h3></a>
 			<span wicket:id="boogieinput"></span>
-		</p>
-		</div>
+		<br/>
 		
 	</div>
 	<div id="ft"></div>

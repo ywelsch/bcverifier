@@ -35,6 +35,9 @@ body { margin:0;padding:0;}
 	margin-left : 50px;
 	margin-right : 5px;
 }
+#maintable {
+	width:100%;
+}
 body { margin-top : 0; padding-top : 0;}
 #logo, #logo h1 { margin-top : 0; padding-top : 0;}
 #bd {
@@ -54,10 +57,8 @@ body { margin-top : 0; padding-top : 0;}
 	box-shadow: 0px 0px 10px #888;
 }
 div.lib1, div.lib2, div.inv {
-	position: absolute;
-	top : 60px;
     width: 300px;
-    height: 220px;
+    height: 50px;
 }
 div.boogieinput {
     width: 610px;
@@ -65,29 +66,23 @@ div.boogieinput {
 }
 #lib1col, #lib2col {
 	z-index : 2;
-	position: absolute;
 	top : 75px;
 }
 #formsubmit {
 	font-family: 'Yanone Kaffeesatz', arial, serif;
-	
 	font-size: 20pt;
 	box-shadow: 0px 0px 10px #888;
 }
 #check {
-	z-index : 3;
-	position : absolute;
-	top : 300px;
-	left : 400px;
+	text-align:center;
 }
 div.inv {
+	left:100px;
 	width: 500px;
     height: 150px;
 }
 #invcol {
 	z-index : 2;
-	position: absolute;
-	top : 300px;
 	left : 100px;
 	display: block;
     margin-left: auto;
@@ -97,16 +92,6 @@ div.inv {
 	z-index : 3;
 	position : absolute;
 	top : 530px;
-}
-#lib1col {
-	top : 0px;
-	right : 50%;
-	left : 20px;
-}
-#lib2col {
-	top : 0px;
-	left: 50%;
-	right : 20px;
 }
 textarea.hiddeninput {
 	visibility: hidden;
