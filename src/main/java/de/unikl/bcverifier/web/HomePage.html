@@ -13,29 +13,45 @@
 <script src="mode-java.js" type="text/javascript" charset="utf-8"></script>
 <script>
 function connectLib(libname,talibname) {
-	var lib1editor = ace.edit(libname);
-	lib1editor.setTheme("ace/theme/cobalt");
+	var editor = ace.edit(libname);
+	editor.setTheme("ace/theme/cobalt");
 	 var JavaMode = require("ace/mode/java").Mode;
-	    lib1editor.getSession().setMode(new JavaMode());
-	    lib1editor.renderer.setShowGutter(false);
+	    editor.getSession().setMode(new JavaMode());
+	    editor.renderer.setShowGutter(false);
 	    var lib1textarea = document.getElementById(talibname);
-	    lib1editor.getSession().setValue(lib1textarea.value);
-	    lib1editor.getSession().on('change', function(){
-	      lib1textarea.value = lib1editor.getSession().getValue();
-	      lib1editor.getSession().getDocument().getLength() * lib1editor.renderer.lineHeight + lib1editor.renderer.scrollBar.getWidth() 
+	    editor.getSession().setValue(lib1textarea.value);
+	    editor.getSession().on('change', function(){
+	      lib1textarea.value = editor.getSession().getValue();
+	      editor.getSession().getDocument().getLength() * editor.renderer.lineHeight + editor.renderer.scrollBar.getWidth() 
 	    });
 }
 function connectInv(libname,talibname) {
-	var lib1editor = ace.edit(libname);
-	lib1editor.setTheme("ace/theme/cobalt");
+	var editor = ace.edit(libname);
+	editor.setTheme("ace/theme/cobalt");
 	 //var JavaMode = require("ace/mode/java").Mode; // https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode
-	    //lib1editor.getSession().setMode(new JavaMode());
-	    lib1editor.renderer.setShowGutter(false);
+	    //editor.getSession().setMode(new JavaMode());
+	    editor.renderer.setShowGutter(false);
 	    var lib1textarea = document.getElementById(talibname);
-	    lib1editor.getSession().setValue(lib1textarea.value);
-	    lib1editor.getSession().on('change', function(){
-	      lib1textarea.value = lib1editor.getSession().getValue();
+	    editor.getSession().setValue(lib1textarea.value);
+	    editor.getSession().on('change', function(){
+	      lib1textarea.value = editor.getSession().getValue();
 	    });
+}
+function connectBoogieInput(libname,talibname) {
+	var editor = ace.edit(libname);
+	editor.setTheme("ace/theme/cobalt");
+	 //var JavaMode = require("ace/mode/java").Mode; // https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode
+	    //editor.getSession().setMode(new JavaMode());
+	    editor.renderer.setShowGutter(false);
+	    var lib1textarea = document.getElementById(talibname);
+	    editor.getSession().setValue(lib1textarea.value);
+	    editor.getSession().on('change', function(){
+	      lib1textarea.value = editor.getSession().getValue();
+	    });
+	 window.boogieinput = editor;
+}
+function acegoto(editor,line,column) {
+	window.boogieinput.gotoLine(line,column-1);
 }
 </script>
 </head>
@@ -54,22 +70,19 @@ function connectInv(libname,talibname) {
 		<div id="lib1col">
 			<h2>First library:</h2>
 			<p>
-				<textarea class="hiddeninput" id="talib1" wicket:id="lib1">public class C { }</textarea>
-				<div id="lib1"></div>
+				<span wicket:id="lib1"></span>
 			</p>
 		</div>
 		<div id="lib2col">
 			<h2>Second library:</h2>
 			<p>
-				<textarea class="hiddeninput" id="talib2" wicket:id="lib2">public class C { }</textarea>
-				<div id="lib2"></div>
+				<span wicket:id="lib2"></span>
 			</p>
 		</div>
 		<div id="invcol">
 			<h2>Invariant:</h2>
 			<p>
-				<textarea class="hiddeninput" id="tainv" wicket:id="inv">true</textarea>
-				<div id="inv"></div>
+				<span wicket:id="inv"></span>
 			</p>
 		</div>
 		<div id ="check">
@@ -80,10 +93,9 @@ function connectInv(libname,talibname) {
 		<h2>Output:</h2>
 		<p>
 			<h3>Output message:</h3>
-			<textfield wicket:id="output">Output</textfield>
+			<span wicket:id="output">Output</span>
 			<h3>Generated BPL file:</h3>
-			<textarea class="hiddeninput" id="taboogieinput" wicket:id="boogieinput">true</textarea>
-			<div id="boogieinput"></div>
+			<span wicket:id="boogieinput"></span>
 		</p>
 		</div>
 		

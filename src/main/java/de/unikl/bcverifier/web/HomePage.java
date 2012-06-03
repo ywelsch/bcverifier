@@ -2,15 +2,19 @@ package de.unikl.bcverifier.web;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.basic.MultiLineLabel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
+import org.apache.wicket.util.string.Strings;
 
 import com.google.common.io.Files;
 
@@ -24,16 +28,19 @@ import de.unikl.bcverifier.boogie.BoogieRunner;
 public class HomePage extends WebPage {
 	private static final long serialVersionUID = 1L;
 	private String output;
-	private String lib1;
-	private String lib2;
-	private String inv;
+	private String lib1 = "public class C {\n  public int m() {\n    return 0;\n  }\n}";
+	private String lib2 = "public class C {\n  public int m() {\n    return 2 - 1;\n  }\n}";
+	private String inv = "true";
 	private String boogieinput;
+	
+	public static Pattern PATTERN = Pattern.compile(/*"\\s*" +*/ "(\\w*\\.bpl)\\((\\d*)\\,(\\d*)\\)\\:" /*+ ".*"*/);
+	AcePanel bipanel = new AcePanel("boogieinput", "connectBoogieInput", new PropertyModel<String>(HomePage.this, "boogieinput"));
 
     public HomePage(final PageParameters parameters) {
 		add(new Label("version", new Configuration().getVersionString()));
 		add(new LibForm("libForm"));
-		add(new Label("output", new PropertyModel(this, "output")));
-		add(new AceTextArea<String>("boogieinput", "taboogieinput", "connectInv", new PropertyModel(HomePage.this, "boogieinput")).setType(String.class));
+		add(new MultiLineLabel("output", new PropertyModel(this, "output")).setEscapeModelStrings(false));
+		add(bipanel);
     }
     
     public String getOutput() {
@@ -79,9 +86,9 @@ public class HomePage extends WebPage {
 	public class LibForm extends Form {
 		public LibForm(String id) {
 			super(id);
-			add(new AceTextArea<String>("lib1", "talib1", "connectLib", new PropertyModel(HomePage.this, "lib1")).setType(String.class));
-			add(new AceTextArea<String>("lib2", "talib2", "connectLib", new PropertyModel(HomePage.this, "lib2")).setType(String.class));
-			add(new AceTextArea<String>("inv",  "tainv", "connectInv", new PropertyModel(HomePage.this, "inv")).setType(String.class));
+			add(new AcePanel("lib1", "connectLib", new PropertyModel(HomePage.this, "lib1")));
+			add(new AcePanel("lib2", "connectLib", new PropertyModel(HomePage.this, "lib2")));
+			add(new AcePanel("inv",  "connectInv", new PropertyModel(HomePage.this, "inv")));
 		}
 		
 		@Override
@@ -90,7 +97,7 @@ public class HomePage extends WebPage {
 				HomePage.this.setOutput("");
 				HomePage.this.setBoogieinput("");
 				compile();
-				HomePage.this.setOutput(BoogieRunner.getLastMessage());
+				HomePage.this.setOutput(linkify(BoogieRunner.getLastMessage()));
 			} catch (IOException e) {
 				HomePage.this.setOutput(e.getMessage());
 				e.printStackTrace();
@@ -103,6 +110,12 @@ public class HomePage extends WebPage {
 			}
 		}
 		
+		private String linkify(String lastMessage) {
+			StringBuilder result = new StringBuilder(Strings.escapeMarkup(lastMessage));
+			Matcher m = PATTERN.matcher(result.toString());
+    		return m.replaceAll("<a href=\"#\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$2,$3);\">$1($2,$3):</a>");
+		}
+
 		private void compile() throws IOException, TranslationException, CompileException {
 			File dir = Files.createTempDir();
 			File oldDir = new File(dir, "old");
