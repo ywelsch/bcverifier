@@ -29,6 +29,12 @@ body { margin:0;padding:0;}
 	font-size:36pt;
 	display: inline;
 }
+#logo select {
+	margin-left : 50px;
+}
+#invtitle input {
+	margin-left : 150px;
+}
 #logo img { 
 	display:inline;
 	vertical-align: bottom;
@@ -37,6 +43,9 @@ body { margin:0;padding:0;}
 }
 #maintable {
 	width:100%;
+}
+#lib1td, #lib2td {
+	vertical-align: top;
 }
 body { margin-top : 0; padding-top : 0;}
 #logo, #logo h1 { margin-top : 0; padding-top : 0;}
@@ -56,29 +65,23 @@ body { margin-top : 0; padding-top : 0;}
 	-webkit-box-shadow: 0px 0px 10px #888;
 	box-shadow: 0px 0px 10px #888;
 }
-div.lib1, div.lib2, div.inv {
+div.inv, div.libclass {
     width: 300px;
     height: 50px;
 }
 div.boogieinput {
-    width: 610px;
+    width: 600px;
     height: 220px;
-}
-#lib1col, #lib2col {
-	z-index : 2;
-	top : 75px;
 }
 #formsubmit {
 	font-family: 'Yanone Kaffeesatz', arial, serif;
 	font-size: 20pt;
 	box-shadow: 0px 0px 10px #888;
-}
-#check {
-	text-align:center;
+	position: relative;
+	bottom: 10px;
 }
 div.inv {
-	left:100px;
-	width: 500px;
+	width: 600px;
     height: 150px;
 }
 #invcol {
@@ -97,12 +100,16 @@ textarea.hiddeninput {
 	visibility: hidden;
 }
 a, a:visited, a:hover, a:active {
-	color : #6493D2;
+	color : #092E67;
+}
+a.add, a.remove {
+	text-decoration:none;
 }
 h2 {
 	padding : 0; margin:0;
 	font-size:36pt;
 	color:#FF5500;
+	display: inline;
 }
 h3 {
 	padding : 0; margin:0;

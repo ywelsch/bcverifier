@@ -57,7 +57,7 @@ function connectBoogieInput(libname,talibname,container) {
 	editor.setTheme("ace/theme/cobalt");
 	 //var JavaMode = require("ace/mode/java").Mode; // https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode
 	    //editor.getSession().setMode(new JavaMode());
-	    editor.renderer.setShowGutter(false);
+	    //editor.renderer.setShowGutter(false);
 	    var textarea = document.getElementById(talibname);
 	    editor.getSession().setValue(textarea.value);
 	    //updateEditorSize(editor,editorwrap);
@@ -80,6 +80,10 @@ function acegoto(editor,line,column) {
 				BCVerifier
 				<wicket:container wicket:id="version">1.5-SNAPSHOT</wicket:container>
 			</h1>
+			<select wicket:id="examples">
+				<option>Some Example</option>
+				<option>Some Other Example</option>
+			</select>
 		</div>
 	</div>
 	<div id="bd">
@@ -95,27 +99,38 @@ function acegoto(editor,line,column) {
 		</tr>
 		<tr>
 			<td id="lib1td">
-				<span wicket:id="lib1" height="300px"></span>
+			<div wicket:id="lib1panel">
+  				<span wicket:id="lib1contents">
+					<span wicket:id="libclass" height="300px"></span>
+					<br/>
+				</span>
+				<a href="#" class="add" wicket:id="add1Row">+</a>
+				<a href="#" class="remove" wicket:id="remove1Row">-</a>
+			</div>
 			</td>
 			<td id="lib2td">
-				<span wicket:id="lib2"></span>
+			<div wicket:id="lib2panel">
+  				<span wicket:id="lib2contents">
+					<span wicket:id="libclass" height="300px"></span>
+					<br/>
+				</span>
+				<a href="#" class="add" wicket:id="add2Row">+</a>
+				<a href="#" class="remove" wicket:id="remove2Row">-</a>
+			</div>
 			</td>
 		</tr>
 		</table>
-		<br/>
-			<h2 align="center">Coupling invariant:</h2>
-				<span wicket:id="inv"></span>
-		<div id ="check">
+			<div id="invtitle">
+			<h2>Coupling invariant:</h2>
 			<input type="submit" value="Check" id="formsubmit" />
-		</div>
+			</div>
+			<span wicket:id="inv"></span>
 		</form>
 		<br/>
 		<h2>Output:</h2>
 			<span wicket:id="output">Output</span>
 			<a name="boogieinputbegin"><h3>Generated BPL file:</h3></a>
 			<span wicket:id="boogieinput"></span>
-		<br/>
-		
 	</div>
 	<div id="ft"></div>
 </body>
