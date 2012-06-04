@@ -1,4 +1,3 @@
-
 public class Cell {
     Object c;
     void set(Object o) {

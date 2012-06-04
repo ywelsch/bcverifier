@@ -1,4 +1,3 @@
-
 public class Cell {
     Object c1, c2;
     int n;
