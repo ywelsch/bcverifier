@@ -159,6 +159,11 @@ public class Configuration {
     public File configFile() {
     	return places;
     }
+    
+    public void setConfigFile(File configFile) {
+        this.places = configFile;
+    }
+    
     public String getVersionString() {
     	if (versionString == null) {
     		Properties prop = new Properties();

@@ -19,6 +19,8 @@ import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
 import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.nonNull;
+import static b2bpl.translation.CodeGenerator.oldHeap1;
+import static b2bpl.translation.CodeGenerator.oldHeap2;
 import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.relNull;
 import static b2bpl.translation.CodeGenerator.related;
@@ -425,7 +427,37 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             checkingCommand.add(new BPLAssumeCommand(
                     logicalAnd(useHavoc(stack1(sp1MinusOne, var("place"))), useHavoc(stack2(sp2MinusOne, var("place")))))
                     );
+            
+            // save away the old heaps
+            checkingCommand.add(new BPLAssignmentCommand(var("old_heap1"), var("heap1")));
+            checkingCommand.add(new BPLAssignmentCommand(var("old_heap2"), var("heap2")));
+            
             checkingCommand.add(new BPLHavocCommand(var("heap1"), var("heap2")));
+            
+            // the exposed and createdByCtxt flags have to be preserved for the invariant to be applicable
+            String sp = "sp";
+            BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
+            String v = "v";
+            BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
+            checkingCommand.add(new BPLAssumeCommand(
+                    forall(
+                            spVar, vVar,
+                            logicalAnd(
+                                    implies(oldHeap1(stack1(var(sp), var(v)), var("exposed")), heap1(stack1(var(sp), var(v)), var("exposed"))),
+                                    isEqual(oldHeap1(stack1(var(sp), var(v)), var("createdByCtxt")), heap1(stack1(var(sp), var(v)), var("createdByCtxt")))
+                            )
+                            )
+                    ));
+            checkingCommand.add(new BPLAssumeCommand(
+                    forall(
+                            spVar, vVar,
+                            logicalAnd(
+                                    implies(oldHeap2(stack2(var(sp), var(v)), var("exposed")), heap2(stack2(var(sp), var(v)), var("exposed"))),
+                                    isEqual(oldHeap2(stack2(var(sp), var(v)), var("createdByCtxt")), heap2(stack2(var(sp), var(v)), var("createdByCtxt")))
+                            )
+                            )
+                    ));
+            
             checkingCommand.addAll(invAssumes);
             
             // relate stack and heap again
@@ -455,6 +487,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             //////////////////////////////////////
             localVariables.add(new BPLVariableDeclaration(unrollCount1Var));
             localVariables.add(new BPLVariableDeclaration(unrollCount2Var));
+            
+            // add variables for saving away the old heaps
+            //////////////////////////////////////////////
+            localVariables.add(new BPLVariableDeclaration(new BPLVariable("old_heap1", new BPLTypeName(HEAP_TYPE))));
+            localVariables.add(new BPLVariableDeclaration(new BPLVariable("old_heap2", new BPLTypeName(HEAP_TYPE))));
 
             List<BPLCommand> procAssumes;
 
@@ -715,8 +752,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             }
             
             // assume the result of the method is not yet set
-            String sp = "sp";
-            BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
             procAssumes.add(new BPLAssumeCommand(
                     forall(spVar, 
                             implies(less(var(sp), var("sp1")), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )

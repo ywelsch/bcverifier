@@ -4,8 +4,4 @@ public class A {
 	public A(){
 		o = new O();
 	}
-
-	public O get() {
-		return o;
-	}
 }

@@ -75,6 +75,8 @@ public class LibraryTests {
         LabeledCSVParser parser;
         File testsFile;
         File invFile;
+        File preconditionsFile;
+        String precondFileName;
         String[] generatorFlags;
         int expectedErrorCount;
         int deadCodePoints;
@@ -86,11 +88,17 @@ public class LibraryTests {
             parser = new LabeledCSVParser(new CSVParser(FileUtils.openInputStream(testsFile)));
             while(parser.getLine() != null){
                 invFile = new File(libDir, parser.getValueByLabel("invariant_file"));
+                precondFileName = parser.getValueByLabel("preconditions_file");
+                if(!precondFileName.isEmpty()){
+                    preconditionsFile = new File(libDir, precondFileName);
+                } else {
+                    preconditionsFile = null;
+                }
                 generatorFlags = parser.getValueByLabel("flags").split("[ ]+");
                 expectedErrorCount = Integer.parseInt(parser.getValueByLabel("expected_errors"));
                 deadCodePoints = Integer.parseInt(parser.getValueByLabel("dead_code_points"));
                 loopUnrollCap = Integer.parseInt(parser.getValueByLabel("loop_unroll_cap"));
-                libTestCases.add($(libDir, invFile, generatorFlags, expectedErrorCount, deadCodePoints, loopUnrollCap));
+                libTestCases.add($(libDir, invFile, preconditionsFile, generatorFlags, expectedErrorCount, deadCodePoints, loopUnrollCap));
             }
         } catch(IOException e){
             Logger.getLogger(LibraryTests.class).warn("Could not open tests file for library "+libDir.getName());
@@ -99,7 +107,7 @@ public class LibraryTests {
     }
 	
 	@Test @Parameters(method = "librariesToCheck")
-	public void verifyLibrary(File dir, File invariant, String[] generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException {
+	public void verifyLibrary(File dir, File invariant, File preconditions, String[] generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException {
 		Configuration config = new Configuration();
 		JCommander parser = new JCommander();
 		parser.addObject(config);
@@ -115,6 +123,7 @@ public class LibraryTests {
 		File lib1 = new File(dir, "old");
 		File lib2 = new File(dir, "new");
 		config.setInvariant(invariant);
+		config.setConfigFile(preconditions);
 		config.setLibraries(lib1, lib2);
 		config.setOutput(specificationFile);
 		config.setAction(VerifyAction.VERIFY);
@@ -127,7 +136,7 @@ public class LibraryTests {
 	}
 	
 	@Test @Parameters(method = "librariesToCheck")
-    public void smokeTestLibrary(File dir, File invariant, String[] generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException, IOException {
+    public void smokeTestLibrary(File dir, File invariant, File preconditions, String[] generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException, IOException {
         Configuration config = new Configuration();
         JCommander parser = new JCommander();
         parser.addObject(config);
@@ -144,6 +153,7 @@ public class LibraryTests {
         File lib1 = new File(dir, "old");
         File lib2 = new File(dir, "new");
         config.setInvariant(invFile);
+        config.setConfigFile(preconditions);
         config.setLibraries(lib1, lib2);
         config.setNullChecks(false);
         config.setOutput(specificationFile);
