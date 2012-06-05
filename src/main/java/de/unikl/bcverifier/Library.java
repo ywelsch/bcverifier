@@ -138,24 +138,36 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         BPLVariable unrollCount2Var = new BPLVariable(unrollCount2, BPLBuiltInType.INT);
         BPLVariable maxLoopUnrollVar = new BPLVariable(MAX_LOOP_UNROLL, BPLBuiltInType.INT);
         
-        
-        List<String> invariants;
-        try {
-            invariants = FileUtils.readLines(config.invariant(), "UTF-8");
-        } catch (IOException ex) {
-            invariants = new ArrayList<String>();
-        }
         ArrayList<BPLCommand> invAssertions = new ArrayList<BPLCommand>();
         ArrayList<BPLCommand> invAssumes = new ArrayList<BPLCommand>();
         BPLCommand cmd;
-        for (String inv : invariants) {
-            if (inv.length() > 0 && !inv.matches("\\/\\/.*")) {
-                cmd = new BPLAssertCommand(var(inv));
-                cmd.addComment("invariant");
-                invAssertions.add(cmd);
-                cmd = new BPLAssumeCommand(var(inv));
-                cmd.addComment("invariant");
-                invAssumes.add(cmd);
+        if (config.isSingleFormulaInvariant()) {
+        	try {
+        		String inv = FileUtils.readFileToString(config.invariant(), "UTF-8");
+        		cmd = new BPLAssertCommand(var(inv));
+        		cmd.addComment("invariant");
+        		invAssertions.add(cmd);
+        		cmd = new BPLAssumeCommand(var(inv));
+        		cmd.addComment("invariant");
+        		invAssumes.add(cmd);
+        	} catch (IOException ex) {
+        		//TODO:
+        	}
+        } else {
+        	try {
+        		List<String> invariants = FileUtils.readLines(config.invariant(), "UTF-8");
+                for (String inv : invariants) {
+            		if (inv.length() > 0 && !inv.matches("\\/\\/.*")) {
+            			cmd = new BPLAssertCommand(var(inv));
+            			cmd.addComment("invariant");
+            			invAssertions.add(cmd);
+            			cmd = new BPLAssumeCommand(var(inv));
+            			cmd.addComment("invariant");
+            			invAssumes.add(cmd);
+            		}
+            	}
+            } catch (IOException ex) {
+            	//TODO:
             }
         }
 

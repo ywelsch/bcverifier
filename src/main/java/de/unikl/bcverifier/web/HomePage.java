@@ -131,7 +131,7 @@ public class HomePage extends WebPage {
     
     private void populateExamples() {
     	addExample("cell", "Cell example");
-    	addExample("cell2", "Cell example (Alternative)");
+    	//addExample("cell2", "Cell example (Alternative)");
     	addExample("cb", "Callback example");
     	addExample("obool", "OBool example");
 	}
@@ -143,7 +143,7 @@ public class HomePage extends WebPage {
 			topDir = new File(loader.getResource(dir).toURI());
 			File oldDir = new File(topDir, "old");
 			File newDir = new File(topDir, "new");
-			File invFile = new File(topDir, "bpl/inv.bpl");
+			File invFile = new File(topDir, "bpl/webinv.bpl");
 	        Collection<File> oldJavaFiles = FileUtils.listFiles(oldDir, new String[] { "java" }, true);
 	        Collection<File> newJavaFiles = FileUtils.listFiles(newDir, new String[] { "java" }, true);
 			Example ex = new Example();
@@ -298,6 +298,7 @@ public class HomePage extends WebPage {
 			Configuration config = new Configuration();
 			config.setLibraries(oldDir, newDir);
 			config.setInvariant(invFile);
+			config.setSingleFormulaInvariant(true);
 			config.setOutput(output);
 			Library library = new Library(config);
 			LibraryCompiler.compile(config.library1());

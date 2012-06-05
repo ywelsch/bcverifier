@@ -48,6 +48,8 @@ public class Configuration {
     @Parameter(names = {"-l", "--libs"}, description = "Path to the libraries to compare", arity = 2, required = true, validateWith = Configuration.DirectoryValidator.class)
     private List<File> dirs = new ArrayList<File>();
 	private String versionString;
+	@Parameter(names = {"-sfi", "--singleformulainvariant"}, description = "Invariant is packaged as a single Boogie formula")
+    private boolean singleFormulaInvariant = false;
     
     public static class DirectoryValidator implements IParameterValidator {
 		public void validate(String name, String value) throws ParameterException {
@@ -175,5 +177,11 @@ public class Configuration {
     		versionString = prop.getProperty("version", "unknown");
     	}
 		return versionString;
+	}
+	public boolean isSingleFormulaInvariant() {
+		return singleFormulaInvariant;
+	}
+	public void setSingleFormulaInvariant(boolean singleFormulaInvariant) {
+		this.singleFormulaInvariant = singleFormulaInvariant;
 	}
 }
