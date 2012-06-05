@@ -5,3 +5,6 @@
 "bpl/inv2.bpl"  ,""                  ,""     ,2                ,0                 ,2
 "bpl/inv2.bpl"  ,""                  ,""     ,2                ,0                 ,3
 "bpl/inv2.bpl"  ,""                  ,""     ,0                ,0                 ,4
+"bpl/inv2.bpl"  ,"bpl/noHavoc.bpl"   ,""     ,0                ,0                 ,4
+"bpl/inv3.bpl"  ,""                  ,""     ,0                ,0                 ,4
+"bpl/inv3.bpl"  ,"bpl/noHavoc.bpl"   ,""     ,1                ,0                 ,4
