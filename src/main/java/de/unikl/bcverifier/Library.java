@@ -30,6 +30,7 @@ import static b2bpl.translation.CodeGenerator.stack2;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.useHavoc;
+import static b2bpl.translation.CodeGenerator.validHeapSucc;
 import static b2bpl.translation.CodeGenerator.var;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
 
@@ -447,31 +448,37 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
             String v = "v";
             BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
-            checkingCommand.add(new BPLAssumeCommand(
-                    forall(
-                            spVar, vVar,
-                            logicalAnd(
-                                    implies(oldHeap1(stack1(var(sp), var(v)), var("exposed")), heap1(stack1(var(sp), var(v)), var("exposed"))),
-                                    isEqual(oldHeap1(stack1(var(sp), var(v)), var("createdByCtxt")), heap1(stack1(var(sp), var(v)), var("createdByCtxt")))
-                            )
-                            )
-                    ));
-            checkingCommand.add(new BPLAssumeCommand(
-                    forall(
-                            spVar, vVar,
-                            logicalAnd(
-                                    implies(oldHeap2(stack2(var(sp), var(v)), var("exposed")), heap2(stack2(var(sp), var(v)), var("exposed"))),
-                                    isEqual(oldHeap2(stack2(var(sp), var(v)), var("createdByCtxt")), heap2(stack2(var(sp), var(v)), var("createdByCtxt")))
-                            )
-                            )
-                    ));
-            
-            checkingCommand.addAll(invAssumes);
+//            checkingCommand.add(new BPLAssumeCommand(
+//                    forall(
+//                            spVar, vVar,
+//                            logicalAnd(
+//                                    implies(oldHeap1(stack1(var(sp), var(v)), var("exposed")), heap1(stack1(var(sp), var(v)), var("exposed"))),
+//                                    isEqual(oldHeap1(stack1(var(sp), var(v)), var("createdByCtxt")), heap1(stack1(var(sp), var(v)), var("createdByCtxt")))
+//                            )
+//                            )
+//                    ));
+//            checkingCommand.add(new BPLAssumeCommand(
+//                    forall(
+//                            spVar, vVar,
+//                            logicalAnd(
+//                                    implies(oldHeap2(stack2(var(sp), var(v)), var("exposed")), heap2(stack2(var(sp), var(v)), var("exposed"))),
+//                                    isEqual(oldHeap2(stack2(var(sp), var(v)), var("createdByCtxt")), heap2(stack2(var(sp), var(v)), var("createdByCtxt")))
+//                            )
+//                            )
+//                    ));
             
             // relate stack and heap again
             ///////////////////////////////////
-            checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(var("stack1"), var("sp1"), var("heap1"))));
-            checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(var("stack2"), var("sp2"), var("heap2"))));
+//            checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(var("stack1"), var("sp1"), var("heap1"))));
+//            checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(var("stack2"), var("sp2"), var("heap2"))));
+            
+            // relate the new heap with the old one
+            ///////////////////////////////////////
+            checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var("old_heap1"), var("heap1"), var("stack1"))));
+            checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var("old_heap2"), var("heap2"), var("stack2"))));
+            
+            checkingCommand.addAll(invAssumes);
+            
 
             methodBlocks.add(new BPLBasicBlock("check_boundary_call", checkingCommand
                     .toArray(new BPLCommand[checkingCommand.size()]),

@@ -1063,6 +1063,10 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(IS_STATIC_METHOD_FUNC, meth);
     }
     
+    public static BPLExpression validHeapSucc(BPLExpression oldHeap, BPLExpression newHeap, BPLExpression stack){
+        return new BPLFunctionApplication(VALID_HEAP_SUCC_FUNC, oldHeap, newHeap, stack);
+    }
+    
     
     
     public static BPLExpression useHavoc(BPLExpression address){
@@ -1123,5 +1127,13 @@ public final class CodeGenerator implements ITranslationConstants {
     
     public static BPLExpression receiver(){
         return var("param0_r");
+    }
+    
+    public static BPLExpression map(BPLExpression prefix, BPLExpression ... accessors){
+        return new BPLArrayExpression(prefix, accessors);
+    }
+    
+    public static BPLExpression map1(BPLExpression prefix, BPLExpression accessor1, BPLExpression accessor2){
+        return new BPLArrayExpression(new BPLArrayExpression(prefix, accessor1), accessor2);
     }
 }

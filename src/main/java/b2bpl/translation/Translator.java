@@ -2,10 +2,6 @@ package b2bpl.translation;
 
 import static b2bpl.translation.CodeGenerator.add;
 import static b2bpl.translation.CodeGenerator.asDirectSubClass;
-import static b2bpl.translation.CodeGenerator.asInterface;
-import static b2bpl.translation.CodeGenerator.asRangeField;
-import static b2bpl.translation.CodeGenerator.asRefField;
-import static b2bpl.translation.CodeGenerator.asType;
 import static b2bpl.translation.CodeGenerator.baseClass;
 import static b2bpl.translation.CodeGenerator.bijective;
 import static b2bpl.translation.CodeGenerator.bitAnd;
@@ -23,6 +19,7 @@ import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.ftype;
 import static b2bpl.translation.CodeGenerator.greater;
 import static b2bpl.translation.CodeGenerator.hasReturnValue;
+import static b2bpl.translation.CodeGenerator.heap1;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
 import static b2bpl.translation.CodeGenerator.implies;
 import static b2bpl.translation.CodeGenerator.intToInt;
@@ -46,6 +43,8 @@ import static b2bpl.translation.CodeGenerator.libType;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
+import static b2bpl.translation.CodeGenerator.map;
+import static b2bpl.translation.CodeGenerator.map1;
 import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.modulo;
 import static b2bpl.translation.CodeGenerator.multiply;
@@ -54,18 +53,23 @@ import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.nullLiteral;
 import static b2bpl.translation.CodeGenerator.obj;
 import static b2bpl.translation.CodeGenerator.objectCoupling;
+import static b2bpl.translation.CodeGenerator.oldHeap1;
 import static b2bpl.translation.CodeGenerator.oneClassDown;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.refOfType;
 import static b2bpl.translation.CodeGenerator.relNull;
+import static b2bpl.translation.CodeGenerator.stack1;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.trigger;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.unique;
+import static b2bpl.translation.CodeGenerator.validHeapSucc;
 import static b2bpl.translation.CodeGenerator.var;
 import static b2bpl.translation.CodeGenerator.wellformedCoupling;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
 import static b2bpl.translation.CodeGenerator.wellformedStack;
+import static b2bpl.translation.ITranslationConstants.IS_STATIC_METHOD_FUNC;
+import static b2bpl.translation.ITranslationConstants.VALID_HEAP_SUCC_FUNC;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -76,7 +80,6 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
-import org.hamcrest.CoreMatchers;
 
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayAssignment;
@@ -1462,7 +1465,26 @@ public class Translator implements ITranslationConstants {
             
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(ITranslationConstants.USE_HAVOC, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
             
-            addFunction(ITranslationConstants.IS_STATIC_METHOD_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            
+            addFunction(VALID_HEAP_SUCC_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(STACK_TYPE), BPLBuiltInType.BOOL);
+
+            String oldHeap = "oldHeap";
+            BPLVariable oldHeapVar = new BPLVariable(oldHeap, new BPLTypeName(HEAP_TYPE));
+            String newHeap = "newHeap";
+            BPLVariable newHeapVar = new BPLVariable(newHeap, new BPLTypeName(HEAP_TYPE));
+            addAxiom(forall(oldHeapVar, newHeapVar, stackVar,
+                    isEquiv(validHeapSucc(var(oldHeap), var(newHeap), var(stack)),
+                            forall(
+                                    spVar, vVar,
+                                    logicalAnd(
+                                            implies(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var("exposed")), map(var(newHeap), map1(var(stack), var(sp), var(v)), var("exposed"))),
+                                            isEqual(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var("createdByCtxt")), map(var(newHeap), map1(var(stack), var(sp), var(v)), var("createdByCtxt"))),
+                                            implies(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var("alloc")), map(var(newHeap), map1(var(stack), var(sp), var(v)), var("alloc")))
+                                    )
+                            )
+                            )
+                    ));
             
             flushPendingTheory(); //TODO this is needed at the moment to generate information about the long values (which should be printed into the program code directly)
         }
