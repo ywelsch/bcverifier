@@ -184,4 +184,7 @@ public class Configuration {
 	public void setSingleFormulaInvariant(boolean singleFormulaInvariant) {
 		this.singleFormulaInvariant = singleFormulaInvariant;
 	}
+	public void setConfigFile(File places) {
+		this.places = places;
+	}
 }
