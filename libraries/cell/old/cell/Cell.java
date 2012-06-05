@@ -1,7 +1,7 @@
 package cell;
 
-public class Cell {
-    private Object c;
-    public void set(Object o) {c = o;}
-    public Object get() {return c;}
+public class Cell<T> {
+    private T c;
+    public void set(T o) {c = o;}
+    public T get() {return c;}
 }
