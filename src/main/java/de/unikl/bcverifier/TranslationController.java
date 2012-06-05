@@ -41,6 +41,8 @@ public class TranslationController implements ITranslationConstants {
     private static HashSet<String> places = new HashSet<String>();
     private static HashMap<String, Set<String>> methodDefinitions = new HashMap<String, Set<String>>();
     private static Set<String> returnLabels = new HashSet<String>();
+    public static int maxLocals;
+    public static int maxStack;
     
     private static String lastPlace = null;
     private static String nextLabel = null;

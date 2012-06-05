@@ -1,4 +1,6 @@
-"invariant_file","flags","expected_errors","dead_code_points","loop_unroll_cap"
-"bpl/inv.bpl"   ,""     ,0                ,1                 ,4
-"bpl/inv.bpl"   ,""     ,2                ,0                 ,3
-"bpl/inv.bpl"   ,""     ,3                ,0                 ,2
+"invariant_file","preconditions_file","flags","expected_errors","dead_code_points","loop_unroll_cap"
+"bpl/inv.bpl"   ,""                  ,""     ,0                ,1                 ,4
+"bpl/inv.bpl"   ,""                  ,""     ,3                ,0                 ,3
+"bpl/inv.bpl"   ,""                  ,""     ,3                ,0                 ,2
+"bpl/inv2.bpl"  ,"bpl/noHavoc.bpl"   ,""     ,2                ,0                 ,4
+"bpl/inv2.bpl"  ,""                  ,""     ,0                ,1                 ,4
