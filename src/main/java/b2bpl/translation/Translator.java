@@ -634,7 +634,6 @@ public class Translator implements ITranslationConstants {
                                     forall(refVar, fieldRefVar, implies(new BPLArrayExpression(var(heap), var(r), var(alloc)), new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(alloc)))),
                                     forall(refVar, fieldRefVar, implies(logicalNot(obj(var(heap), var(r))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), nullLiteral()))),
                                     forall(refVar, fieldIntVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
-                                    forall(refVar, fieldBoolVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), BPLBoolLiteral.FALSE))),
                                     forall(refVar, fieldRefVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(heap), var(t)))),
                                     forall(refVar, fieldIntVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), var(t)))),
                                     forall(refVar, isEqual(typ(var(r), var(heap)), new BPLArrayExpression(var(heap), var(r), var(dynType))))
@@ -688,8 +687,6 @@ public class Translator implements ITranslationConstants {
                     logicalNot(isSubtype(typ(classRepr(var(t)), var(heap)), var(GLOBAL_VAR_PREFIX+"java.lang.Object")))
                     ));
             addAxiom(forall(tVar, notEqual(classRepr(var(t)), var("null"))));
-
-            addFunction(UTTER_FUNC, new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL);
 
             addFunction(IS_STATIC_FIELD_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), BPLBuiltInType.BOOL);
             addAxiom(logicalNot(isStaticField(var(alloc))));
@@ -747,16 +744,6 @@ public class Translator implements ITranslationConstants {
                     new BPLTrigger(isInstanceOf(var(o), var(heap), var(t)))
                     ));
 
-            addFunction(AS_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(REF_TYPE));
-            addAxiom(forall(
-                    oVar, heapVar, tVar,
-                    implies(isOfType(var(o), var(heap), var(t)), isEqual(asType(var(o), var(heap), var(t)), var(o)))
-                    ));
-            addAxiom(forall(
-                    oVar, heapVar, tVar,
-                    implies(logicalNot(isOfType(var(o), var(heap), var(t))), isNull(asType(var(o), var(heap), var(t))))
-                    ));
-
             addFunction(IS_ALLOCATED_FUNC+"<alpha>", new BPLTypeName(HEAP_TYPE), new BPLTypeName("alpha"), BPLBuiltInType.BOOL);
             addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
                     new BPLVariable[]{heapVar, oVar, new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")))},
@@ -779,44 +766,12 @@ public class Translator implements ITranslationConstants {
                     new BPLTrigger(new BPLArrayExpression(var(heap), classRepr(var(c)), var(alloc)))
                     ));
 
-            addConstants(new BPLVariable(BEING_CONSTRUCTED_CONST, new BPLTypeName(REF_TYPE)));
-            //TODO NonNullFieldsAreInitialized + DeclType(NonNullFieldsAreInitialized) == java.lang.Object
-            //TODO PurityAxiomsCanBeAssumed
-
-            addFunction(DECL_TYPE_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), new BPLTypeName(NAME_TYPE));
-            //TODO AsNonNullRefField
-            addFunction(AS_REF_FIELD_FUNC, new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)), new BPLTypeName(NAME_TYPE), new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)));
-            addFunction(AS_RANGE_FIELD_FUNC, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT), new BPLTypeName(NAME_TYPE), new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT));
-
-            addAxiom(forall(
-                    new BPLVariable[]{heapVar, oVar, fieldRefVar, tVar},
-                    implies(wellformedHeap(var(heap)), isOfType(new BPLArrayExpression(var(heap), var(o), asRefField(var(f), var(t))), var(heap), var(t))),
-                    new BPLTrigger(new BPLArrayExpression(var(heap), var(o), asRefField(var(f), var(t))))
-                    ));
-            //TODO axiom for AsNonNullField
-            addAxiom(forall(
-                    new BPLVariable[]{heapVar, oVar, fieldIntVar, tVar},
-                    implies(wellformedHeap(var(heap)), isInRange(new BPLArrayExpression(var(heap), var(o), asRangeField(var(f), var(t))), var(t))),
-                    new BPLTrigger(new BPLArrayExpression(var(heap), var(o), asRangeField(var(f), var(t))))
-                    ));
-
             addFunction(IS_MEMBERLESS_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     oVar, heapVar,
                     logicalNot(isMemberlessType(typ(var(o), var(heap)))),
                     new BPLTrigger(isMemberlessType(typ(var(o), var(heap))))
                     ));
-
-            addFunction(AS_INTERFACE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    tVar,
-                    implies(isEqual(asInterface(var(t)), var(t)), logicalNot(isSubtype(var(GLOBAL_VAR_PREFIX+"java.lang.Object"), var(t)))),
-                    new BPLTrigger(isSubtype(var(GLOBAL_VAR_PREFIX+"java.lang.Object"), asInterface(var(t))))
-                    ));
-
-            //TODO HeapSucc
-
-            //TODO IsImmutable, AsImmutable, AsMutable and axioms
 
             // primitive types
             for (JBaseType valueType : valueTypes) {
@@ -851,8 +806,6 @@ public class Translator implements ITranslationConstants {
                     implies(isInRange(var(i), var(c)), isEqual(intToInt(var(i), var(b), var(c)), var(i)))
                     ));
 
-            addComment("SizeOf(T, n) means that n = sizeof(T)");
-            addFunction(SIZE_IS_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.INT, BPLBuiltInType.BOOL);
 
             addFunction(IF_THEN_ELSE_FUNC+"<alpha>", BPLBuiltInType.BOOL, new BPLTypeName("alpha"), new BPLTypeName("alpha"), new BPLTypeName("alpha"));
             addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
@@ -1439,8 +1392,7 @@ public class Translator implements ITranslationConstants {
                     logicalAnd(
                             forall(pVar, vVar, implies(logicalAnd(lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp))), new BPLArrayExpression(var(heap), new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), var(alloc)))),
                             forall(pVar, vVar, implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), nullLiteral()))),
-                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), intLiteral(0)))),
-                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.BOOL)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), BPLBoolLiteral.FALSE)))
+                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), intLiteral(0))))
                             )
                     )
                     ));
@@ -1483,9 +1435,7 @@ public class Translator implements ITranslationConstants {
 
             addConstants(new BPLVariable("isCall", new BPLTypeName(VAR_TYPE, BPLBuiltInType.BOOL)));
             addConstants(new BPLVariable("place", new BPLTypeName(VAR_TYPE, new BPLTypeName(ADDRESS_TYPE))));
-            addConstants(new BPLVariable("retA", new BPLTypeName(ADDRESS_TYPE)));
             addConstants(new BPLVariable("meth", new BPLTypeName(VAR_TYPE, new BPLTypeName(METHOD_TYPE))));
-            addConstants(new BPLVariable("receiver", new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
 
             {
                 // A helper function for converting int values to bool values.

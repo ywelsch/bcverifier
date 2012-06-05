@@ -361,6 +361,10 @@ public interface ITranslationConstants {
   
   String CONSTRUCTOR_TABLE_LABEL = "constructortable";
 
+public static final String UNROLL_COUNT = "unrollCount";
+
+public static final String MAX_LOOP_UNROLL = "maxLoopUnroll";
+
 static final String IS_STATIC_METHOD_FUNC = "IsStaticMethod";
 
 static final String USE_HAVOC = "useHavoc";
