@@ -78,9 +78,14 @@ import b2bpl.bytecode.JType;
  */
 public final class CodeGenerator implements ITranslationConstants {
     private static Project project;
+    private static TranslationController tc;
 
     public static void setProject(Project project) {
         CodeGenerator.project = project;
+    }
+    
+    public static void setTranslationController(TranslationController controller){
+        CodeGenerator.tc = controller;
     }
 
     // @ requires name != null;
@@ -991,15 +996,15 @@ public final class CodeGenerator implements ITranslationConstants {
     
 
     public static BPLExpression stack(BPLExpression sp, BPLExpression exp) {
-        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.getStack()), sp), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(tc.getStack()), sp), exp);
     }
 
     public static BPLExpression stack(BPLExpression exp) {
-        return stack(var(TranslationController.getStackPointer()), exp);
+        return stack(var(tc.getStackPointer()), exp);
     }
 
     public static BPLExpression heap(BPLExpression exp1, BPLExpression exp2) {
-        return new BPLArrayExpression(var(TranslationController.getHeap()),
+        return new BPLArrayExpression(var(tc.getHeap()),
                 exp1, exp2);
     }
     

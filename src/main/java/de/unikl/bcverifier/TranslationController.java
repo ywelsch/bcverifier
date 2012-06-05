@@ -14,9 +14,6 @@ import b2bpl.bytecode.JClassType;
 import b2bpl.translation.ITranslationConstants;
 
 public class TranslationController implements ITranslationConstants {
-    private static boolean isActive = false;
-    private static Configuration config;
-    private static int round;
     public static final String HEAP1 = "heap1";
     public static final String HEAP2 = "heap2";
     public static final String STACK1 = "stack1";
@@ -33,53 +30,57 @@ public class TranslationController implements ITranslationConstants {
     public static final String CONSTRUCTOR_LABEL1 = LABEL_PREFIX2 + CONSTRUCTOR_TABLE_LABEL;
     public static final String CONSTRUCTOR_LABEL2 = VERIFY_LABEL;
     
-    private static Set<String> declaredMethods = new HashSet<String>();
-    private static Map<String, BPLVariable> usedVariables = new HashMap<String, BPLVariable>();
-    private static Map<String, BPLVariable> stackVariables = new HashMap<String, BPLVariable>();
-    private static HashSet<JClassType> referencedTypes = new HashSet<JClassType>();
-    private static HashSet<BCField> referencedFields = new HashSet<BCField>();
-    private static HashSet<String> places = new HashSet<String>();
-    private static HashMap<String, Set<String>> methodDefinitions = new HashMap<String, Set<String>>();
-    private static Set<String> returnLabels = new HashSet<String>();
-    public static int maxLocals;
-    public static int maxStack;
+    private boolean isActive = false;
+    private Configuration config;
+    private int round;
+
+    private Set<String> declaredMethods = new HashSet<String>();
+    private Map<String, BPLVariable> usedVariables = new HashMap<String, BPLVariable>();
+    private Map<String, BPLVariable> stackVariables = new HashMap<String, BPLVariable>();
+    private HashSet<JClassType> referencedTypes = new HashSet<JClassType>();
+    private HashSet<BCField> referencedFields = new HashSet<BCField>();
+    private HashSet<String> places = new HashSet<String>();
+    private HashMap<String, Set<String>> methodDefinitions = new HashMap<String, Set<String>>();
+    private Set<String> returnLabels = new HashSet<String>();
+    public int maxLocals;
+    public int maxStack;
     
-    private static String lastPlace = null;
-    private static String nextLabel = null;
+    private String lastPlace = null;
+    private String nextLabel = null;
     
-    public static Set<String> declaredMethods() {
+    public Set<String> declaredMethods() {
         return declaredMethods;
     }
     
-    public static Map<String, BPLVariable> usedVariables(){
+    public Map<String, BPLVariable> usedVariables(){
         return usedVariables;
     }
     
-    public static Map<String, BPLVariable> stackVariables() {
+    public Map<String, BPLVariable> stackVariables() {
         return stackVariables;
     }
     
-    public static HashSet<JClassType> referencedTypes() {
+    public HashSet<JClassType> referencedTypes() {
         return referencedTypes;
     }
     
-    public static HashSet<BCField> referencedFields() {
+    public HashSet<BCField> referencedFields() {
         return referencedFields;
     }
     
-    public static HashMap<String, Set<String>> methodDefinitions() {
+    public HashMap<String, Set<String>> methodDefinitions() {
         return methodDefinitions;
     }
     
-    public static Set<String> returnLabels() {
+    public Set<String> returnLabels() {
         return returnLabels;
     }
     
-    public static void resetReturnLabels() {
+    public void resetReturnLabels() {
         returnLabels.clear();
     }
     
-    public static void definesMethod(String className, String methodName) {
+    public void definesMethod(String className, String methodName) {
         Set<String> definedMethods = methodDefinitions.get(className);
         if(definedMethods==null){
             definedMethods = new HashSet<String>();
@@ -88,15 +89,15 @@ public class TranslationController implements ITranslationConstants {
         definedMethods.add(methodName);
     }
     
-    public static HashSet<String> places() {
+    public HashSet<String> places() {
         return places;
     }
     
-    public static String nextLabel() {
+    public String nextLabel() {
         return nextLabel;
     }
     
-    public static void activate() {
+    public void activate() {
         isActive = true;
         declaredMethods.clear();
         usedVariables.clear();
@@ -108,31 +109,31 @@ public class TranslationController implements ITranslationConstants {
         returnLabels.clear();
     }
     
-    public static void deactivate() {
+    public void deactivate() {
         isActive = false;
     }
     
-    public static boolean isActive() {
+    public boolean isActive() {
         return isActive;
     }
     
-    public static void enterRound1() {
+    public void enterRound1() {
         round = 1;
     }
     
-    public static void enterRound2() {
+    public void enterRound2() {
         round = 2;
     }
     
-    public static void setConfig(Configuration c) {
+    public void setConfig(Configuration c) {
         config = c;
     }
     
-    public static Configuration getConfig() {
+    public Configuration getConfig() {
         return config;
     }
     
-    public static String getHeap() {
+    public String getHeap() {
         switch(round) {
         case 1:
             return HEAP1;
@@ -143,7 +144,7 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public static String getStack(){
+    public String getStack(){
         switch(round){
         case 1:
             return STACK1;
@@ -154,7 +155,7 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public static String getStackPointer() {
+    public String getStackPointer() {
         switch(round){
         case 1:
             return SP1;
@@ -165,7 +166,7 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public static String prefix(String label) {
+    public String prefix(String label) {
         switch(round){
         case 1:
             return LABEL_PREFIX1+label;
@@ -176,7 +177,7 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public static String getDispatchLabel() {
+    public String getDispatchLabel() {
         switch(round){
         case 1:
             return DISPATCH_LABEL1;
@@ -187,7 +188,7 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public static String getCheckLabel() {
+    public String getCheckLabel() {
         switch(round){
         case 1:
             return CHECK_LABEL1;
@@ -198,7 +199,7 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public static String getNextConstructorLabel(){
+    public String getNextConstructorLabel(){
         switch(round){
         case 1:
             return CONSTRUCTOR_LABEL1;
@@ -216,7 +217,7 @@ public class TranslationController implements ITranslationConstants {
      * if we should be a place for some loop or other usable location in the code
      * @return
      */
-    public static String buildPlace(String methodName, boolean atBegin){
+    public String buildPlace(String methodName, boolean atBegin){
         String placeName;
         if(atBegin){
             placeName = prefix(methodName+"_begin");
@@ -237,7 +238,7 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public static String buildPlace(String methodName, String invocedMethod) {
+    public String buildPlace(String methodName, String invocedMethod) {
         String placeName;
         for(int i=0; i<Integer.MAX_VALUE; i++){
             placeName = prefix(methodName + "_" + invocedMethod+i);

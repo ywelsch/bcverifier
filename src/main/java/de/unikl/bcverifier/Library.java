@@ -115,6 +115,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     private static final Logger log = Logger.getLogger(Library.class);
     
     private final Configuration config;
+
+    private TranslationController tc;
+    
+    public void setTranslationController(TranslationController controller){
+        this.tc = controller;
+    }
     
     public Library(Configuration config) {
         this.config = config;
@@ -203,6 +209,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             Project project = Project.fromCommandLine(oldFileNames,
                     new PrintWriter(System.out));
             CodeGenerator.setProject(project);
+            CodeGenerator.setTranslationController(tc);
 
             TypeLoader.setProject(project);
             TypeLoader.setProjectTypes(project.getProjectTypes());
@@ -211,30 +218,32 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, this));
             TypeLoader.setTroubleReporter(this);
 
-            TranslationController.setConfig(config);
-            programDecls.addAll(new Translator(project).getPrelude()); // TODO
+            tc.setConfig(config);
+            Translator trans = new Translator(project);
+            trans.setTranslationController(tc);
+            programDecls.addAll(trans.getPrelude()); // TODO
                                                                        // workaround
                                                                        // to
                                                                        // generate
                                                                        // Prelude
 
-            TranslationController.activate();
+            tc.activate();
 
-            TranslationController.enterRound1();
+            tc.enterRound1();
             LibraryDefinition libraryDefinition1 = compileSpecification(oldFileNames);
             programDecls.addAll(libraryDefinition1.getNeededDeclarations());
             methodBlocks.addAll(libraryDefinition1.getMethodBlocks());
 
-            TranslationController.enterRound2();
+            tc.enterRound2();
             LibraryDefinition libraryDefinition2 = compileSpecification(newFileNames);
             programDecls.addAll(libraryDefinition2.getNeededDeclarations());
             methodBlocks.addAll(libraryDefinition2.getMethodBlocks());
 
             // insert all method definition axioms
             ///////////////////////////////////////
-            for (String className : TranslationController.methodDefinitions()
+            for (String className : tc.methodDefinitions()
                     .keySet()) {
-                Set<String> methodNames = TranslationController
+                Set<String> methodNames = tc
                         .methodDefinitions().get(className);
                 List<BPLExpression> methodExprs = new ArrayList<BPLExpression>();
 
@@ -280,7 +289,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                             greater(var("sp2"), new BPLIntLiteral(0))
                             )
                     )));
-            methodBlocks.add(new BPLBasicBlock(TranslationController
+            methodBlocks.add(new BPLBasicBlock(tc
                     .getCheckLabel(), checkingCommand.toArray(new BPLCommand[checkingCommand.size()]), new BPLGotoCommand(
                     "check_boundary_return", "check_boundary_call")));
 
@@ -356,7 +365,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             checkingCommand.add(new BPLAssertCommand(isEqual(
                     stack1(var("meth")), stack2(var("meth")))));
 
-            for (BPLVariable var : TranslationController.stackVariables()
+            for (BPLVariable var : tc.stackVariables()
                     .values()) {
                 if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
                     checkingCommand
@@ -484,7 +493,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     .toArray(new BPLCommand[checkingCommand.size()]),
                     new BPLGotoCommand(TranslationController.LABEL_PREFIX1 + RETTABLE_LABEL)));
 
-            for (String place : TranslationController.places()) {
+            for (String place : tc.places()) {
                 programDecls.add(new BPLConstantDeclaration(new BPLVariable(
                         place, new BPLTypeName(ADDRESS_TYPE))));
             }
@@ -493,7 +502,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             BPLVariable[] inParams = new BPLVariable[0];
             BPLVariable[] outParams = new BPLVariable[0];
 
-            for (BPLVariable var : TranslationController.usedVariables()
+            for (BPLVariable var : tc.usedVariables()
                     .values()) {
                 localVariables.add(new BPLVariableDeclaration(var));
             }
@@ -571,7 +580,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
             // relate all parameters from the outside
             // ///////////////////////////////////////
-            for (BPLVariable var : TranslationController.stackVariables()
+            for (BPLVariable var : tc.stackVariables()
                     .values()) {
                 if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
                     assumeCmd = new BPLAssumeCommand(relNull(
@@ -670,7 +679,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             // ///////////////////////////////////////
             Pattern paramRefPattern = Pattern.compile(PARAM_VAR_PREFIX + "(\\d+)_r");
             Matcher matcher;
-            for (BPLVariable var : TranslationController.stackVariables()
+            for (BPLVariable var : tc.stackVariables()
                     .values()) {
                 matcher = paramRefPattern.matcher(var.getName());
                 if (matcher.matches() && !matcher.group(1).equals("0")) { //special assumes for receiver (param0_r)
@@ -741,7 +750,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             
             // relate all parameters from the outside
             // ///////////////////////////////////////
-            for (BPLVariable var : TranslationController.stackVariables()
+            for (BPLVariable var : tc.stackVariables()
                     .values()) {
                 if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
                     assumeCmd = new BPLAssumeCommand(relNull(
@@ -781,7 +790,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
             // relate all parameters from the outside
             // ///////////////////////////////////////
-            for (BPLVariable var : TranslationController.stackVariables()
+            for (BPLVariable var : tc.stackVariables()
                     .values()) {
                 if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
                     assumeCmd = new BPLAssumeCommand(relNull(
@@ -845,21 +854,21 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             intVarName = RESULT_PARAM+INT_TYPE_ABBREV;
             possibleStackVariables.put(intVarName, new BPLVariable(intVarName, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)));
             // reg0_r, reg0_i, ...
-            for(int j=0; j<TranslationController.maxLocals; j++){
+            for(int j=0; j<tc.maxLocals; j++){
                 refVarName = LOCAL_VAR_PREFIX+j+REF_TYPE_ABBREV;
                 intVarName = LOCAL_VAR_PREFIX+j+INT_TYPE_ABBREV;
                 possibleStackVariables.put(refVarName, new BPLVariable(refVarName, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
                 possibleStackVariables.put(intVarName, new BPLVariable(intVarName, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)));
             }
             // param0_r, param0_i, ...
-            for(int j=0; j<TranslationController.maxLocals+1; j++){
+            for(int j=0; j<tc.maxLocals+1; j++){
                 refVarName = PARAM_VAR_PREFIX+j+REF_TYPE_ABBREV;
                 intVarName = PARAM_VAR_PREFIX+j+INT_TYPE_ABBREV;
                 possibleStackVariables.put(refVarName, new BPLVariable(refVarName, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
                 possibleStackVariables.put(intVarName, new BPLVariable(intVarName, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)));
             }
             // stack0_r, stack0_i, ...
-            for(int j=0; j<TranslationController.maxStack; j++){
+            for(int j=0; j<tc.maxStack; j++){
                 refVarName = STACK_VAR_PREFIX+j+REF_TYPE_ABBREV;
                 intVarName = STACK_VAR_PREFIX+j+INT_TYPE_ABBREV;
                 possibleStackVariables.put(refVarName, new BPLVariable(refVarName, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
@@ -909,11 +918,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
     private LibraryDefinition compileSpecification(String[] fileNames)
             throws FileNotFoundException {
-        TranslationController.resetReturnLabels();
+        tc.resetReturnLabels();
 
         Project project = Project.fromCommandLine(fileNames, new PrintWriter(
                 System.out));
         CodeGenerator.setProject(project);
+        CodeGenerator.setTranslationController(tc);
 
         TypeLoader.setProject(project);
         TypeLoader.setProjectTypes(project.getProjectTypes());
@@ -928,6 +938,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         }
 
         Translator translator = new Translator(project);
+        translator.setTranslationController(tc);
         Map<String, BPLProcedure> procedures = translator
                 .translateMethods(projectTypes);
         List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();
@@ -955,20 +966,20 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                             if (var.getType().isTypeName()
                                     && ((BPLTypeName) var.getType()).getName()
                                             .equals(VAR_TYPE)) {
-                                TranslationController.stackVariables().put(
+                                tc.stackVariables().put(
                                         var.getName(), var);
                             } else {
-                                TranslationController.usedVariables().put(
+                                tc.usedVariables().put(
                                         var.getName(), var);
                             }
                         }
                     }
                     for (BPLVariable outParam : proc.getOutParameters()) {
-                        TranslationController.usedVariables().put(
+                        tc.usedVariables().put(
                                 outParam.getName(), outParam);
                     }
 
-                    methodLabel = TranslationController.prefix(proc.getName());
+                    methodLabel = tc.prefix(proc.getName());
                     
                     // add label of the method to the method label list
                     if(!method.isConstructor()){
@@ -982,7 +993,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     // /////////////////////////////
                     List<BPLCommand> preMethodCommands = new ArrayList<BPLCommand>();
                     preMethodCommands.add(new BPLAssumeCommand(isEqual(
-                            stack(var("place")), var(TranslationController
+                            stack(var("place")), var(tc
                                     .buildPlace(proc.getName(), true)))));
                     
                     preMethodCommands
@@ -997,7 +1008,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                         + MethodTranslator.getMethodName(method)),
                                         var(GLOBAL_VAR_PREFIX + classType.getName()),
                                         typ(stack(receiver()),
-                                                var(TranslationController.getHeap())))));
+                                                var(tc.getHeap())))));
                     }
 
                     // preMethodCommands.add(new
@@ -1016,32 +1027,32 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 }
             }
         }
-        TranslationController.maxLocals = Math.max(TranslationController.maxLocals, maxLocals);
-        TranslationController.maxStack = Math.max(TranslationController.maxStack, maxStack);
+        tc.maxLocals = Math.max(tc.maxLocals, maxLocals);
+        tc.maxStack = Math.max(tc.maxStack, maxStack);
         
         ///////////////////////////////////////////////
         // add default constructor for java.lang.Object in case it is called inside the methods/constructors of the library
         ////////////////////////////////////////////////
-        String constructorLabelObject = TranslationController.prefix(Object.class.getName()+"."+CONSTRUCTOR_NAME);
+        String constructorLabelObject = tc.prefix(Object.class.getName()+"."+CONSTRUCTOR_NAME);
         methodBlocks.add(
                 0,
                 new BPLBasicBlock(constructorLabelObject, new BPLCommand[0],
-                        new BPLGotoCommand(TranslationController.prefix(RETTABLE_LABEL)))
+                        new BPLGotoCommand(tc.prefix(RETTABLE_LABEL)))
                 );
         
 
         // //////////////////////////////////////
         // callTable and returnTable
         // //////////////////////////////////////
-        String callTableLabel = TranslationController.prefix(CALLTABLE_LABEL);
+        String callTableLabel = tc.prefix(CALLTABLE_LABEL);
         String callTableInitLabel = callTableLabel + "_init";
         
-        String retTableLabel = TranslationController.prefix(RETTABLE_LABEL);
+        String retTableLabel = tc.prefix(RETTABLE_LABEL);
         String retTableInitLabel = retTableLabel + "_init";
-        String[] returnLabels = TranslationController.returnLabels().toArray(
-                new String[TranslationController.returnLabels().size()]);
+        String[] returnLabels = tc.returnLabels().toArray(
+                new String[tc.returnLabels().size()]);
         
-        String constTableLabel = TranslationController.prefix(CONSTRUCTOR_TABLE_LABEL);
+        String constTableLabel = tc.prefix(CONSTRUCTOR_TABLE_LABEL);
 
         BPLTransferCommand dispatchTransferCmd;
         // //////////////////////////////////////
@@ -1049,7 +1060,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // /////////////////////////////////////
         List<BPLCommand> dispatchCommands;
         dispatchCommands = new ArrayList<BPLCommand>();
-        BPLExpression unrollLoop = var(TranslationController.prefix(ITranslationConstants.UNROLL_COUNT));
+        BPLExpression unrollLoop = var(tc.prefix(ITranslationConstants.UNROLL_COUNT));
         dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
         dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
         
@@ -1070,7 +1081,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // /////////////////////////////////////////
         // commands before callTableInit (preconditions of the calltable)
         // /////////////////////////////////////////
-        BPLExpression sp = var(TranslationController.getStackPointer());
+        BPLExpression sp = var(tc.getStackPointer());
 
         dispatchCommands = new ArrayList<BPLCommand>();
         dispatchCommands.add(new BPLAssumeCommand(isEqual(sp,
@@ -1123,9 +1134,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         dispatchCommands = new ArrayList<BPLCommand>();
         dispatchCommands.add(new BPLAssumeCommand(new BPLFunctionApplication(
                 IS_PUBLIC_FUNC, typ(stack(receiver()),
-                        var(TranslationController.getHeap())))));
+                        var(tc.getHeap())))));
         dispatchCommands.add(new BPLAssumeCommand(isCallable(
-                typ(stack(receiver()), var(TranslationController.getHeap())),
+                typ(stack(receiver()), var(tc.getHeap())),
                 stack(var("meth")))));
         dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
         dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
@@ -1148,14 +1159,14 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         dispatchCommands = new ArrayList<BPLCommand>();
         dispatchCommands.add(new BPLAssumeCommand(new BPLFunctionApplication(
                 IS_PUBLIC_FUNC, typ(stack(receiver()),
-                        var(TranslationController.getHeap())))));
+                        var(tc.getHeap())))));
         dispatchCommands.add(new BPLAssumeCommand(isCallable(
-                typ(stack(receiver()), var(TranslationController.getHeap())),
+                typ(stack(receiver()), var(tc.getHeap())),
                 stack(var("meth")))));
         methodBlocks
                 .add(0,
                         new BPLBasicBlock(
-                                TranslationController.getDispatchLabel(),
+                                tc.getDispatchLabel(),
                                 dispatchCommands
                                         .toArray(new BPLCommand[dispatchCommands
                                                 .size()]), new BPLGotoCommand(

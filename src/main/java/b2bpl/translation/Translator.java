@@ -193,6 +193,9 @@ public class Translator implements ITranslationConstants {
 
     /** The project containing the settings of the translation. */
     private final Project project;
+    
+    /** The translation controller to use */
+    private TranslationController tc;
 
     /**
      * The {@code TranslationContext} responsible for resolving special
@@ -225,6 +228,10 @@ public class Translator implements ITranslationConstants {
         JBaseType.CHAR
     };
 
+    public void setTranslationController(TranslationController controller){
+        this.tc = controller;
+    }
+    
     /**
      * Creates a new translator which is configured by the given
      * {@code project}.
@@ -253,6 +260,7 @@ public class Translator implements ITranslationConstants {
         context = new Context();
         declarations = new ArrayList<BPLDeclaration>();
         MethodTranslator methodTranslator = new MethodTranslator(project);
+        methodTranslator.setTranslationController(tc);
         generateTheory();
         for (JClassType type : types) {
             for (BCMethod method : type.getMethods()) {
@@ -274,6 +282,7 @@ public class Translator implements ITranslationConstants {
         context = new Context();
         declarations = new ArrayList<BPLDeclaration>();
         MethodTranslator methodTranslator = new MethodTranslator(project);
+        methodTranslator.setTranslationController(tc);
 
         BPLProcedure proc;
         
@@ -290,13 +299,13 @@ public class Translator implements ITranslationConstants {
                         && !method.isSynthetic()) {
 
                     proc = methodTranslator.translate(context, method);
-                    if(!TranslationController.declaredMethods().contains(methodName)){
+                    if(!tc.declaredMethods().contains(methodName)){
                         Logger.getLogger(Translator.class).debug("Adding method "+methodName);
                         addConstants(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE)));
-                        TranslationController.declaredMethods().add(methodName);
+                        tc.declaredMethods().add(methodName);
                     }
 //                    declarations.add(new BPLAxiom(new BPLFunctionApplication(DEFINES_METHOD, typeRef(type), var(methodName))));
-                    TranslationController.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
+                    tc.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
                     if(method.isStatic()){
                         addAxiom(isStaticMethod(var(methodName)));
                     } else {
@@ -314,10 +323,10 @@ public class Translator implements ITranslationConstants {
                     }
                     procedures.put(method.getQualifiedBoogiePLName(), proc);
                 } else if(method.isAbstract()){
-                    if(!TranslationController.declaredMethods().contains(methodName)){
+                    if(!tc.declaredMethods().contains(methodName)){
                         Logger.getLogger(Translator.class).debug("Adding abstract method "+methodName);
                         addConstants(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE)));
-                        TranslationController.declaredMethods().add(methodName);
+                        tc.declaredMethods().add(methodName);
                     }
                 }
             }
@@ -1362,7 +1371,7 @@ public class Translator implements ITranslationConstants {
                             )
                     ));
 
-            if (TranslationController.getConfig().extensionalityEnabled()) { 
+            if (tc.getConfig().extensionalityEnabled()) { 
             	addComment("Extensionality for simulations");
             	addAxiom(forall(
             			r1Var, r2Var, relatedVar,
@@ -1400,7 +1409,7 @@ public class Translator implements ITranslationConstants {
                     )
                     ));
 
-            if (TranslationController.getConfig().extensionalityEnabled()) {
+            if (tc.getConfig().extensionalityEnabled()) {
             	addComment("Extensionality for stacks");
             	addAxiom(forall(
             			spVar, stackVar,
@@ -1838,7 +1847,7 @@ public class Translator implements ITranslationConstants {
         //        addType(HEAP_TYPE);
         //
         //        // Create global heap variable for entire program
-        //        addDeclaration(new BPLVariableDeclaration(new BPLVariable[] { new BPLVariable(TranslationController.getHeap(), new BPLTypeName(HEAP_TYPE)) } ));
+        //        addDeclaration(new BPLVariableDeclaration(new BPLVariable[] { new BPLVariable(tc.getHeap(), new BPLTypeName(HEAP_TYPE)) } ));
         //
         //        //
         //        // Values (objects, primitive values, arrays)
@@ -2875,7 +2884,7 @@ public class Translator implements ITranslationConstants {
 
         {
             // Class fields which appear in one or more modifies clauses
-            // SpecificationTranslator translator = SpecificationTranslator.forModifiesClause(TranslationController.getHeap(), parameters);
+            // SpecificationTranslator translator = SpecificationTranslator.forModifiesClause(tc.getHeap(), parameters);
             // return translator.translateModifiesStoreRefs(context, project.getSpecificationDesugarer().getModifiesStoreRefs(method));
         }
     }
@@ -2909,11 +2918,11 @@ public class Translator implements ITranslationConstants {
     //                                        oVar, tVar,
     //                                        implies(
     //                                                logicalAnd(
-    //                                                        alive(rval(var(o)), var(TranslationController.getHeap())),
+    //                                                        alive(rval(var(o)), var(tc.getHeap())),
     //                                                        isSubtype(var(t), typ(rval(var(o)))),
     //                                                        notEqual(var(o), var(this_var_name))
     //                                                        ),
-    //                                                        inv(var(t), var(o), var(TranslationController.getHeap()))
+    //                                                        inv(var(t), var(o), var(tc.getHeap()))
     //                                                )
     //                                        )
     //                                )
@@ -2926,19 +2935,19 @@ public class Translator implements ITranslationConstants {
     //                                        // postcondition of helper procedure (usually constructor)
     //                                        isEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), var(this_var_name)),
     //                                        notEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), BPLNullLiteral.NULL),
-    //                                        alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(TranslationController.getHeap())),
+    //                                        alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(tc.getHeap())),
     //                                        isInstanceOf(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(type))//,
     ////                                        forall(lVar,
     ////                                                implies(
-    ////                                                        // alive(rval(var(o)), old(var(TranslationController.getHeap()))),
-    ////                                                        alive(rval(obj(var(l))), old(var(TranslationController.getHeap()))),
+    ////                                                        // alive(rval(var(o)), old(var(tc.getHeap()))),
+    ////                                                        alive(rval(obj(var(l))), old(var(tc.getHeap()))),
     ////                                                        logicalAnd(
     ////                                                                isEqual(
-    ////                                                                        get(var(TranslationController.getHeap()), var(l)),
-    ////                                                                        get(old(var(TranslationController.getHeap())), var(l))
+    ////                                                                        get(var(tc.getHeap()), var(l)),
+    ////                                                                        get(old(var(tc.getHeap())), var(l))
     ////                                                                        ),
-    ////                                                                        //alive(rval(var(o)), var(TranslationController.getHeap()))
-    ////                                                                        alive(rval(obj(var(l))), var(TranslationController.getHeap()))
+    ////                                                                        //alive(rval(var(o)), var(tc.getHeap()))
+    ////                                                                        alive(rval(obj(var(l))), var(tc.getHeap()))
     ////                                                                )
     ////                                                        )
     ////                                                )
@@ -2950,15 +2959,15 @@ public class Translator implements ITranslationConstants {
     //                                    // postcondition of helper procedure (usually constructor)
     //                                    forall(lVar,
     //                                            implies(
-    //                                                    // alive(rval(var(o)), old(var(TranslationController.getHeap()))),
-    //                                                    alive(rval(obj(var(l))), old(var(TranslationController.getHeap()))),
+    //                                                    // alive(rval(var(o)), old(var(tc.getHeap()))),
+    //                                                    alive(rval(obj(var(l))), old(var(tc.getHeap()))),
     //                                                    logicalAnd(
     //                                                            isEqual(
-    //                                                                    get(var(TranslationController.getHeap()), var(l)),
-    //                                                                    get(old(var(TranslationController.getHeap())), var(l))
+    //                                                                    get(var(tc.getHeap()), var(l)),
+    //                                                                    get(old(var(tc.getHeap())), var(l))
     //                                                                    ),
-    //                                                                    //alive(rval(var(o)), var(TranslationController.getHeap()))
-    //                                                                    alive(rval(obj(var(l))), var(TranslationController.getHeap()))
+    //                                                                    //alive(rval(var(o)), var(tc.getHeap()))
+    //                                                                    alive(rval(obj(var(l))), var(tc.getHeap()))
     //                                                            )
     //                                                    )
     //                                            )
@@ -2973,7 +2982,7 @@ public class Translator implements ITranslationConstants {
     //                                                implies(
     //                                                        // BPLBoolLiteral.FALSE,
     //                                                        isEqual(var(o), var(this_var_name)),
-    //                                                        inv(var(t), var(o), var(TranslationController.getHeap()))
+    //                                                        inv(var(t), var(o), var(tc.getHeap()))
     //                                                        )
     //                                                )
     //                                        )
@@ -3290,8 +3299,8 @@ public class Translator implements ITranslationConstants {
          * Initializes the internal datastructures.
          */
         public Context() {
-            typeReferences = TranslationController.referencedTypes();
-            fieldReferences = TranslationController.referencedFields();
+            typeReferences = tc.referencedTypes();
+            fieldReferences = tc.referencedFields();
             symbolicIntLiterals = new TreeSet<Long>();
             stringLiterals = new HashMap<String, String>();
             classLiterals = new HashSet<JType>();

@@ -33,6 +33,7 @@ import de.unikl.bcverifier.Configuration;
 import de.unikl.bcverifier.Configuration.VerifyAction;
 import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
+import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 
 @RunWith(JUnitParamsRunner.class)
@@ -128,7 +129,9 @@ public class LibraryTests {
 		config.setOutput(specificationFile);
 		config.setAction(VerifyAction.VERIFY);
         config.setLoopUnrollCap(loopUnrollCap);
+        TranslationController tc = new TranslationController();
 		Library library = new Library(config);
+		library.setTranslationController(tc);
 		library.compile();
 		library.translate();
 		library.check();
@@ -160,7 +163,9 @@ public class LibraryTests {
         config.setAction(VerifyAction.VERIFY);
         config.setLoopUnrollCap(loopUnrollCap);
         config.setSmokeTestOn(true);
+        TranslationController tc = new TranslationController();
         Library library = new Library(config);
+        library.setTranslationController(tc);
         library.compile();
         library.translate();
         library.check();
@@ -183,7 +188,9 @@ public class LibraryTests {
 		config.setLibraries(lib1, lib2);
 		config.setOutput(specificationFile);
         config.setAction(VerifyAction.TYPECHECK);
+        TranslationController tc = new TranslationController();
 		Library library = new Library(config);
+		library.setTranslationController(tc);
 		library.compile();
 		library.translate();
 		library.check();

@@ -237,6 +237,9 @@ public class MethodTranslator implements ITranslationConstants {
 
     /** The project containing the settings of the translation. */
     private final Project project;
+    
+    /** The translation controller used */
+    private TranslationController tc;
 
     /**
      * The translation context to be used during the translation of the current
@@ -285,6 +288,10 @@ public class MethodTranslator implements ITranslationConstants {
      * used.
      */
     private int callStatements = 0;
+    
+    public void setTranslationController(TranslationController controller){
+        this.tc = controller;
+    }
 
     /**
      * Creates a new method translator which is configured by the given
@@ -382,9 +389,9 @@ public class MethodTranslator implements ITranslationConstants {
 
         // The diverse heap variables being maintained.
         /*
-    BPLVariable heap = new BPLVariable(TranslationController.getHeap(), new BPLTypeName(HEAP_TYPE));
-    BPLVariable oldHeap = new BPLVariable(OLD_TranslationController.getHeap(), new BPLTypeName(HEAP_TYPE));
-    BPLVariable preHeap = new BPLVariable(PRE_TranslationController.getHeap(), new BPLTypeName(HEAP_TYPE));
+    BPLVariable heap = new BPLVariable(tc.getHeap(), new BPLTypeName(HEAP_TYPE));
+    BPLVariable oldHeap = new BPLVariable(OLD_tc.getHeap(), new BPLTypeName(HEAP_TYPE));
+    BPLVariable preHeap = new BPLVariable(PRE_tc.getHeap(), new BPLTypeName(HEAP_TYPE));
     vars.add(new BPLVariableDeclaration(heap, oldHeap, preHeap));
     vars.add(filterVariableDeclarations(blocks, heap, oldHeap, preHeap));
          */
@@ -420,7 +427,7 @@ public class MethodTranslator implements ITranslationConstants {
         BPLVariable[] inParams = new BPLVariable[paramTypes.length];
         //@deprecated inParams[0] = new BPLVariable(PRE_HEAP_VAR, new BPLTypeName(HEAP_TYPE));
         for (int i = 0; i < inParams.length; i++) {
-            if(TranslationController.isActive()){
+            if(tc.isActive()){
                 BPLType bplType = new BPLTypeName(VAR_TYPE, type(paramTypes[i]));
                 vars.add(new BPLVariableDeclaration(new BPLVariable(paramVar(i, paramTypes[i]), bplType)));
             }
@@ -433,7 +440,7 @@ public class MethodTranslator implements ITranslationConstants {
         List<BPLVariable> outParams = new ArrayList<BPLVariable>();
         //@deprecated outParams.add(new BPLVariable(RETURN_HEAP_PARAM, new BPLTypeName(HEAP_TYPE)));
 //        if (provideReturnValue) {
-//            if(TranslationController.isActive()){
+//            if(tc.isActive()){
 //                if (method.isConstructor()) {
 //                    vars.add(new BPLVariableDeclaration(new BPLVariable(RESULT_PARAM + REF_TYPE_ABBREV, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)))));
 //                } else {
@@ -509,7 +516,7 @@ public class MethodTranslator implements ITranslationConstants {
             //      requiresClauses.add(new BPLRequiresClause(logicalAnd(
             //         alive(
             //           rval(var(thisVar())),
-            //           var(TranslationController.getHeap())
+            //           var(tc.getHeap())
             //         ),
             //         isOfType(
             //           rval(var(thisVar())),
@@ -525,7 +532,7 @@ public class MethodTranslator implements ITranslationConstants {
             //      requiresClauses.add(new BPLRequiresClause(logicalAnd(
             //        alive(
             //          rval(var(thisVar())),
-            //          var(TranslationController.getHeap())
+            //          var(tc.getHeap())
             //        ),
             //        isInstanceOf(
             //          rval(var(thisVar())),
@@ -550,7 +557,7 @@ public class MethodTranslator implements ITranslationConstants {
                     //          requiresClauses.add(new BPLRequiresClause(logicalAnd(
                     //            alive(
                     //              rval(var(paramVar(i, params[i]))),
-                    //              var(TranslationController.getHeap())
+                    //              var(tc.getHeap())
                     //            ),
                     //            isInstanceOf( // isOfType
                     //              rval(var(paramVar(i, params[i]))),
@@ -586,13 +593,13 @@ public class MethodTranslator implements ITranslationConstants {
       BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
       requiresClauses.add(new BPLRequiresClause(forall(lVar, notEqual(
           rval(var(thisVar())),
-          get(var(TranslationController.getHeap()), var(l))))));
+          get(var(tc.getHeap()), var(l))))));
 
       // Initialize the fields of the this object to their default values.
       String f = quantVarName("f");
       BPLVariable fVar = new BPLVariable(f, BPLBuiltInType.NAME);
       requiresClauses.add(new BPLRequiresClause(forall(fVar, isEqual(get(
-          var(TranslationController.getHeap()),
+          var(tc.getHeap()),
           fieldLoc(var(thisVar()), var(f))), initVal(fieldType(var(f)))))));
              */
         }
@@ -642,17 +649,17 @@ public class MethodTranslator implements ITranslationConstants {
         String t = quantVarName("t");
         BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
 
-        // return forall(oVar, tVar, implies(notEqual(var(o), var(thisVar())), inv(var(t), var(o), var(TranslationController.getHeap()))));
+        // return forall(oVar, tVar, implies(notEqual(var(o), var(thisVar())), inv(var(t), var(o), var(tc.getHeap()))));
         //    if (project.performInvariantChecks()) {    
         //      return forall(
         //          oVar, tVar,
         //          implies(
         //              logicalAnd(
-        //                  alive(rval(var(o)), var(TranslationController.getHeap())),
+        //                  alive(rval(var(o)), var(tc.getHeap())),
         //                  isSubtype(var(t), typ(rval(var(o)))),
         //                  (method.isConstructor()) ? notEqual(var(o), var(thisVar())) : BPLBoolLiteral.TRUE
         //              ),
-        //              inv(var(t), var(o), var(TranslationController.getHeap()))
+        //              inv(var(t), var(o), var(tc.getHeap()))
         //          )
         //      );
         //    } else {
@@ -677,10 +684,10 @@ public class MethodTranslator implements ITranslationConstants {
         //          oVar, tVar,
         //              implies(
         //                  logicalAnd(
-        //                      alive(rval(var(o)), var(TranslationController.getHeap())),
+        //                      alive(rval(var(o)), var(tc.getHeap())),
         //                      isSubtype(var(t), typ(rval(var(o))))
         //                  ),
-        //                  inv(var(t), var(o), var(TranslationController.getHeap()))
+        //                  inv(var(t), var(o), var(tc.getHeap()))
         //              )
         //          );
         //    } else {
@@ -696,8 +703,8 @@ public class MethodTranslator implements ITranslationConstants {
     private BPLExpression getInvariantBeforeLeavingMethod() {
         BPLExpression isModifiedVar = BPLBoolLiteral.TRUE;
         for (BPLVariableExpression v : modifiedVariables) {
-            // isModifiedVar = logicalAnd(isModifiedVar, inv(var(s.getType().toString()), var(s.getName()), var(TranslationController.getHeap())));
-            //         isModifiedVar = logicalAnd(isModifiedVar, inv(typ(rval(v)), v, var(TranslationController.getHeap())));
+            // isModifiedVar = logicalAnd(isModifiedVar, inv(var(s.getType().toString()), var(s.getName()), var(tc.getHeap())));
+            //         isModifiedVar = logicalAnd(isModifiedVar, inv(typ(rval(v)), v, var(tc.getHeap())));
         }
 
         //    if (project.performInvariantChecks()) {
@@ -706,7 +713,7 @@ public class MethodTranslator implements ITranslationConstants {
         return BPLBoolLiteral.TRUE;
         //    }
 
-        // return forall(oVar, tVar, implies(notInModVars, inv(var(t), var(o), var(TranslationController.getHeap()))));
+        // return forall(oVar, tVar, implies(notInModVars, inv(var(t), var(o), var(tc.getHeap()))));
     }
 
 
@@ -729,7 +736,7 @@ public class MethodTranslator implements ITranslationConstants {
         //    }
 
         //    if (project.performInvariantChecks()) {
-        //      return forall(oVar, tVar, implies(isUnmodifiedVar, inv(var(t), var(o), var(TranslationController.getHeap()))));
+        //      return forall(oVar, tVar, implies(isUnmodifiedVar, inv(var(t), var(o), var(tc.getHeap()))));
         //    } else {
         return BPLBoolLiteral.TRUE;
         //    }
@@ -744,7 +751,7 @@ public class MethodTranslator implements ITranslationConstants {
     }
 
     return forall(oVar, tVar,
-        implies(notInModVars, inv(var(t), var(o), var(TranslationController.getHeap())))
+        implies(notInModVars, inv(var(t), var(o), var(tc.getHeap())))
     ); */
     }
 
@@ -764,7 +771,7 @@ public class MethodTranslator implements ITranslationConstants {
     // TODO read modified variables from BPL file
     translateModifiesClause(method, get)
 
-    modifiesClauses.add(new BPLModifiesClause(var(TranslationController.getHeap())));
+    modifiesClauses.add(new BPLModifiesClause(var(tc.getHeap())));
 
     return modifiesClauses.toArray(new BPLModifiesClause[modifiesClauses.size()]);
          */
@@ -810,8 +817,8 @@ public class MethodTranslator implements ITranslationConstants {
 //        //    BPLExpression guaranteeAliveness = forall(
 //        //        vVar,
 //        //        implies(
-//        //            alive(var(v), old(var(TranslationController.getHeap()))),
-//        //            alive(var(v), var(TranslationController.getHeap()))
+//        //            alive(var(v), old(var(tc.getHeap()))),
+//        //            alive(var(v), var(tc.getHeap()))
 //        //        )
 //        //    );
 //
@@ -828,10 +835,10 @@ public class MethodTranslator implements ITranslationConstants {
 //        //        implies(
 //        //          allModifiedHeapLocations,
 //        //          implies(
-//        //              alive(rval(obj(var(l))), old(var(TranslationController.getHeap()))), // only consider objects which were allocated on the old heap
+//        //              alive(rval(obj(var(l))), old(var(tc.getHeap()))), // only consider objects which were allocated on the old heap
 //        //              isEqual(
-//        //                  get(var(TranslationController.getHeap()), var(l)),
-//        //                  get(old(var(TranslationController.getHeap())), var(l))
+//        //                  get(var(tc.getHeap()), var(l)),
+//        //                  get(old(var(tc.getHeap())), var(l))
 //        //              )
 //        //          )
 //        //        )
@@ -846,13 +853,13 @@ public class MethodTranslator implements ITranslationConstants {
 //      FC = forall(
 //          ref,
 //          implies(
-//              alive(rval(var(r)), old(var(TranslationController.getHeap()))),
+//              alive(rval(var(r)), old(var(tc.getHeap()))),
 //              logicalAnd(
 //                  isEqual(
-//                      get(var(TranslationController.getHeap()), fieldLoc(var(r), typ(rval(var(r))))),
-//                      get(old(var(TranslationController.getHeap())), fieldLoc(var(r), typ(rval(var(r)))))
+//                      get(var(tc.getHeap()), fieldLoc(var(r), typ(rval(var(r))))),
+//                      get(old(var(tc.getHeap())), fieldLoc(var(r), typ(rval(var(r)))))
 //                  ),
-//                  alive(rval(var(r)), var(TranslationController.getHeap()))
+//                  alive(rval(var(r)), var(tc.getHeap()))
 //              )
 //          )
 //      );
@@ -869,7 +876,7 @@ public class MethodTranslator implements ITranslationConstants {
 //        //    if (method.isConstructor()) {
 //        //      qResult = logicalAnd(
 //        //            Q,
-//        //            alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(TranslationController.getHeap())),
+//        //            alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(tc.getHeap())),
 //        //            isInstanceOf(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), typeRef(method.getOwner())),
 //        //            notEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), BPLNullLiteral.NULL)//,
 //        ////            guaranteeAliveness,
@@ -882,7 +889,7 @@ public class MethodTranslator implements ITranslationConstants {
 //        //          qResult = logicalAnd(
 //        //            // isNormalReturnState(var(RETURN_STATE_PARAM)),
 //        //            Q,
-//        //            alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(TranslationController.getHeap())),
+//        //            alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(tc.getHeap())),
 //        //            isOfType(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), typeRef(method.getReturnType())));
 //        //        } else {
 //        //          // The method's return value is not a reference type
@@ -890,7 +897,7 @@ public class MethodTranslator implements ITranslationConstants {
 //        //          qResult = logicalAnd(
 //        //            // isNormalReturnState(var(RETURN_STATE_PARAM)),
 //        //            Q,
-//        //            alive(ival(var(RESULT_PARAM + typeAbbrev(type(method.getReturnType())))), var(TranslationController.getHeap())),
+//        //            alive(ival(var(RESULT_PARAM + typeAbbrev(type(method.getReturnType())))), var(tc.getHeap())),
 //        //            isOfType(ival(var(RESULT_PARAM + typeAbbrev(type(method.getReturnType())))), typeRef(method.getReturnType())));
 //        //        }
 //        //      } else {
@@ -938,7 +945,7 @@ public class MethodTranslator implements ITranslationConstants {
 //                    isOfType(var(EXCEPTION_PARAM), typeRef(exception))
 //                    );
 //            //      BPLExpression qException =  logicalAnd(Qex,
-//            //          alive(rval(var(EXCEPTION_PARAM)), var(TranslationController.getHeap()))
+//            //          alive(rval(var(EXCEPTION_PARAM)), var(tc.getHeap()))
 //            //      );
 //
 //            // Add exceptional postcondition for this particular exception
@@ -1130,7 +1137,7 @@ public class MethodTranslator implements ITranslationConstants {
 
         /*
          * // Keep a copy of the method's pre-state heap.
-         * addAssignment(var(OLD_HEAP_VAR), var(TranslationController.getHeap()));
+         * addAssignment(var(OLD_HEAP_VAR), var(tc.getHeap()));
          *  // If we have a this object, then it is not null. if
          * (!method.isStatic()) { addAssume(nonNull(var(thisVar()))); }
          *  // For every method parameter, we do the following: // - assume its type
@@ -1141,7 +1148,7 @@ public class MethodTranslator implements ITranslationConstants {
          * typeRef(params[i]); if (params[i].isBaseType()) { // There is no need to
          * assume aliveness of value types.
          * addAssume(isOfType(ival(var(paramVar(i))), typeRef)); } else {
-         * addAssume(alive(rval(var(paramVar(i))), var(TranslationController.getHeap())));
+         * addAssume(alive(rval(var(paramVar(i))), var(tc.getHeap())));
          * addAssume(isOfType(rval(var(paramVar(i))), typeRef)); }
          * addAssignment(var(localVar(i, params[i])), var(paramVar(i))); }
          *  // Special handling for constructors. if (method.isConstructor()) { //
@@ -1157,10 +1164,10 @@ public class MethodTranslator implements ITranslationConstants {
          *  // No object in the heap is equal to the this object. String l =
          * quantVarName("l"); BPLVariable lVar = new BPLVariable(l, new
          * BPLTypeName(LOCATION_TYPE)); addAssume(forall( lVar,
-         * notEqual(rval(var(thisVar())), get(var(TranslationController.getHeap()), var(l)))));
+         * notEqual(rval(var(thisVar())), get(var(tc.getHeap()), var(l)))));
          *  // Initialize the fields of the this object to their default values.
          * String f = quantVarName("f"); BPLVariable fVar = new BPLVariable(f,
-         * BPLBuiltInType.NAME); addAssume(forall( fVar, isEqual( get(var(TranslationController.getHeap()),
+         * BPLBuiltInType.NAME); addAssume(forall( fVar, isEqual( get(var(tc.getHeap()),
          * fieldLoc(var(thisVar()), var(f))), initVal(fieldType(var(f)))))); }
          * 
          * endBlock(PRE_BLOCK_LABEL);
@@ -1175,24 +1182,24 @@ public class MethodTranslator implements ITranslationConstants {
         // addAssume(translatePrecondition(method, getInParameters()));
 
         //@deprecated addAssume(notEqual(var(thisVar()), BPLNullLiteral.NULL));
-        //@deprecated addAssume(alive(rval(var(thisVar())), var(TranslationController.getHeap())));
+        //@deprecated addAssume(alive(rval(var(thisVar())), var(tc.getHeap())));
 
         JType[] params = new JType[method.getParameterCount() + 1];
         params[0] = method.getOwner(); //for static methods the class object, for non-static the receiver
         System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
-        if(TranslationController.isActive()){
+        if(tc.isActive()){
             addAssume(nonNull(stack(var(thisVar()))));
         }
 
         for (int i = 0; i < params.length; i++) {
-            if(TranslationController.isActive()){
+            if(tc.isActive()){
                 if(params[i].isBaseType()){
                     JBaseType baseType = (JBaseType)params[i];
                     addAssume(isInRange(stack(var(paramVar(i, baseType))), typeRef(baseType)));
                 } else if(params[i].isClassType()){
                     JClassType classType = (JClassType)params[i];
-                    addAssume(isOfType(stack(var(paramVar(i, classType))), var(TranslationController.getHeap()), context.translateTypeReference(classType)));
-//                    addAssume(obj(var(TranslationController.getHeap()), stack(var(paramVar(i, classType))))); //TODO this would mean all parameters are non-null
+                    addAssume(isOfType(stack(var(paramVar(i, classType))), var(tc.getHeap()), context.translateTypeReference(classType)));
+//                    addAssume(obj(var(tc.getHeap()), stack(var(paramVar(i, classType))))); //TODO this would mean all parameters are non-null
                 } else {
                     //TODO arrays
                 }
@@ -1209,7 +1216,7 @@ public class MethodTranslator implements ITranslationConstants {
             }
         }
 
-        //@deprecated addAssignment(var(TranslationController.getHeap()), var(PRE_HEAP_VAR));
+        //@deprecated addAssignment(var(tc.getHeap()), var(PRE_HEAP_VAR));
 
         // requires param0 != null;
         // requires alive(rval(param0), heap);
@@ -1304,8 +1311,8 @@ public class MethodTranslator implements ITranslationConstants {
             startBlock(postXBlockLabel(exception));
 
             // addAssume(isInstanceOf(rval(var(refStackVar(0))), typeRef(exception)));
-            addAssume(isOfType(var(EXCEPTION_PARAM), var(TranslationController.getHeap()), typeRef(exception)));
-            //      addAssume(alive(rval(var(EXCEPTION_PARAM)), var(TranslationController.getHeap())));
+            addAssume(isOfType(var(EXCEPTION_PARAM), var(tc.getHeap()), typeRef(exception)));
+            //      addAssume(alive(rval(var(EXCEPTION_PARAM)), var(tc.getHeap())));
 
             /*
              * REMOVE: exceptional postconditions are checked implicitely by Boogie
@@ -1327,7 +1334,7 @@ public class MethodTranslator implements ITranslationConstants {
          * addAssert(translateMethodFrame(method, OLD_HEAP_VAR, getInParameters()));
          */
 
-        //@deprecated addAssignment(var(RETURN_HEAP_PARAM), var(TranslationController.getHeap()));
+        //@deprecated addAssignment(var(RETURN_HEAP_PARAM), var(tc.getHeap()));
 
         boolean provideReturnValue = !method.isVoid() || method.isConstructor();
 
@@ -1340,27 +1347,27 @@ public class MethodTranslator implements ITranslationConstants {
                     BPLExpression topElem = stack(var(resVar(retType)));
 
                     if (method.getReturnType().isReferenceType() || method.isConstructor()) {
-                        //        addAssume(alive(rval(topElem), var(TranslationController.getHeap())));
-                        addAssume(isOfType(topElem, var(TranslationController.getHeap()), typeRef(retType)));
+                        //        addAssume(alive(rval(topElem), var(tc.getHeap())));
+                        addAssume(isOfType(topElem, var(tc.getHeap()), typeRef(retType)));
                     } else {
-                        //        addAssume(alive(ival(topElem), var(TranslationController.getHeap())));
+                        //        addAssume(alive(ival(topElem), var(tc.getHeap())));
                         //        addAssume(isOfType(topElem, var(VALUE_TYPE_PREFIX + JBaseType.INT.toString())));
                         addAssume(isInRange(topElem, typeRef(retType)));
                     }
 
-//                    if(TranslationController.isActive()){
+//                    if(tc.isActive()){
 //                        addAssignment(stack(var(RESULT_PARAM + typeAbbrev(type(retType)))), stack(var(stackVar(0, retType))));
 //                    } else {
 //                        addAssignment(var(RESULT_PARAM + typeAbbrev(type(retType))), stack(var(stackVar(0, retType))));
 //                    }
-                    if(TranslationController.isActive() && method.isConstructor()){
+                    if(tc.isActive() && method.isConstructor()){
                         addAssignment(stack(var(RESULT_PARAM + typeAbbrev(type(retType)))), stack(var(stackVar(0, retType))));
                     }
 
         }
         
         String methodName = MethodTranslator.getMethodName(method);
-//        addCommand(new BPLAssumeCommand(isEqual(stack(var("place")), var(TranslationController.buildPlace(getProcedureName(method), true)))));
+//        addCommand(new BPLAssumeCommand(isEqual(stack(var("place")), var(tc.buildPlace(getProcedureName(method), true)))));
         addCommand(new BPLAssumeCommand(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX+methodName))));
 
         String currentLabel = blockLabel;
@@ -1370,17 +1377,17 @@ public class MethodTranslator implements ITranslationConstants {
         endBlock(boundaryReturnLabel, internReturnLabel);
         
         startBlock(boundaryReturnLabel);
-        addAssume(isEqual(var(TranslationController.getStackPointer()), intLiteral(0)));
-        addAssignment(stack(var("place")), var(TranslationController.buildPlace(getProcedureName(method), true)));
+        addAssume(isEqual(var(tc.getStackPointer()), intLiteral(0)));
+        addAssignment(stack(var("place")), var(tc.buildPlace(getProcedureName(method), true)));
         if(method.isConstructor()){
-            rawEndBlock(TranslationController.getNextConstructorLabel());
+            rawEndBlock(tc.getNextConstructorLabel());
         } else {
-            rawEndBlock(TranslationController.getCheckLabel());
+            rawEndBlock(tc.getCheckLabel());
         }
         
-        String retTableLabel = TranslationController.prefix("rettable");
+        String retTableLabel = tc.prefix("rettable");
         startBlock(internReturnLabel);
-        addAssume(greater(var(TranslationController.getStackPointer()), intLiteral(0)));
+        addAssume(greater(var(tc.getStackPointer()), intLiteral(0)));
         rawEndBlock(retTableLabel);
     }
 
@@ -1450,10 +1457,10 @@ public class MethodTranslator implements ITranslationConstants {
       // Assume all invariants of all objects but the this object.
       addAssume(forall(tVar, oVar, implies(
           notEqual(var(o), var(thisVar())),
-          inv(var(t), var(o), var(TranslationController.getHeap())))));
+          inv(var(t), var(o), var(tc.getHeap())))));
     } else {
       // Assume all invariants of all objects.
-      addAssume(forall(tVar, oVar, inv(var(t), var(o), var(TranslationController.getHeap()))));
+      addAssume(forall(tVar, oVar, inv(var(t), var(o), var(tc.getHeap()))));
     }
          */
     }
@@ -1472,13 +1479,13 @@ public class MethodTranslator implements ITranslationConstants {
 //            // Assume all invariants of all objects but the this object.
 //            return new BPLRequiresClause(forall(tVar, oVar, implies(notEqual(
 //                    var(o),
-//                    var(thisVar())), inv(var(t), var(o), var(TranslationController.getHeap())))));
+//                    var(thisVar())), inv(var(t), var(o), var(tc.getHeap())))));
 //        } else {
 //            // Assume all invariants of all objects.
 //            return new BPLRequiresClause(forall(tVar, oVar, inv(
 //                    var(t),
 //                    var(o),
-//                    var(TranslationController.getHeap()))));
+//                    var(tc.getHeap()))));
 //        }
         return new BPLRequiresClause(BPLBoolLiteral.TRUE);
     }
@@ -1496,7 +1503,7 @@ public class MethodTranslator implements ITranslationConstants {
     BPLExpression type = typeRef(method.getOwner());
     if (project.isThisInvariantsOnly()) {
       if (!method.isStatic() && !excludeThisObject) {
-        addAssert(inv(type, var(thisVar()), var(TranslationController.getHeap())));
+        addAssert(inv(type, var(thisVar()), var(tc.getHeap())));
       }
     } else {
       String o = quantVarName("o");
@@ -1508,12 +1515,12 @@ public class MethodTranslator implements ITranslationConstants {
               inv(
                 type,
                 var(o),
-                var(TranslationController.getHeap())
+                var(tc.getHeap())
               )
             )
         ));
       } else {
-        addAssert(forall(oVar, inv(type, var(o), var(TranslationController.getHeap()))));
+        addAssert(forall(oVar, inv(type, var(o), var(tc.getHeap()))));
       }
     }
   }
@@ -1528,7 +1535,7 @@ public class MethodTranslator implements ITranslationConstants {
 //
 //        if (project.isThisInvariantsOnly()) {
 //            if (!method.isStatic() && !excludeThisObject) {
-//                return new BPLEnsuresClause(inv(type, var(thisVar()), var(TranslationController.getHeap())));
+//                return new BPLEnsuresClause(inv(type, var(thisVar()), var(tc.getHeap())));
 //            } else {
 //                return new BPLEnsuresClause(BPLBoolLiteral.TRUE);
 //            }
@@ -1538,13 +1545,13 @@ public class MethodTranslator implements ITranslationConstants {
 //            if (excludeThisObject) {
 //                return new BPLEnsuresClause(forall(oVar, implies(notEqual(
 //                        var(o),
-//                        var(thisVar())), inv(type, var(o), var(TranslationController.getHeap())
+//                        var(thisVar())), inv(type, var(o), var(tc.getHeap())
 //                                ))));
 //            } else {
 //                return new BPLEnsuresClause(forall(oVar, inv(
 //                        type,
 //                        var(o),
-//                        var(TranslationController.getHeap())
+//                        var(tc.getHeap())
 //                        )));
 //            }
 //        }
@@ -1586,7 +1593,7 @@ public class MethodTranslator implements ITranslationConstants {
         if (cfgBlock.isBackEdgeTarget()) {
             // update unroll count when entering a loop
             ///////////////////////////////////////////
-            BPLExpression unrollLoop = var(TranslationController.prefix(ITranslationConstants.UNROLL_COUNT));
+            BPLExpression unrollLoop = var(tc.prefix(ITranslationConstants.UNROLL_COUNT));
             addAssignment(unrollLoop, add(unrollLoop, new BPLIntLiteral(1)));
             addAssert(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL)));
             
@@ -1605,7 +1612,7 @@ public class MethodTranslator implements ITranslationConstants {
                     if (type.isBaseType()) {
                         //            addAssume(isOfType(var(localVar(i, type)), typeRef(type)));
                     } else if (type != JNullType.NULL) {
-                        addAssume(isEqual(typ(stack(var(localVar(i, type))), var(TranslationController.getHeap())), typeRef(type)));
+                        addAssume(isEqual(typ(stack(var(localVar(i, type))), var(tc.getHeap())), typeRef(type)));
                     }
                 }
             }
@@ -1616,7 +1623,7 @@ public class MethodTranslator implements ITranslationConstants {
                     if (type.isBaseType()) {
                         //            addAssume(isOfType(var(stackVar(i, type)), typeRef(type)));
                     } else if (type != JNullType.NULL) {
-                        addAssume(isEqual(typ(stack(var(stackVar(i, type))), var(TranslationController.getHeap())), typeRef(type)));
+                        addAssume(isEqual(typ(stack(var(stackVar(i, type))), var(tc.getHeap())), typeRef(type)));
                     }
                 }
             }
@@ -1629,7 +1636,7 @@ public class MethodTranslator implements ITranslationConstants {
             //      BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VALUE_TYPE));
             //      addAssume(forall(vVar, implies(alive(var(v), var(loopHeap)), alive(
             //          var(v),
-            //          var(TranslationController.getHeap())))));
+            //          var(tc.getHeap())))));
 
             // If we are verifying the invariants on all objects of the method's
             // receiver type (and not only on the this object), we must enforce that
@@ -1660,7 +1667,7 @@ public class MethodTranslator implements ITranslationConstants {
                 //              inv(
                 //                typeRef(method.getOwner()),
                 //                var(o),
-                //                var(TranslationController.getHeap())
+                //                var(tc.getHeap())
                 //              )
                 //            )
                 //        ));
@@ -1714,7 +1721,7 @@ public class MethodTranslator implements ITranslationConstants {
 //    private BPLExpression translatePrecondition(
 //            BCMethod method,
 //            String[] parameters) {
-//        SpecificationTranslator translator = SpecificationTranslator.forPrecondition(TranslationController.getHeap(), parameters);
+//        SpecificationTranslator translator = SpecificationTranslator.forPrecondition(tc.getHeap(), parameters);
 //        return translator.translate(context, project.getSpecificationDesugarer().getPrecondition(method));
 //    }
 
@@ -1728,7 +1735,7 @@ public class MethodTranslator implements ITranslationConstants {
 //    private BPLModifiesClause translateModifiesClause(
 //            BCMethod method,
 //            String[] parameters) {
-//        SpecificationTranslator translator = SpecificationTranslator.forModifiesClause(TranslationController.getHeap(), parameters);
+//        SpecificationTranslator translator = SpecificationTranslator.forModifiesClause(tc.getHeap(), parameters);
 //        return translator.translateModifiesStoreRefs(context, project.getSpecificationDesugarer().getModifiesStoreRefs(method));
 //    }
 
@@ -1747,7 +1754,7 @@ public class MethodTranslator implements ITranslationConstants {
 //            /*String oldHeap,*/
 //            String result,
 //            String[] parameters) {
-//        SpecificationTranslator translator = SpecificationTranslator.forPostcondition(TranslationController.getHeap(), /* oldHeap, */ result, parameters);
+//        SpecificationTranslator translator = SpecificationTranslator.forPostcondition(tc.getHeap(), /* oldHeap, */ result, parameters);
 //        return translator.translate(context, project.getSpecificationDesugarer().getPostcondition(method));
 //    }
 
@@ -1769,7 +1776,7 @@ public class MethodTranslator implements ITranslationConstants {
 //            /* String oldHeap, */
 //            String exceptionObject,
 //            String[] parameters) {
-//        SpecificationTranslator translator = SpecificationTranslator.forPostcondition(TranslationController.getHeap(), /* oldHeap, */ exceptionObject, parameters);
+//        SpecificationTranslator translator = SpecificationTranslator.forPostcondition(tc.getHeap(), /* oldHeap, */ exceptionObject, parameters);
 //        return translator.translate(context, project.getSpecificationDesugarer().getExceptionalPostcondition(method, exception));
 //    }
 
@@ -1824,7 +1831,7 @@ public class MethodTranslator implements ITranslationConstants {
 //            InstructionHandle insn) {
 //        SpecificationTranslator translator = SpecificationTranslator
 //                .forLocalSpecification(
-//                        TranslationController.getHeap(),
+//                        tc.getHeap(),
 //                        PRE_HEAP_VAR,
 //                        getLocalVariablesAt(insn),
 //                        getStackVariablesAt(insn),
@@ -1898,18 +1905,18 @@ public class MethodTranslator implements ITranslationConstants {
             String[] parameters) {
         if (storeRefs.length > 0) {
             String l = quantVarName("l");
-//            ModifiesFilter filter = ModifiesFilter.forMethod(old(var(TranslationController.getHeap())).toString(), parameters, l);
+//            ModifiesFilter filter = ModifiesFilter.forMethod(old(var(tc.getHeap())).toString(), parameters, l);
 
             /* TODO: REMOVE (previous version)
       BPLExpression expr = implies(logicalAnd(
                                      alive(rval(obj(var(l))),
-                                           old(var(TranslationController.getHeap()))
+                                           old(var(tc.getHeap()))
                                      ),
                                      filter.translate(context, storeRefs)
                                    ),
                                    isEqual(
-                                     get(var(TranslationController.getHeap()), var(l)),
-                                     get(old(var(TranslationController.getHeap())), var(l))
+                                     get(var(tc.getHeap()), var(l)),
+                                     get(old(var(tc.getHeap())), var(l))
                                    )
                            );
              */ // END (previous version)
@@ -1918,14 +1925,14 @@ public class MethodTranslator implements ITranslationConstants {
 
             //      BPLExpression expr = logicalAnd(
             //          implies(
-            //              // alive(rval(var(o)), old(var(TranslationController.getHeap()))),
-            //              alive(rval(obj(var(l))), old(var(TranslationController.getHeap()))),
+            //              // alive(rval(var(o)), old(var(tc.getHeap()))),
+            //              alive(rval(obj(var(l))), old(var(tc.getHeap()))),
             //              logicalAnd(
-            //                // alive(rval(var(o)), var(TranslationController.getHeap()))
-            //                alive(rval(obj(var(l))), var(TranslationController.getHeap())),
+            //                // alive(rval(var(o)), var(tc.getHeap()))
+            //                alive(rval(obj(var(l))), var(tc.getHeap())),
             //                isEqual(
-            //                    get(var(TranslationController.getHeap()), var(l)),
-            //                    get(old(var(TranslationController.getHeap())), var(l))
+            //                    get(var(tc.getHeap()), var(l)),
+            //                    get(old(var(tc.getHeap())), var(l))
             //                )
             //              )
             //          )
@@ -1933,13 +1940,13 @@ public class MethodTranslator implements ITranslationConstants {
             //          implies(
             //              filter.translate(context, storeRefs),
             //              isEqual(
-            //                  get(var(TranslationController.getHeap()), var(l)),
-            //                  get(old(var(TranslationController.getHeap())), var(l))
+            //                  get(var(tc.getHeap()), var(l)),
+            //                  get(old(var(tc.getHeap())), var(l))
             //              )
             //          )*/
             //      );
             //
-            //      SpecificationTranslator translator = SpecificationTranslator.forPrecondition(var(TranslationController.getHeap()).toString(), parameters);
+            //      SpecificationTranslator translator = SpecificationTranslator.forPrecondition(var(tc.getHeap()).toString(), parameters);
             //      BPLExpression pre = translator.translate(context, requires);
             //      expr = implies(pre, expr);
 
@@ -1957,7 +1964,7 @@ public class MethodTranslator implements ITranslationConstants {
         //     ModifiesFilter.forMethod(oldHeap, parameters, l);
         //   BPLExpression expr = filter.translate(context, storeRefs);
         //   expr = logicalAnd(alive(rval(obj(var(l))), var(oldHeap)), expr);
-        //   BPLExpression left = get(var(TranslationController.getHeap()), var(l));
+        //   BPLExpression left = get(var(tc.getHeap()), var(l));
         //   BPLExpression right = get(var(oldHeap), var(l));
         //   expr = implies(expr, isEqual(left, right));
         //   BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
@@ -1985,7 +1992,7 @@ public class MethodTranslator implements ITranslationConstants {
 //                    l);
             //      BPLExpression expr = filter.translate(context, storeRefs);
             //      expr = logicalAnd(alive(rval(obj(var(l))), var(loopHeap)), expr);
-            //      BPLExpression left = get(var(TranslationController.getHeap()), var(l));
+            //      BPLExpression left = get(var(tc.getHeap()), var(l));
             //      BPLExpression right = get(var(loopHeap), var(l));
             //      expr = implies(expr, isEqual(left, right));
             //      BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LOCATION_TYPE));
@@ -2087,7 +2094,7 @@ public class MethodTranslator implements ITranslationConstants {
 //        } else if (rhs instanceof BPLFunctionApplication) {
 //            BPLFunctionApplication farhs = ((BPLFunctionApplication)rhs);
 //
-//            if (lhs_label == TranslationController.getHeap()) {
+//            if (lhs_label == tc.getHeap()) {
 //
 //                if (farhs.getFunctionName() == UPDATE_FUNC) {
 //
@@ -2155,14 +2162,14 @@ public class MethodTranslator implements ITranslationConstants {
         if(transferCommand instanceof BPLGotoCommand){
             String[] targetLabels = new String[transferCommand.getTargetLabels().length];
             for(int i=0; i<transferCommand.getTargetLabels().length; i++){
-                targetLabels[i] = TranslationController.prefix(getProcedureName(method) + "_" + transferCommand.getTargetLabels()[i]);
+                targetLabels[i] = tc.prefix(getProcedureName(method) + "_" + transferCommand.getTargetLabels()[i]);
             }
             transCmd = new BPLGotoCommand(targetLabels);
         } else {
             transCmd = transferCommand;
         }
         BPLBasicBlock block = new BPLBasicBlock(
-                TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+                tc.prefix(getProcedureName(method) + "_" + blockLabel),
                 commands.toArray(new BPLCommand[commands.size()]),
                 transCmd
                 );
@@ -2173,7 +2180,7 @@ public class MethodTranslator implements ITranslationConstants {
     private void rawEndBlock(String... labels) {
         BPLTransferCommand transCmd = new BPLGotoCommand(labels);
         BPLBasicBlock block = new BPLBasicBlock(
-                TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+                tc.prefix(getProcedureName(method) + "_" + blockLabel),
                 commands.toArray(new BPLCommand[commands.size()]),
                 transCmd
                 );
@@ -2234,7 +2241,7 @@ public class MethodTranslator implements ITranslationConstants {
 //                    // keep a copy of the current heap which is used at the loop header
 //                    // itself for translating loop invariants.
 //                    String loopHeap = getLoopHeapVar(cfgEdge.getTarget());
-//                    addAssignment(var(loopHeap), var(TranslationController.getHeap()));
+//                    addAssignment(var(loopHeap), var(tc.getHeap()));
 //                }
 //            }
         }
@@ -2745,7 +2752,7 @@ public class MethodTranslator implements ITranslationConstants {
             addAssume(logicalNot(logicalAnd(normalConditions)));
             // Havoc the exception object and assume its static type.
             // addHavoc(var(refStackVar(0)));
-            // addAssume(alive(rval(var(refStackVar(0))), var(TranslationController.getHeap())));
+            // addAssume(alive(rval(var(refStackVar(0))), var(tc.getHeap())));
             // addAssume(nonNull(var(refStackVar(0))));
             //      addAssume(isEqual(typ(rval(var(refStackVar(0)))), typeRef(exception)));
             endBlock(labels.toArray(new String[labels.size()]));
@@ -2844,14 +2851,14 @@ public class MethodTranslator implements ITranslationConstants {
             int stack = handle.getFrame().getStackSize() - 1;
             BCField field = insn.getField();
 
-            if(TranslationController.getConfig().isNullChecks()){
+            if(tc.getConfig().isNullChecks()){
                 addAssert(nonNull(stack(var(refStackVar(stack)))));
             } else {
                 addAssume(nonNull(stack(var(refStackVar(stack)))));
             }
 
             BPLExpression ref = stack(var(refStackVar(stack)));
-            BPLExpression get = fieldAccess(context, TranslationController.getHeap(), ref, field);
+            BPLExpression get = fieldAccess(context, tc.getHeap(), ref, field);
             addAssignment(stack(var(stackVar(stack, field.getType()))), get);
         }
 
@@ -2861,7 +2868,7 @@ public class MethodTranslator implements ITranslationConstants {
             int stackRhs = handle.getFrame().getStackSize() - 1;
             BCField field = insn.getField();
 
-            if(TranslationController.getConfig().isNullChecks()){
+            if(tc.getConfig().isNullChecks()){
                 addAssert(nonNull(stack(var(refStackVar(stackLhs)))));
             } else {
                 addAssume(nonNull(stack(var(refStackVar(stackLhs)))));
@@ -2869,7 +2876,7 @@ public class MethodTranslator implements ITranslationConstants {
 
             BPLExpression lhs = var(refStackVar(stackLhs));
             BPLExpression rhs = var(stackVar(stackRhs, field.getType()));
-            //      BPLExpression update = fieldUpdate(context, TranslationController.getHeap(), lhs, field, rhs);
+            //      BPLExpression update = fieldUpdate(context, tc.getHeap(), lhs, field, rhs);
 
             BPLVariableExpression vlhs = (BPLVariableExpression)lhs;
 
@@ -2883,11 +2890,11 @@ public class MethodTranslator implements ITranslationConstants {
 //                }
 //            }
 
-            BPLExpression heapLocation = new BPLArrayExpression(var(TranslationController.getHeap()), stack(lhs), context.translateFieldReference(field));
+            BPLExpression heapLocation = new BPLArrayExpression(var(tc.getHeap()), stack(lhs), context.translateFieldReference(field));
             BPLCommand cmd = new BPLAssignmentCommand(heapLocation, stack(rhs));
             addCommand(cmd);
-            if(TranslationController.getConfig().isAssumeWellformedHeap()){
-                addCommand(new BPLAssumeCommand(wellformedHeap(var(TranslationController.getHeap()))));
+            if(tc.getConfig().isAssumeWellformedHeap()){
+                addCommand(new BPLAssumeCommand(wellformedHeap(var(tc.getHeap()))));
             }
         }
 
@@ -2896,7 +2903,7 @@ public class MethodTranslator implements ITranslationConstants {
             int stack = handle.getFrame().getStackSize();
             BCField field = insn.getField();
 
-            BPLExpression get = fieldAccess(context, TranslationController.getHeap(), null, field);
+            BPLExpression get = fieldAccess(context, tc.getHeap(), null, field);
             addAssignment(stack(var(stackVar(stack, field.getType()))), get);
         }
 
@@ -2906,8 +2913,8 @@ public class MethodTranslator implements ITranslationConstants {
             BCField field = insn.getField();
 
             BPLExpression rhs = var(stackVar(stackRhs, field.getType()));
-            //      BPLExpression update = fieldUpdate(context, TranslationController.getHeap(), null, field, rhs);
-            BPLExpression heapLocation = new BPLArrayExpression(var(TranslationController.getHeap()), new BPLFunctionApplication("ClassRepr", typeRef(field.getType())), var(GLOBAL_VAR_PREFIX+field.getQualifiedName())); //TODO check static fields are accessed correctly
+            //      BPLExpression update = fieldUpdate(context, tc.getHeap(), null, field, rhs);
+            BPLExpression heapLocation = new BPLArrayExpression(var(tc.getHeap()), new BPLFunctionApplication("ClassRepr", typeRef(field.getType())), var(GLOBAL_VAR_PREFIX+field.getQualifiedName())); //TODO check static fields are accessed correctly
             addAssignment(heapLocation, stack(rhs));
         }
 
@@ -2919,7 +2926,7 @@ public class MethodTranslator implements ITranslationConstants {
             String ref = refStackVar(stackRef);
             String idx = intStackVar(stackIdx);
 
-            if(!TranslationController.isActive()){
+            if(!tc.isActive()){
                 translateRuntimeException(
                         "java.lang.NullPointerException",
                         nonNull(stack(var(ref))));
@@ -2930,7 +2937,7 @@ public class MethodTranslator implements ITranslationConstants {
             //          less(var(idx), arrayLength(rval(var(ref)))));
 
             //TODO how to access an array
-            //      BPLExpression get = arrayAccess(TranslationController.getHeap(), arrayType, var(ref), var(idx));
+            //      BPLExpression get = arrayAccess(tc.getHeap(), arrayType, var(ref), var(idx));
             //      addAssignment(stack(var(stackVar(stackRef, elemType))), get);
         }
 
@@ -2954,7 +2961,7 @@ public class MethodTranslator implements ITranslationConstants {
             String idx = intStackVar(stackIdx);
             String val = stackVar(stackVal, elemType);
 
-            if(!TranslationController.isActive()){
+            if(!tc.isActive()){
                 translateRuntimeException(
                         "java.lang.NullPointerException",
                         nonNull(stack(var(ref))));
@@ -2971,12 +2978,12 @@ public class MethodTranslator implements ITranslationConstants {
 
             //TODO how to update an array
             //      BPLExpression update = arrayUpdate(
-            //              TranslationController.getHeap(),
+            //              tc.getHeap(),
             //          arrayType,
             //          var(ref),
             //          var(idx),
             //          var(val));
-            //      addAssignment(var(TranslationController.getHeap()), update);
+            //      addAssignment(var(tc.getHeap()), update);
         }
 
         //@ requires insn != null;
@@ -2994,7 +3001,7 @@ public class MethodTranslator implements ITranslationConstants {
             int stack = handle.getFrame().getStackSize() - 1;
             String ref = refStackVar(stack);
 
-            if(!TranslationController.isActive()){
+            if(!tc.isActive()){
                 translateRuntimeException(
                         "java.lang.NullPointerException",
                         nonNull(stack(var(ref))));
@@ -3047,14 +3054,14 @@ public class MethodTranslator implements ITranslationConstants {
 
             // Non-static method calls may throw a NullPointerException.
                     
-            if (TranslationController.getConfig().isNullChecks() && !invokedMethod.isStatic() && !invokedMethod.isConstructor()) {
+            if (tc.getConfig().isNullChecks() && !invokedMethod.isStatic() && !invokedMethod.isConstructor()) {
                 addAssert(nonNull(stack(var(refStackVar(first)))));
             } else {
                 addAssume(nonNull(stack(var(refStackVar(first)))));
             }
             
             if(!isSuperConstructor){
-                BPLExpression sp = var(TranslationController.getStackPointer());
+                BPLExpression sp = var(tc.getStackPointer());
                 BPLExpression spMinus1 = sub(sp, intLiteral(1)); 
                 addAssignment(sp, add(sp, intLiteral(1)), "create new stack frame");
                 
@@ -3071,7 +3078,7 @@ public class MethodTranslator implements ITranslationConstants {
                     if(invokedMethodParams[i].isBaseType()){
                         addAssert(isInRange(stack(spMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
                     } else if(invokedMethodParams[i].isClassType()){
-                        addAssert(isOfType(stack(spMinus1, var(args[i])), var(TranslationController.getHeap()), typeRef(invokedMethodParams[i])));
+                        addAssert(isOfType(stack(spMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
                     } else {
                         //TODO array type
                     }
@@ -3166,7 +3173,7 @@ public class MethodTranslator implements ITranslationConstants {
                 //          addHavoc(var(exceptionVar(callStatements)));
                 //          addAssume(alive(
                 //              rval(var(exceptionVar(callStatements))),
-                //              var(TranslationController.getHeap())));
+                //              var(tc.getHeap())));
                 //          */
                 //          
                 //          addAssume(logicalAnd(
@@ -3198,7 +3205,7 @@ public class MethodTranslator implements ITranslationConstants {
                 //      if (hasReturnValue) {
                 //        // addHavoc(var(resultVar)); // do not havoc: we need to know whether the return value is null
                 //        if (retType.isReferenceType()) {
-                //          addAssume(alive(rval(var(resultVar)), var(TranslationController.getHeap())));
+                //          addAssume(alive(rval(var(resultVar)), var(tc.getHeap())));
                 //          addAssume(isOfType(rval(var(resultVar)), typeRef(retType)));
                 //        } else {
                 //          addAssume(isOfType(ival(var(resultVar)), typeRef(retType)));
@@ -3222,22 +3229,22 @@ public class MethodTranslator implements ITranslationConstants {
 
                 //new code
                 String invokedMethodName = getMethodName(invokedMethod);
-                String thisPlace = TranslationController.buildPlace(getProcedureName(method), invokedMethodName);
+                String thisPlace = tc.buildPlace(getProcedureName(method), invokedMethodName);
                 addAssignment(stack(spMinus1, var("place")), var(thisPlace));
                 addAssignment(stack(var("meth")), var(GLOBAL_VAR_PREFIX + invokedMethodName));
 
                 if(!invokedMethod.isConstructor() && !invokedMethod.isStatic()){
-                    //                rawEndBlock(TranslationController.getCheckLabel());
+                    //                rawEndBlock(tc.getCheckLabel());
                     String boundaryLabel = blockLabel + "_boundary";
                     String internLabel =  blockLabel + "_intern";
 
                     BPLTransferCommand transCmd = new BPLGotoCommand(
-                            TranslationController.prefix(getProcedureName(method) + "_" + boundaryLabel),
-                            TranslationController.prefix(getProcedureName(method) + "_" + internLabel));
+                            tc.prefix(getProcedureName(method) + "_" + boundaryLabel),
+                            tc.prefix(getProcedureName(method) + "_" + internLabel));
                     transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
                     transCmd.addComment("Sourceline: "+handle.getSourceLine());
                     BPLBasicBlock block = new BPLBasicBlock(
-                            TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+                            tc.prefix(getProcedureName(method) + "_" + blockLabel),
                             commands.toArray(new BPLCommand[commands.size()]),
                             transCmd
                             );
@@ -3249,34 +3256,34 @@ public class MethodTranslator implements ITranslationConstants {
                     BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
                     addAssume(exists(tVar, 
                             logicalAnd(
-                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(TranslationController.getHeap()))),
+                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
                                     libType(var(t))
                                     )
                             ));
                     //                block = new BPLBasicBlock(
-                    //                        TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+                    //                        tc.prefix(getProcedureName(method) + "_" + blockLabel),
                     //                        commands.toArray(new BPLCommand[commands.size()]),
                     //                        transCmd
                     //                        );
                     //                blocks.add(block);
-                    rawEndBlock(TranslationController.prefix(CALLTABLE_LABEL));
+                    rawEndBlock(tc.prefix(CALLTABLE_LABEL));
 
 
                     startBlock(boundaryLabel);
                     addAssume(exists(tVar, 
                             logicalAnd(
-                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(TranslationController.getHeap()))),
+                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
                                     logicalNot(libType(var(t)))
                                     )
                             ));
                     addAssume(heap(stack(receiver()), var("createdByCtxt")));
                     //TODO more detailed information about the type here
-                    rawEndBlock(TranslationController.getCheckLabel());
+                    rawEndBlock(tc.getCheckLabel());
                 } else if(invokedMethod.isConstructor()) {
                     //the invoked method is a constructor of an internal type
                     first = first - 1; //the stack index is one off if we have a constructor
                     
-                    BPLTransferCommand transCmd = new BPLGotoCommand(TranslationController.prefix(getProcedureName(invokedMethod))); //this is a static call
+                    BPLTransferCommand transCmd = new BPLGotoCommand(tc.prefix(getProcedureName(invokedMethod))); //this is a static call
                     transCmd.addComment("constructor call: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
                     transCmd.addComment("Sourceline: "+handle.getSourceLine());
                     
@@ -3285,28 +3292,28 @@ public class MethodTranslator implements ITranslationConstants {
                     addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("exposed")))); //the object did not yet cross the boundary
                     
                     BPLBasicBlock block = new BPLBasicBlock(
-                            TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+                            tc.prefix(getProcedureName(method) + "_" + blockLabel),
                             commands.toArray(new BPLCommand[commands.size()]),
                             transCmd
                             );
                     blocks.add(block);
                 } else { //method is static
-                    BPLTransferCommand transCmd = new BPLGotoCommand(TranslationController.prefix(getProcedureName(invokedMethod)));
+                    BPLTransferCommand transCmd = new BPLGotoCommand(tc.prefix(getProcedureName(invokedMethod)));
                     transCmd.addComment("static methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
                     transCmd.addComment("Sourceline: "+handle.getSourceLine());
                     BPLBasicBlock block = new BPLBasicBlock(
-                            TranslationController.prefix(getProcedureName(method) + "_" + blockLabel),
+                            tc.prefix(getProcedureName(method) + "_" + blockLabel),
                             commands.toArray(new BPLCommand[commands.size()]),
                             transCmd
                             );
                     blocks.add(block);
                 }
                 
-                startBlock(TranslationController.nextLabel());
+                startBlock(tc.nextLabel());
 //                addAssignment(stack(receiver()), var("reg0_r"));//TODO correct expression here
 
                 if(!invokedMethod.isConstructor()){
-                    addAssume(isOfType(stack(receiver()), var(TranslationController.getHeap()), typeRef(insn.getMethodOwner())));
+                    addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
                 } else {
                     addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
                     addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("createdByCtxt")))); //we hace constructed the object on our own
@@ -3318,7 +3325,7 @@ public class MethodTranslator implements ITranslationConstants {
                     if(retType.isBaseType()){
                         addAssume(isInRange(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), typeRef(retType)));
                     } else if(retType.isClassType()){
-                        addAssume(isOfType(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(TranslationController.getHeap()), typeRef(retType)));
+                        addAssume(isOfType(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(tc.getHeap()), typeRef(retType)));
                     } else {
                         //TODO array
                     }
@@ -3334,7 +3341,7 @@ public class MethodTranslator implements ITranslationConstants {
                     if(elemType.isBaseType()){
                         addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
                     } else {
-                        addAssume(isOfType(stack(var(stackVar(i, elemType))), var(TranslationController.getHeap()), typeRef(elemType)));
+                        addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
                     }
                 }
                 
@@ -3346,7 +3353,7 @@ public class MethodTranslator implements ITranslationConstants {
                     if(params[i].isBaseType()){
                         addAssume(isInRange(stack(var(paramVar(i, params[i]))), typeRef(params[i])));
                     } else {
-                        addAssume(isOfType(stack(var(paramVar(i, params[i]))), var(TranslationController.getHeap()), typeRef(params[i])));
+                        addAssume(isOfType(stack(var(paramVar(i, params[i]))), var(tc.getHeap()), typeRef(params[i])));
                     }
                     if(method.isStatic()){
                         if(i>0){
@@ -3407,7 +3414,7 @@ public class MethodTranslator implements ITranslationConstants {
                 break;
             case IOpCodes.IDIV:
             case IOpCodes.LDIV:
-                if(TranslationController.getConfig().isNullChecks()){
+                if(tc.getConfig().isNullChecks()){
                     addAssert(notEqual(stack(var(right)), intLiteral(0)));
                 } else {
                     addAssume(notEqual(stack(var(right)), intLiteral(0)));
@@ -3417,7 +3424,7 @@ public class MethodTranslator implements ITranslationConstants {
             case IOpCodes.IREM:
             case IOpCodes.LREM:
             default:
-                if(TranslationController.getConfig().isNullChecks()){
+                if(tc.getConfig().isNullChecks()){
                     addAssert(notEqual(stack(var(right)), intLiteral(0)));
                 } else {
                     addAssume(notEqual(stack(var(right)), intLiteral(0)));
@@ -3745,7 +3752,7 @@ public class MethodTranslator implements ITranslationConstants {
             // endBlock(POST_BLOCK_LABEL);
 
 //            addAssignment(var(RETURN_STATE_PARAM), var(NORMAL_RETURN_STATE));
-            if(TranslationController.isActive()){
+            if(tc.isActive()){
                 addAssignment(stack(var(RESULT_PARAM + INT_TYPE_ABBREV)), stack(var(intStackVar(stack)))); //TODO maybe this is a boolean
             } else {
                 addAssignment(var(RESULT_PARAM + INT_TYPE_ABBREV), stack(var(intStackVar(stack)))); //TODO maybe this is a boolean
@@ -3760,7 +3767,7 @@ public class MethodTranslator implements ITranslationConstants {
             // addAssignment(var(RESULT_VAR), var(intStackVar(stack)));
             // endBlock(POST_BLOCK_LABEL);
 
-            if(TranslationController.isActive()){
+            if(tc.isActive()){
                 addAssignment(stack(var(RESULT_PARAM + INT_TYPE_ABBREV)), stack(var(intStackVar(stack))));
             } else {
                 addAssignment(var(RESULT_PARAM + INT_TYPE_ABBREV), stack(var(intStackVar(stack))));
@@ -3775,7 +3782,7 @@ public class MethodTranslator implements ITranslationConstants {
             // addAssignment(var(RESULT_VAR), var(refStackVar(stack)));
             // endBlock(POST_BLOCK_LABEL);
 
-            if(TranslationController.isActive()){
+            if(tc.isActive()){
                 addAssignment(stack(var(RESULT_PARAM + REF_TYPE_ABBREV)), stack(var(refStackVar(stack))));
             } else {
                 addAssignment(var(RESULT_PARAM + REF_TYPE_ABBREV), stack(var(refStackVar(stack))));
@@ -3787,7 +3794,7 @@ public class MethodTranslator implements ITranslationConstants {
         public void visitAThrowInstruction(AThrowInstruction insn) {
             int stack = handle.getFrame().getStackSize() - 1;
 
-            if(!TranslationController.isActive()){
+            if(!tc.isActive()){
                 translateRuntimeException(
                         "java.lang.NullPointerException",
                         nonNull(stack(var(refStackVar(stack)))));
@@ -3809,17 +3816,17 @@ public class MethodTranslator implements ITranslationConstants {
             addAssume(logicalNot(heap(stack(var(refStackVar(stack))), var("alloc"))));
             addAssignment(heap(stack(var(refStackVar(stack))), var("alloc")), BPLBoolLiteral.TRUE);
             addAssume(nonNull(stack(var(refStackVar(stack)))));
-            addAssume(isEqual(typ(stack(var(refStackVar(stack))), var(TranslationController.getHeap())), typeRef(insn.getType())));
-            if(TranslationController.getConfig().isAssumeWellformedHeap()){
-                addAssume(wellformedHeap(var(TranslationController.getHeap())));
+            addAssume(isEqual(typ(stack(var(refStackVar(stack))), var(tc.getHeap())), typeRef(insn.getType())));
+            if(tc.getConfig().isAssumeWellformedHeap()){
+                addAssume(wellformedHeap(var(tc.getHeap())));
             }
             
             //      addHavoc(var(refStackVar(stack)));
             //TODO do we need to do anything to reserve the memory space on the heap?
             //      addAssume(isEqual(
-            //          heapNew(context, var(TranslationController.getHeap()), insn.getType()),
+            //          heapNew(context, var(tc.getHeap()), insn.getType()),
             //          rval(var(refStackVar(stack)))));
-            //      addAssignment(var(TranslationController.getHeap()), heapAdd(context, var(TranslationController.getHeap()), insn.getType()));
+            //      addAssignment(var(tc.getHeap()), heapAdd(context, var(tc.getHeap()), insn.getType()));
         }
 
         //@ requires allocationType != null;
@@ -3828,7 +3835,7 @@ public class MethodTranslator implements ITranslationConstants {
             String ref = refStackVar(stack);
             String len = intStackVar(stack);
 
-            if(!TranslationController.isActive()){
+            if(!tc.isActive()){
                 translateRuntimeException(
                         "java.lang.NegativeArraySizeException",
                         lessEqual(intLiteral(0), stack(var(len))));
@@ -3840,12 +3847,12 @@ public class MethodTranslator implements ITranslationConstants {
             //TODO do we need to do anything to reserve the memory space on the heap?
             //      addAssume(isEqual(heapNewArray(
             //          context,
-            //          var(TranslationController.getHeap()),
+            //          var(tc.getHeap()),
             //          allocationType,
             //          var(len)), rval(var(ref))));
-            //      addAssignment(var(TranslationController.getHeap()), heapAddArray(
+            //      addAssignment(var(tc.getHeap()), heapAddArray(
             //          context,
-            //          var(TranslationController.getHeap()),
+            //          var(tc.getHeap()),
             //          allocationType,
             //          var(len)));
         }
@@ -3893,7 +3900,7 @@ public class MethodTranslator implements ITranslationConstants {
             for (int i = 0; i < dims; i++) {
                 vc[i] = lessEqual(intLiteral(0), stack(var(intStackVar(first + i))));
             }
-            if(!TranslationController.isActive()){
+            if(!tc.isActive()){
                 translateRuntimeException("java.lang.NegativeArraySizeException", vc);
             }
 
@@ -3901,14 +3908,14 @@ public class MethodTranslator implements ITranslationConstants {
             addAssignment(stack(var(ref)), var(swapVar(JNullType.NULL)));
             //      addHavoc(stack(var(ref)));
             //TODO do we need to do anything to reserve the memory space on the heap?
-            //      addAssume(isEqual(heapNew(var(TranslationController.getHeap()), buildMultiArrayAllocation(
+            //      addAssume(isEqual(heapNew(var(tc.getHeap()), buildMultiArrayAllocation(
             //          type,
             //          dims,
             //          first)), rval(var(ref))));
             //      addAssignment(
-            //          var(TranslationController.getHeap()),
+            //          var(tc.getHeap()),
             //          heapAdd(
-            //              var(TranslationController.getHeap()),
+            //              var(tc.getHeap()),
             //              buildMultiArrayAllocation(type, dims, first)
             //          )
             //      );
@@ -3944,7 +3951,7 @@ public class MethodTranslator implements ITranslationConstants {
 
             addAssignment(stack(var(intStackVar(stack))), bool2int(isInstanceOf(
                     stack(var(refStackVar(stack))),
-                    var(TranslationController.getHeap()),
+                    var(tc.getHeap()),
                     type)));
         }
 
