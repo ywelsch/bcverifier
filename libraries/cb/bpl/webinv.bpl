@@ -1,1 +1,1 @@
-( forall r: Ref :: Obj(heap1, r) && RefOfType(r, heap1, $cb.A) ==> heap1[r,$cb.A.g] % 2 == 0 )
+( forall o: Ref :: ObjOfType(o,$cb.A,heap1) ==> heap1[o,$cb.A.g] % 2 == 0 )

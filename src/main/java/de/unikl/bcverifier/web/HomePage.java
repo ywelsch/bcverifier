@@ -304,12 +304,13 @@ public class HomePage extends WebPage {
 			showLink.setDefaultFormProcessing(false);
 			pan.setOutputMarkupPlaceholderTag(true);
 			add(showLink);
-			
+			pan.setVisible(false);
 			return pan;
 		}
 
 		private AcePanel createInvPanel() {
 			AcePanel pan = new AcePanel("inv",  "connectInv", new PropertyModel<String>(HomePage.this, "inv"));
+			pan.setOutputMarkupId(true);
 			add(pan);
 			return pan;
 		}

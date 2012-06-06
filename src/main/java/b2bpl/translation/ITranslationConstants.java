@@ -353,6 +353,8 @@ public interface ITranslationConstants {
 
   String OBJ_FUNC = "Obj";
   
+  String OBJ_OF_TYPE_FUNC = "ObjOfType";
+  
   String IS_CALLABLE_FUNC = "isCallable";
 
   String CALLTABLE_LABEL = "calltable";

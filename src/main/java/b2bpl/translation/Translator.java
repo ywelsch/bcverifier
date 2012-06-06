@@ -637,7 +637,7 @@ public class Translator implements ITranslationConstants {
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName(BIJ_TYPE), wellformedCoupling(var(heap1), var(heap2), var(related)))));
 
             
-            addComment("Modified heap, coupling, relation (not origianl SscBoogie)");
+            addComment("Modified heap, coupling, relation (not original SscBoogie)");
             addFunction(WELLFORMED_HEAP_FUNC, new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heapVar,
@@ -1325,7 +1325,17 @@ public class Translator implements ITranslationConstants {
                                     )
                             )
                     )));
-
+            
+            addComment("Syntactic sugar for writing coupling invariant");
+            addFunction(OBJ_OF_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
+            addAxiom(forall(
+                    heapVar, refVar, tVar,
+                    isEquiv(new BPLFunctionApplication(OBJ_OF_TYPE_FUNC, var(r), var(t), var(heap)), 
+                            logicalAnd(
+                            		obj(var(heap), var(r)),
+                            		refOfType(var(r), var(heap), var(t))
+                            )
+                    ))); 
 
 
             addType(METHOD_TYPE);
