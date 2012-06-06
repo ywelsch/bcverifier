@@ -1,3 +1,15 @@
+@font-face {
+  font-family: 'Yanone Kaffeesatz';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Yanone Kaffeesatz Regular'), local('YanoneKaffeesatz-Regular'), url('fonts/yanoneregular.woff') format('woff');
+}
+@font-face {
+  font-family: 'Yanone Kaffeesatz';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Yanone Kaffeesatz Bold'), local('YanoneKaffeesatz-Bold'), url('fonts/yanonebold.woff') format('woff');
+}
 body, p, li, a { font-family: georgia, times, serif;font-size:13pt;}
 h1, h2, h3 { font-family: 'Yanone Kaffeesatz', arial, serif; }
 body { margin:0;padding:0;}
