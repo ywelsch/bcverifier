@@ -1,5 +1,6 @@
 package de.unikl.bcverifier;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -84,6 +85,10 @@ public class TranslationController implements ITranslationConstants {
             methodDefinitions.put(className, definedMethods);
         }
         definedMethods.add(methodName);
+    }
+    
+    public void definesNoMethods(String className){
+        methodDefinitions.put(className, Collections.<String> emptySet());
     }
     
     public HashSet<String> places() {

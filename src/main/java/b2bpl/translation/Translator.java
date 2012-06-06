@@ -327,7 +327,13 @@ public class Translator implements ITranslationConstants {
             }
 //            declarations.add(new BPLAxiom(libType(typeRef(type))));
             libTypeExpressions.add(isEqual(var(t), typeRef(type)));
-            addAxiom(forall(tVar, isEquiv(classExtends(typeRef(type), var(t)), isEqual(var(t), typeRef(type.getSupertype())))));
+            if(!type.isInterface()){
+                addAxiom(forall(tVar, isEquiv(classExtends(typeRef(type), var(t)), isEqual(var(t), typeRef(type.getSupertype())))));
+            }
+            
+            if(tc.methodDefinitions().get(VALUE_TYPE_PREFIX+type.getName()) == null){ // if we not added any methods up to now, the class does not implement any
+                tc.definesNoMethods(VALUE_TYPE_PREFIX+type.getName());
+            }
         }
         if(libTypeExpressions.size() > 0){
             addAxiom(forall(tVar, isEquiv(libType(var(t)), logicalOr(libTypeExpressions.toArray(new BPLExpression[libTypeExpressions.size()])))));
@@ -1433,9 +1439,13 @@ public class Translator implements ITranslationConstants {
                                             forall(c3Var, implies(classExtends(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) 
                                     )
                             )
-                    ),
-                    new BPLTrigger(memberOf(var(m), var(c1), var(c2)))
+                    )
                     ));
+            addAxiom(forall(
+                    mVar, c1Var, c2Var,
+                    implies(memberOf(var(m), var(c1), var(c2)),
+                            definesMethod(var(c1), var(m))
+                    )));
             
 
             addType(ADDRESS_TYPE);
@@ -1486,6 +1496,40 @@ public class Translator implements ITranslationConstants {
                                             implies(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var(ALLOC_FIELD)), map(var(newHeap), map1(var(stack), var(sp), var(v)), var(ALLOC_FIELD)))
                                     )
                             )
+                            )
+                    ));
+            
+            
+            // relation between classExtends and subtype
+            addAxiom(forall(c1Var, c2Var,
+                    implies(classExtends(var(c1), var(c2)), isSubtype(var(c1), var(c2)))
+                    ));
+            addAxiom(forall(c1Var, c2Var, 
+                    implies(
+                            logicalAnd(
+                                    isClassType(var(c1)),
+                                    classExtends(var(c1), var(c2))
+                            ),
+                            isClassType(var(c2))
+                    )));
+            addAxiom(forall(c1Var, c2Var,
+                    implies(
+                            logicalAnd(
+                                    isSubtype(var(c1), var(c2)),
+                                    isClassType(var(c1)),
+                                    isClassType(var(c2))
+                                    ),
+                            logicalOr(
+                                    isEqual(var(c1), var(c2)),
+                                    classExtends(var(c1), var(c2)),
+                                    exists(c3Var,
+                                            logicalAnd(
+                                                    isClassType(var(c3)),
+                                                    classExtends(var(c1), var(c3)),
+                                                    isSubtype(var(c3), var(c2))
+                                                    )
+                                            )
+                                    )
                             )
                     ));
             
@@ -3371,9 +3415,14 @@ public class Translator implements ITranslationConstants {
                 addConstants(new BPLVariable(
                         getClassTypeName(classType),
                         new BPLTypeName(NAME_TYPE)));
-
+                
                 // State that the type indeed is a class type.
-                addAxiom(isClassType(typeRef(classType)));
+                if(!classType.isInterface()){
+                    addAxiom(isClassType(typeRef(classType)));
+                } else {
+                    addAxiom(logicalNot(isClassType(typeRef(classType)))); // interfaces are no classes
+                    addAxiom(isMemberlessType(typeRef(classType)));
+                }
 
                 // Eventually axiomatize the fact that the type is final.
                 if (classType.isFinal()) {

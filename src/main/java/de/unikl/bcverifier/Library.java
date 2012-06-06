@@ -1,6 +1,7 @@
 package de.unikl.bcverifier;
 
 import static b2bpl.translation.CodeGenerator.add;
+import static b2bpl.translation.CodeGenerator.definesMethod;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.greater;
@@ -243,21 +244,28 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     .keySet()) {
                 Set<String> methodNames = tc
                         .methodDefinitions().get(className);
-                List<BPLExpression> methodExprs = new ArrayList<BPLExpression>();
-
                 String m = "m";
                 BPLVariable mVar = new BPLVariable(m, new BPLTypeName(
                         METHOD_TYPE));
-                for (String methodName : methodNames) {
-                    methodExprs.add(isEqual(var(m), var(methodName)));
+                if(!methodNames.isEmpty()){
+                    List<BPLExpression> methodExprs = new ArrayList<BPLExpression>();
+
+                    for (String methodName : methodNames) {
+                        methodExprs.add(isEqual(var(m), var(methodName)));
+                    }
+                    programDecls.add(new BPLAxiom(forall(
+                            mVar,
+                            isEquiv(definesMethod(var(className), var(m)),
+                                    logicalOr(methodExprs
+                                            .toArray(new BPLExpression[methodExprs
+                                                                       .size()]))))));
+                } else {
+                    programDecls.add(new BPLAxiom(forall(
+                            mVar,
+                            logicalNot(definesMethod(var(className), var(m)))
+                            )
+                            ));
                 }
-                programDecls.add(new BPLAxiom(forall(
-                        mVar,
-                        isEquiv(new BPLFunctionApplication("definesMethod",
-                                var(className), var(m)),
-                                logicalOr(methodExprs
-                                        .toArray(new BPLExpression[methodExprs
-                                                .size()]))))));
             }
             
             /////////////////////////////////////
