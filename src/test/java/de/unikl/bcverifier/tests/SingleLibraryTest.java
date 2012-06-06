@@ -10,10 +10,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import de.unikl.bcverifier.Configuration;
-import de.unikl.bcverifier.Library;
-import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.Configuration.VerifyAction;
+import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
+import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 
 public class SingleLibraryTest {

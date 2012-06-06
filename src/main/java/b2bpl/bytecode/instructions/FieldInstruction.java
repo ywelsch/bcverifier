@@ -1,9 +1,9 @@
 package b2bpl.bytecode.instructions;
 
 import b2bpl.bytecode.BCField;
+import b2bpl.bytecode.IOpCodes;
 import b2bpl.bytecode.JReferenceType;
 import b2bpl.bytecode.JType;
-import b2bpl.bytecode.IOpCodes;
 
 
 public abstract class FieldInstruction extends Instruction {

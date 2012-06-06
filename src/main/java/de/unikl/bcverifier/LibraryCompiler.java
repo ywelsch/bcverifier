@@ -4,8 +4,11 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 
-import javax.tools.*;
+import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 
 import org.apache.commons.io.FileUtils;
 

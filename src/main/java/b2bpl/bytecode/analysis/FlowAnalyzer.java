@@ -10,7 +10,6 @@ import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LineNumberNode;
-import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
@@ -33,7 +32,6 @@ import b2bpl.bytecode.instructions.AThrowInstruction;
 import b2bpl.bytecode.instructions.Instruction;
 import b2bpl.bytecode.instructions.InvokeInstruction;
 import b2bpl.bytecode.instructions.InvokeSpecialInstruction;
-import b2bpl.bytecode.instructions.LocalVariableInstruction;
 
 
 /**

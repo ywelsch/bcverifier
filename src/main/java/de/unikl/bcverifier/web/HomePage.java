@@ -19,12 +19,8 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.basic.MultiLineLabel;
-import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.FormComponent;
-import org.apache.wicket.markup.html.form.TextArea;
-import org.apache.wicket.markup.html.form.validation.IFormValidator;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.model.Model;
@@ -36,10 +32,10 @@ import com.google.common.io.Files;
 
 import de.unikl.bcverifier.Configuration;
 import de.unikl.bcverifier.Library;
-import de.unikl.bcverifier.LibraryCompiler;
-import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.Library.TranslationException;
+import de.unikl.bcverifier.LibraryCompiler;
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
+import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 
 public class HomePage extends WebPage {

@@ -1,38 +1,16 @@
 package b2bpl.translation;
 
-import static b2bpl.translation.CodeGenerator.add;
-import static b2bpl.translation.CodeGenerator.exists;
-import static b2bpl.translation.CodeGenerator.implies;
-import static b2bpl.translation.CodeGenerator.isEqual;
-import static b2bpl.translation.CodeGenerator.logicalAnd;
-import static b2bpl.translation.CodeGenerator.logicalNot;
-import static b2bpl.translation.CodeGenerator.logicalOr;
-import static b2bpl.translation.CodeGenerator.nonNull;
-import static b2bpl.translation.CodeGenerator.relNull;
-import static b2bpl.translation.CodeGenerator.sub;
-import static b2bpl.translation.CodeGenerator.var;
-import static b2bpl.translation.ITranslationConstants.REF_TYPE;
-import static b2bpl.translation.ITranslationConstants.REF_TYPE_ABBREV;
-import static b2bpl.translation.ITranslationConstants.RESULT_VAR;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import de.unikl.bcverifier.TranslationController;
-
-import b2bpl.Main;
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayExpression;
-import b2bpl.bpl.ast.BPLAssertCommand;
-import b2bpl.bpl.ast.BPLAssignmentCommand;
-import b2bpl.bpl.ast.BPLAssumeCommand;
 import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
 import b2bpl.bpl.ast.BPLBinaryLogicalExpression;
 import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLCastExpression;
-import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLEqualityExpression;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLFunctionApplication;
@@ -46,12 +24,11 @@ import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLTrigger;
 import b2bpl.bpl.ast.BPLType;
 import b2bpl.bpl.ast.BPLTypeName;
-import b2bpl.bpl.ast.BPLUnaryMinusExpression;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import b2bpl.bytecode.BCField;
-import b2bpl.bytecode.JArrayType;
 import b2bpl.bytecode.JType;
+import de.unikl.bcverifier.TranslationController;
 
 /**
  * Simple utility class providing convenience methods to generate BoogiePL code
@@ -1079,55 +1056,55 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression heap1(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var("heap1"), exp1, exp2);
+        return new BPLArrayExpression(var(TranslationController.HEAP1), exp1, exp2);
     }
     
     public static BPLExpression heap2(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var("heap2"), exp1, exp2);
+        return new BPLArrayExpression(var(TranslationController.HEAP2), exp1, exp2);
     }
     
     public static BPLExpression oldHeap1(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var("old_heap1"), exp1, exp2);
+        return new BPLArrayExpression(var(OLD_HEAP1), exp1, exp2);
     }
     
     public static BPLExpression oldHeap2(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var("old_heap2"), exp1, exp2);
+        return new BPLArrayExpression(var(OLD_HEAP2), exp1, exp2);
     }
     
     public static BPLExpression stack1(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack1"), var("sp1")), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK1), var(TranslationController.SP1)), exp);
     }
     
     public static BPLExpression stack1(BPLExpression sp, BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack1"), sp), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK1), sp), exp);
     }
     
     public static BPLExpression stack1old(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack1"), add(var("sp1"), new BPLIntLiteral(1))), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK1), add(var(TranslationController.SP1), new BPLIntLiteral(1))), exp);
     }
     
     public static BPLExpression stack1calling(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack1"), sub(var("sp1"), new BPLIntLiteral(1))), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK1), sub(var(TranslationController.SP1), new BPLIntLiteral(1))), exp);
     }
     
     public static BPLExpression stack2(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack2"), var("sp2")), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK2), var(TranslationController.SP2)), exp);
     }
     
     public static BPLExpression stack2(BPLExpression sp, BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack2"), sp), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK2), sp), exp);
     }
     
     public static BPLExpression stack2old(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack2"), add(var("sp2"), new BPLIntLiteral(1))), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK2), add(var(TranslationController.SP2), new BPLIntLiteral(1))), exp);
     }
     
     public static BPLExpression stack2calling(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var("stack2"), sub(var("sp2"), new BPLIntLiteral(1))), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK2), sub(var(TranslationController.SP2), new BPLIntLiteral(1))), exp);
     }
     
     public static BPLExpression related(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var("related"), exp1, exp2);
+        return new BPLArrayExpression(var(RELATED_RELATION), exp1, exp2);
     }
     
     public static BPLExpression receiver(){

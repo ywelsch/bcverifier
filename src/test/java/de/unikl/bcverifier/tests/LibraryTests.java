@@ -1,19 +1,17 @@
 package de.unikl.bcverifier.tests;
 
-import static org.junit.Assert.*;
 import static junitparams.JUnitParamsRunner.$;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.AndFileFilter;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.HiddenFileFilter;

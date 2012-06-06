@@ -19,7 +19,6 @@ import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.ftype;
 import static b2bpl.translation.CodeGenerator.greater;
 import static b2bpl.translation.CodeGenerator.hasReturnValue;
-import static b2bpl.translation.CodeGenerator.heap1;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
 import static b2bpl.translation.CodeGenerator.implies;
 import static b2bpl.translation.CodeGenerator.intToInt;
@@ -53,12 +52,10 @@ import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.nullLiteral;
 import static b2bpl.translation.CodeGenerator.obj;
 import static b2bpl.translation.CodeGenerator.objectCoupling;
-import static b2bpl.translation.CodeGenerator.oldHeap1;
 import static b2bpl.translation.CodeGenerator.oneClassDown;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.refOfType;
 import static b2bpl.translation.CodeGenerator.relNull;
-import static b2bpl.translation.CodeGenerator.stack1;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.trigger;
 import static b2bpl.translation.CodeGenerator.typ;
@@ -68,8 +65,6 @@ import static b2bpl.translation.CodeGenerator.var;
 import static b2bpl.translation.CodeGenerator.wellformedCoupling;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
 import static b2bpl.translation.CodeGenerator.wellformedStack;
-import static b2bpl.translation.ITranslationConstants.IS_STATIC_METHOD_FUNC;
-import static b2bpl.translation.ITranslationConstants.VALID_HEAP_SUCC_FUNC;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -571,12 +566,12 @@ public class Translator implements ITranslationConstants {
 
         // needed variable declarations
         {
-            final String heap1 = "heap1";
-            final String heap2 = "heap2";
-            final String related = "related";
-            final String alloc = "alloc";
-            final String exposed = "exposed";
-            final String createdByCtxt = "createdByCtxt";
+            final String heap1 = TranslationController.HEAP1;
+            final String heap2 = TranslationController.HEAP2;
+            final String related = RELATED_RELATION;
+            final String alloc = ALLOC_FIELD;
+            final String exposed = EXPOSED_FIELD;
+            final String createdByCtxt = CREATED_BY_CTXT_FIELD;
             final String r = "r";
             BPLVariable refVar = new BPLVariable(r, new BPLTypeName(REF_TYPE));
             final String heap = "heap";
@@ -587,7 +582,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable fieldBoolVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL));
             BPLVariable heap1Var = new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE));
             BPLVariable heap2Var = new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE));
-            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName("Bij"));
+            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BIJ_TYPE));
             final String r1 = "r1";
             BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
             final String r2 = "r2";
@@ -616,7 +611,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable xVar = new BPLVariable(x, new BPLTypeName("alpha"));
             final String y = "y";
             BPLVariable yVar = new BPLVariable(y, new BPLTypeName("alpha"));
-            final String dynType = "dynType";
+            final String dynType = DYN_TYPE_FIELD;
 
 
             // axiomatization
@@ -633,7 +628,7 @@ public class Translator implements ITranslationConstants {
 
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(heap1)))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(heap2)))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName("Bij"), wellformedCoupling(var(heap1), var(heap2), var(related)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName(BIJ_TYPE), wellformedCoupling(var(heap1), var(heap2), var(related)))));
 
             
             addComment("Modified heap, coupling, relation (not origianl SscBoogie)");
@@ -652,7 +647,7 @@ public class Translator implements ITranslationConstants {
                                     ))
                     ));
 
-            addFunction(WELLFORMED_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            addFunction(WELLFORMED_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
                     isEquiv(wellformedCoupling(var(heap1), var(heap2), var(related)),
@@ -665,7 +660,7 @@ public class Translator implements ITranslationConstants {
                                     ))
                     ));
 
-            addFunction(OBJECT_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            addFunction(OBJECT_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
                     isEquiv(objectCoupling(var(heap1), var(heap2), var(related)),
@@ -673,7 +668,7 @@ public class Translator implements ITranslationConstants {
                     ));
 
 
-            addFunction(BIJECTIVE_FUNC, new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            addFunction(BIJECTIVE_FUNC, new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     relatedVar, r1Var, r2Var, r3Var, r4Var,
                     isEquiv(CodeGenerator.bijective(var(related)),
@@ -1145,12 +1140,12 @@ public class Translator implements ITranslationConstants {
 
 
         {
-            final String heap1 = "heap1";
-            final String heap2 = "heap2";
-            final String related = "related";
-            final String alloc = "alloc";
-            final String exposed = "exposed";
-            final String createdByCtxt = "createdByCtxt";
+            final String heap1 = TranslationController.HEAP1;
+            final String heap2 = TranslationController.HEAP2;
+            final String related = RELATED_RELATION;
+            final String alloc = ALLOC_FIELD;
+            final String exposed = EXPOSED_FIELD;
+            final String createdByCtxt = CREATED_BY_CTXT_FIELD;
             final String r = "r";
             BPLVariable refVar = new BPLVariable(r, new BPLTypeName(REF_TYPE));
             final String heap = "heap";
@@ -1164,7 +1159,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable vAlphaVar = new BPLVariable(vAlpha, new BPLTypeName("alpha"));
             BPLVariable heap1Var = new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE));
             BPLVariable heap2Var = new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE));
-            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName("Bij"));
+            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BIJ_TYPE));
             final String r1 = "r1";
             BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
             final String r2 = "r2";
@@ -1185,10 +1180,10 @@ public class Translator implements ITranslationConstants {
             BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
             final String u = "u";
             BPLVariable uVar = new BPLVariable(u, new BPLTypeName(NAME_TYPE));
-            final String sp1 = "sp1";
-            final String sp2 = "sp2";
-            final String stack1 = "stack1";
-            final String stack2 = "stack2";
+            final String sp1 = TranslationController.SP1;
+            final String sp2 = TranslationController.SP2;
+            final String stack1 = TranslationController.STACK1;
+            final String stack2 = TranslationController.STACK2;
             final String thisName = "this";
             final String stack = "stack";
             BPLVariable stackVar = new BPLVariable(stack, new BPLTypeName(STACK_TYPE));
@@ -1214,7 +1209,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable c2Var = new BPLVariable(c2, new BPLTypeName(NAME_TYPE));
             final String c3 = "c3";
             BPLVariable c3Var = new BPLVariable(c3, new BPLTypeName(NAME_TYPE));
-            final String dynType = "dynType";
+            final String dynType = DYN_TYPE_FIELD;
             
             
             addAxiom(forall(tVar, uVar, oVar, heapVar,
@@ -1317,10 +1312,10 @@ public class Translator implements ITranslationConstants {
                     isEquiv(obj(var(heap), var(r)), 
                             logicalAnd(
                                     nonNull(var(r)),
-                                    new BPLArrayExpression(var(heap), var(r), var("alloc")),
+                                    new BPLArrayExpression(var(heap), var(r), var(ALLOC_FIELD)),
                                     logicalOr(
-                                            new BPLArrayExpression(var(heap), var(r), var("exposed")),
-                                            logicalNot(new BPLArrayExpression(var(heap), var(r), var("createdByCtxt")))
+                                            new BPLArrayExpression(var(heap), var(r), var(EXPOSED_FIELD)),
+                                            logicalNot(new BPLArrayExpression(var(heap), var(r), var(CREATED_BY_CTXT_FIELD)))
                                     )
                             )
                     )));
@@ -1445,9 +1440,8 @@ public class Translator implements ITranslationConstants {
 
             addType(ADDRESS_TYPE);
 
-            addConstants(new BPLVariable("isCall", new BPLTypeName(VAR_TYPE, BPLBuiltInType.BOOL)));
-            addConstants(new BPLVariable("place", new BPLTypeName(VAR_TYPE, new BPLTypeName(ADDRESS_TYPE))));
-            addConstants(new BPLVariable("meth", new BPLTypeName(VAR_TYPE, new BPLTypeName(METHOD_TYPE))));
+            addConstants(new BPLVariable(PLACE_VARIABLE, new BPLTypeName(VAR_TYPE, new BPLTypeName(ADDRESS_TYPE))));
+            addConstants(new BPLVariable(METH_FIELD, new BPLTypeName(VAR_TYPE, new BPLTypeName(METHOD_TYPE))));
 
             {
                 // A helper function for converting int values to bool values.
@@ -1487,9 +1481,9 @@ public class Translator implements ITranslationConstants {
                             forall(
                                     spVar, vVar,
                                     logicalAnd(
-                                            implies(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var("exposed")), map(var(newHeap), map1(var(stack), var(sp), var(v)), var("exposed"))),
-                                            isEqual(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var("createdByCtxt")), map(var(newHeap), map1(var(stack), var(sp), var(v)), var("createdByCtxt"))),
-                                            implies(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var("alloc")), map(var(newHeap), map1(var(stack), var(sp), var(v)), var("alloc")))
+                                            implies(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var(EXPOSED_FIELD)), map(var(newHeap), map1(var(stack), var(sp), var(v)), var(EXPOSED_FIELD))),
+                                            isEqual(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var(CREATED_BY_CTXT_FIELD)), map(var(newHeap), map1(var(stack), var(sp), var(v)), var(CREATED_BY_CTXT_FIELD))),
+                                            implies(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var(ALLOC_FIELD)), map(var(newHeap), map1(var(stack), var(sp), var(v)), var(ALLOC_FIELD)))
                                     )
                             )
                             )

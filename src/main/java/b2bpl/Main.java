@@ -4,8 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 
-import de.unikl.bcverifier.TranslationController;
-
 import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.transformation.IBPLTransformator;
@@ -19,6 +17,7 @@ import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.analysis.SemanticAnalyzer;
 import b2bpl.translation.CodeGenerator;
 import b2bpl.translation.Translator;
+import de.unikl.bcverifier.TranslationController;
 
 
 public class Main implements ITroubleReporter {

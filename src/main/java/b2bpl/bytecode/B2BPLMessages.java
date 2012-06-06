@@ -1,6 +1,6 @@
 package b2bpl.bytecode;
 
-import static b2bpl.bytecode.TroubleDescription.Kind.*;
+import static b2bpl.bytecode.TroubleDescription.Kind.ERROR;
 
 
 public class B2BPLMessages {

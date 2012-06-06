@@ -12,14 +12,11 @@ import static b2bpl.translation.CodeGenerator.cast;
 import static b2bpl.translation.CodeGenerator.divide;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldAccess;
-import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.greater;
 import static b2bpl.translation.CodeGenerator.greaterEqual;
 import static b2bpl.translation.CodeGenerator.heap;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
-import static b2bpl.translation.CodeGenerator.implies;
 import static b2bpl.translation.CodeGenerator.intToInt;
-import static b2bpl.translation.CodeGenerator.isAllocated;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isInRange;
 import static b2bpl.translation.CodeGenerator.isInstanceOf;
@@ -38,8 +35,6 @@ import static b2bpl.translation.CodeGenerator.neg;
 import static b2bpl.translation.CodeGenerator.nonNull;
 import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.nullLiteral;
-import static b2bpl.translation.CodeGenerator.obj;
-import static b2bpl.translation.CodeGenerator.old;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.stack;
@@ -48,7 +43,6 @@ import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.type;
 import static b2bpl.translation.CodeGenerator.var;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
-import static b2bpl.translation.ITranslationConstants.GLOBAL_VAR_PREFIX;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -59,9 +53,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.sound.midi.Receiver;
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane.RestoreAction;
 
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayExpression;
@@ -109,8 +100,6 @@ import b2bpl.bytecode.analysis.ControlFlowGraph;
 import b2bpl.bytecode.analysis.Edge;
 import b2bpl.bytecode.analysis.StackFrame;
 import b2bpl.bytecode.bml.ast.BMLExpression;
-import b2bpl.bytecode.bml.ast.BMLIntLiteral;
-import b2bpl.bytecode.bml.ast.BMLLoopInvariant;
 import b2bpl.bytecode.bml.ast.BMLLoopModifiesClause;
 import b2bpl.bytecode.bml.ast.BMLLoopSpecification;
 import b2bpl.bytecode.bml.ast.BMLLoopVariant;
@@ -1367,8 +1356,8 @@ public class MethodTranslator implements ITranslationConstants {
         }
         
         String methodName = MethodTranslator.getMethodName(method);
-//        addCommand(new BPLAssumeCommand(isEqual(stack(var("place")), var(tc.buildPlace(getProcedureName(method), true)))));
-        addCommand(new BPLAssumeCommand(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX+methodName))));
+//        addCommand(new BPLAssumeCommand(isEqual(stack(var(PLACE_VARIABLE)), var(tc.buildPlace(getProcedureName(method), true)))));
+        addCommand(new BPLAssumeCommand(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX+methodName))));
 
         String currentLabel = blockLabel;
         
@@ -1378,7 +1367,7 @@ public class MethodTranslator implements ITranslationConstants {
         
         startBlock(boundaryReturnLabel);
         addAssume(isEqual(var(tc.getStackPointer()), intLiteral(0)));
-        addAssignment(stack(var("place")), var(tc.buildPlace(getProcedureName(method), true)));
+        addAssignment(stack(var(PLACE_VARIABLE)), var(tc.buildPlace(getProcedureName(method), true)));
         if(method.isConstructor()){
             rawEndBlock(tc.getNextConstructorLabel());
         } else {
@@ -3230,13 +3219,13 @@ public class MethodTranslator implements ITranslationConstants {
                 //new code
                 String invokedMethodName = getMethodName(invokedMethod);
                 String thisPlace = tc.buildPlace(getProcedureName(method), invokedMethodName);
-                addAssignment(stack(spMinus1, var("place")), var(thisPlace));
-                addAssignment(stack(var("meth")), var(GLOBAL_VAR_PREFIX + invokedMethodName));
+                addAssignment(stack(spMinus1, var(PLACE_VARIABLE)), var(thisPlace));
+                addAssignment(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName));
 
                 if(!invokedMethod.isConstructor() && !invokedMethod.isStatic()){
                     //                rawEndBlock(tc.getCheckLabel());
-                    String boundaryLabel = blockLabel + "_boundary";
-                    String internLabel =  blockLabel + "_intern";
+                    String boundaryLabel = blockLabel + BOUNDARY_LABEL_POSTFIX;
+                    String internLabel =  blockLabel + INTERN_LABEL_POSTFIX;
 
                     BPLTransferCommand transCmd = new BPLGotoCommand(
                             tc.prefix(getProcedureName(method) + "_" + boundaryLabel),
@@ -3276,7 +3265,7 @@ public class MethodTranslator implements ITranslationConstants {
                                     logicalNot(libType(var(t)))
                                     )
                             ));
-                    addAssume(heap(stack(receiver()), var("createdByCtxt")));
+                    addAssume(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)));
                     //TODO more detailed information about the type here
                     rawEndBlock(tc.getCheckLabel());
                 } else if(invokedMethod.isConstructor()) {
@@ -3288,8 +3277,8 @@ public class MethodTranslator implements ITranslationConstants {
                     transCmd.addComment("Sourceline: "+handle.getSourceLine());
                     
                     // we created the object, so it is not createdByCtxt and not exposed
-                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("createdByCtxt")))); //we hace constructed the object on our own
-                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("exposed")))); //the object did not yet cross the boundary
+                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
+                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
                     
                     BPLBasicBlock block = new BPLBasicBlock(
                             tc.prefix(getProcedureName(method) + "_" + blockLabel),
@@ -3316,10 +3305,10 @@ public class MethodTranslator implements ITranslationConstants {
                     addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
                 } else {
                     addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
-                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("createdByCtxt")))); //we hace constructed the object on our own
-                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var("exposed")))); //the object did not yet cross the boundary
+                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
+                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
                 }
-                addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + invokedMethodName)));
+                addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName)));
                 
                 if(hasReturnValue){
                     if(retType.isBaseType()){
@@ -3366,8 +3355,8 @@ public class MethodTranslator implements ITranslationConstants {
                 
                 addAssume(nonNull(stack(receiver())));
                 
-                addAssume(isEqual(stack(var("meth")), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
-                addAssume(isEqual(stack(var("place")), var(thisPlace)));
+                addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
+                addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(thisPlace)));
                 
                 callStatements++;
             }
@@ -3813,8 +3802,8 @@ public class MethodTranslator implements ITranslationConstants {
             int stack = handle.getFrame().getStackSize();
             addHavoc(var(swapVar(JNullType.NULL)));
             addAssignment(stack(var(refStackVar(stack))), var(swapVar(JNullType.NULL)));
-            addAssume(logicalNot(heap(stack(var(refStackVar(stack))), var("alloc"))));
-            addAssignment(heap(stack(var(refStackVar(stack))), var("alloc")), BPLBoolLiteral.TRUE);
+            addAssume(logicalNot(heap(stack(var(refStackVar(stack))), var(ALLOC_FIELD))));
+            addAssignment(heap(stack(var(refStackVar(stack))), var(ALLOC_FIELD)), BPLBoolLiteral.TRUE);
             addAssume(nonNull(stack(var(refStackVar(stack)))));
             addAssume(isEqual(typ(stack(var(refStackVar(stack))), var(tc.getHeap())), typeRef(insn.getType())));
             if(tc.getConfig().isAssumeWellformedHeap()){
