@@ -1489,11 +1489,12 @@ public class Translator implements ITranslationConstants {
             addAxiom(forall(oldHeapVar, newHeapVar, stackVar,
                     isEquiv(validHeapSucc(var(oldHeap), var(newHeap), var(stack)),
                             forall(
-                                    spVar, vVar,
+                                    spVar, oVar,
                                     logicalAnd(
-                                            implies(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var(EXPOSED_FIELD)), map(var(newHeap), map1(var(stack), var(sp), var(v)), var(EXPOSED_FIELD))),
-                                            isEqual(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var(CREATED_BY_CTXT_FIELD)), map(var(newHeap), map1(var(stack), var(sp), var(v)), var(CREATED_BY_CTXT_FIELD))),
-                                            implies(map(var(oldHeap), map1(var(stack), var(sp), var(v)), var(ALLOC_FIELD)), map(var(newHeap), map1(var(stack), var(sp), var(v)), var(ALLOC_FIELD)))
+                                            implies(map(var(oldHeap), var(o), var(EXPOSED_FIELD)), map(var(newHeap), var(o), var(EXPOSED_FIELD))),
+                                            isEqual(map(var(oldHeap), var(o), var(CREATED_BY_CTXT_FIELD)), map(var(newHeap), var(o), var(CREATED_BY_CTXT_FIELD))),
+                                            implies(map(var(oldHeap), var(o), var(ALLOC_FIELD)), map(var(newHeap), var(o), var(ALLOC_FIELD))),
+                                            isEqual(map(var(oldHeap), var(o), var(DYN_TYPE_FIELD)), map(var(newHeap), var(o), var(DYN_TYPE_FIELD)))
                                     )
                             )
                             )
