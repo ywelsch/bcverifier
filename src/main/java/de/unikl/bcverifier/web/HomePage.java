@@ -3,14 +3,18 @@ package de.unikl.bcverifier.web;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -27,11 +31,13 @@ import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.form.validation.IFormValidator;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.string.Strings;
 
+import com.beust.jcommander.ParameterDescription;
 import com.google.common.io.Files;
 
 import de.unikl.bcverifier.Configuration;
@@ -96,13 +102,12 @@ public class HomePage extends WebPage {
 	final LibForm form = new LibForm("libForm");
 	
     public HomePage(final PageParameters parameters) {
-		add(new Label("version", new Configuration().getVersionString()));
+		add(new Label("version", ConfigSession.get().getConfig().getVersionString()));
 		add(form);
 		createDropDownSelector(form.pan1, form.pan2, form.pan3);
 		add(new MultiLineLabel("output", new PropertyModel(this, "output")).setEscapeModelStrings(false));
 		add(bipanel);
 		lib1contents.add("public class C {\n  public int m() {\n    return 0;\n  }\n}");
-		lib1contents.add("public interface I {}");
 		lib2contents.add("public class C {\n  public int m() {\n    return 2 - 1;\n  }\n}");
 		populateExamples();
     }
@@ -197,12 +202,109 @@ public class HomePage extends WebPage {
 		final MarkupContainer pan1;
 		final MarkupContainer pan2;
 		final AcePanel pan3;
+		final MarkupContainer opanel;
 		
 		public LibForm(String id) {
 			super(id);
 			pan1 = createLibPanel("lib1panel", "lib1contents", "add1Row", "remove1Row", lib1contents);
 			pan2 = createLibPanel("lib2panel", "lib2contents", "add2Row", "remove2Row", lib2contents);
 			pan3 = createInvPanel();
+			opanel = createOptionPanel();
+		}
+
+		private WebMarkupContainer createOptionPanel() {
+			final WebMarkupContainer pan = new WebMarkupContainer("optionpanel");
+			pan.setOutputMarkupId(true);
+			add(pan);
+			
+			//parser.parseWithoutValidation("");
+	        //System.out.println("INITIALIZED OPTIONPANEL" + parser.getParameters().size());
+			final ListView<String> liblv = new ListView<String>("optioncontents", ConfigSession.get().getParams()) {
+				@Override
+				protected void populateItem(ListItem<String> item) {
+					//createAcePanel("lib1", "connectLib", 1);
+					int index = item.getIndex();
+					final String param = item.getModelObject();
+					ParameterDescription pd = ConfigSession.get().getParam(param);
+					Class<?> paramType = pd.getField().getType();
+					//item.add(new AcePanel("libclass", "connectLib", item.getModel()));
+					item.add(new Label("description", pd.getDescription()));
+					if (paramType.equals(Boolean.TYPE)) {
+		        		// make checkbox
+		        		item.add(new BooleanConfigPanel("option", new IModel<Boolean>() {
+							public void detach() {}
+							public Boolean getObject() {
+								return (Boolean) ConfigSession.get().get(param);
+							}
+							public void setObject(Boolean object) {
+								ConfigSession.get().put(param, object);
+							}
+		        		}));
+		        	} else if (paramType.equals(Integer.TYPE)) {
+		        		item.add(new IntegerConfigPanel("option", new IModel<Integer>() {
+							public void detach() {}
+							public Integer getObject() {
+								return (Integer) ConfigSession.get().get(param);
+							}
+							public void setObject(Integer object) {
+								ConfigSession.get().put(param, object);
+							}		        			
+		        		}));
+		        	} else if (paramType.isEnum()) {
+		        		List<String> choices = new ArrayList<String>();
+		        		List<Enum<?>> enums = EnumUtils.getEnumList((Class<Enum>)paramType);
+		        		for (Enum<?> e : enums) {
+		        			choices.add(e.name());
+		        		}
+		        		item.add(new EnumConfigPanel("option", new IModel<String>() {
+							public void detach() {}
+							public String getObject() {
+								return ((Enum<?>)ConfigSession.get().get(param)).name();
+							}
+							public void setObject(String object) {
+								ParameterDescription pd = ConfigSession.get().getParam(param);
+								Class<?> paramType = pd.getField().getType();
+								Object value = EnumUtils.getEnum((Class<Enum>)paramType, object);
+								ConfigSession.get().put(param, value);
+							}		        			
+		        		}, choices));	
+		        	} else {
+		        		item.add(new StringConfigPanel("option", new IModel<String>() {
+							public void detach() {}
+							public String getObject() {
+								return (String) ConfigSession.get().get(param);
+							}
+							public void setObject(String object) {
+								ConfigSession.get().put(param, object);
+							}		        			
+		        		}));
+		        	}
+				}
+			};
+			//liblv.setReuseItems(true);
+			pan.add(liblv);
+			
+			AjaxSubmitLink showLink = new AjaxSubmitLink("showOptions", LibForm.this) {
+				@Override
+				protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+					if (target != null)
+						target.add(pan);
+					if (pan.isVisible()) {
+						pan.setVisible(false);
+					} else {
+						pan.setVisible(true);
+					}
+				}
+
+				@Override
+				protected void onError(AjaxRequestTarget target, Form<?> form) {
+				}
+			};
+			showLink.setDefaultFormProcessing(false);
+			pan.setOutputMarkupPlaceholderTag(true);
+			add(showLink);
+			
+			return pan;
 		}
 
 		private AcePanel createInvPanel() {
@@ -295,7 +397,7 @@ public class HomePage extends WebPage {
 			File invFile = new File(bplDir, "inv.bpl");
 			FileUtils.writeStringToFile(invFile, getInv());
 			File output = new File(bplDir, "output.bpl");
-			Configuration config = new Configuration();
+			Configuration config = ConfigSession.get().getConfig();
 			config.setLibraries(oldDir, newDir);
 			config.setInvariant(invFile);
 			config.setSingleFormulaInvariant(true);
@@ -305,7 +407,9 @@ public class HomePage extends WebPage {
 			LibraryCompiler.compile(config.library2());
 			library.translate();
 			HomePage.this.setBoogieinput(FileUtils.readFileToString(output));
-			library.check();
+			if(config.isCheck()) {
+				library.check();
+			}
 		}
 
 		private void createFiles(final File prefix, final List<String> libcontents) throws IOException {

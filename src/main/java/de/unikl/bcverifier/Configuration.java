@@ -3,6 +3,7 @@ package de.unikl.bcverifier;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -11,10 +12,14 @@ import java.util.Properties;
 import org.apache.commons.io.IOUtils;
 
 import com.beust.jcommander.IParameterValidator;
+import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterDescription;
 import com.beust.jcommander.ParameterException;
 
-public class Configuration {
+import de.unikl.bcverifier.web.WebGUI;
+
+public class Configuration implements Serializable {
 	public enum VerifyAction {
     	NONE, TYPECHECK, VERIFY;
     	public static final String allValues = Arrays.toString(VerifyAction.values()); 
@@ -27,17 +32,17 @@ public class Configuration {
     private boolean debug = false;
 	@Parameter(names = {"-c", "--compile"}, description = "Compile .java files in library directory before generating Boogie specification")
     private boolean compileFirst = false;
-	@Parameter(names = {"-H", "--heapassumes"}, description = "Add assume WellformedHeap after every heap assignment")
+	@Parameter(names = {"-H", "--heapassumes"}, description = "Add assume WellformedHeap after every heap assignment") @WebGUI
 	private boolean assumeWellformedHeap = false;
-	@Parameter(names = {"-X", "--extensionality"}, description = "Add extensionality axioms")
+	@Parameter(names = {"-X", "--extensionality"}, description = "Add extensionality axioms") @WebGUI
 	private boolean extensionality = false;
 	@Parameter(names = {"-S", "--smoketest"}, description = "Perform smoke test during verification")
     private boolean smoke = false;
-	@Parameter(names = {"-L", "--loopUnroll"}, description = "The cap for loop unrolling")
+	@Parameter(names = {"-L", "--loopUnroll"}, description = "The cap for loop unrolling") @WebGUI
 	private int loopUnrollCap = 5;
-	@Parameter(names = {"-N", "--nullchecks"}, description = "Disable null checks to field accesses and method calls as well as !=0 checks to division/modulo")
+	@Parameter(names = {"-N", "--nullchecks"}, description = "Disable null checks to field accesses and method calls as well as !=0 checks to division/modulo") @WebGUI
 	private boolean disableNullChecks = false;
-	@Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])")
+	@Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])") @WebGUI
     private VerifyAction action = VerifyAction.VERIFY;
     @Parameter(names = {"-i" , "--invariant"}, description = "Path to the file containing the coupling invariant", required = true, validateWith = Configuration.FileValidator.class)
     private File invariant;
@@ -48,7 +53,7 @@ public class Configuration {
     @Parameter(names = {"-l", "--libs"}, description = "Path to the libraries to compare", arity = 2, required = true, validateWith = Configuration.DirectoryValidator.class)
     private List<File> dirs = new ArrayList<File>();
 	private String versionString;
-	@Parameter(names = {"-sfi", "--singleformulainvariant"}, description = "Invariant is packaged as a single Boogie formula")
+	@Parameter(names = {"-sfi", "--singleformulainvariant"}, description = "Invariant is packaged as a single Boogie formula") @WebGUI
     private boolean singleFormulaInvariant = false;
     
     public static class DirectoryValidator implements IParameterValidator {
@@ -186,5 +191,8 @@ public class Configuration {
 	}
 	public void setConfigFile(File places) {
 		this.places = places;
+	}
+	public void setWebDefaults() {
+		singleFormulaInvariant = true;
 	}
 }
