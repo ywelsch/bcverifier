@@ -1,8 +1,8 @@
 package b2bpl.bytecode.instructions;
 
 import b2bpl.bytecode.IInstructionVisitor;
-import b2bpl.bytecode.JArrayType;
 import b2bpl.bytecode.IOpCodes;
+import b2bpl.bytecode.JArrayType;
 
 
 public class MultiANewArrayInstruction extends Instruction {

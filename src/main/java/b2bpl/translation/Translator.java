@@ -2,10 +2,6 @@ package b2bpl.translation;
 
 import static b2bpl.translation.CodeGenerator.add;
 import static b2bpl.translation.CodeGenerator.asDirectSubClass;
-import static b2bpl.translation.CodeGenerator.asInterface;
-import static b2bpl.translation.CodeGenerator.asRangeField;
-import static b2bpl.translation.CodeGenerator.asRefField;
-import static b2bpl.translation.CodeGenerator.asType;
 import static b2bpl.translation.CodeGenerator.baseClass;
 import static b2bpl.translation.CodeGenerator.bijective;
 import static b2bpl.translation.CodeGenerator.bitAnd;
@@ -46,6 +42,8 @@ import static b2bpl.translation.CodeGenerator.libType;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
+import static b2bpl.translation.CodeGenerator.map;
+import static b2bpl.translation.CodeGenerator.map1;
 import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.modulo;
 import static b2bpl.translation.CodeGenerator.multiply;
@@ -62,6 +60,7 @@ import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.trigger;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.unique;
+import static b2bpl.translation.CodeGenerator.validHeapSucc;
 import static b2bpl.translation.CodeGenerator.var;
 import static b2bpl.translation.CodeGenerator.wellformedCoupling;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
@@ -76,7 +75,6 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
-import org.hamcrest.CoreMatchers;
 
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayAssignment;
@@ -190,6 +188,9 @@ public class Translator implements ITranslationConstants {
 
     /** The project containing the settings of the translation. */
     private final Project project;
+    
+    /** The translation controller to use */
+    private TranslationController tc;
 
     /**
      * The {@code TranslationContext} responsible for resolving special
@@ -222,6 +223,10 @@ public class Translator implements ITranslationConstants {
         JBaseType.CHAR
     };
 
+    public void setTranslationController(TranslationController controller){
+        this.tc = controller;
+    }
+    
     /**
      * Creates a new translator which is configured by the given
      * {@code project}.
@@ -250,6 +255,7 @@ public class Translator implements ITranslationConstants {
         context = new Context();
         declarations = new ArrayList<BPLDeclaration>();
         MethodTranslator methodTranslator = new MethodTranslator(project);
+        methodTranslator.setTranslationController(tc);
         generateTheory();
         for (JClassType type : types) {
             for (BCMethod method : type.getMethods()) {
@@ -271,6 +277,7 @@ public class Translator implements ITranslationConstants {
         context = new Context();
         declarations = new ArrayList<BPLDeclaration>();
         MethodTranslator methodTranslator = new MethodTranslator(project);
+        methodTranslator.setTranslationController(tc);
 
         BPLProcedure proc;
         
@@ -287,13 +294,13 @@ public class Translator implements ITranslationConstants {
                         && !method.isSynthetic()) {
 
                     proc = methodTranslator.translate(context, method);
-                    if(!TranslationController.declaredMethods().contains(methodName)){
+                    if(!tc.declaredMethods().contains(methodName)){
                         Logger.getLogger(Translator.class).debug("Adding method "+methodName);
                         addConstants(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE)));
-                        TranslationController.declaredMethods().add(methodName);
+                        tc.declaredMethods().add(methodName);
                     }
 //                    declarations.add(new BPLAxiom(new BPLFunctionApplication(DEFINES_METHOD, typeRef(type), var(methodName))));
-                    TranslationController.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
+                    tc.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
                     if(method.isStatic()){
                         addAxiom(isStaticMethod(var(methodName)));
                     } else {
@@ -311,16 +318,22 @@ public class Translator implements ITranslationConstants {
                     }
                     procedures.put(method.getQualifiedBoogiePLName(), proc);
                 } else if(method.isAbstract()){
-                    if(!TranslationController.declaredMethods().contains(methodName)){
+                    if(!tc.declaredMethods().contains(methodName)){
                         Logger.getLogger(Translator.class).debug("Adding abstract method "+methodName);
                         addConstants(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE)));
-                        TranslationController.declaredMethods().add(methodName);
+                        tc.declaredMethods().add(methodName);
                     }
                 }
             }
 //            declarations.add(new BPLAxiom(libType(typeRef(type))));
             libTypeExpressions.add(isEqual(var(t), typeRef(type)));
-            addAxiom(forall(tVar, isEquiv(classExtends(typeRef(type), var(t)), isEqual(var(t), typeRef(type.getSupertype())))));
+            if(!type.isInterface()){
+                addAxiom(forall(tVar, isEquiv(classExtends(typeRef(type), var(t)), isEqual(var(t), typeRef(type.getSupertype())))));
+            }
+            
+            if(tc.methodDefinitions().get(VALUE_TYPE_PREFIX+type.getName()) == null){ // if we not added any methods up to now, the class does not implement any
+                tc.definesNoMethods(VALUE_TYPE_PREFIX+type.getName());
+            }
         }
         if(libTypeExpressions.size() > 0){
             addAxiom(forall(tVar, isEquiv(libType(var(t)), logicalOr(libTypeExpressions.toArray(new BPLExpression[libTypeExpressions.size()])))));
@@ -559,12 +572,12 @@ public class Translator implements ITranslationConstants {
 
         // needed variable declarations
         {
-            final String heap1 = "heap1";
-            final String heap2 = "heap2";
-            final String related = "related";
-            final String alloc = "alloc";
-            final String exposed = "exposed";
-            final String createdByCtxt = "createdByCtxt";
+            final String heap1 = TranslationController.HEAP1;
+            final String heap2 = TranslationController.HEAP2;
+            final String related = RELATED_RELATION;
+            final String alloc = ALLOC_FIELD;
+            final String exposed = EXPOSED_FIELD;
+            final String createdByCtxt = CREATED_BY_CTXT_FIELD;
             final String r = "r";
             BPLVariable refVar = new BPLVariable(r, new BPLTypeName(REF_TYPE));
             final String heap = "heap";
@@ -575,7 +588,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable fieldBoolVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL));
             BPLVariable heap1Var = new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE));
             BPLVariable heap2Var = new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE));
-            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName("Bij"));
+            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BIJ_TYPE));
             final String r1 = "r1";
             BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
             final String r2 = "r2";
@@ -604,7 +617,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable xVar = new BPLVariable(x, new BPLTypeName("alpha"));
             final String y = "y";
             BPLVariable yVar = new BPLVariable(y, new BPLTypeName("alpha"));
-            final String dynType = "dynType";
+            final String dynType = DYN_TYPE_FIELD;
 
 
             // axiomatization
@@ -621,7 +634,7 @@ public class Translator implements ITranslationConstants {
 
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(heap1)))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(heap2)))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName("Bij"), wellformedCoupling(var(heap1), var(heap2), var(related)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName(BIJ_TYPE), wellformedCoupling(var(heap1), var(heap2), var(related)))));
 
             
             addComment("Modified heap, coupling, relation (not origianl SscBoogie)");
@@ -634,14 +647,13 @@ public class Translator implements ITranslationConstants {
                                     forall(refVar, fieldRefVar, implies(new BPLArrayExpression(var(heap), var(r), var(alloc)), new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(alloc)))),
                                     forall(refVar, fieldRefVar, implies(logicalNot(obj(var(heap), var(r))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), nullLiteral()))),
                                     forall(refVar, fieldIntVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
-                                    forall(refVar, fieldBoolVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), BPLBoolLiteral.FALSE))),
                                     forall(refVar, fieldRefVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(heap), var(t)))),
                                     forall(refVar, fieldIntVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), var(t)))),
                                     forall(refVar, isEqual(typ(var(r), var(heap)), new BPLArrayExpression(var(heap), var(r), var(dynType))))
                                     ))
                     ));
 
-            addFunction(WELLFORMED_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            addFunction(WELLFORMED_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
                     isEquiv(wellformedCoupling(var(heap1), var(heap2), var(related)),
@@ -654,7 +666,7 @@ public class Translator implements ITranslationConstants {
                                     ))
                     ));
 
-            addFunction(OBJECT_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            addFunction(OBJECT_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
                     isEquiv(objectCoupling(var(heap1), var(heap2), var(related)),
@@ -662,7 +674,7 @@ public class Translator implements ITranslationConstants {
                     ));
 
 
-            addFunction(BIJECTIVE_FUNC, new BPLTypeName("Bij"), BPLBuiltInType.BOOL);
+            addFunction(BIJECTIVE_FUNC, new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     relatedVar, r1Var, r2Var, r3Var, r4Var,
                     isEquiv(CodeGenerator.bijective(var(related)),
@@ -688,8 +700,6 @@ public class Translator implements ITranslationConstants {
                     logicalNot(isSubtype(typ(classRepr(var(t)), var(heap)), var(GLOBAL_VAR_PREFIX+"java.lang.Object")))
                     ));
             addAxiom(forall(tVar, notEqual(classRepr(var(t)), var("null"))));
-
-            addFunction(UTTER_FUNC, new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL);
 
             addFunction(IS_STATIC_FIELD_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), BPLBuiltInType.BOOL);
             addAxiom(logicalNot(isStaticField(var(alloc))));
@@ -747,16 +757,6 @@ public class Translator implements ITranslationConstants {
                     new BPLTrigger(isInstanceOf(var(o), var(heap), var(t)))
                     ));
 
-            addFunction(AS_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(REF_TYPE));
-            addAxiom(forall(
-                    oVar, heapVar, tVar,
-                    implies(isOfType(var(o), var(heap), var(t)), isEqual(asType(var(o), var(heap), var(t)), var(o)))
-                    ));
-            addAxiom(forall(
-                    oVar, heapVar, tVar,
-                    implies(logicalNot(isOfType(var(o), var(heap), var(t))), isNull(asType(var(o), var(heap), var(t))))
-                    ));
-
             addFunction(IS_ALLOCATED_FUNC+"<alpha>", new BPLTypeName(HEAP_TYPE), new BPLTypeName("alpha"), BPLBuiltInType.BOOL);
             addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
                     new BPLVariable[]{heapVar, oVar, new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")))},
@@ -779,44 +779,12 @@ public class Translator implements ITranslationConstants {
                     new BPLTrigger(new BPLArrayExpression(var(heap), classRepr(var(c)), var(alloc)))
                     ));
 
-            addConstants(new BPLVariable(BEING_CONSTRUCTED_CONST, new BPLTypeName(REF_TYPE)));
-            //TODO NonNullFieldsAreInitialized + DeclType(NonNullFieldsAreInitialized) == java.lang.Object
-            //TODO PurityAxiomsCanBeAssumed
-
-            addFunction(DECL_TYPE_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), new BPLTypeName(NAME_TYPE));
-            //TODO AsNonNullRefField
-            addFunction(AS_REF_FIELD_FUNC, new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)), new BPLTypeName(NAME_TYPE), new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)));
-            addFunction(AS_RANGE_FIELD_FUNC, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT), new BPLTypeName(NAME_TYPE), new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT));
-
-            addAxiom(forall(
-                    new BPLVariable[]{heapVar, oVar, fieldRefVar, tVar},
-                    implies(wellformedHeap(var(heap)), isOfType(new BPLArrayExpression(var(heap), var(o), asRefField(var(f), var(t))), var(heap), var(t))),
-                    new BPLTrigger(new BPLArrayExpression(var(heap), var(o), asRefField(var(f), var(t))))
-                    ));
-            //TODO axiom for AsNonNullField
-            addAxiom(forall(
-                    new BPLVariable[]{heapVar, oVar, fieldIntVar, tVar},
-                    implies(wellformedHeap(var(heap)), isInRange(new BPLArrayExpression(var(heap), var(o), asRangeField(var(f), var(t))), var(t))),
-                    new BPLTrigger(new BPLArrayExpression(var(heap), var(o), asRangeField(var(f), var(t))))
-                    ));
-
             addFunction(IS_MEMBERLESS_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     oVar, heapVar,
                     logicalNot(isMemberlessType(typ(var(o), var(heap)))),
                     new BPLTrigger(isMemberlessType(typ(var(o), var(heap))))
                     ));
-
-            addFunction(AS_INTERFACE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    tVar,
-                    implies(isEqual(asInterface(var(t)), var(t)), logicalNot(isSubtype(var(GLOBAL_VAR_PREFIX+"java.lang.Object"), var(t)))),
-                    new BPLTrigger(isSubtype(var(GLOBAL_VAR_PREFIX+"java.lang.Object"), asInterface(var(t))))
-                    ));
-
-            //TODO HeapSucc
-
-            //TODO IsImmutable, AsImmutable, AsMutable and axioms
 
             // primitive types
             for (JBaseType valueType : valueTypes) {
@@ -851,8 +819,6 @@ public class Translator implements ITranslationConstants {
                     implies(isInRange(var(i), var(c)), isEqual(intToInt(var(i), var(b), var(c)), var(i)))
                     ));
 
-            addComment("SizeOf(T, n) means that n = sizeof(T)");
-            addFunction(SIZE_IS_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.INT, BPLBuiltInType.BOOL);
 
             addFunction(IF_THEN_ELSE_FUNC+"<alpha>", BPLBuiltInType.BOOL, new BPLTypeName("alpha"), new BPLTypeName("alpha"), new BPLTypeName("alpha"));
             addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
@@ -1180,12 +1146,12 @@ public class Translator implements ITranslationConstants {
 
 
         {
-            final String heap1 = "heap1";
-            final String heap2 = "heap2";
-            final String related = "related";
-            final String alloc = "alloc";
-            final String exposed = "exposed";
-            final String createdByCtxt = "createdByCtxt";
+            final String heap1 = TranslationController.HEAP1;
+            final String heap2 = TranslationController.HEAP2;
+            final String related = RELATED_RELATION;
+            final String alloc = ALLOC_FIELD;
+            final String exposed = EXPOSED_FIELD;
+            final String createdByCtxt = CREATED_BY_CTXT_FIELD;
             final String r = "r";
             BPLVariable refVar = new BPLVariable(r, new BPLTypeName(REF_TYPE));
             final String heap = "heap";
@@ -1199,7 +1165,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable vAlphaVar = new BPLVariable(vAlpha, new BPLTypeName("alpha"));
             BPLVariable heap1Var = new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE));
             BPLVariable heap2Var = new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE));
-            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName("Bij"));
+            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BIJ_TYPE));
             final String r1 = "r1";
             BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
             final String r2 = "r2";
@@ -1220,10 +1186,10 @@ public class Translator implements ITranslationConstants {
             BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
             final String u = "u";
             BPLVariable uVar = new BPLVariable(u, new BPLTypeName(NAME_TYPE));
-            final String sp1 = "sp1";
-            final String sp2 = "sp2";
-            final String stack1 = "stack1";
-            final String stack2 = "stack2";
+            final String sp1 = TranslationController.SP1;
+            final String sp2 = TranslationController.SP2;
+            final String stack1 = TranslationController.STACK1;
+            final String stack2 = TranslationController.STACK2;
             final String thisName = "this";
             final String stack = "stack";
             BPLVariable stackVar = new BPLVariable(stack, new BPLTypeName(STACK_TYPE));
@@ -1249,7 +1215,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable c2Var = new BPLVariable(c2, new BPLTypeName(NAME_TYPE));
             final String c3 = "c3";
             BPLVariable c3Var = new BPLVariable(c3, new BPLTypeName(NAME_TYPE));
-            final String dynType = "dynType";
+            final String dynType = DYN_TYPE_FIELD;
             
             
             addAxiom(forall(tVar, uVar, oVar, heapVar,
@@ -1352,10 +1318,10 @@ public class Translator implements ITranslationConstants {
                     isEquiv(obj(var(heap), var(r)), 
                             logicalAnd(
                                     nonNull(var(r)),
-                                    new BPLArrayExpression(var(heap), var(r), var("alloc")),
+                                    new BPLArrayExpression(var(heap), var(r), var(ALLOC_FIELD)),
                                     logicalOr(
-                                            new BPLArrayExpression(var(heap), var(r), var("exposed")),
-                                            logicalNot(new BPLArrayExpression(var(heap), var(r), var("createdByCtxt")))
+                                            new BPLArrayExpression(var(heap), var(r), var(EXPOSED_FIELD)),
+                                            logicalNot(new BPLArrayExpression(var(heap), var(r), var(CREATED_BY_CTXT_FIELD)))
                                     )
                             )
                     )));
@@ -1406,7 +1372,7 @@ public class Translator implements ITranslationConstants {
                             )
                     ));
 
-            if (TranslationController.getConfig().extensionalityEnabled()) { 
+            if (tc.getConfig().extensionalityEnabled()) { 
             	addComment("Extensionality for simulations");
             	addAxiom(forall(
             			r1Var, r2Var, relatedVar,
@@ -1439,13 +1405,12 @@ public class Translator implements ITranslationConstants {
                     logicalAnd(
                             forall(pVar, vVar, implies(logicalAnd(lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp))), new BPLArrayExpression(var(heap), new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), var(alloc)))),
                             forall(pVar, vVar, implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), nullLiteral()))),
-                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), intLiteral(0)))),
-                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.BOOL)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), BPLBoolLiteral.FALSE)))
+                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), intLiteral(0))))
                             )
                     )
                     ));
 
-            if (TranslationController.getConfig().extensionalityEnabled()) {
+            if (tc.getConfig().extensionalityEnabled()) {
             	addComment("Extensionality for stacks");
             	addAxiom(forall(
             			spVar, stackVar,
@@ -1474,18 +1439,19 @@ public class Translator implements ITranslationConstants {
                                             forall(c3Var, implies(classExtends(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) 
                                     )
                             )
-                    ),
-                    new BPLTrigger(memberOf(var(m), var(c1), var(c2)))
+                    )
                     ));
+            addAxiom(forall(
+                    mVar, c1Var, c2Var,
+                    implies(memberOf(var(m), var(c1), var(c2)),
+                            definesMethod(var(c1), var(m))
+                    )));
             
 
             addType(ADDRESS_TYPE);
 
-            addConstants(new BPLVariable("isCall", new BPLTypeName(VAR_TYPE, BPLBuiltInType.BOOL)));
-            addConstants(new BPLVariable("place", new BPLTypeName(VAR_TYPE, new BPLTypeName(ADDRESS_TYPE))));
-            addConstants(new BPLVariable("retA", new BPLTypeName(ADDRESS_TYPE)));
-            addConstants(new BPLVariable("meth", new BPLTypeName(VAR_TYPE, new BPLTypeName(METHOD_TYPE))));
-            addConstants(new BPLVariable("receiver", new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
+            addConstants(new BPLVariable(PLACE_VARIABLE, new BPLTypeName(VAR_TYPE, new BPLTypeName(ADDRESS_TYPE))));
+            addConstants(new BPLVariable(METH_FIELD, new BPLTypeName(VAR_TYPE, new BPLTypeName(METHOD_TYPE))));
 
             {
                 // A helper function for converting int values to bool values.
@@ -1512,7 +1478,61 @@ public class Translator implements ITranslationConstants {
             
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(ITranslationConstants.USE_HAVOC, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
             
-            addFunction(ITranslationConstants.IS_STATIC_METHOD_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            
+            addFunction(VALID_HEAP_SUCC_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(STACK_TYPE), BPLBuiltInType.BOOL);
+
+            String oldHeap = "oldHeap";
+            BPLVariable oldHeapVar = new BPLVariable(oldHeap, new BPLTypeName(HEAP_TYPE));
+            String newHeap = "newHeap";
+            BPLVariable newHeapVar = new BPLVariable(newHeap, new BPLTypeName(HEAP_TYPE));
+            addAxiom(forall(oldHeapVar, newHeapVar, stackVar,
+                    isEquiv(validHeapSucc(var(oldHeap), var(newHeap), var(stack)),
+                            forall(
+                                    spVar, oVar,
+                                    logicalAnd(
+                                            implies(map(var(oldHeap), var(o), var(EXPOSED_FIELD)), map(var(newHeap), var(o), var(EXPOSED_FIELD))),
+                                            isEqual(map(var(oldHeap), var(o), var(CREATED_BY_CTXT_FIELD)), map(var(newHeap), var(o), var(CREATED_BY_CTXT_FIELD))),
+                                            implies(map(var(oldHeap), var(o), var(ALLOC_FIELD)), map(var(newHeap), var(o), var(ALLOC_FIELD))),
+                                            isEqual(map(var(oldHeap), var(o), var(DYN_TYPE_FIELD)), map(var(newHeap), var(o), var(DYN_TYPE_FIELD)))
+                                    )
+                            )
+                            )
+                    ));
+            
+            
+            // relation between classExtends and subtype
+            addAxiom(forall(c1Var, c2Var,
+                    implies(classExtends(var(c1), var(c2)), isSubtype(var(c1), var(c2)))
+                    ));
+            addAxiom(forall(c1Var, c2Var, 
+                    implies(
+                            logicalAnd(
+                                    isClassType(var(c1)),
+                                    classExtends(var(c1), var(c2))
+                            ),
+                            isClassType(var(c2))
+                    )));
+            addAxiom(forall(c1Var, c2Var,
+                    implies(
+                            logicalAnd(
+                                    isSubtype(var(c1), var(c2)),
+                                    isClassType(var(c1)),
+                                    isClassType(var(c2))
+                                    ),
+                            logicalOr(
+                                    isEqual(var(c1), var(c2)),
+                                    classExtends(var(c1), var(c2)),
+                                    exists(c3Var,
+                                            logicalAnd(
+                                                    isClassType(var(c3)),
+                                                    classExtends(var(c1), var(c3)),
+                                                    isSubtype(var(c3), var(c2))
+                                                    )
+                                            )
+                                    )
+                            )
+                    ));
             
             flushPendingTheory(); //TODO this is needed at the moment to generate information about the long values (which should be printed into the program code directly)
         }
@@ -1866,7 +1886,7 @@ public class Translator implements ITranslationConstants {
         //        addType(HEAP_TYPE);
         //
         //        // Create global heap variable for entire program
-        //        addDeclaration(new BPLVariableDeclaration(new BPLVariable[] { new BPLVariable(TranslationController.getHeap(), new BPLTypeName(HEAP_TYPE)) } ));
+        //        addDeclaration(new BPLVariableDeclaration(new BPLVariable[] { new BPLVariable(tc.getHeap(), new BPLTypeName(HEAP_TYPE)) } ));
         //
         //        //
         //        // Values (objects, primitive values, arrays)
@@ -2903,7 +2923,7 @@ public class Translator implements ITranslationConstants {
 
         {
             // Class fields which appear in one or more modifies clauses
-            // SpecificationTranslator translator = SpecificationTranslator.forModifiesClause(TranslationController.getHeap(), parameters);
+            // SpecificationTranslator translator = SpecificationTranslator.forModifiesClause(tc.getHeap(), parameters);
             // return translator.translateModifiesStoreRefs(context, project.getSpecificationDesugarer().getModifiesStoreRefs(method));
         }
     }
@@ -2937,11 +2957,11 @@ public class Translator implements ITranslationConstants {
     //                                        oVar, tVar,
     //                                        implies(
     //                                                logicalAnd(
-    //                                                        alive(rval(var(o)), var(TranslationController.getHeap())),
+    //                                                        alive(rval(var(o)), var(tc.getHeap())),
     //                                                        isSubtype(var(t), typ(rval(var(o)))),
     //                                                        notEqual(var(o), var(this_var_name))
     //                                                        ),
-    //                                                        inv(var(t), var(o), var(TranslationController.getHeap()))
+    //                                                        inv(var(t), var(o), var(tc.getHeap()))
     //                                                )
     //                                        )
     //                                )
@@ -2954,19 +2974,19 @@ public class Translator implements ITranslationConstants {
     //                                        // postcondition of helper procedure (usually constructor)
     //                                        isEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), var(this_var_name)),
     //                                        notEqual(var(RESULT_PARAM + REF_TYPE_ABBREV), BPLNullLiteral.NULL),
-    //                                        alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(TranslationController.getHeap())),
+    //                                        alive(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(tc.getHeap())),
     //                                        isInstanceOf(rval(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(type))//,
     ////                                        forall(lVar,
     ////                                                implies(
-    ////                                                        // alive(rval(var(o)), old(var(TranslationController.getHeap()))),
-    ////                                                        alive(rval(obj(var(l))), old(var(TranslationController.getHeap()))),
+    ////                                                        // alive(rval(var(o)), old(var(tc.getHeap()))),
+    ////                                                        alive(rval(obj(var(l))), old(var(tc.getHeap()))),
     ////                                                        logicalAnd(
     ////                                                                isEqual(
-    ////                                                                        get(var(TranslationController.getHeap()), var(l)),
-    ////                                                                        get(old(var(TranslationController.getHeap())), var(l))
+    ////                                                                        get(var(tc.getHeap()), var(l)),
+    ////                                                                        get(old(var(tc.getHeap())), var(l))
     ////                                                                        ),
-    ////                                                                        //alive(rval(var(o)), var(TranslationController.getHeap()))
-    ////                                                                        alive(rval(obj(var(l))), var(TranslationController.getHeap()))
+    ////                                                                        //alive(rval(var(o)), var(tc.getHeap()))
+    ////                                                                        alive(rval(obj(var(l))), var(tc.getHeap()))
     ////                                                                )
     ////                                                        )
     ////                                                )
@@ -2978,15 +2998,15 @@ public class Translator implements ITranslationConstants {
     //                                    // postcondition of helper procedure (usually constructor)
     //                                    forall(lVar,
     //                                            implies(
-    //                                                    // alive(rval(var(o)), old(var(TranslationController.getHeap()))),
-    //                                                    alive(rval(obj(var(l))), old(var(TranslationController.getHeap()))),
+    //                                                    // alive(rval(var(o)), old(var(tc.getHeap()))),
+    //                                                    alive(rval(obj(var(l))), old(var(tc.getHeap()))),
     //                                                    logicalAnd(
     //                                                            isEqual(
-    //                                                                    get(var(TranslationController.getHeap()), var(l)),
-    //                                                                    get(old(var(TranslationController.getHeap())), var(l))
+    //                                                                    get(var(tc.getHeap()), var(l)),
+    //                                                                    get(old(var(tc.getHeap())), var(l))
     //                                                                    ),
-    //                                                                    //alive(rval(var(o)), var(TranslationController.getHeap()))
-    //                                                                    alive(rval(obj(var(l))), var(TranslationController.getHeap()))
+    //                                                                    //alive(rval(var(o)), var(tc.getHeap()))
+    //                                                                    alive(rval(obj(var(l))), var(tc.getHeap()))
     //                                                            )
     //                                                    )
     //                                            )
@@ -3001,7 +3021,7 @@ public class Translator implements ITranslationConstants {
     //                                                implies(
     //                                                        // BPLBoolLiteral.FALSE,
     //                                                        isEqual(var(o), var(this_var_name)),
-    //                                                        inv(var(t), var(o), var(TranslationController.getHeap()))
+    //                                                        inv(var(t), var(o), var(tc.getHeap()))
     //                                                        )
     //                                                )
     //                                        )
@@ -3318,8 +3338,8 @@ public class Translator implements ITranslationConstants {
          * Initializes the internal datastructures.
          */
         public Context() {
-            typeReferences = TranslationController.referencedTypes();
-            fieldReferences = TranslationController.referencedFields();
+            typeReferences = tc.referencedTypes();
+            fieldReferences = tc.referencedFields();
             symbolicIntLiterals = new TreeSet<Long>();
             stringLiterals = new HashMap<String, String>();
             classLiterals = new HashSet<JType>();
@@ -3396,9 +3416,14 @@ public class Translator implements ITranslationConstants {
                 addConstants(new BPLVariable(
                         getClassTypeName(classType),
                         new BPLTypeName(NAME_TYPE)));
-
+                
                 // State that the type indeed is a class type.
-                addAxiom(isClassType(typeRef(classType)));
+                if(!classType.isInterface()){
+                    addAxiom(isClassType(typeRef(classType)));
+                } else {
+                    addAxiom(logicalNot(isClassType(typeRef(classType)))); // interfaces are no classes
+                    addAxiom(isMemberlessType(typeRef(classType)));
+                }
 
                 // Eventually axiomatize the fact that the type is final.
                 if (classType.isFinal()) {

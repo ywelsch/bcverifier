@@ -361,9 +361,53 @@ public interface ITranslationConstants {
   
   String CONSTRUCTOR_TABLE_LABEL = "constructortable";
 
+public static final String CHECK_BOUNDARY_RETURN_LABEL = "check_boundary_return";
+
+public static final String CHECK_BOUNDARY_CALL_LABEL = "check_boundary_call";
+
+public static final String METH_FIELD = "meth";
+
+public static final String EXPOSED_FIELD = "exposed";
+
+public static final String RELATED_RELATION = "related";
+
+public static final String PLACE_VARIABLE = "place";
+
+public static final String OLD_HEAP1 = "old_heap1";
+
+public static final String OLD_HEAP2 = "old_heap2";
+
+public static final String PRECONDITIONS_LABEL = "preconditions";
+
+public static final String PRECONDITIONS_CALL_LABEL = "preconditions_call";
+
+public static final String PRECONDITIONS_RETURN_LABEL = "preconditions_return";
+
+public static final String PRECONDITIONS_CONSTRUCTOR_LABEL = "preconditions_constructor";
+
+public static final String CREATED_BY_CTXT_FIELD = "createdByCtxt";
+
+public static final String CHECK_LIBRARIES_PROCEDURE_NAME = "checkLibraries";
+
+public static final String INIT_LABEL_POSTFIX = "_init";
+
+public static final String INTERN_LABEL_POSTFIX = "_intern";
+
+public static final String BOUNDARY_LABEL_POSTFIX = "_boudary";
+
+static final String VALID_HEAP_SUCC_FUNC = "ValidHeapSucc";
+
+public static final String UNROLL_COUNT = "unrollCount";
+
+public static final String MAX_LOOP_UNROLL = "maxLoopUnroll";
+
 static final String IS_STATIC_METHOD_FUNC = "IsStaticMethod";
 
 static final String USE_HAVOC = "useHavoc";
+
+public static final String DYN_TYPE_FIELD = "dynType";
+
+public static final String ALLOC_FIELD = "alloc";
 
 //public static final String ALLOC_OBJ = "AllocObj";
 }

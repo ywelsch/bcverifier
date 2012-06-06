@@ -17,11 +17,13 @@ import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.analysis.SemanticAnalyzer;
 import b2bpl.translation.CodeGenerator;
 import b2bpl.translation.Translator;
+import de.unikl.bcverifier.TranslationController;
 
 
 public class Main implements ITroubleReporter {
 
   private static Project project = null;
+  private TranslationController tc = new TranslationController();
 
   public Main(String[] args) {
     this(Project.fromCommandLine(args, new PrintWriter(System.out)));
@@ -30,6 +32,7 @@ public class Main implements ITroubleReporter {
   public Main(Project project) {
     Main.project = project;
     CodeGenerator.setProject(project);
+    CodeGenerator.setTranslationController(tc);
   }
 
   public static void main(String[] args) {
@@ -76,7 +79,9 @@ public class Main implements ITroubleReporter {
   }
 
   private void translate(String outFile, JClassType... types) {
-    BPLProgram program = new Translator(project).translate(types);
+    Translator trans = new Translator(project);
+    trans.setTranslationController(tc);
+    BPLProgram program = trans.translate(types);
 
     for (IBPLTransformator transformator : project.getTransformators()) {
       program = transformator.transform(program);

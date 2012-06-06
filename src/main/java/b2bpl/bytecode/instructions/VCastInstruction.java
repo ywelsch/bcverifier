@@ -1,8 +1,8 @@
 package b2bpl.bytecode.instructions;
 
 import b2bpl.bytecode.IInstructionVisitor;
-import b2bpl.bytecode.JBaseType;
 import b2bpl.bytecode.IOpCodes;
+import b2bpl.bytecode.JBaseType;
 
 
 public class VCastInstruction extends Instruction {

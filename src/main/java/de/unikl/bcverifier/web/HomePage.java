@@ -45,6 +45,7 @@ import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.LibraryCompiler;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
+import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 
 public class HomePage extends WebPage {
@@ -402,7 +403,9 @@ public class HomePage extends WebPage {
 			config.setInvariant(invFile);
 			config.setSingleFormulaInvariant(true);
 			config.setOutput(output);
+			TranslationController tc = new TranslationController();
 			Library library = new Library(config);
+			library.setTranslationController(tc);
 			LibraryCompiler.compile(config.library1());
 			LibraryCompiler.compile(config.library2());
 			library.translate();

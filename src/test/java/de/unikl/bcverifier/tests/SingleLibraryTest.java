@@ -10,9 +10,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import de.unikl.bcverifier.Configuration;
-import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Configuration.VerifyAction;
+import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
+import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 
 public class SingleLibraryTest {
@@ -34,7 +35,9 @@ public class SingleLibraryTest {
 		config.setLibraries(lib1, lib2);
 		config.setOutput(specificationFile);
         config.setAction(VerifyAction.VERIFY);
+        TranslationController tc = new TranslationController();
 		Library library = new Library(config);
+		library.setTranslationController(tc);
 		library.compile();
 		library.translate();
 		library.check();
