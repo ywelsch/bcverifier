@@ -10,6 +10,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<wicket.version>1.5.6</wicket.version>
 		<jetty.version>7.5.0.v20110901</jetty.version>
+    	<skipTests>true</skipTests>
 	</properties>
 
 	<dependencies>
@@ -17,6 +18,18 @@
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.2</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.eclipse.jdt.core.compiler</groupId>
+			<artifactId>ecj</artifactId>
+			<version>3.7.2</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-vfs2</artifactId>
+			<version>2.0</version>
 		</dependency>
 
 		<dependency>
@@ -34,7 +47,7 @@
 			<groupId>org.eclipse.jetty.aggregate</groupId>
 			<artifactId>jetty-all-server</artifactId>
 			<version>${jetty.version}</version>
-			<scope>provided</scope>
+			<!--<scope>provided</scope>-->
 		</dependency>
 
 		<!-- <dependency> <groupId>com.google.code.javaparser</groupId> <artifactId>javaparser</artifactId> 
@@ -150,6 +163,14 @@
 		</testResources>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.12</version>
+				<configuration>
+					<skipTests>${skipTests}</skipTests>
+				</configuration>
+			</plugin>
+			<plugin>
 				<inherited>true</inherited>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -183,7 +204,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>de.unikl.bcverifier.Main</mainClass>
+							<mainClass>de.unikl.bcverifier.web.WebStart</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
@@ -208,13 +229,13 @@
 							<port>8080</port>
 							<maxIdleTime>3600000</maxIdleTime>
 						</connector>
-						<connector implementation="org.eclipse.jetty.server.ssl.SslSocketConnector">
+						<!-- <connector implementation="org.eclipse.jetty.server.ssl.SslSocketConnector">
 							<port>8443</port>
 							<maxIdleTime>3600000</maxIdleTime>
 							<keystore>${project.build.directory}/test-classes/keystore</keystore>
 							<password>wicket</password>
 							<keyPassword>wicket</keyPassword>
-						</connector>
+						</connector> -->
 					</connectors>
 				</configuration>
 			</plugin>

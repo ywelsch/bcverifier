@@ -14,7 +14,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.vfs2.FileName;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSelectInfo;
+import org.apache.commons.vfs2.FileSelector;
+import org.apache.commons.vfs2.FileSystemManager;
+import org.apache.commons.vfs2.FileTypeSelector;
+import org.apache.commons.vfs2.VFS;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -144,25 +152,41 @@ public class HomePage extends WebPage {
 
 	private void addExample(String dir, String description) {
 		ClassLoader loader = HomePage.class.getClassLoader();
-		File topDir;
 		try {
-			topDir = new File(loader.getResource(dir).toURI());
-			File oldDir = new File(topDir, "old");
-			File newDir = new File(topDir, "new");
-			File invFile = new File(topDir, "bpl/webinv.bpl");
-	        Collection<File> oldJavaFiles = FileUtils.listFiles(oldDir, new String[] { "java" }, true);
-	        Collection<File> newJavaFiles = FileUtils.listFiles(newDir, new String[] { "java" }, true);
-			Example ex = new Example();
+			System.out.println(loader.getResource(dir).toURI());
+			FileSystemManager fsManager = VFS.getManager();
+			FileObject topDir = fsManager.resolveFile(loader.getResource(dir).toURI().toString());
+			FileObject oldDir = topDir.getChild("old");
+			FileObject newDir = topDir.getChild("new");
+			FileObject invFile = topDir.getChild("bpl").getChild("webinv.bpl");
+			
+			class JavaFileSelector implements FileSelector {
+
+				public boolean includeFile(FileSelectInfo fileInfo)
+						throws Exception {
+					return fileInfo.getFile().getName().getBaseName().endsWith(".java");
+				}
+
+				public boolean traverseDescendents(FileSelectInfo fileInfo)
+						throws Exception {
+					return true;
+				}
+				
+			}
+			
+			FileObject[] oldJavaFiles = oldDir.findFiles(new JavaFileSelector());
+			FileObject[] newJavaFiles = newDir.findFiles(new JavaFileSelector());
+	        Example ex = new Example();
 			ex.setId(description);
-			ex.setInvariant(FileUtils.readFileToString(invFile));
+			ex.setInvariant(IOUtils.toString(invFile.getContent().getInputStream()));
 			List<String> lib1files = new ArrayList<String>();
-			for (File f : oldJavaFiles) {
-				lib1files.add(FileUtils.readFileToString(f));
+			for (FileObject f : oldJavaFiles) {
+				lib1files.add(IOUtils.toString(f.getContent().getInputStream()));
 			}
 			ex.setLib1files(lib1files);
 			List<String> lib2files = new ArrayList<String>();
-			for (File f : newJavaFiles) {
-				lib2files.add(FileUtils.readFileToString(f));
+			for (FileObject f : newJavaFiles) {
+				lib2files.add(IOUtils.toString(f.getContent().getInputStream()));
 			}
 			ex.setLib2files(lib2files);
 			examples.add(ex);

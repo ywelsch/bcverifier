@@ -1,6 +1,8 @@
 package de.unikl.bcverifier;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -11,6 +13,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jdt.core.compiler.batch.BatchCompiler;
 
 public class LibraryCompiler {
     public static class CompileException extends Exception{
@@ -21,15 +24,15 @@ public class LibraryCompiler {
         }
     }
 
-    @SuppressWarnings("restriction")
+    private static final String DEFAULT_PREFIX = "-source 5 -target 5 -g -nowarn -noExit ";
+    
     public static void compile(File libraryPath) throws CompileException {
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager standardFileManager = compiler.getStandardFileManager(null, null, null);
-        Collection<File> javaFiles = FileUtils.listFiles(libraryPath, new String[]{"java"}, true);
-        Iterable<? extends JavaFileObject> javaFileObjectsFromFiles = standardFileManager.getJavaFileObjectsFromFiles(javaFiles);
-        CompilationTask compilationTask = compiler.getTask(null, standardFileManager, null, Arrays.asList("-g"), null, javaFileObjectsFromFiles);
-        if(!compilationTask.call()){
-            throw new CompileException("Files could not be compiled.");
+    	StringWriter outWriter = new StringWriter();
+    	StringWriter errWriter = new StringWriter();
+        boolean res = BatchCompiler.compile(DEFAULT_PREFIX + libraryPath.getAbsolutePath(), new PrintWriter(outWriter), new PrintWriter(errWriter), null);
+        if (!res) {
+        	String errorString = errWriter.toString();
+            throw new CompileException("Files could not be compiled\n" + errorString);
         }
     }
 }
