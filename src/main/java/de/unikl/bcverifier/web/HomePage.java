@@ -27,6 +27,7 @@ import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.ajax.markup.html.form.AjaxSubmitLink;
+import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
@@ -109,16 +110,20 @@ public class HomePage extends WebPage {
 	
 	final AcePanel bipanel = new AcePanel("boogieinput", "connectBoogieInput", new PropertyModel<String>(HomePage.this, "boogieinput"));
 	final LibForm form = new LibForm("libForm");
+	final MultiLineLabel olabel = new MultiLineLabel("output", new PropertyModel(this, "output"));
 	
     public HomePage(final PageParameters parameters) {
 		add(new Label("version", ConfigSession.get().getConfig().getVersionString()));
 		add(form);
-		createDropDownSelector(form.pan1, form.pan2, form.pan3);
-		add(new MultiLineLabel("output", new PropertyModel(this, "output")).setEscapeModelStrings(false));
+		olabel.setEscapeModelStrings(false);
+		olabel.setOutputMarkupId(true);
+		add(olabel);
 		add(bipanel);
+		createDropDownSelector(form.pan1, form.pan2, form.pan3);
 		lib1contents.add("public class C {\n  public int m() {\n    return 0;\n  }\n}");
 		lib2contents.add("public class C {\n  public int m() {\n    return 2 - 1;\n  }\n}");
 		populateExamples();
+		bipanel.setVisible(false);
     }
     
     private void createDropDownSelector(final MarkupContainer pan1, final MarkupContainer pan2, final AcePanel pan3) {
@@ -134,8 +139,10 @@ public class HomePage extends WebPage {
                 	lib2contents.clear();
                 	lib2contents.addAll(ex.getLib2files());
                 	setInv(ex.getInvariant());
+                	setOutput("");
+                	setBoogieinput("");
                 	if (target != null) {
-                		target.add(pan1, pan2, pan3);
+                		target.add(pan1, pan2, pan3, bipanel, olabel);
                 	}
                 }
             }
@@ -220,6 +227,11 @@ public class HomePage extends WebPage {
 	}
 
 	public void setBoogieinput(String boogieinput) {
+		if (boogieinput == "") {
+			bipanel.setVisible(false);
+		} else {
+			bipanel.setVisible(true);
+		}
 		this.boogieinput = boogieinput;
 	}
 
@@ -231,6 +243,7 @@ public class HomePage extends WebPage {
 		
 		public LibForm(String id) {
 			super(id);
+			add(new AttributeAppender("action", new Model("#outputlink"), "")); 
 			pan1 = createLibPanel("lib1panel", "lib1contents", "add1Row", "remove1Row", lib1contents);
 			pan2 = createLibPanel("lib2panel", "lib2contents", "add2Row", "remove2Row", lib2contents);
 			pan3 = createInvPanel();

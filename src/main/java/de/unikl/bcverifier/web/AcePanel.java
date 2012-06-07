@@ -15,6 +15,7 @@ public class AcePanel extends Panel {
 	public AcePanel(final String id, final String connect, IModel<String> model) {
 		super(id, model);
 		this.setOutputMarkupId(true);
+		this.setOutputMarkupPlaceholderTag(true);
 		ta = new TextArea<String>("textarea", model);
 		ta.setOutputMarkupId(true);
 		add(ta);
@@ -31,7 +32,7 @@ public class AcePanel extends Panel {
 			@Override
 			public void renderHead(Component component, IHeaderResponse response) {
 				super.renderHead(component, response);
-				response.renderOnDomReadyJavaScript(connect + "(\"" + ace.getMarkupId() + "\",\"" + ta.getMarkupId() + "\",\"" + AcePanel.this.getMarkupId() + "\");");
+				response.renderOnLoadJavaScript(connect + "(\"" + ace.getMarkupId() + "\",\"" + ta.getMarkupId() + "\",\"" + AcePanel.this.getMarkupId() + "\");");
 			}
 		});
 	}

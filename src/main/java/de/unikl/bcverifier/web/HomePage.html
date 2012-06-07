@@ -10,10 +10,11 @@
 <script src="ace/mode-java.js" type="text/javascript" charset="utf-8"></script>
 <script src="ace/mode-boogie.js" type="text/javascript" charset="utf-8"></script>
 <script>
-function updateEditorSize(editor,editorwrap,container) {
+function updateEditorSize(editor,editorwrap,textarea) {
+	textarea.value = editor.getSession().getValue();
 	var newHeight = editor.getSession().getDocument().getLength() * editor.renderer.lineHeight + editor.renderer.scrollBar.getWidth();
     editorwrap.style.height = newHeight + "px";
-    container.style.height = newHeight + "px";
+    textarea.style.height = newHeight + "px";
     editor.resize();
 }
 function connectLib(libname,talibname,container) {
@@ -26,11 +27,12 @@ function connectLib(libname,talibname,container) {
 	    editor.getSession().setMode(new JavaMode());
 	    editor.renderer.setShowGutter(false);
 	    editor.setShowPrintMargin(false);
+	    editor.setHighlightActiveLine(false);
 	    var textarea = document.getElementById(talibname);
 	    editor.getSession().setValue(textarea.value);
 	    updateEditorSize(editor,editorwrap,textarea);
+	    setTimeout(function() { updateEditorSize(editor,editorwrap,textarea); }, 100); // fix for internet explorer
 	    editor.getSession().on('change', function(){
-	      textarea.value = editor.getSession().getValue();
 	      updateEditorSize(editor,editorwrap,textarea);
 	    });
 }
@@ -43,13 +45,15 @@ function connectInv(libname,talibname,container) {
 	    editor.getSession().setMode(new BoogieMode());
 	    editor.renderer.setShowGutter(false);
 	    editor.setShowPrintMargin(false);
+	    editor.setHighlightActiveLine(false);
 	    var textarea = document.getElementById(talibname);
 	    editor.getSession().setValue(textarea.value);
 	    updateEditorSize(editor,editorwrap,textarea);
+	    setTimeout(function() { updateEditorSize(editor,editorwrap,textarea); }, 100); // fix for internet explorer
 	    editor.getSession().on('change', function(){
-	      textarea.value = editor.getSession().getValue();
 	      updateEditorSize(editor,editorwrap,textarea);
 	    });
+	    editor.getSession().setValue(textarea.value);
 }
 function connectBoogieInput(libname,talibname,container) {
 	var editor = ace.edit(libname);
@@ -60,13 +64,13 @@ function connectBoogieInput(libname,talibname,container) {
 	    //editor.renderer.setShowGutter(false);
 	    //editor.getSession().setUseWrapMode(true);
 	    editor.setShowPrintMargin(false);
+	    editor.setHighlightActiveLine(false);
 	    editor.setReadOnly(true);
 	    var textarea = document.getElementById(talibname);
 	    editor.getSession().setValue(textarea.value);
 	    //updateEditorSize(editor,editorwrap);
 	    editor.getSession().on('change', function(){
 	      textarea.value = editor.getSession().getValue();
-	      updateEditorSize(editor,editorwrap);
 	    });
 	 window.boogieinput = editor;
 }
@@ -104,7 +108,7 @@ function acegoto(editor,line,column) {
 			<td id="lib1td">
 			<div wicket:id="lib1panel">
   				<span wicket:id="lib1contents">
-					<span wicket:id="libclass" height="300px"></span>
+					<span wicket:id="libclass"></span>
 					<br/>
 				</span>
 				<a href="#" class="add" wicket:id="add1Row">+</a>
@@ -114,7 +118,7 @@ function acegoto(editor,line,column) {
 			<td id="lib2td">
 			<div wicket:id="lib2panel">
   				<span wicket:id="lib2contents">
-					<span wicket:id="libclass" height="300px"></span>
+					<span wicket:id="libclass"></span>
 					<br/>
 				</span>
 				<a href="#" class="add" wicket:id="add2Row">+</a>
@@ -129,7 +133,7 @@ function acegoto(editor,line,column) {
 			</div>
 			<span wicket:id="inv"></span>
 			<div id="optionstitle">
-			<a href="#" class="show" wicket:id="showOptions">Toggle Options</a>
+			<a href="#" class="show" wicket:id="showOptions">Toggle options</a>
 			<br/>
 			<div wicket:id="optionpanel">
 				<span wicket:id="optioncontents">
@@ -141,7 +145,7 @@ function acegoto(editor,line,column) {
 			</div>
 		</form>
 		<br/>
-		<h2>Output:</h2>
+		<h2 id="outputlink">Output:</h2>
 			<span wicket:id="output">Output</span>
 			<a name="boogieinputbegin"><h3>Generated BPL file:</h3></a>
 			<span wicket:id="boogieinput"></span>
