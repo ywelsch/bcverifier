@@ -1182,6 +1182,9 @@ public class MethodTranslator implements ITranslationConstants {
 
         for (int i = 0; i < params.length; i++) {
             if(tc.isActive()){
+                if(i == 0 && method.isStatic() && params[i].isClassType()){
+                    continue; // skip check for param0_r if the method is static
+                }
                 if(params[i].isBaseType()){
                     JBaseType baseType = (JBaseType)params[i];
                     addAssume(isInRange(stack(var(paramVar(i, baseType))), typeRef(baseType)));
@@ -3277,8 +3280,8 @@ public class MethodTranslator implements ITranslationConstants {
                     transCmd.addComment("Sourceline: "+handle.getSourceLine());
                     
                     // we created the object, so it is not createdByCtxt and not exposed
-                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
-                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+                    addAssume(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
+                    addAssume(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
                     
                     BPLBasicBlock block = new BPLBasicBlock(
                             tc.prefix(getProcedureName(method) + "_" + blockLabel),
