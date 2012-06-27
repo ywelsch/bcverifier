@@ -989,6 +989,10 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(IS_CALLABLE_FUNC, exp1, exp2);
     }
     
+    public static BPLExpression isPublic(BPLExpression clazz){
+        return new BPLFunctionApplication(IS_PUBLIC_FUNC, clazz);
+    }
+    
     public static BPLExpression relNull(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
         return new BPLFunctionApplication(REL_NULL_FUNC, exp1, exp2, exp3);
     }

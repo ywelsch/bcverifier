@@ -6,6 +6,7 @@ import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.greater;
 import static b2bpl.translation.CodeGenerator.hasReturnValue;
+import static b2bpl.translation.CodeGenerator.heap;
 import static b2bpl.translation.CodeGenerator.heap1;
 import static b2bpl.translation.CodeGenerator.heap2;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
@@ -14,6 +15,7 @@ import static b2bpl.translation.CodeGenerator.isCallable;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isNull;
+import static b2bpl.translation.CodeGenerator.isPublic;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
@@ -1138,12 +1140,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // //////////////////////////////////////////
         
         dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(new BPLFunctionApplication(
-                IS_PUBLIC_FUNC, typ(stack(receiver()),
-                        var(tc.getHeap())))));
-        dispatchCommands.add(new BPLAssumeCommand(isCallable(
-                typ(stack(receiver()), var(tc.getHeap())),
-                stack(var(METH_FIELD)))));
+        dispatchCommands.add(new BPLAssumeCommand(
+                logicalOr(
+                    isPublic(typ(stack(receiver()),var(tc.getHeap()))),
+                    logicalNot(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)))
+                )
+                ));
+//        dispatchCommands.add(new BPLAssumeCommand(isCallable(
+//                typ(stack(receiver()), var(tc.getHeap())),
+//                stack(var(METH_FIELD)))));
         dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
         dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
         
@@ -1163,12 +1168,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // commands before dispatch
         // //////////////////////////////////////
         dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(new BPLFunctionApplication(
-                IS_PUBLIC_FUNC, typ(stack(receiver()),
-                        var(tc.getHeap())))));
-        dispatchCommands.add(new BPLAssumeCommand(isCallable(
-                typ(stack(receiver()), var(tc.getHeap())),
-                stack(var(METH_FIELD)))));
+        dispatchCommands.add(new BPLAssumeCommand(
+                logicalOr(
+                    isPublic(typ(stack(receiver()),var(tc.getHeap()))),
+                    logicalNot(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)))
+                )
+                ));
+//        dispatchCommands.add(new BPLAssumeCommand(isCallable(
+//                typ(stack(receiver()), var(tc.getHeap())),
+//                stack(var(METH_FIELD)))));
         methodBlocks
                 .add(0,
                         new BPLBasicBlock(
