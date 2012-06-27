@@ -1240,7 +1240,9 @@ public class Translator implements ITranslationConstants {
 //                    ));
             
             addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")}, new BPLVariable[]{oVar, heapVar, tVar, fieldAlphaVar, vAlphaVar},
-                    isEquiv(isOfType(var(o), var(heap), var(t)), isOfType(var(o), new BPLArrayExpression(var(heap), new BPLArrayAssignment(new BPLExpression[]{var(o), var(f)}, var(v))), var(t)))
+                    implies(notEqual(var(f), var(DYN_TYPE_FIELD)), //isOfType depends on the dynType field
+                            isEquiv(isOfType(var(o), var(heap), var(t)), isOfType(var(o), new BPLArrayExpression(var(heap), new BPLArrayAssignment(new BPLExpression[]{var(o), var(f)}, var(v))), var(t)))
+                    )
                     ));
             
             addFunction(IS_CLASS_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
@@ -1504,7 +1506,7 @@ public class Translator implements ITranslationConstants {
                                     spVar, oVar,
                                     logicalAnd(
                                             implies(map(var(oldHeap), var(o), var(EXPOSED_FIELD)), map(var(newHeap), var(o), var(EXPOSED_FIELD))),
-                                            isEqual(map(var(oldHeap), var(o), var(CREATED_BY_CTXT_FIELD)), map(var(newHeap), var(o), var(CREATED_BY_CTXT_FIELD))),
+                                            implies(map(var(oldHeap), var(o), var(ALLOC_FIELD)), isEqual(map(var(oldHeap), var(o), var(CREATED_BY_CTXT_FIELD)), map(var(newHeap), var(o), var(CREATED_BY_CTXT_FIELD)))),
                                             implies(map(var(oldHeap), var(o), var(ALLOC_FIELD)), map(var(newHeap), var(o), var(ALLOC_FIELD))),
                                             isEqual(map(var(oldHeap), var(o), var(DYN_TYPE_FIELD)), map(var(newHeap), var(o), var(DYN_TYPE_FIELD)))
                                     )
