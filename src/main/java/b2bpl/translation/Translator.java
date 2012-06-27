@@ -1449,7 +1449,6 @@ public class Translator implements ITranslationConstants {
                             logicalOr(
                                     logicalAnd(isEqual(var(c1), var(c2)), definesMethod(var(c2), var(m))),
                                     logicalAnd(logicalNot(definesMethod(var(c2), var(m))), 
-//                                            exists(c3Var, implies(isSubtype(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) //TODO do we have to use classExtends-function instead of isSubtype?
                                             forall(c3Var, implies(classExtends(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) 
                                     )
                             )
@@ -1460,6 +1459,21 @@ public class Translator implements ITranslationConstants {
                     implies(memberOf(var(m), var(c1), var(c2)),
                             definesMethod(var(c1), var(m))
                     )));
+            
+            addAxiom(forall(
+                    mVar, c1Var, c2Var,
+                    implies(memberOf(var(m), var(c1), var(c2)),
+                            forall(c3Var,
+                                    implies(notEqual(var(c3), var(c1)), logicalNot(memberOf(var(m), var(c3), var(c2))))
+                                    )
+                            )
+                    ));
+            
+            addAxiom(forall(
+                    mVar, c1Var, c2Var,
+                    implies(memberOf(var(m), var(c1), var(c2)),
+                            logicalAnd(isClassType(var(c1)), isClassType(var(c2))))
+                    ));
             
 
             addType(ADDRESS_TYPE);
