@@ -1042,9 +1042,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // add default constructor for java.lang.Object in case it is called inside the methods/constructors of the library
         ////////////////////////////////////////////////
         String constructorLabelObject = tc.prefix(Object.class.getName()+"."+CONSTRUCTOR_NAME);
+        List<BPLCommand> objectConstructorCommands = new ArrayList<BPLCommand>();
+        objectConstructorCommands.add(new BPLAssignmentCommand(CodeGenerator.stack(var(RESULT_PARAM+REF_TYPE_ABBREV)), stack(receiver())));
         methodBlocks.add(
                 0,
-                new BPLBasicBlock(constructorLabelObject, new BPLCommand[0],
+                new BPLBasicBlock(constructorLabelObject, objectConstructorCommands.toArray(new BPLCommand[objectConstructorCommands.size()]),
                         new BPLGotoCommand(tc.prefix(RETTABLE_LABEL)))
                 );
         

@@ -1460,6 +1460,7 @@ public class Translator implements ITranslationConstants {
                             definesMethod(var(c1), var(m))
                     )));
             
+            addComment("memberOf is a relation (could also be defined as function definedInClass(m, c2) == c1)");
             addAxiom(forall(
                     mVar, c1Var, c2Var,
                     implies(memberOf(var(m), var(c1), var(c2)),
@@ -1469,6 +1470,7 @@ public class Translator implements ITranslationConstants {
                             )
                     ));
             
+            addComment("memberOf only talks about class types");
             addAxiom(forall(
                     mVar, c1Var, c2Var,
                     implies(memberOf(var(m), var(c1), var(c2)),

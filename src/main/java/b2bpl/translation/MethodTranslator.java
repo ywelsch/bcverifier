@@ -3052,7 +3052,7 @@ public class MethodTranslator implements ITranslationConstants {
                 addAssume(nonNull(stack(var(refStackVar(first)))));
             }
             
-            if(!isSuperConstructor){
+            if(true){ //TODO remove if, if handling is working
                 BPLExpression sp = var(tc.getStackPointer());
                 BPLExpression spMinus1 = sub(sp, intLiteral(1)); 
                 addAssignment(sp, add(sp, intLiteral(1)), "create new stack frame");
@@ -3272,16 +3272,20 @@ public class MethodTranslator implements ITranslationConstants {
                     //TODO more detailed information about the type here
                     rawEndBlock(tc.getCheckLabel());
                 } else if(invokedMethod.isConstructor()) {
-                    //the invoked method is a constructor of an internal type
-                    first = first - 1; //the stack index is one off if we have a constructor
+                    //the invoked method is a constructor of an internal type, but not a superconstructor call
+                    if(!isSuperConstructor){
+                        first = first - 1; //the stack index is one off if we have a constructor
+                    }
                     
                     BPLTransferCommand transCmd = new BPLGotoCommand(tc.prefix(getProcedureName(invokedMethod))); //this is a static call
                     transCmd.addComment("constructor call: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
                     transCmd.addComment("Sourceline: "+handle.getSourceLine());
                     
-                    // we created the object, so it is not createdByCtxt and not exposed
-                    addAssume(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
-                    addAssume(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+                    if(!isSuperConstructor){
+                        // we created the object, so it is not createdByCtxt and not exposed
+                        addAssume(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
+                        addAssume(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+                    }
                     
                     BPLBasicBlock block = new BPLBasicBlock(
                             tc.prefix(getProcedureName(method) + "_" + blockLabel),
@@ -3308,8 +3312,10 @@ public class MethodTranslator implements ITranslationConstants {
                     addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
                 } else {
                     addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
-                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
-                    addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+                    if(!isSuperConstructor){
+                        addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
+                        addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+                    }
                 }
                 addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName)));
                 

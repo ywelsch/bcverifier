@@ -1,4 +1,4 @@
 "invariant_file","preconditions_file","flags","expected_errors","dead_code_points","loop_unroll_cap"
 "bpl/inv.bpl"   ,""                  ,""     ,0                ,2                 ,3
 "bpl/inv.bpl"   ,""                  ,""     ,1                ,0                 ,2
-"bpl/inv.bpl"   ,"bpl/noHavoc.bpl"   ,""     ,2                ,0                 ,2
+"bpl/inv.bpl"   ,"bpl/noHavoc.bpl"   ,""     ,3                ,0                 ,2
