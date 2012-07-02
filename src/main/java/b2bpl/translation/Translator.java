@@ -1443,6 +1443,16 @@ public class Translator implements ITranslationConstants {
             addFunction(LIB_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addFunction(CLASS_EXTENDS_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             
+            addComment("classExtends is a partial function");
+            addAxiom(forall(
+                    c1Var, c2Var,
+                    implies(classExtends(var(c1), var(c2)), forall(c3Var, implies(notEqual(var(c2), var(c3)), logicalNot(classExtends(var(c1), var(c3))))))
+                    ));
+            addAxiom(forall(
+                    tVar,
+                    logicalNot(classExtends(var("$java.lang.Object"), var(t)))
+                    ));
+            
             addAxiom(forall(
                     mVar, c1Var, c2Var,
                     isEquiv(memberOf(var(m), var(c1), var(c2)),
