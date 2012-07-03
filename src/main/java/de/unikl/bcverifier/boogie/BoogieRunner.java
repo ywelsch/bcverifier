@@ -35,7 +35,7 @@ public class BoogieRunner {
                 } else {
                 	cmdArgs = new String[]{"/bin/bash", "-l",  "-c", "which boogie"};
                 }
-                Process p = Runtime.getRuntime().exec(new String[]{"where", "boogie"});
+                Process p = Runtime.getRuntime().exec(cmdArgs);
                 BOOGIE_COMMAND = IOUtils.toString(p.getInputStream()).trim();
                 log.debug("Which returned "+BOOGIE_COMMAND);
             	log.debug(IOUtils.toString(p.getErrorStream()));
