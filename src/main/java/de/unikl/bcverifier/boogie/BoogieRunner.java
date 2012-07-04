@@ -106,7 +106,7 @@ public class BoogieRunner {
             if(!verify){
                 parameters.add("/noVerify");
             }
-            parameters.add(boogieFile.getName());
+            parameters.add(boogieFile.getAbsolutePath());
             Process p = runtime.exec(parameters.toArray(new String[parameters.size()]), null, workingDir);
             processOutput = p.getInputStream();
             String result = IOUtils.toString(processOutput).trim();
