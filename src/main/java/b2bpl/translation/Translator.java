@@ -328,7 +328,8 @@ public class Translator implements ITranslationConstants {
 //            declarations.add(new BPLAxiom(libType(typeRef(type))));
             libTypeExpressions.add(isEqual(var(t), typeRef(type)));
             if(!type.isInterface()){
-                addAxiom(forall(tVar, isEquiv(classExtends(typeRef(type), var(t)), isEqual(var(t), typeRef(type.getSupertype())))));
+//                addAxiom(forall(tVar, isEquiv(classExtends(typeRef(type), var(t)), isEqual(var(t), typeRef(type.getSupertype())))));
+                addAxiom(classExtends(typeRef(type), typeRef(type.getSupertype())));
             }
             
             if(tc.methodDefinitions().get(VALUE_TYPE_PREFIX+type.getName()) == null){ // if we not added any methods up to now, the class does not implement any
@@ -3446,8 +3447,6 @@ public class Translator implements ITranslationConstants {
          * <i>name</i>.
          */
         public BPLExpression translateTypeReference(JType type) {
-            // Only class types trigger the translation of constants representing
-            // them.
             if (type.isClassType() && !typeReferences.contains(type)) {
                 JClassType classType = (JClassType) type;
                 typeReferences.add(classType);
