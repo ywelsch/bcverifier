@@ -29,6 +29,7 @@ import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isInRange;
 import static b2bpl.translation.CodeGenerator.isInstanceOf;
+import static b2bpl.translation.CodeGenerator.isLocalPlace;
 import static b2bpl.translation.CodeGenerator.isMemberlessType;
 import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isOfType;
@@ -1574,6 +1575,8 @@ public class Translator implements ITranslationConstants {
                                     )
                             )
                     ));
+            
+            addFunction(IS_LOCAL_PLACE_FUNC, new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL);
             
             flushPendingTheory(); //TODO this is needed at the moment to generate information about the long values (which should be printed into the program code directly)
         }
@@ -3652,6 +3655,11 @@ public class Translator implements ITranslationConstants {
                 //                        ));
             }
             return var(name);
+        }
+
+        public void addLocalPlace(String localPlace) {
+            addConstants(new BPLVariable(localPlace, new BPLTypeName(ADDRESS_TYPE)));
+            addAxiom(isLocalPlace(var(localPlace)));
         }
     }
 }

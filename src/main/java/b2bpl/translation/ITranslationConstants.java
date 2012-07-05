@@ -361,6 +361,8 @@ public interface ITranslationConstants {
  
   String RETTABLE_LABEL = "rettable";
   
+  String LOCAL_PLACES_TABLE_LABEL = "localplacestable";
+  
   String CONSTRUCTOR_TABLE_LABEL = "constructortable";
 
 public static final String CHECK_BOUNDARY_RETURN_LABEL = "check_boundary_return";
@@ -411,5 +413,5 @@ public static final String DYN_TYPE_FIELD = "dynType";
 
 public static final String ALLOC_FIELD = "alloc";
 
-//public static final String ALLOC_OBJ = "AllocObj";
+public static final String IS_LOCAL_PLACE_FUNC = "isLocalPlace";
 }

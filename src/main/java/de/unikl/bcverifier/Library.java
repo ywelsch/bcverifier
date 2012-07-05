@@ -14,6 +14,7 @@ import static b2bpl.translation.CodeGenerator.implies;
 import static b2bpl.translation.CodeGenerator.isCallable;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
+import static b2bpl.translation.CodeGenerator.isLocalPlace;
 import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isPublic;
 import static b2bpl.translation.CodeGenerator.less;
@@ -37,6 +38,7 @@ import static b2bpl.translation.CodeGenerator.wellformedHeap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -45,12 +47,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.LineIterator;
 import org.apache.log4j.Logger;
+import org.eclipse.jetty.http.HttpStatus.Code;
 
 import b2bpl.CompilationAbortedException;
 import b2bpl.Project;
@@ -121,10 +127,76 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     
     public void setTranslationController(TranslationController controller){
         this.tc = controller;
+        if(config.getLocalPlaces() != null){
+            tc.setLocalPlaces(parseLocalPlaces(config.getLocalPlaces()));
+        }
     }
     
     public Library(Configuration config) {
         this.config = config;
+    }
+    
+    public static class LocalPlaceDefinition{
+        private HashMap<Integer, String> oldMap;
+        private HashMap<Integer, String> newMap;
+        
+        public LocalPlaceDefinition(HashMap<Integer, String> oldMap, HashMap<Integer,String> newMap){
+            this.oldMap = oldMap;
+            this.newMap = newMap;
+        }
+        
+        public String getPlaceInOld(int line1, int line2){
+            return findPlaceBetween(oldMap, line1, line2);
+        }
+        
+        public String getPlaceInNew(int line1, int line2){
+            return findPlaceBetween(newMap, line1, line2);
+        }
+        
+        private static String findPlaceBetween(HashMap<Integer,String> placeMap, int line1, int line2){
+            int pairLine;
+            for(Entry<Integer, String> pair : placeMap.entrySet()){
+                pairLine = pair.getKey();
+                if(line1 < pairLine && pairLine <= line2){
+                    placeMap.remove(pair.getKey());
+                    return pair.getValue();
+                }
+            }
+            return null;
+        }
+    }
+
+    private LocalPlaceDefinition parseLocalPlaces(File localPlaces) {
+        FileReader reader = null;
+        Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)");
+        
+        HashMap<Integer,String> oldMap = new HashMap<Integer, String>();
+        HashMap<Integer,String> newMap = new HashMap<Integer, String>();
+        try {
+            reader = new FileReader(localPlaces);
+            LineIterator lineIterator = IOUtils.lineIterator(reader);
+            String nextLine;
+            Matcher m;
+            while(lineIterator.hasNext()){
+                nextLine = lineIterator.next();
+                m = p.matcher(nextLine);
+                if(m.matches()){
+                    if(m.group(2).equals("old")){
+                        oldMap.put(Integer.decode(m.group(3)), m.group(1));
+                    } else if(m.group(2).equals("new")){
+                        newMap.put(Integer.decode(m.group(3)), m.group(1));
+                    }
+                }
+            }
+            
+            return new LocalPlaceDefinition(oldMap, newMap);
+        } catch (FileNotFoundException e) {
+            log.warn("Could not read local places from "+localPlaces, e);
+            return null;
+        } finally {
+            if(reader!=null)
+                IOUtils.closeQuietly(reader);
+        }
     }
 
     public void compile() {
@@ -927,6 +999,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     private LibraryDefinition compileSpecification(String[] fileNames)
             throws FileNotFoundException {
         tc.resetReturnLabels();
+        tc.resetLocalPlaces();
 
         Project project = Project.fromCommandLine(fileNames, new PrintWriter(
                 System.out));
@@ -1062,15 +1135,41 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         String[] returnLabels = tc.returnLabels().toArray(
                 new String[tc.returnLabels().size()]);
         
+        String placeTableLabel = tc.prefix(LOCAL_PLACES_TABLE_LABEL);
+        String[] placesLabels = tc.getLocalPlaces().toArray(
+                new String[tc.getLocalPlaces().size()]);
+        
         String constTableLabel = tc.prefix(CONSTRUCTOR_TABLE_LABEL);
 
         BPLTransferCommand dispatchTransferCmd;
+        
         // //////////////////////////////////////
-        // commands before callTable
+        // commands before localPlacesTable
         // /////////////////////////////////////
         List<BPLCommand> dispatchCommands;
         dispatchCommands = new ArrayList<BPLCommand>();
+        dispatchCommands.add(new BPLAssumeCommand(CodeGenerator.isLocalPlace(stack(var(PLACE_VARIABLE)))));
         BPLExpression unrollLoop = var(tc.prefix(ITranslationConstants.UNROLL_COUNT));
+        dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
+        dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
+        
+        if (placesLabels.length > 0) {
+            dispatchTransferCmd = new BPLGotoCommand(placesLabels);
+        } else {
+            dispatchTransferCmd = new BPLReturnCommand();
+        }
+        methodBlocks.add(
+                0,
+                new BPLBasicBlock(placeTableLabel, dispatchCommands
+                        .toArray(new BPLCommand[dispatchCommands.size()]),
+                        dispatchTransferCmd));
+        
+        
+        // //////////////////////////////////////
+        // commands before callTable
+        // /////////////////////////////////////
+        dispatchCommands = new ArrayList<BPLCommand>();
+        dispatchCommands.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack(var(PLACE_VARIABLE))))));
         dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
         dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
         
@@ -1107,6 +1206,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // commands before returnTable
         // ///////////////////////////////////////
         dispatchCommands = new ArrayList<BPLCommand>();
+        dispatchCommands.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack(var(PLACE_VARIABLE))))));
         dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
         dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
         
