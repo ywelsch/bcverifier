@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<project name="isl" default="compile" basedir=".">
+	<property name="src.dir" value="${basedir}/src/main/java" />
+	<property name="gen.dir" value="${basedir}/src/gen/java" />
+	<property name="ext.dir" value="${basedir}/lib" />
+	<property name="ast.src.dir" value="${src.dir}/de/unikl/bcverifier/isl/ast" />
+	<property name="ast.gen.dir" value="${gen.dir}/de/unikl/bcverifier/isl/ast" />
+	<property name="parser.src.dir" value="${src.dir}/de/unikl/bcverifier/isl/parser" />
+	<property name="parser.gen.dir" value="${gen.dir}/de/unikl/bcverifier/isl/parser" />
+
+	<property name="isl.flex" value="isl.flex" />
+	<property name="isl.parser" value="isl.parser" />
+	
+	
+	<!-- The package name of JastAdd generated files -->
+	<property name="ast.package" value="de.unikl.bcverifier.isl.ast" />
+
+	<!-- "jflex" is an ant task class for the scanner generator in JFlex.jar -->
+	<taskdef name="jflex" classname="JFlex.anttask.JFlexTask" classpath="${ext.dir}/JFlex.jar" />
+
+	<!-- "beaver" is an ant task class for the parser generator in beaver.jar -->
+	<taskdef name="beaver" classname="beaver.comp.run.AntTask" classpath="${ext.dir}/beaver.jar" />
+
+	<!-- "jastadd" is an ant task class in jastadd2.jar -->
+	<taskdef name="jastadd" classname="jastadd.JastAddTask" classpath="${ext.dir}/jastadd2.jar" />
+
+	<path id="compile.classpath">
+	  <pathelement location="${ext.dir}/beaver.jar" />
+	  <pathelement location="${ext.dir}/jastadd2.jar" />
+	  <pathelement location="${ext.dir}/JastAddParser.jar" />
+	</path>
+	
+	
+
+	<target name="prepare">
+		<mkdir dir="${gen.dir}" />
+		<mkdir dir="${ast.gen.dir}" />
+		<mkdir dir="${parser.gen.dir}" />
+	</target>
+
+	<target name="compile" depends="prepare, gen">
+	</target>
+
+
+	<target name="clean" description="cleans everything">
+		<delete failonerror="false" includeemptydirs="true">
+			<fileset dir="${gen.dir}" />
+		</delete>
+	</target>
+
+	<target name="rebuild" depends="clean, compile">
+	</target>
+
+	<!-- generate ABS -->
+
+	<target name="gen" depends="genparser, genast">
+	</target>
+
+	<fileset id="jastAddFiles" dir="${src.dir}">
+		<include name="**/*.ast" />
+		<include name="**/*.jrag" />
+		<include name="**/*.jadd" />
+	</fileset>
+	
+	
+	<target name="genast">
+		<echo message="My build-path is ${toString:jastAddFiles}" />
+
+		<jastadd package="${ast.package}" rewrite="true" beaver="true" novisitcheck="true" outdir="${gen.dir}" debug="true">
+			<fileset refid="jastAddFiles" />
+		</jastadd>
+	</target>
+
+
+	<target name="genparser" depends="genflex,genp1,genp2">
+	</target>
+
+
+	<target name="genflex">
+		<!-- generate the scanner -->
+		<echo message="Running jflex" />
+		<jflex file="${parser.src.dir}/${isl.flex}" outdir="${parser.gen.dir}" nobak="yes" />
+	</target>
+
+	<target name="genp1" depends="genflex, genast">
+		<echo message="Parser phase1" />
+		<!-- generate the parser phase 1, translating .parser to .beaver -->
+		<java fork="true" dir="${parser.src.dir}" classpath="${ext.dir}/JastAddParser.jar:${ext.dir}/beaver-rt-src.jar" classname="Main">
+			<arg line="${isl.parser} '${parser.gen.dir}/parser.beaver'" />
+		</java>
+	</target>
+
+	<target name="genp2" depends="genp1">
+		<!-- generate the parser phase 2, translating .beaver to .java -->
+		<echo message="Parser phase" />
+		<beaver file="${parser.gen.dir}/parser.beaver" 
+			terminalNames="yes" 
+			compress="no" 
+			useSwitch="yes"
+		   reportActions="yes"/>
+	</target>
+
+</project>
