@@ -3,6 +3,7 @@ syntax: glob
 libraries/**/*.class
 syntax: glob
 libraries/**/output.bpl
+libraries/**/boogie_output.txt
 syntax: glob
 doc/*.aux
 syntax: glob
@@ -13,3 +14,5 @@ syntax: glob
 doc/*.fdb_latexmk
 syntax: glob
 target/**
+syntax: glob
+src/gen
