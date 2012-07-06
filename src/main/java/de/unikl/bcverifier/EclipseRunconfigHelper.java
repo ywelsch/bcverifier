@@ -12,9 +12,17 @@ public class EclipseRunconfigHelper {
             File libraryDir = invariantFile.getParentFile().getParentFile();
             File lib1Dir = new File(libraryDir, "old");
             File lib2Dir = new File(libraryDir, "new");
+            File noHavocFile = new File(invariantFile.getParentFile(), "places.bpl");
+            File localPlaces = new File(libraryDir, "local_places.txt");
             ArrayList<String> params = new ArrayList<String>();
             params.add("-i"); params.add(invariantFile.getAbsolutePath());
             params.add("-l"); params.add(lib1Dir.getAbsolutePath()); params.add(lib2Dir.getAbsolutePath());
+            if(noHavocFile.isFile()){
+                params.add("-p"); params.add(noHavocFile.getAbsolutePath());
+            }
+            if(localPlaces.isFile()){
+                params.add("-lp"); params.add(localPlaces.getAbsolutePath());
+            }
             for(int i=1; i<args.length; i++){
                 params.add(args[i]);
             }

@@ -1053,6 +1053,9 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(VALID_HEAP_SUCC_FUNC, oldHeap, newHeap, stack);
     }
     
+    public static BPLExpression isLocalPlace(BPLExpression place){
+        return new BPLFunctionApplication(IS_LOCAL_PLACE_FUNC, place);
+    }
     
     
     public static BPLExpression useHavoc(BPLExpression address){

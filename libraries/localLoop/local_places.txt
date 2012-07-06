@@ -1,0 +1,2 @@
+inLoop1 = old 7
+inLoop2 = new 8

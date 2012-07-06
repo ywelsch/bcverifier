@@ -54,6 +54,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.log4j.Logger;
+
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLAssertCommand;
@@ -1413,6 +1415,15 @@ public class MethodTranslator implements ITranslationConstants {
                     // translateInstructionAnnotations(insn);
                     // Let the instruction translator know which is the current
                     // instruction handle before doing the actual translation.
+                    if(insnTranslator.handle != null &&
+                       insn.getSourceLine() != -1 && 
+                       insnTranslator.handle.getSourceLine() != -1 && 
+                       insnTranslator.handle.getSourceLine() < insn.getSourceLine()){
+                        String localPlace = tc.getLocalPlaceBetween(insnTranslator.handle.getSourceLine(), insn.getSourceLine());
+                        if(localPlace != null){
+                            insnTranslator.translateLocalPlace(localPlace);
+                        }
+                    }
                     insnTranslator.handle = insn;
                     insn.accept(insnTranslator);
                 }
@@ -2755,6 +2766,19 @@ public class MethodTranslator implements ITranslationConstants {
             // directly appended to it.
             startBlock(falseBlock);
             addAssume(logicalAnd(normalConditions));
+        }
+
+        private void translateLocalPlace(String localPlace) {
+            Logger.getLogger(InstructionTranslator.class).debug("adding local place "+localPlace);
+            addAssignment(stack(var(PLACE_VARIABLE)), var(localPlace), "local place");
+            context.addLocalPlace(localPlace);
+            
+            rawEndBlock(tc.getCheckLabel());
+            
+            startBlock(localPlace);
+            addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(localPlace)));
+            String placeLabel = tc.prefix(getProcedureName(method) + "_" + localPlace);
+            tc.addLocalPlace(placeLabel);
         }
 
         //@ requires insn != null;

@@ -29,6 +29,7 @@ import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isInRange;
 import static b2bpl.translation.CodeGenerator.isInstanceOf;
+import static b2bpl.translation.CodeGenerator.isLocalPlace;
 import static b2bpl.translation.CodeGenerator.isMemberlessType;
 import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isOfType;
@@ -328,7 +329,8 @@ public class Translator implements ITranslationConstants {
 //            declarations.add(new BPLAxiom(libType(typeRef(type))));
             libTypeExpressions.add(isEqual(var(t), typeRef(type)));
             if(!type.isInterface()){
-                addAxiom(forall(tVar, isEquiv(classExtends(typeRef(type), var(t)), isEqual(var(t), typeRef(type.getSupertype())))));
+//                addAxiom(forall(tVar, isEquiv(classExtends(typeRef(type), var(t)), isEqual(var(t), typeRef(type.getSupertype())))));
+                addAxiom(classExtends(typeRef(type), typeRef(type.getSupertype())));
             }
             
             if(tc.methodDefinitions().get(VALUE_TYPE_PREFIX+type.getName()) == null){ // if we not added any methods up to now, the class does not implement any
@@ -1573,6 +1575,8 @@ public class Translator implements ITranslationConstants {
                                     )
                             )
                     ));
+            
+            addFunction(IS_LOCAL_PLACE_FUNC, new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL);
             
             flushPendingTheory(); //TODO this is needed at the moment to generate information about the long values (which should be printed into the program code directly)
         }
@@ -3446,8 +3450,6 @@ public class Translator implements ITranslationConstants {
          * <i>name</i>.
          */
         public BPLExpression translateTypeReference(JType type) {
-            // Only class types trigger the translation of constants representing
-            // them.
             if (type.isClassType() && !typeReferences.contains(type)) {
                 JClassType classType = (JClassType) type;
                 typeReferences.add(classType);
@@ -3653,6 +3655,11 @@ public class Translator implements ITranslationConstants {
                 //                        ));
             }
             return var(name);
+        }
+
+        public void addLocalPlace(String localPlace) {
+            addConstants(new BPLVariable(localPlace, new BPLTypeName(ADDRESS_TYPE)));
+            addAxiom(isLocalPlace(var(localPlace)));
         }
     }
 }

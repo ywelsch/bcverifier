@@ -55,6 +55,8 @@ public class Configuration implements Serializable {
 	private String versionString;
 	@Parameter(names = {"-sfi", "--singleformulainvariant"}, description = "Invariant is packaged as a single Boogie formula") @WebGUI
     private boolean singleFormulaInvariant = false;
+	@Parameter(names = {"-lp", "--localplaces"}, description = "Path to a file containing definitions for local places", validateWith = Configuration.FileValidator.class)
+	private File local_places;
     
     public static class DirectoryValidator implements IParameterValidator {
 		public void validate(String name, String value) throws ParameterException {
@@ -189,7 +191,13 @@ public class Configuration implements Serializable {
 	public void setSingleFormulaInvariant(boolean singleFormulaInvariant) {
 		this.singleFormulaInvariant = singleFormulaInvariant;
 	}
-	public void setConfigFile(File places) {
+	public File getLocalPlaces() {
+        return local_places;
+    }
+    public void setLocalPlaces(File localPlaces) {
+        this.local_places = localPlaces;
+    }
+    public void setConfigFile(File places) {
 		this.places = places;
 	}
 	public void setWebDefaults() {

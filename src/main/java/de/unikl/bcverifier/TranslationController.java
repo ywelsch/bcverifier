@@ -3,8 +3,11 @@ package de.unikl.bcverifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import de.unikl.bcverifier.Library.LocalPlaceDefinition;
 
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bytecode.BCField;
@@ -45,6 +48,8 @@ public class TranslationController implements ITranslationConstants {
     
     private String lastPlace = null;
     private String nextLabel = null;
+    private LocalPlaceDefinition localPlaceDefinitions;
+    private Set<String> localPlaces = new HashSet<String>();
     
     public Set<String> declaredMethods() {
         return declaredMethods;
@@ -76,6 +81,10 @@ public class TranslationController implements ITranslationConstants {
     
     public void resetReturnLabels() {
         returnLabels.clear();
+    }
+    
+    public void resetLocalPlaces() {
+        localPlaces.clear();
     }
     
     public void definesMethod(String className, String methodName) {
@@ -212,6 +221,28 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
+    public String getLocalPlaceBetween(int line1, int line2){
+        if(localPlaceDefinitions == null)
+            return null;
+        
+        switch(round){
+        case 1:
+            return localPlaceDefinitions.getPlaceInOld(line1, line2);
+        case 2:
+            return localPlaceDefinitions.getPlaceInNew(line1, line2);
+        default:
+            return null;
+        }
+    }
+    
+    public void addLocalPlace(String localPlace){
+        localPlaces.add(localPlace);
+    }
+    
+    public Set<String> getLocalPlaces(){
+        return localPlaces;
+    }
+    
     /**
      * returns the place name for a place inside a method
      * @param methodName the name of the method we are currently in
@@ -253,5 +284,9 @@ public class TranslationController implements ITranslationConstants {
             }
         }
         throw new RuntimeException("No possible places left for method invocation of "+ invocedMethod+" in method "+methodName);
+    }
+
+    public void setLocalPlaces(LocalPlaceDefinition localPlaces) {
+        this.localPlaceDefinitions = localPlaces;
     }
 }
