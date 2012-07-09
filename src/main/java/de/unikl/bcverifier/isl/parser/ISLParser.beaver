@@ -1,0 +1,161 @@
+%header {:
+
+package de.unikl.bcverifier.isl.parser;
+import de.unikl.bcverifier.isl.ast.*;
+
+
+:};
+
+
+%embed {:
+	private ArrayList<ParserError> errors = new ArrayList<ParserError>();
+
+	public ArrayList<ParserError> getErrors() {
+		return errors;
+	}
+	
+	{ 
+		// Use error handler in parser
+		report = new Events(); 
+	} 
+	
+	class Events extends Parser.Events {
+		public void syntaxError(Symbol token) {
+			SyntaxError e = new SyntaxError("Syntactic error: unexpected token " + Terminals.NAMES[token.getId()], Symbol.getLine(token.getStart()), Symbol.getColumn(token.getStart()), token);
+            errors.add(e);
+		}
+
+		public void scannerError(Scanner.Exception e) {
+			LexicalError err = new LexicalError("Lexical error: " + e.getMessage(), e.line, e.column);
+			errors.add(err);
+		}
+		public void unexpectedTokenRemoved(Symbol token) {
+			// do nothing
+		}
+
+		public void missingTokenInserted(Symbol token) {
+			// do nothing
+		}
+
+		public void misspelledTokenReplaced(Symbol token) {
+			// do nothing
+		}
+
+		public void errorPhraseRemoved(Symbol error) {
+			// do nothing
+		}
+	}
+	
+	/** convert array to ast-list */
+	private <T extends ASTNode<?>> List<T> list(T[] ar) {
+		List<T> result = new List<T>();
+		for (T t : ar) {
+			result.add(t);
+		}
+		return result;
+	}
+	
+	
+:};
+
+
+%terminals FORALL, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER,
+	IF, THEN, ELSE,
+	DOT,
+	MOD, MULT, DIV, PLUS, MINUS,
+	EQUALS, UNEQUALS,
+	LBRACKET, RBRACKET, COMMA, LPAREN, RPAREN,
+	IMPLIES, RELATED,
+	INTLITERAL
+;
+
+// operator precedences, highest first
+%left DOT; 
+%left MOD, MULT, DIV;
+%left PLUS, MINUS;
+%left RELATED;
+%left EQUALS, UNEQUALS;
+%right IMPLIES;
+%left THEN;
+
+%typeof id = "Ident";
+%typeof vardefs = "List<VarDef>";
+%typeof vardef = "VarDef";
+%typeof expr = "Expr";
+%typeof idlist = "List<Ident>";
+%typeof typedef = "TypeDef";
+%typeof cu = "CompilationUnit";
+
+
+%goal cu;
+
+cu = 
+	  expr.e* 
+		{: return new CompilationUnit(list(e)); :} 
+	| INVALIDTOKEN.t
+    	{: return null; :}
+;
+
+expr =
+      FORALL vardefs.v LBRACKET expr.e RBRACKET 
+      	{: return new ForallExpr(v,e); :}
+    | TRUE  
+    	{: return new BoolConst(true); :}
+    | FALSE 
+    	{: return new BoolConst(false); :}
+    | INTLITERAL.i
+    	{: return new IntConst(i); :}
+    | id.i
+    	{: return new VarAccess(i); :}
+    | expr.left DOT id.right
+    	{: return new MemberAccess(left, right); :}
+    | expr.left RELATED expr.right
+    	{: return new BinaryOperation(Operator.RELATED, left, right); :}
+    | expr.left IMPLIES expr.right
+    	{: return new BinaryOperation(Operator.IMPLIES, left, right); :}
+    | expr.left MOD expr.right
+    	{: return new BinaryOperation(Operator.MOD, left, right); :}
+    | expr.left EQUALS expr.right
+    	{: return new BinaryOperation(Operator.EQUALS, left, right); :}
+    | expr.left UNEQUALS expr.right
+    	{: return new BinaryOperation(Operator.UNEQUALS, left, right); :}
+    | IF expr.cond THEN expr.e1 ELSE expr.e2
+    	{: return new IfThenElse(cond, e1, e2); :}
+    | LPAREN expr.e RPAREN
+    
+;
+  
+ vardefs =
+ 	  vardef.v 
+ 	  	{: return new List().add(v); :}
+ 	| vardefs.vs COMMA vardef.v 
+ 		{: return vs.add(v); :}
+ ;
+ 
+ vardef = 
+ 	  typedef.t id.n 
+ 	  	{: return new VarDef(t, n); :}
+;
+
+typedef = 
+	  OLD idlist.n
+		{: return new NamedTypeDef(Version.OLD, n); :}
+	| NEW idlist.n
+		{: return new NamedTypeDef(Version.NEW, n); :}
+	| idlist.n
+		{: return new NamedTypeDef(Version.BOTH, n); :}
+;
+
+idlist =
+	  id.i 
+ 	  	{: return new List().add(i); :}
+ 	| idlist.is DOT id.i 
+ 		{: return is.add(i); :}
+;
+
+id = 
+	IDENTIFIER.i
+		{: return new Ident(i); :}
+;
+
+ 	   

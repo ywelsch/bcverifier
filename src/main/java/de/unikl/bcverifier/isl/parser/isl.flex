@@ -2,13 +2,14 @@ package de.unikl.bcverifier.isl.parser;
 
 import beaver.Symbol;
 import beaver.Scanner;
-import de.unikl.bcverifier.isl.parser.parser.Terminals;
+import de.unikl.bcverifier.isl.parser.ISLParser.Terminals;
+
 
 %%
 
 %public
 %final
-%class ABSScanner
+%class ISLScanner
 %extends Scanner
 %unicode
 %function nextToken
@@ -52,8 +53,7 @@ EndOfLineComment = "//" {InputCharacter}* {LineTerminator}?
 //Identifiers defined using character classes
 // BoolLiteral = [Tt]rue | [Ff]alse
 
-Identifier  = [:lowercase:] ([:letter:] | [:digit:] | "_")*
-TypeIdentifier  = [:uppercase:] ([:letter:] | [:digit:] | "_")*
+Identifier  = [:letter:] ([:letter:] | [:digit:] | "_")*
 IntLiteral = 0 | [1-9][0-9]*
 
 
@@ -72,69 +72,49 @@ IntLiteral = 0 | [1-9][0-9]*
 //            to get syntax highlighting in Eclipse
 <YYINITIAL> {
  "forall"      { return sym(Terminals.FORALL); }
- 
+ "true"      { return sym(Terminals.TRUE); }
+ "false"      { return sym(Terminals.FALSE); }
+ "old"      { return sym(Terminals.OLD); }
+ "new"      { return sym(Terminals.NEW); }
+ "if"      { return sym(Terminals.IF); }
+ "then"      { return sym(Terminals.THEN); }
+ "else"      { return sym(Terminals.ELSE); }
 }
-/*
-//Separators
+
+//Separators and operators
 <YYINITIAL> {
- "("           { return sym(Terminals.LPAREN); }
- ")"           { return sym(Terminals.RPAREN); }
- "{"           { return sym(Terminals.LBRACE); }
- "}"           { return sym(Terminals.RBRACE); }
+"("           { return sym(Terminals.LPAREN); }
+")"           { return sym(Terminals.RPAREN); }
  "["           { return sym(Terminals.LBRACKET); }
  "]"           { return sym(Terminals.RBRACKET); }
  ","           { return sym(Terminals.COMMA); }
- ";"           { return sym(Terminals.SEMICOLON); }
- ":"           { return sym(Terminals.COLON); }
+"==>"           { return sym(Terminals.IMPLIES); }
+"~"           { return sym(Terminals.RELATED); }
+"."           { return sym(Terminals.DOT); }
+"%"          { return sym(Terminals.MOD); }
+"=="          { return sym(Terminals.EQUALS); }
+"!="          { return sym(Terminals.UNEQUALS); }
+
 }
 
-//Operators
-<YYINITIAL> {
- "?"           { return sym(Terminals.QMARK); }
- ".."          { return sym(Terminals.UNTIL); }
- "."           { return sym(Terminals.DOT); }
- "!"           { return sym(Terminals.BANG); }
- "="           { return sym(Terminals.ASSIGN); }
- "&"           { return sym(Terminals.GUARDAND); }
- "=="          { return sym(Terminals.EQEQ); }
- "!="          { return sym(Terminals.NOTEQ); }
- "=>"          { return sym(Terminals.RARROW); }
- "->"          { return sym(Terminals.IMPLIES); }
- "<->"         { return sym(Terminals.EQUIV); }
-  "+"	       { return sym(Terminals.PLUS); }
-  "-"          { return sym(Terminals.MINUS); }
-  "*"          { return sym(Terminals.MULT); }
-  "/"          { return sym(Terminals.DIV); }
-  "%"          { return sym(Terminals.MOD); }
- "&&"          { return sym(Terminals.ANDAND); }
- "||"          { return sym(Terminals.OROR); }
- "|"          { return sym(Terminals.BAR); }
- "~"          { return sym(Terminals.NEGATION); }
- "<"          { return sym(Terminals.LT); }
- ">"          { return sym(Terminals.GT); }
- "<="          { return sym(Terminals.LTEQ); }
- ">="          { return sym(Terminals.GTEQ); }
- "_"          { return sym(Terminals.USCORE); }
- "'"          { return sym(Terminals.PRIME); }
-}
 
 //Literals
 <YYINITIAL> {
-    \"            { yybegin(STRING); string.setLength(0);  }
+//    \"            { yybegin(STRING); string.setLength(0);  }
     {IntLiteral}  { return sym(Terminals.INTLITERAL); }
-//    {BoolLiteral} { return sym(Terminals.BOOLLITERAL); }
 }
+
 
 <YYINITIAL> {
     {Identifier}  { return sym(Terminals.IDENTIFIER); }
-    {TypeIdentifier}  { return sym(Terminals.TYPE_IDENTIFIER); }
+//    {TypeIdentifier}  { return sym(Terminals.TYPE_IDENTIFIER); }
 	{Comment}     { /* discard token */ }
 	{WhiteSpace}  { /* discard token */ }
 }
 
 
 
-
+/*
 <STRING> {
  \"            { yybegin(YYINITIAL);
                  return symString(string.toString()); }
@@ -145,8 +125,7 @@ IntLiteral = 0 | [1-9][0-9]*
  \\\"          { string.append('\"'); }
  \\            { string.append('\\'); }
 }
-
-
-.|\n          { return sym(Terminals.INVALID_CHARACTER); }
-<<EOF>>       { return sym(Terminals.EOF); }
 */
+
+.|\n          { return sym(Terminals.INVALIDTOKEN); }
+<<EOF>>       { return sym(Terminals.EOF); }

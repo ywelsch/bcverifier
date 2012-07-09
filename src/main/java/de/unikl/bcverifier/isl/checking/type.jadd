@@ -1,0 +1,44 @@
+import java.util.*;
+import de.unikl.bcverifier.isl.checking.types.*;
+import de.unikl.bcverifier.isl.checking.TypeHelper;
+
+aspect exprType {
+	
+	syn lazy ExprType Expr.attrType();
+	
+	eq ForallExpr.attrType() = ExprTypeBool.instance();
+
+	eq VarAccess.attrType() {
+		Def def = attrDef();
+		return def.attrType();
+	}
+
+	eq MemberAccess.attrType() = TypeHelper.attrType(this);
+
+	eq FuncCall.attrType() = ExprTypeBool.instance();
+
+	eq BinaryOperation.attrType() = TypeHelper.attrType(this);
+
+	eq IfThenElse.attrType() = TypeHelper.attrType(this);
+
+	eq ErrorExpr.attrType() = ExprTypeBool.instance();
+	
+	eq BoolConst.attrType() = ExprTypeBool.instance();
+	
+	eq IntConst.attrType() = ExprTypeInt.instance();
+	
+	
+	
+	syn lazy ExprType Def.attrType();
+	
+	eq UnknownDef.attrType() = UnknownType.instance();
+	
+	eq VarDef.attrType() = getTypeDef().attrType();
+	
+	
+	syn lazy ExprType TypeDef.attrType();
+	
+	eq NamedTypeDef.attrType() = TypeHelper.attrType(this);
+	
+	
+}

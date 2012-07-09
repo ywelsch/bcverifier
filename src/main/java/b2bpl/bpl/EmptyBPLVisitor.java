@@ -22,6 +22,7 @@ import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLFunctionParameter;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLHavocCommand;
+import b2bpl.bpl.ast.BPLIfThenElseExpression;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
@@ -285,5 +286,10 @@ public R visitArrayAssignment(BPLArrayAssignment bplArrayAssignment) {
 public R visitRawCommand(BPLRawCommand bplRawCommand) {
     // do nothing
     return null;
+}
+
+public R visitIfThenElseExpression(BPLIfThenElseExpression bplIfThenElseExpression) {
+	// do nothing
+	return null;
 }
 }

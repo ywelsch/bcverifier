@@ -1,0 +1,4 @@
+aspect compilationUnit {
+	syn lazy CompilationUnit ASTNode.attrCompilationUnit() = parent.attrCompilationUnit();
+	eq CompilationUnit.attrCompilationUnit() = this;
+}

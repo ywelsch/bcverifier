@@ -1,1 +1,43 @@
-CompilationUnit ::= <Name>;
+CompilationUnit ::= Expr*;
+
+// Expressions:
+
+abstract Expr;
+
+ForallExpr: Expr ::= BoundVar:VarDef* Expr;
+
+VarAccess: Expr ::= Name:Ident;
+
+MemberAccess: Expr ::= Left:Expr Right:Ident;
+
+FuncCall : Expr ::= FuncName:Ident Argument:Expr*;
+
+BinaryOperation : Expr ::= <Operator:de.unikl.bcverifier.isl.parser.Operator> Left:Expr Right:Expr;
+
+IfThenElse : Expr ::= Cond:Expr ThenExpr:Expr ElseExpr:Expr;
+
+ErrorExpr : Expr ::= <Message>;
+
+// constant expressions:
+BoolConst : Expr ::= <Val:boolean>;
+IntConst : Expr ::= <Val>;
+
+
+// Variable definitions:
+abstract Def;
+
+UnknownDef : Def ::= ;
+VarDef : Def ::= TypeDef Name:Ident;
+
+// Types
+
+abstract TypeDef;
+
+NamedTypeDef : TypeDef ::= <Version:Version> Name:Ident*;
+
+
+
+  
+// other stuff:
+
+Ident ::= <Name>;

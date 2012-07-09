@@ -1,0 +1,5 @@
+import java.lang.reflect.Field;
+
+aspect field {
+	syn Field MemberAccess.attrField() = TypeHelper.attrField(this);
+}

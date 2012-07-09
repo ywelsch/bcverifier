@@ -1,0 +1,22 @@
+import de.unikl.bcverifier.isl.checking.TypeError;
+
+aspect addError {
+	public void ASTNode.addError(ASTNode position, String msg) {
+		attrCompilationUnit().addError(position, msg);
+	}
+	
+	public void ASTNode.addError(String msg) {
+		attrCompilationUnit().addError(this, msg);
+	}
+	
+	public void CompilationUnit.addError(ASTNode position, String msg) {
+		getErrors().add(new TypeError(position, msg));
+	}
+	
+	
+	private java.util.List<TypeError> CompilationUnit.errors = new ArrayList<TypeError>();
+	
+	public java.util.List<TypeError> CompilationUnit.getErrors() {
+		return errors;
+	}
+}

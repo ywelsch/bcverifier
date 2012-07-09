@@ -1,0 +1,10 @@
+import java.util.*;
+
+aspect definedVars {
+	
+	syn lazy Collection<Def> Expr.attrDefinedVars() = Collections.emptyList();
+	
+	eq ForallExpr.attrDefinedVars() = AstUtils.list(getBoundVars());
+	
+	
+}

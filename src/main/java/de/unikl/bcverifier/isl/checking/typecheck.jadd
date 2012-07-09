@@ -1,0 +1,15 @@
+aspect typecheck {
+	public void ASTNode.typecheck() {
+		// typecheck children
+		for (int i=0; i<getNumChild(); i++) {
+			getChild(i).typecheck();
+		}
+	}
+	
+	public void Expr.typecheck() {
+		super.typecheck();
+		// calculate the type
+		attrType();
+	}
+	
+}

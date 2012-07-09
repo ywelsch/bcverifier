@@ -341,17 +341,10 @@
 									</jastadd>
 								
 								
-								
-										
-										<echo message="Parser phase1" />
-										<!-- generate the parser phase 1, translating .parser to .beaver -->
-										<java fork="true" dir="${parser.src.dir}" classpath="${basedir}/lib/JastAddParser.jar:${basedir}/lib/beaver-rt-src.jar" classname="Main">
-											<arg line="isl.parser '${parser.gen.dir}/parser.beaver'" />
-										</java>
-								
 										<!-- generate the parser phase 2, translating .beaver to .java -->
 										<echo message="Parser phase" />
-										<beaver file="${parser.gen.dir}/parser.beaver" 
+										<beaver file="${parser.src.dir}/ISLParser.beaver" 
+											destdir="${parser.gen.dir}"
 											terminalNames="yes" 
 											compress="no" 
 											useSwitch="yes"

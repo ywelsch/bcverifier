@@ -1,0 +1,5 @@
+aspect name {
+	syn String Def.attrName();
+	eq VarDef.attrName() = getName().getName();
+	eq UnknownDef.attrName() = "<unknown>";
+}

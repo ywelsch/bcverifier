@@ -1,0 +1,33 @@
+import java.util.*;
+
+aspect lookup {
+	
+	syn Def ASTNode.lookup(String name) = getParent().lookup(name); 
+	
+	
+	eq Expr.lookup(String name) {
+		for (Def d : attrDefinedVars()) {
+			if (d.attrName().equals(name)) {
+				return d;
+			}
+		}
+		return getParent().lookup(name);
+	}
+	
+	
+	eq CompilationUnit.lookup(String name) {
+		return new UnknownDef();
+	}
+
+	
+	
+	syn lazy Def VarAccess.attrDef() {
+		String varname = getName().getName();
+		Def d = lookup(varname);
+		if (d instanceof UnknownDef) {
+			addError(this, "Could not find variable with name " + varname);
+		}
+		return d;
+	}
+	
+}

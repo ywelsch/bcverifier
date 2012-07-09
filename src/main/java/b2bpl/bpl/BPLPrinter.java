@@ -29,6 +29,7 @@ import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLFunctionParameter;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLHavocCommand;
+import b2bpl.bpl.ast.BPLIfThenElseExpression;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
@@ -688,5 +689,15 @@ public Object visitArrayAssignment(BPLArrayAssignment bplArrayAssignment) {
 public Object visitRawCommand(BPLRawCommand bplRawCommand) {
     print(bplRawCommand.getCommandString());
     return null;
+}
+
+public Object visitIfThenElseExpression(BPLIfThenElseExpression e) {
+	print("if ");
+	e.getCondition().accept(this);
+	print(" then ");
+	e.getThenExpr().accept(this);
+	print(" else ");
+	e.getElseExpr().accept(this);
+	return null;
 }
 }
