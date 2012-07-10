@@ -17,6 +17,7 @@ import static b2bpl.translation.CodeGenerator.greaterEqual;
 import static b2bpl.translation.CodeGenerator.heap;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
 import static b2bpl.translation.CodeGenerator.intToInt;
+import static b2bpl.translation.CodeGenerator.isCallable;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isInRange;
 import static b2bpl.translation.CodeGenerator.isInstanceOf;
@@ -2142,6 +2143,16 @@ public class MethodTranslator implements ITranslationConstants {
     private void addAssume(BPLExpression expression) {
         addCommand(new BPLAssumeCommand(expression));
     }
+    
+    /**
+     * Adds an assumption for the given {@code expression} to the currently active
+     * BoogiePL block.
+     * 
+     * @param expression The assumption's expression.
+     */
+    private void addAssume(BPLExpression expression, String comment) {
+        addCommentedCommand(new BPLAssumeCommand(expression), comment);
+    }
 
     /**
      * Adds a havoc statement for the given {@code variables} to the currently
@@ -3292,6 +3303,7 @@ public class MethodTranslator implements ITranslationConstants {
                                     logicalNot(libType(var(t)))
                                     )
                             ));
+                    addAssume(isCallable(typeRef(method.getOwner()), var(GLOBAL_VAR_PREFIX+invokedMethodName)), "rule out private methods");
                     addAssume(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)));
                     //TODO more detailed information about the type here
                     rawEndBlock(tc.getCheckLabel());
