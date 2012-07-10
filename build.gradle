@@ -1,0 +1,94 @@
+apply plugin: 'java'
+//apply plugin: 'eclipse'
+
+version = '0.0.1-SNAPSHOT'
+description = 'Bytecode Verifier based on Boogie 2'
+
+defaultTasks 'classes'
+
+String wicketVersion = "1.5.6"
+String jettyVersion = "7.5.0.v20110901"
+
+String astPackage = "de.unikl.bcverifier.isl.ast"
+String islGenDir = "$projectDir/src/gen/java"
+String parserSrcDir = "$projectDir/src/main/java/de/unikl/bcverifier/isl/parser"
+String parserGenDir = "$islGenDir/de/unikl/bcverifier/isl/parser"
+
+repositories {
+	mavenCentral()
+    maven {
+        url "https://repository.apache.org/content/repositories/snapshots/"
+    }
+}
+
+dependencies {
+    compile group: 'commons-io', name: 'commons-io', version: '2.2'
+    compile group: 'org.eclipse.jdt.core.compiler', name: 'ecj', version: '3.7.2'
+    compile group: 'org.apache.commons', name: 'commons-vfs2', version: '2.0'
+    compile group: 'org.apache.wicket', name: 'wicket-core', version: wicketVersion
+    compile group: 'org.apache.wicket', name: 'wicket-extensions', version: wicketVersion
+    compile group: 'org.eclipse.jetty.aggregate', name: 'jetty-all-server', version: jettyVersion
+    compile group: 'asm', name: 'asm', version: '3.3.1'
+    compile group: 'asm', name: 'asm-tree', version: '3.3.1'
+    compile group: 'asm', name: 'asm-util', version: '3.3.1'
+    compile group: 'asm', name: 'asm-analysis', version: '3.3.1'
+    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.6.2'
+    compile group: 'log4j', name: 'log4j', version: '1.2.16'
+    testCompile group: 'junit', name: 'junit', version: '4.10'
+    testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '0.4.0'
+    compile group: 'com.beust', name: 'jcommander', version: '1.25'
+    compile files("$projectDir/lib/ostermillerutils-1.08.02.jar")
+    compile files("$projectDir/lib/beaver-rt.jar")
+    compile group: 'com.google.guava', name: 'guava-io', version: 'r03'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.1'
+}
+
+sourceSets.main.java.srcDir islGenDir
+
+task runJastAdd {
+    inputs.files{fileTree(dir: "$projectDir/src/main/java", includes: ['**/*.ast', '**/*.jrag', '**/*.jadd'])}
+    outputs.dir(parserGenDir)
+    doLast {
+        ant.taskdef name: 'jastadd', classname: 'jastadd.JastAddTask', classpath: "$projectDir/lib/jastadd2.jar"
+        new File(islGenDir).mkdirs()
+        ant.jastadd(package: astPackage, rewrite: 'true', beaver: 'true', novisitcheck: 'true', outdir: islGenDir, debug: 'true') {
+            fileset(dir: "$projectDir/src/main/java") {
+                include name: '**/*.ast'
+                include name: '**/*.jrag'
+                include name: '**/*.jadd'
+            }
+        }
+    }
+}
+
+task runBeaver {
+    String beaverFile = "$parserSrcDir/ISLParser.beaver"
+    inputs.file(beaverFile)
+    outputs.dir(parserGenDir)
+    doLast {
+        ant.taskdef name: 'beaver', classname: 'beaver.comp.run.AntTask', classpath: "$projectDir/lib/beaver.jar"
+        new File(parserGenDir).mkdirs()
+        ant.beaver(file: beaverFile, destdir: parserGenDir, terminalNames: 'yes', compress: 'no', useSwitch: 'yes', reportActions: 'yes')
+    }
+}
+
+task runJFlex {
+    String flexFile = "$parserSrcDir/isl.flex"
+    inputs.file(flexFile)
+    outputs.dir(parserGenDir)
+    doLast {
+        ant.taskdef name: 'jflex', classname: 'JFlex.anttask.JFlexTask', classpath: "$projectDir/lib/JFlex.jar"
+    
+        ant.jflex(file: flexFile, outdir: parserGenDir)
+    }
+}
+
+runJFlex.dependsOn runBeaver
+runBeaver.dependsOn runJastAdd
+compileJava.dependsOn runJFlex
+
+task removeGenFolder(type: Delete) {
+    delete islGenDir
+}
+
+clean.dependsOn removeGenFolder
