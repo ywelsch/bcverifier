@@ -27,10 +27,9 @@ public class ISLParserTest {
 	@Test
 	public void cell() throws IOException, Exception {
 		CompilationUnit cu = testParseOk(
-				"forall old Cell o1, new Cell o2 [",
+				"invariant forall old Cell o1, new Cell o2 ::",
 					"o1 ~ o2 ==>",
-						"if o2.f then o1.c ~ o2.c1 else o1.c ~ o2.c2",
-				"]");
+						"if o2.f then o1.c ~ o2.c1 else o1.c ~ o2.c2;");
 		testTypeCheckOk(
 				new File("./libraries/cell/old"), 
 				new File("./libraries/cell/new"), cu);
@@ -40,7 +39,7 @@ public class ISLParserTest {
 	
 	@Test
 	public void cb() throws IOException, Exception {
-		CompilationUnit cu = testParseOk("forall old A a [ a.g % 2 == 0 ]");
+		CompilationUnit cu = testParseOk("invariant forall old A a :: a.g % 2 == 0;");
 		testTypeCheckOk(
 				new File("./libraries/cb/old"), 
 				new File("./libraries/cb/new"), cu);
@@ -51,17 +50,17 @@ public class ISLParserTest {
 	@Test
 	public void obool() throws IOException, Exception {
 		CompilationUnit cu = testParseOk(
-				"forall old Bool o1, new Bool o2 [o1 ~ o2 ==> o1.f == o2.f]",
-				"forall old OBool o1, new OBool o2 [o1 ~ o2 ==> o1.g.f != o2.g.f]",
+				"invariant forall old Bool o1, new Bool o2 :: o1 ~ o2 ==> o1.f == o2.f;",
+				"invariant forall old OBool o1, new OBool o2 :: o1 ~ o2 ==> o1.g.f != o2.g.f;",
 				// internal:
-				"forall old OBool o [!createdByCtxt(o.g) && !exposed(o.g)]",
-				"forall new OBool o [!createdByCtxt(o.g) && !exposed(o.g)]",
+				"invariant forall old OBool o :: !createdByCtxt(o.g) && !exposed(o.g);",
+				"invariant forall new OBool o :: !createdByCtxt(o.g) && !exposed(o.g);",
 				// nonnull:
-				"forall old OBool o [o.g != null]",
-				"forall new OBool o [o.g != null]",
+				"invariant forall old OBool o :: o.g != null;",
+				"invariant forall new OBool o :: o.g != null;",
 				// unique
-				"forall old OBool o1, old OBool o2 [o1 != o2 ==> o1.g != o2.g]",
-				"forall new OBool o1, new OBool o2 [o1 != o2 ==> o1.g != o2.g]"
+				"invariant forall old OBool o1, old OBool o2 :: o1 != o2 ==> o1.g != o2.g;",
+				"invariant forall new OBool o1, new OBool o2 :: o1 != o2 ==> o1.g != o2.g;"
 				);
 		testTypeCheckOk(
 				new File("./libraries/obool/old"), 

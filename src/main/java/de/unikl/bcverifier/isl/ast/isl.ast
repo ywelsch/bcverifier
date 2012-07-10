@@ -1,4 +1,4 @@
-CompilationUnit ::= Expr*;
+CompilationUnit ::= Statement*;
 
 // Expressions:
 
@@ -30,6 +30,11 @@ abstract Def;
 
 UnknownDef : Def ::= ;
 VarDef : Def ::= TypeDef Name:Ident;
+
+// Statements:
+abstract Statement;
+
+Invariant : Statement ::= Expr;
 
 
 // Types

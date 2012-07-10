@@ -80,14 +80,15 @@ IntLiteral = 0 | [1-9][0-9]*
  "then"      { return sym(Terminals.THEN); }
  "else"      { return sym(Terminals.ELSE); }
  "null"		{ return sym(Terminals.NULL); }
+ "invariant" { return sym(Terminals.INVARIANT); }
 }
 
 //Separators and operators
 <YYINITIAL> {
 "("           { return sym(Terminals.LPAREN); }
 ")"           { return sym(Terminals.RPAREN); }
- "["           { return sym(Terminals.LBRACKET); }
- "]"           { return sym(Terminals.RBRACKET); }
+// "["           { return sym(Terminals.LBRACKET); }
+// "]"           { return sym(Terminals.RBRACKET); }
  ","           { return sym(Terminals.COMMA); }
 "==>"           { return sym(Terminals.IMPLIES); }
 "&&"			{ return sym(Terminals.AND); }
@@ -98,6 +99,8 @@ IntLiteral = 0 | [1-9][0-9]*
 "=="          { return sym(Terminals.EQUALS); }
 "!="          { return sym(Terminals.UNEQUALS); }
 "!"				{ return sym(Terminals.NOT); }
+"::"			{ return sym(Terminals.COLONCOLON); }
+";"			{ return sym(Terminals.SEMI); }
 }
 
 

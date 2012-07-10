@@ -59,12 +59,12 @@ import de.unikl.bcverifier.isl.ast.*;
 :};
 
 
-%terminals FORALL, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER,
+%terminals FORALL, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER, INVARIANT,
 	IF, THEN, ELSE,
 	DOT,
 	MOD, MULT, DIV, PLUS, MINUS, NOT,
 	EQUALS, UNEQUALS,
-	LBRACKET, RBRACKET, COMMA, LPAREN, RPAREN,
+	COLONCOLON, COMMA, LPAREN, RPAREN, SEMI,
 	IMPLIES, AND, OR, RELATED,
 	INTLITERAL, NULL
 ;
@@ -80,6 +80,7 @@ import de.unikl.bcverifier.isl.ast.*;
 %left OR;
 %right IMPLIES;
 %left THEN;
+%left FORALL;
 
 %typeof id = "Ident";
 %typeof vardefs = "List<VarDef>";
@@ -90,18 +91,25 @@ import de.unikl.bcverifier.isl.ast.*;
 %typeof cu = "CompilationUnit";
 %typeof parameterlist = "List<Expr>";
 %typeof nonEmptyParameterlist = "List<Expr>";
+%typeof statement = "Statement";
+
 
 %goal cu;
 
 cu = 
-	  expr.e* 
-		{: return new CompilationUnit(list(e)); :} 
+	  statement.s* 
+		{: return new CompilationUnit(list(s)); :} 
 	| INVALIDTOKEN.t
     	{: return null; :}
 ;
 
+statement = 
+	INVARIANT expr.e SEMI
+		{: return new Invariant(e); :}
+;
+
 expr =
-      FORALL vardefs.v LBRACKET expr.e RBRACKET 
+      FORALL vardefs.v COLONCOLON expr.e
       	{: return new ForallExpr(v,e); :}
     | TRUE  
     	{: return new BoolConst(true); :}

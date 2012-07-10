@@ -21,8 +21,11 @@ aspect translate {
 
 	public java.util.List<BPLExpression> CompilationUnit.translate() {
 		ArrayList<BPLExpression> result = new ArrayList<BPLExpression>();
-		for (Expr e: getExprs()) {
-			result.add(e.translateExpr());
+		for (Statement s: getStatements()) {
+			if (s instanceof Invariant) {
+				Invariant invariant = (Invariant) s;
+				result.add(invariant.getExpr().translateExpr());
+			}
 		}
 		return result;
 	}
