@@ -85,6 +85,7 @@ import b2bpl.bpl.ast.BPLRawCommand;
 import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
 import b2bpl.bpl.ast.BPLTransferCommand;
+import b2bpl.bpl.ast.BPLType;
 import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableDeclaration;
@@ -429,6 +430,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                             stack2(var(RESULT_VAR
                                                     + INT_TYPE_ABBREV)))))));
 
+            String o1 = "o1";
+            BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
+            String o2 = "o2";
+            BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
+            
+            checkingCommand.add(new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION))))));
             checkingCommand.addAll(invAssertions);
             methodBlocks.add(new BPLBasicBlock(CHECK_BOUNDARY_RETURN_LABEL, checkingCommand
                     .toArray(new BPLCommand[checkingCommand.size()]),
@@ -513,6 +520,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                             stack2(var(var.getName())))));
                 }
             }
+            checkingCommand.add(new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION))))));
             checkingCommand.addAll(invAssertions);
             
             // check if we want to use havoc to handle boudary call
@@ -683,6 +691,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 }
             }
 
+            procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
+            procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
+            
             methodBlocks.add(1, new BPLBasicBlock(PRECONDITIONS_CALL_LABEL,
                     procAssumes.toArray(new BPLCommand[procAssumes.size()]),
                     new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
@@ -783,6 +794,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 }
             }
 
+            procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
+            procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
+            
             methodBlocks.add(1, new BPLBasicBlock(PRECONDITIONS_CONSTRUCTOR_LABEL,
                     procAssumes.toArray(new BPLCommand[procAssumes.size()]),
                     new BPLGotoCommand(TranslationController.LABEL_PREFIX1 + CONSTRUCTOR_TABLE_LABEL)));
@@ -911,6 +925,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                     var(EXPOSED_FIELD)))));
             procAssumes.add(assumeCmd);
 
+            procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
+            procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
+            
             methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_RETURN_LABEL,
                     procAssumes.toArray(new BPLCommand[procAssumes.size()]),
                     new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
@@ -1286,7 +1303,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                 dispatchCommands
                                         .toArray(new BPLCommand[dispatchCommands
                                                 .size()]), new BPLGotoCommand(
-                                        callTableInitLabel, retTableInitLabel)));
+                                        callTableInitLabel, retTableInitLabel, placeTableLabel)));
 
         return new LibraryDefinition(programDecls, methodBlocks);
     }

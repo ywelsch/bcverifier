@@ -270,7 +270,7 @@
 		            </goals>
 		            <configuration>
 		              <sources>
-		                <source>${basedir}/src/gen/java</source>
+		                <source>${isl.gen.dir}</source>
 		              </sources>
 		            </configuration>
 		          </execution>
