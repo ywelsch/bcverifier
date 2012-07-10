@@ -11,20 +11,25 @@ import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLIfThenElseExpression;
 import b2bpl.bpl.ast.BPLIntLiteral;
+import b2bpl.bpl.ast.BPLLogicalNotExpression;
 import b2bpl.bpl.ast.BPLQuantifierExpression;
-import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLQuantifierExpression.Operator;
 import b2bpl.bpl.ast.BPLType;
+import b2bpl.bpl.ast.BPLTypeName;
+import b2bpl.bpl.ast.BPLUnaryMinusExpression;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.BoolConst;
+import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.ErrorExpr;
 import de.unikl.bcverifier.isl.ast.ForallExpr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.IntConst;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
+import de.unikl.bcverifier.isl.ast.NullConst;
+import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
@@ -44,6 +49,10 @@ public class ExprTranslation {
 		switch (e.getOperator()) {
 		case IMPLIES:
 			return new BPLBinaryLogicalExpression(BPLBinaryLogicalExpression.Operator.IMPLIES, left, right);
+		case AND:
+			return new BPLBinaryLogicalExpression(BPLBinaryLogicalExpression.Operator.AND, left, right);
+		case OR:
+			return new BPLBinaryLogicalExpression(BPLBinaryLogicalExpression.Operator.OR, left, right);
 		case RELATED:
 			BPLExpression related = new BPLVariableExpression("related"); //$NON-NLS-1$
 			return new BPLFunctionApplication("RelNull", left, right, related ); //$NON-NLS-1$
@@ -53,8 +62,16 @@ public class ExprTranslation {
 			return new BPLEqualityExpression(NOT_EQUALS, left, right);
 		case MOD:
 			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.REMAINDER, left, right);
+		case DIV:
+			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.DIVIDE, left, right);
+		case MINUS:
+			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.MINUS, left, right);
+		case MULT:
+			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.TIMES, left, right);
+		case PLUS:
+			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.PLUS, left, right);
 		}
-		throw new Error("unhandled case: " + e); //$NON-NLS-1$
+		throw new Error("unhandled case: " + e.getOperator()); //$NON-NLS-1$
 	}
 
 	public static BPLExpression translate(BoolConst e) {
@@ -134,7 +151,7 @@ public class ExprTranslation {
 						));
 	}
 
-	private static BPLExpression getHeap(Version version) {
+	public static BPLExpression getHeap(Version version) {
 		if (version == Version.OLD) {
 			return new BPLVariableExpression("heap1"); //$NON-NLS-1$
 		} else if (version == Version.NEW) {
@@ -144,7 +161,11 @@ public class ExprTranslation {
 	}
 
 	public static BPLExpression translate(FuncCall e) {
-		// TODO Auto-generated method stub
+		Def def = e.attrDef();
+		if (def instanceof BuiltinFunction) {
+			BuiltinFunction f = (BuiltinFunction) def;
+			return f.translateCall(e.getArguments());
+		}
 		throw new Error("not implemented");
 	}
 
@@ -185,5 +206,20 @@ public class ExprTranslation {
 	public static BPLExpression translate(IntConst e) {
 		return new BPLIntLiteral(Integer.parseInt(e.getVal()));
 	}
+
+	public static BPLExpression translate(NullConst nullConst) {
+		return new BPLVariableExpression("null");
+	}
+
+	public static BPLExpression translate(UnaryOperation e) {
+		switch (e.getOperator()) {
+		case UMINUS:
+			return new BPLUnaryMinusExpression(e.getExpr().translateExpr());
+		case NOT:
+			return new BPLLogicalNotExpression(e.getExpr().translateExpr());
+		}
+		throw new Error("not implemented: " + e.getOperator());
+	}
+
 
 }

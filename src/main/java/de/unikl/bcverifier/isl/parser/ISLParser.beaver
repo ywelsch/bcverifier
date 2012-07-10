@@ -62,19 +62,22 @@ import de.unikl.bcverifier.isl.ast.*;
 %terminals FORALL, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER,
 	IF, THEN, ELSE,
 	DOT,
-	MOD, MULT, DIV, PLUS, MINUS,
+	MOD, MULT, DIV, PLUS, MINUS, NOT,
 	EQUALS, UNEQUALS,
 	LBRACKET, RBRACKET, COMMA, LPAREN, RPAREN,
-	IMPLIES, RELATED,
-	INTLITERAL
+	IMPLIES, AND, OR, RELATED,
+	INTLITERAL, NULL
 ;
 
 // operator precedences, highest first
+%right NOT;
 %left DOT; 
 %left MOD, MULT, DIV;
 %left PLUS, MINUS;
 %left RELATED;
 %left EQUALS, UNEQUALS;
+%left AND;
+%left OR;
 %right IMPLIES;
 %left THEN;
 
@@ -85,7 +88,8 @@ import de.unikl.bcverifier.isl.ast.*;
 %typeof idlist = "List<Ident>";
 %typeof typedef = "TypeDef";
 %typeof cu = "CompilationUnit";
-
+%typeof parameterlist = "List<Expr>";
+%typeof nonEmptyParameterlist = "List<Expr>";
 
 %goal cu;
 
@@ -105,26 +109,59 @@ expr =
     	{: return new BoolConst(false); :}
     | INTLITERAL.i
     	{: return new IntConst(i); :}
+    | NULL
+    	{: return new NullConst(); :}
     | id.i
     	{: return new VarAccess(i); :}
+    | id.f LPAREN parameterlist.p RPAREN
+    	{: return new FuncCall(f, p); :} 
     | expr.left DOT id.right
     	{: return new MemberAccess(left, right); :}
     | expr.left RELATED expr.right
-    	{: return new BinaryOperation(Operator.RELATED, left, right); :}
+    	{: return new BinaryOperation(BinaryOperator.RELATED, left, right); :}
     | expr.left IMPLIES expr.right
-    	{: return new BinaryOperation(Operator.IMPLIES, left, right); :}
+    	{: return new BinaryOperation(BinaryOperator.IMPLIES, left, right); :}
+    | expr.left AND expr.right
+    	{: return new BinaryOperation(BinaryOperator.AND, left, right); :}
+    | expr.left OR expr.right
+    	{: return new BinaryOperation(BinaryOperator.OR, left, right); :}
+    | expr.left PLUS expr.right
+    	{: return new BinaryOperation(BinaryOperator.PLUS, left, right); :}
+    | expr.left MINUS expr.right
+    	{: return new BinaryOperation(BinaryOperator.MINUS, left, right); :}
+    | expr.left MULT expr.right
+    	{: return new BinaryOperation(BinaryOperator.MULT, left, right); :}
+    | expr.left DIV expr.right
+    	{: return new BinaryOperation(BinaryOperator.DIV, left, right); :}
     | expr.left MOD expr.right
-    	{: return new BinaryOperation(Operator.MOD, left, right); :}
+    	{: return new BinaryOperation(BinaryOperator.MOD, left, right); :}
     | expr.left EQUALS expr.right
-    	{: return new BinaryOperation(Operator.EQUALS, left, right); :}
+    	{: return new BinaryOperation(BinaryOperator.EQUALS, left, right); :}
     | expr.left UNEQUALS expr.right
-    	{: return new BinaryOperation(Operator.UNEQUALS, left, right); :}
+    	{: return new BinaryOperation(BinaryOperator.UNEQUALS, left, right); :}
+    | NOT expr.e
+    	{: return new UnaryOperation(UnaryOperator.NOT, e); :}
+    | MINUS expr.e
+    	{: return new UnaryOperation(UnaryOperator.UMINUS, e); :}
     | IF expr.cond THEN expr.e1 ELSE expr.e2
     	{: return new IfThenElse(cond, e1, e2); :}
     | LPAREN expr.e RPAREN
-    
 ;
-  
+
+parameterlist =
+	  nonEmptyParameterlist
+	| 
+		{: return new List<Expr>(); :}
+;
+
+nonEmptyParameterlist = 
+	  expr.e 
+	  	{: return new List().add(e); :}
+	| nonEmptyParameterlist.es COMMA expr.e
+		{: return es.add(e); :}
+;
+
+
  vardefs =
  	  vardef.v 
  	  	{: return new List().add(v); :}

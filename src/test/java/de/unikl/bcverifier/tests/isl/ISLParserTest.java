@@ -52,8 +52,16 @@ public class ISLParserTest {
 	public void obool() throws IOException, Exception {
 		CompilationUnit cu = testParseOk(
 				"forall old Bool o1, new Bool o2 [o1 ~ o2 ==> o1.f == o2.f]",
-				"forall old OBool o1, new OBool o2 [o1 ~ o2 ==> o1.g.f != o2.g.f]"
-				// missing: internal, nonnull, unique
+				"forall old OBool o1, new OBool o2 [o1 ~ o2 ==> o1.g.f != o2.g.f]",
+				// internal:
+				"forall old OBool o [!createdByCtxt(o.g) && !exposed(o.g)]",
+				"forall new OBool o [!createdByCtxt(o.g) && !exposed(o.g)]",
+				// nonnull:
+				"forall old OBool o [o.g != null]",
+				"forall new OBool o [o.g != null]",
+				// unique
+				"forall old OBool o1, old OBool o2 [o1 != o2 ==> o1.g != o2.g]",
+				"forall new OBool o1, new OBool o2 [o1 != o2 ==> o1.g != o2.g]"
 				);
 		testTypeCheckOk(
 				new File("./libraries/obool/old"), 

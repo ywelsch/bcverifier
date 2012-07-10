@@ -79,6 +79,7 @@ IntLiteral = 0 | [1-9][0-9]*
  "if"      { return sym(Terminals.IF); }
  "then"      { return sym(Terminals.THEN); }
  "else"      { return sym(Terminals.ELSE); }
+ "null"		{ return sym(Terminals.NULL); }
 }
 
 //Separators and operators
@@ -89,12 +90,14 @@ IntLiteral = 0 | [1-9][0-9]*
  "]"           { return sym(Terminals.RBRACKET); }
  ","           { return sym(Terminals.COMMA); }
 "==>"           { return sym(Terminals.IMPLIES); }
+"&&"			{ return sym(Terminals.AND); }
+"||"			{ return sym(Terminals.OR); }
 "~"           { return sym(Terminals.RELATED); }
 "."           { return sym(Terminals.DOT); }
 "%"          { return sym(Terminals.MOD); }
 "=="          { return sym(Terminals.EQUALS); }
 "!="          { return sym(Terminals.UNEQUALS); }
-
+"!"				{ return sym(Terminals.NOT); }
 }
 
 

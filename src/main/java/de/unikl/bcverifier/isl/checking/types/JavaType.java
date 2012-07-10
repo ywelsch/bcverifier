@@ -1,6 +1,9 @@
 package de.unikl.bcverifier.isl.checking.types;
 
 import static de.unikl.bcverifier.isl.ast.Version.*;
+
+import java.util.List;
+
 import de.unikl.bcverifier.isl.ast.ASTNode;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.LibEnvironment;
@@ -79,5 +82,9 @@ public class JavaType extends ExprType {
 
 	public boolean isNew() {
 		return version == NEW || version == BOTH;
+	}
+
+	public static ExprType object() {
+		return new JavaType(null, Version.BOTH, Object.class);	
 	}
 }

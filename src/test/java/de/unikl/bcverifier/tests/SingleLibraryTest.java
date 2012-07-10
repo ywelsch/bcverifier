@@ -17,7 +17,7 @@ import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 
 public class SingleLibraryTest {
-	File dir = new File("libraries/cbext");
+	File dir = new File("libraries/cell");
 	
 	@BeforeClass
 	public static void oneTimeSetup() {

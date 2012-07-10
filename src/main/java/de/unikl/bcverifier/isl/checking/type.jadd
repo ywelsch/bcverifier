@@ -8,16 +8,15 @@ aspect exprType {
 	
 	eq ForallExpr.attrType() = ExprTypeBool.instance();
 
-	eq VarAccess.attrType() {
-		Def def = attrDef();
-		return def.attrType();
-	}
+	eq VarAccess.attrType() = TypeHelper.attrType(this);
 
 	eq MemberAccess.attrType() = TypeHelper.attrType(this);
 
-	eq FuncCall.attrType() = ExprTypeBool.instance();
+	eq FuncCall.attrType() = TypeHelper.attrType(this);
 
 	eq BinaryOperation.attrType() = TypeHelper.attrType(this);
+	
+	eq UnaryOperation.attrType() = TypeHelper.attrType(this);
 
 	eq IfThenElse.attrType() = TypeHelper.attrType(this);
 
@@ -26,6 +25,8 @@ aspect exprType {
 	eq BoolConst.attrType() = ExprTypeBool.instance();
 	
 	eq IntConst.attrType() = ExprTypeInt.instance();
+	
+	eq NullConst.attrType() = JavaType.create(this, Version.BOTH, java.lang.Object.class);
 	
 	
 	

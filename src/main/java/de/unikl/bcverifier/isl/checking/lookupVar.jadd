@@ -16,6 +16,9 @@ aspect lookup {
 	
 	
 	eq CompilationUnit.lookup(String name) {
+		if (BuiltinFunctions.get(name) != null) {
+			return BuiltinFunctions.get(name);
+		}
 		return new UnknownDef();
 	}
 
@@ -30,4 +33,12 @@ aspect lookup {
 		return d;
 	}
 	
+	syn lazy Def FuncCall.attrDef() {
+		String funcname = getFuncName().getName();
+		Def d = lookup(funcname);
+		if (d instanceof UnknownDef) {
+			addError(this, "Could not find function with name " + funcname);
+		}
+		return d;
+	}
 }

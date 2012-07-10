@@ -7,8 +7,10 @@ aspect translate {
 	syn BPLExpression Expr.translateExpr();
 	
 	eq BinaryOperation.translateExpr() = ExprTranslation.translate(this);
+	eq UnaryOperation.translateExpr() = ExprTranslation.translate(this);
 	eq BoolConst.translateExpr() = ExprTranslation.translate(this);
 	eq IntConst.translateExpr() = ExprTranslation.translate(this);
+	eq NullConst.translateExpr() = ExprTranslation.translate(this);
 	eq ErrorExpr.translateExpr() = ExprTranslation.translate(this);
 	eq ForallExpr.translateExpr() = ExprTranslation.translate(this);
 	eq FuncCall.translateExpr() = ExprTranslation.translate(this);

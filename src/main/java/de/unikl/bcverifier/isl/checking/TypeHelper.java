@@ -3,13 +3,19 @@ package de.unikl.bcverifier.isl.checking;
 import java.lang.reflect.Field;
 
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
+import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
+import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.Ident;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NamedTypeDef;
+import de.unikl.bcverifier.isl.ast.UnaryOperation;
+import de.unikl.bcverifier.isl.ast.VarAccess;
+import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.isl.ast.translation.BuiltinFunction;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
@@ -44,6 +50,8 @@ public class TypeHelper {
 		Expr left = bo.getLeft();
 		Expr right = bo.getRight();
 		switch (bo.getOperator()) {
+		case AND:
+		case OR:
 		case IMPLIES:
 			checkIfSubtype(left, ExprTypeBool.instance());
 			checkIfSubtype(right, ExprTypeBool.instance());
@@ -58,6 +66,10 @@ public class TypeHelper {
 				bo.addError("Cannot compare types " + left.attrType() + " and " + right.attrType());
 			}
 			return ExprTypeBool.instance();
+		case DIV:
+		case MINUS:
+		case MULT:
+		case PLUS:
 		case MOD:
 			checkIfSubtype(left, ExprTypeInt.instance());
 			checkIfSubtype(right, ExprTypeInt.instance());
@@ -118,6 +130,49 @@ public class TypeHelper {
 			}
 		}
 		return null;
+	}
+
+	public static ExprType attrType(UnaryOperation e) {
+		switch (e.getOperator()) {
+		case NOT:
+			checkIfSubtype(e.getExpr(), ExprTypeBool.instance());
+			return ExprTypeBool.instance();
+		case UMINUS:
+			checkIfSubtype(e.getExpr(), ExprTypeInt.instance());
+			return ExprTypeInt.instance();
+		}
+		throw new Error("not implemented: " + e.getOperator());
+	}
+
+	public static ExprType attrType(FuncCall e) {
+		Def def = e.attrDef();
+		if (!(def instanceof BuiltinFunction)) {
+			e.addError(def.attrName() + " is not a function.");
+		} else {
+			BuiltinFunction f = (BuiltinFunction) def;
+			if (e.getNumArgument() > f.getParameterTypes().size()) {
+				e.addError("Too many arguments.");
+			} else if (e.getNumArgument() < f.getParameterTypes().size()) {
+				e.addError("Missing arguments.");
+			} else {
+				for (int i=0; i<e.getNumArgument(); i++) {
+					ExprType argType = e.getArgument(i).attrType();
+					ExprType expectedType = f.getParameterTypes().get(i);
+					if (!argType.isSubtypeOf(expectedType)) {
+						e.getArgument(i).addError("found " + argType + " but expected " + expectedType);
+					}
+				}
+			}
+		}
+		return def.attrType();
+	}
+
+	public static ExprType attrType(VarAccess e)  {
+		Def def = e.attrDef();
+		if (!(def instanceof VarDef)) {
+			e.addError(def.attrName() + " is not a variable.");
+		}
+		return def.attrType();
 	}
 
 }
