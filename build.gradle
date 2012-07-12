@@ -1,5 +1,5 @@
 apply plugin: 'java'
-//apply plugin: 'eclipse'
+apply plugin: 'eclipse'
 
 version = '0.0.1-SNAPSHOT'
 description = 'Bytecode Verifier based on Boogie 2'
@@ -44,6 +44,10 @@ dependencies {
 }
 
 sourceSets.main.java.srcDir islGenDir
+
+eclipse.project.file.beforeMerged { project ->
+    project.natures.add('org.eclipse.xtext.ui.shared.xtextNature')
+}
 
 task runJastAdd {
     inputs.files{fileTree(dir: "$projectDir/src/main/java", includes: ['**/*.ast', '**/*.jrag', '**/*.jadd'])}
