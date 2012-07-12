@@ -137,26 +137,26 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         this.config = config;
     }
     
-    public static class LocalPlaceDefinition{
-        private HashMap<Integer, String> oldMap;
-        private HashMap<Integer, String> newMap;
+    public static class LocalPlaceDefinitions{
+        private HashMap<Integer, List<Place>> oldMap;
+        private HashMap<Integer, List<Place>> newMap;
         
-        public LocalPlaceDefinition(HashMap<Integer, String> oldMap, HashMap<Integer,String> newMap){
+        public LocalPlaceDefinitions(HashMap<Integer, List<Place>> oldMap, HashMap<Integer,List<Place>> newMap){
             this.oldMap = oldMap;
             this.newMap = newMap;
         }
         
-        public String getPlaceInOld(int line1, int line2){
+        public List<Place> getPlaceInOld(int line1, int line2){
             return findPlaceBetween(oldMap, line1, line2);
         }
         
-        public String getPlaceInNew(int line1, int line2){
+        public List<Place> getPlaceInNew(int line1, int line2){
             return findPlaceBetween(newMap, line1, line2);
         }
         
-        private static String findPlaceBetween(HashMap<Integer,String> placeMap, int line1, int line2){
+        private static List<Place> findPlaceBetween(HashMap<Integer,List<Place>> placeMap, int line1, int line2){
             int pairLine;
-            for(Entry<Integer, String> pair : placeMap.entrySet()){
+            for(Entry<Integer, List<Place>> pair : placeMap.entrySet()){
                 pairLine = pair.getKey();
                 if(line1 < pairLine && pairLine <= line2){
                     placeMap.remove(pair.getKey());
@@ -166,31 +166,66 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             return null;
         }
     }
-
-    private LocalPlaceDefinition parseLocalPlaces(File localPlaces) {
-        FileReader reader = null;
-        Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)");
+    
+    public static class Place {
+        private String name;
+        private String condition;
         
-        HashMap<Integer,String> oldMap = new HashMap<Integer, String>();
-        HashMap<Integer,String> newMap = new HashMap<Integer, String>();
+        public Place(String name, String condition){
+            this.name = name;
+            this.condition = condition;
+        }
+        
+        public String getName() {
+            return name;
+        }
+        public void setName(String name) {
+            this.name = name;
+        }
+        public String getCondition() {
+            return condition;
+        }
+        public void setCondition(String condition) {
+            this.condition = condition;
+        }
+    }
+
+    private LocalPlaceDefinitions parseLocalPlaces(File localPlaces) {
+        FileReader reader = null;
+        Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)\\s+(.*)");
+        
+        HashMap<Integer,List<Place>> oldMap = new HashMap<Integer, List<Place>>();
+        HashMap<Integer,List<Place>> newMap = new HashMap<Integer, List<Place>>();
         try {
             reader = new FileReader(localPlaces);
             LineIterator lineIterator = IOUtils.lineIterator(reader);
             String nextLine;
             Matcher m;
+            int lineNumber;
+            List<Place> currentPlaceList;
             while(lineIterator.hasNext()){
                 nextLine = lineIterator.next();
                 m = p.matcher(nextLine);
                 if(m.matches()){
+                    lineNumber = Integer.parseInt(m.group(3));
                     if(m.group(2).equals("old")){
-                        oldMap.put(Integer.decode(m.group(3)), m.group(1));
-                    } else if(m.group(2).equals("new")){
-                        newMap.put(Integer.decode(m.group(3)), m.group(1));
+                        currentPlaceList = oldMap.get(lineNumber);
+                        if(currentPlaceList == null){
+                            currentPlaceList = new ArrayList<Library.Place>();
+                            oldMap.put(lineNumber, currentPlaceList);
+                        }
+                    } else { // new
+                        currentPlaceList = newMap.get(lineNumber);
+                        if(currentPlaceList == null){
+                            currentPlaceList = new ArrayList<Library.Place>();
+                            newMap.put(lineNumber, currentPlaceList);
+                        }
                     }
+                    currentPlaceList.add(new Place(m.group(1), m.group(4)));
                 }
             }
             
-            return new LocalPlaceDefinition(oldMap, newMap);
+            return new LocalPlaceDefinitions(oldMap, newMap);
         } catch (FileNotFoundException e) {
             log.warn("Could not read local places from "+localPlaces, e);
             return null;

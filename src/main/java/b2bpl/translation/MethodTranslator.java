@@ -76,6 +76,7 @@ import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLModifiesClause;
 import b2bpl.bpl.ast.BPLProcedure;
+import b2bpl.bpl.ast.BPLRawCommand;
 import b2bpl.bpl.ast.BPLRequiresClause;
 import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
@@ -173,6 +174,7 @@ import b2bpl.bytecode.instructions.VAStoreInstruction;
 import b2bpl.bytecode.instructions.VCastInstruction;
 import b2bpl.bytecode.instructions.VConstantInstruction;
 import b2bpl.translation.helpers.ModifiedHeapLocation;
+import de.unikl.bcverifier.Library.Place;
 import de.unikl.bcverifier.TranslationController;
 
 
@@ -1420,9 +1422,9 @@ public class MethodTranslator implements ITranslationConstants {
                        insn.getSourceLine() != -1 && 
                        insnTranslator.handle.getSourceLine() != -1 && 
                        insnTranslator.handle.getSourceLine() < insn.getSourceLine()){
-                        String localPlace = tc.getLocalPlaceBetween(insnTranslator.handle.getSourceLine(), insn.getSourceLine());
-                        if(localPlace != null){
-                            insnTranslator.translateLocalPlace(localPlace);
+                        List<Place> localPlaces = tc.getLocalPlacesBetween(insnTranslator.handle.getSourceLine(), insn.getSourceLine());
+                        if(localPlaces != null){
+                            insnTranslator.translateLocalPlaces(localPlaces);
                         }
                     }
                     insnTranslator.handle = insn;
@@ -2779,17 +2781,34 @@ public class MethodTranslator implements ITranslationConstants {
             addAssume(logicalAnd(normalConditions));
         }
 
-        private void translateLocalPlace(String localPlace) {
-            Logger.getLogger(InstructionTranslator.class).debug("adding local place "+localPlace);
-            addAssignment(stack(var(PLACE_VARIABLE)), var(localPlace), "local place");
-            context.addLocalPlace(localPlace);
+        private void translateLocalPlaces(List<Place> localPlaces) {
+            final String CONT_POSTFIX = "_cont";
+            final String CHECK_POSTFIX = "_check";
+            String contLabel = blockLabel + CONT_POSTFIX;
+            List<String> contLabels = new ArrayList<String>();
+            contLabels.add(contLabel);
+            for(Place place : localPlaces){
+                contLabels.add(place.getName() + CHECK_POSTFIX);
+            }
+            endBlock(contLabels.toArray(new String[contLabels.size()]));
             
-            rawEndBlock(tc.getCheckLabel());
+            for(Place localPlace : localPlaces){
+                startBlock(localPlace.getName() + CHECK_POSTFIX);
+                Logger.getLogger(InstructionTranslator.class).debug("adding local place "+localPlace.getName());
+                addAssume(var(localPlace.getCondition())); //TODO raw expression here
+                context.addLocalPlace(localPlace.getName());
+                addAssignment(stack(var(PLACE_VARIABLE)), var(localPlace.getName()), "local place");
+                rawEndBlock(tc.getCheckLabel());
+                
+                startBlock(localPlace.getName());
+                addAssume(var(localPlace.getCondition())); //TODO raw expression here
+                addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(localPlace.getName())));
+                String placeLabel = tc.prefix(getProcedureName(method) + "_" + localPlace.getName());
+                tc.addLocalPlace(placeLabel);
+                endBlock(contLabel);
+            }
             
-            startBlock(localPlace);
-            addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(localPlace)));
-            String placeLabel = tc.prefix(getProcedureName(method) + "_" + localPlace);
-            tc.addLocalPlace(placeLabel);
+            startBlock(contLabel);
         }
 
         //@ requires insn != null;

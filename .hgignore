@@ -16,3 +16,9 @@ syntax: glob
 target/**
 syntax: glob
 src/gen
+syntax: glob
+build/**
+syntax: glob
+test-output/**
+syntax: glob
+**/.DS_Store

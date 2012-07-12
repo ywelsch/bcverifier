@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import de.unikl.bcverifier.Library.LocalPlaceDefinition;
+import de.unikl.bcverifier.Library.LocalPlaceDefinitions;
+import de.unikl.bcverifier.Library.Place;
 
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bytecode.BCField;
@@ -48,7 +49,7 @@ public class TranslationController implements ITranslationConstants {
     
     private String lastPlace = null;
     private String nextLabel = null;
-    private LocalPlaceDefinition localPlaceDefinitions;
+    private LocalPlaceDefinitions localPlaceDefinitions;
     private Set<String> localPlaces = new HashSet<String>();
     
     public Set<String> declaredMethods() {
@@ -221,7 +222,7 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public String getLocalPlaceBetween(int line1, int line2){
+    public List<Place> getLocalPlacesBetween(int line1, int line2){
         if(localPlaceDefinitions == null)
             return null;
         
@@ -286,7 +287,7 @@ public class TranslationController implements ITranslationConstants {
         throw new RuntimeException("No possible places left for method invocation of "+ invocedMethod+" in method "+methodName);
     }
 
-    public void setLocalPlaces(LocalPlaceDefinition localPlaces) {
+    public void setLocalPlaces(LocalPlaceDefinitions localPlaces) {
         this.localPlaceDefinitions = localPlaces;
     }
 }
