@@ -1,6 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'jetty'
+apply plugin: 'application'
 
 version = '0.0.1-SNAPSHOT'
 description = 'Bytecode Verifier based on Boogie 2'
@@ -58,18 +59,22 @@ sourceSets {
     }
 }
 
-eclipse.project.file.beforeMerged { project ->
-    project.natures.add('org.eclipse.xtext.ui.shared.xtextNature')
-}
+mainClassName = "de.unikl.bcverifier.Main"
 
 eclipse {
-    project.file.beforeMerged { project ->
-        project.natures.add('org.eclipse.xtext.ui.shared.xtextNature')
-    }
+	project {
+		name = 'BCVerifier'		
+		natures 'org.eclipse.xtext.ui.shared.xtextNature', 'com.springsource.sts.gradle.core.nature', 'org.eclipse.jdt.groovy.core.groovyNature'
+		comment = description
+	}
     classpath {
         //customizing the classes output directory:
         defaultOutputDir = file('build-eclipse')
+		
+		containers 'GROOVY_SUPPORT', 'com.springsource.sts.gradle.classpathcontainer', 'com.springsource.sts.gradle.dsld.classpathcontainer', 'GROOVY_DSL_SUPPORT'
     
+		minusConfigurations += configurations.compile
+		minusConfigurations += configurations.testCompile
         //default settings for dependencies sources/javadoc download:
         downloadSources = true
         downloadJavadoc = false
@@ -124,3 +129,4 @@ task removeGenFolder(type: Delete) {
 
 clean.dependsOn removeGenFolder
 assemble.dependsOn jar
+tasks.eclipse.dependsOn cleanEclipse
