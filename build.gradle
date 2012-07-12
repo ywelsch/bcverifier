@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
+apply plugin: 'jetty'
 
 version = '0.0.1-SNAPSHOT'
 description = 'Bytecode Verifier based on Boogie 2'
@@ -43,15 +44,41 @@ dependencies {
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.1'
 }
 
-sourceSets.main.java.srcDir islGenDir
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+            srcDir islGenDir
+        }
+        resources {
+            srcDir 'src/main/resources'
+            srcDir 'src/main/java'
+            srcDir 'libraries'  //TODO Auslagern in webLibraries Verzeichnis
+        }
+    }
+}
 
 eclipse.project.file.beforeMerged { project ->
     project.natures.add('org.eclipse.xtext.ui.shared.xtextNature')
 }
 
+eclipse {
+    project.file.beforeMerged { project ->
+        project.natures.add('org.eclipse.xtext.ui.shared.xtextNature')
+    }
+    classpath {
+        //customizing the classes output directory:
+        defaultOutputDir = file('build-eclipse')
+    
+        //default settings for dependencies sources/javadoc download:
+        downloadSources = true
+        downloadJavadoc = false
+    }
+}
+
 task runJastAdd {
     inputs.files{fileTree(dir: "$projectDir/src/main/java", includes: ['**/*.ast', '**/*.jrag', '**/*.jadd'])}
-    outputs.dir(parserGenDir)
+    outputs.dir(islGenDir)
     doLast {
         ant.taskdef name: 'jastadd', classname: 'jastadd.JastAddTask', classpath: "$projectDir/lib/jastadd2.jar"
         new File(islGenDir).mkdirs()
@@ -96,3 +123,4 @@ task removeGenFolder(type: Delete) {
 }
 
 clean.dependsOn removeGenFolder
+assemble.dependsOn jar

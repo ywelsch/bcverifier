@@ -21,4 +21,8 @@ build/**
 syntax: glob
 test-output/**
 syntax: glob
-**/.DS_Store
+.DS_Store
+syntax: glob
+.gradle
+syntax: glob
+build-eclipse

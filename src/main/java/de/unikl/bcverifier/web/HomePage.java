@@ -160,6 +160,7 @@ public class HomePage extends WebPage {
 	private void addExample(String dir, String description) {
 		ClassLoader loader = HomePage.class.getClassLoader();
 		try {
+		    System.out.println(loader.getResource(dir));
 			System.out.println(loader.getResource(dir).toURI());
 			FileSystemManager fsManager = VFS.getManager();
 			FileObject topDir = fsManager.resolveFile(loader.getResource(dir).toURI().toString());
