@@ -87,8 +87,8 @@ eclipse {
 		
 		containers 'GROOVY_SUPPORT', 'com.springsource.sts.gradle.classpathcontainer', 'com.springsource.sts.gradle.dsld.classpathcontainer', 'GROOVY_DSL_SUPPORT'
     
-		minusConfigurations += configurations.compile
-		minusConfigurations += configurations.testCompile
+		//minusConfigurations += configurations.compile
+		//minusConfigurations += configurations.testCompile
         //default settings for dependencies sources/javadoc download:
         downloadSources = true
         downloadJavadoc = false
