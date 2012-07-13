@@ -61,6 +61,16 @@ sourceSets {
 
 mainClassName = "de.unikl.bcverifier.Main"
 
+import org.apache.tools.ant.filters.ReplaceTokens
+
+processResources {
+	from('src/main/resources/project.properties') {
+		filter(ReplaceTokens, tokens: [version: project.version])
+	}
+}
+
+httpPort = 60602
+
 eclipse {
 	project {
 		name = 'BCVerifier'		
