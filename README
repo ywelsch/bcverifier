@@ -1,0 +1,32 @@
+BCVerifier - Bytecode Verifier based on Boogie 2
+==============
+
+Organization
+--------------
+
+Software Technology Group, University of Kaiserslautern
+http://softech.cs.uni-kl.de
+
+Developers
+--------------
+
+- Mathias Weber <m_weber@cs.uni-kl.de>
+- Yannick Welsch <welsch@cs.uni-kl.de>
+- Peter Zeller <p_zeller@cs.uni-kl.de>
+
+Repository
+--------------
+https://softech.cs.uni-kl.de/hg/public/bcverifier
+
+Build System
+--------------
+Gradle: http://gradle.org/
+For Eclipse integration, use STS with gradle support: http://static.springsource.org/sts/docs/latest/reference/html/gradle/installation.html
+
+Main gradle goals:
+
+- jettyRun: Runs web frontend
+- run: Runs command line interface frontend
+- installApp: Installs the application into a specified directory
+- distZip: Creates a full distribution ZIP archive including runtime libraries and OS specific scripts
+- assemble: Assembles all the archives in the project (jar and war), like build but no tests
