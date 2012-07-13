@@ -133,9 +133,13 @@ task runJFlex {
     }
 }
 
-runJFlex.dependsOn runBeaver
-runBeaver.dependsOn runJastAdd
-compileJava.dependsOn runJFlex
+task generateSources
+
+generateSources.dependsOn runJastAdd
+generateSources.dependsOn runBeaver
+generateSources.dependsOn runJFlex
+
+compileJava.dependsOn generateSources
 
 task removeGenFolder(type: Delete) {
     delete islGenDir
