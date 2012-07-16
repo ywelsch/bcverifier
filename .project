@@ -2,18 +2,19 @@
 <projectDescription>
 	<name>BCVerifier</name>
 	<comment>Bytecode Verifier based on Boogie 2</comment>
-	<projects/>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 		<nature>org.eclipse.xtext.ui.shared.xtextNature</nature>
 		<nature>com.springsource.sts.gradle.core.nature</nature>
 		<nature>org.eclipse.jdt.groovy.core.groovyNature</nature>
 	</natures>
-	<buildSpec>
-		<buildCommand>
-			<name>org.eclipse.jdt.core.javabuilder</name>
-			<arguments/>
-		</buildCommand>
-	</buildSpec>
-	<linkedResources/>
 </projectDescription>

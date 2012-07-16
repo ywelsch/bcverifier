@@ -46,6 +46,8 @@ public class Configuration implements Serializable {
     private VerifyAction action = VerifyAction.VERIFY;
     @Parameter(names = {"-i" , "--invariant"}, description = "Path to the file containing the coupling invariant", required = true, validateWith = Configuration.FileValidator.class)
     private File invariant;
+    @Parameter(names = {"-li" , "--localinvariant"}, description = "Path to the file containing the local coupling invariant", required = false, validateWith = Configuration.FileValidator.class)
+    private File localInvariant = null;
     @Parameter(names = {"-o" , "--output"}, description = "Path to generated Boogie file")
     private File output;
     @Parameter(names = {"-p" , "--places"}, description = "Path to places configuration file", validateWith = Configuration.FileValidator.class)
@@ -105,6 +107,9 @@ public class Configuration implements Serializable {
     }
     public File invariant() {
     	return invariant;
+    }
+    public File localInvariant() {
+        return localInvariant;
     }
     public File output() {
     	if (output == null) {

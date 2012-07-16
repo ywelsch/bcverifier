@@ -3847,18 +3847,19 @@ public class MethodTranslator implements ITranslationConstants {
         public void visitAThrowInstruction(AThrowInstruction insn) {
             int stack = handle.getFrame().getStackSize() - 1;
 
-            if(!tc.isActive()){
-                translateRuntimeException(
-                        "java.lang.NullPointerException",
-                        nonNull(stack(var(refStackVar(stack)))));
-            }
-
-            if (stack != 0) {
-                addAssignment(stack(var(refStackVar(0))), stack(var(refStackVar(stack))));
-            }
-
-            branchToHandlers(handle.getFrame().peek());
-            translateReachableExceptionHandlers();
+//            if(!tc.isActive()){
+//                translateRuntimeException(
+//                        "java.lang.NullPointerException",
+//                        nonNull(stack(var(refStackVar(stack)))));
+//            }
+//
+//            if (stack != 0) {
+//                addAssignment(stack(var(refStackVar(0))), stack(var(refStackVar(stack))));
+//            }
+//
+//            branchToHandlers(handle.getFrame().peek());
+//            translateReachableExceptionHandlers();
+            addCommentedCommand(new BPLAssumeCommand(BPLBoolLiteral.FALSE), "throw exception");
         }
 
         //@ requires insn != null;
