@@ -307,7 +307,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             programDecls.add(new BPLAxiom(isEqual(var(ITranslationConstants.MAX_LOOP_UNROLL), new BPLIntLiteral(config.getLoopUnrollCap()))));
 
             
-            addCheckingBlocks(invAssertions, invAssumes, methodBlocks);
+            addCheckingBlocks(invAssertions, invAssumes, localInvAssertions, localInvAssumes, methodBlocks);
             
             
             
@@ -323,7 +323,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             
             addLocalVariables(localVariables);
 
-            addPreconditionBlocks(invAssumes, methodBlocks);
+            addPreconditionBlocks(invAssumes, localInvAssumes, methodBlocks);
             
             
             addVariableConstants(programDecls, methodBlocks);
@@ -501,6 +501,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     }
 
     private void addPreconditionBlocks(ArrayList<BPLCommand> invAssumes,
+            ArrayList<BPLCommand> localInvAssumes,
             List<BPLBasicBlock> methodBlocks) {
         String sp = "sp";
         BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
@@ -547,7 +548,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 new BPLBasicBlock(PRECONDITIONS_LABEL, procAssumes
                         .toArray(new BPLCommand[procAssumes.size()]),
                         new BPLGotoCommand(PRECONDITIONS_CALL_LABEL,
-                                PRECONDITIONS_RETURN_LABEL, PRECONDITIONS_CONSTRUCTOR_LABEL)));
+                                PRECONDITIONS_RETURN_LABEL, PRECONDITIONS_CONSTRUCTOR_LABEL, PRECONDITIONS_LOCAL_LABEL)));
 
         BPLCommand assumeCmd;
 
@@ -790,6 +791,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
         // invariant
         procAssumes.addAll(invAssumes);
+        procAssumes.addAll(localInvAssumes);
 
         // relate all parameters from the outside
         // ///////////////////////////////////////
@@ -840,6 +842,70 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_RETURN_LABEL,
                 procAssumes.toArray(new BPLCommand[procAssumes.size()]),
                 new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
+        
+        
+        // //////////////////////////////////
+        // preconditions of a return to a local place
+        // /////////////////////////////////
+        procAssumes = new ArrayList<BPLCommand>();
+        procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack1(var(PLACE_VARIABLE)))));
+        procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack2(var(PLACE_VARIABLE)))));
+        
+        // relation of the methods initially called on the library
+        // ///////////////////////////////////////////
+        assumeCmd = new BPLAssumeCommand(isEqual(stack1(zero, var(METH_FIELD)),
+                stack2(zero, var(METH_FIELD))));
+        assumeCmd.addComment("Relate the methods that where originally called on the library.");
+        procAssumes.add(assumeCmd);
+
+        assumeCmd = new BPLAssumeCommand(related(stack1(zero, receiver()),
+                stack2(zero, receiver())));
+        assumeCmd.addComment("The receiver and all parameters where initially related.");
+        
+        // relate all parameters from the outside
+        // ///////////////////////////////////////
+        for (BPLVariable var : tc.stackVariables()
+                .values()) {
+            if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
+                assumeCmd = new BPLAssumeCommand(relNull(
+                        stack1(zero, var(var.getName())),
+                        stack2(zero, var(var.getName())), var(RELATED_RELATION)));
+                procAssumes.add(assumeCmd);
+                assumeCmd = new BPLAssumeCommand(implies(
+                        nonNull(stack1(zero, var(var.getName()))),
+                        heap1(stack1(zero, var(var.getName())),
+                                var(EXPOSED_FIELD))));
+                procAssumes.add(assumeCmd);
+                assumeCmd = new BPLAssumeCommand(implies(
+                        nonNull(stack2(zero, var(var.getName()))),
+                        heap2(stack2(zero, var(var.getName())),
+                                var(EXPOSED_FIELD))));
+                procAssumes.add(assumeCmd);
+            } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
+                assumeCmd = new BPLAssumeCommand(isEqual(
+                        stack1(zero, var(var.getName())),
+                        stack2(zero, var(var.getName()))));
+                procAssumes.add(assumeCmd);
+            }
+        }
+        
+        // assume the result of the method is not yet set
+        procAssumes.add(new BPLAssumeCommand(
+                forall(spVar, 
+                        implies(less(var(sp), var(TranslationController.SP1)), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                )));
+        procAssumes.add(new BPLAssumeCommand(
+                forall(spVar, 
+                        implies(less(var(sp), var(TranslationController.SP2)), logicalAnd(isNull(stack2(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                )));
+
+        // invariant
+        procAssumes.addAll(localInvAssumes);
+
+        
+        methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_LOCAL_LABEL,
+                procAssumes.toArray(new BPLCommand[procAssumes.size()]),
+                new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
     }
 
     private void addLocalVariables(List<BPLVariableDeclaration> localVariables) {
@@ -866,7 +932,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     }
 
     private void addCheckingBlocks(ArrayList<BPLCommand> invAssertions,
-            ArrayList<BPLCommand> invAssumes, List<BPLBasicBlock> methodBlocks) {
+            ArrayList<BPLCommand> invAssumes,
+            ArrayList<BPLCommand> localInvAssertions,
+            ArrayList<BPLCommand> localInvAssumes,
+            List<BPLBasicBlock> methodBlocks) {
         // ///////////////////////////////////
         // checking blocks (intern and extern)
         // ///////////////////////////////////
@@ -879,11 +948,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 logicalAnd(
                         greater(var(TranslationController.SP1), new BPLIntLiteral(0)),
                         greater(var(TranslationController.SP2), new BPLIntLiteral(0))
+                        ),
+                logicalAnd(
+                        isLocalPlace(stack1(var(PLACE_VARIABLE))),
+                        isLocalPlace(stack2(var(PLACE_VARIABLE)))
                         )
                 )));
         methodBlocks.add(new BPLBasicBlock(tc
                 .getCheckLabel(), checkingCommand.toArray(new BPLCommand[checkingCommand.size()]), new BPLGotoCommand(
-                CHECK_BOUNDARY_RETURN_LABEL, CHECK_BOUNDARY_CALL_LABEL)));
+                CHECK_BOUNDARY_RETURN_LABEL, CHECK_BOUNDARY_CALL_LABEL, CHECK_LOCAL_LABEL)));
 
         // ////////////////////////////////
         // assertions of the check return block
@@ -947,7 +1020,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
         
         checkingCommand.add(new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION))))));
+        
+        //invariant
         checkingCommand.addAll(invAssertions);
+        
         methodBlocks.add(new BPLBasicBlock(CHECK_BOUNDARY_RETURN_LABEL, checkingCommand
                 .toArray(new BPLCommand[checkingCommand.size()]),
                 new BPLReturnCommand()));
@@ -1032,7 +1108,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             }
         }
         checkingCommand.add(new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION))))));
+        
+        //invariant
         checkingCommand.addAll(invAssertions);
+        checkingCommand.addAll(localInvAssertions);
         
         // check if we want to use havoc to handle boudary call
         /////////////////////////////////////////////////////////
@@ -1085,12 +1164,30 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP1), var(TranslationController.HEAP1), var(TranslationController.STACK1))));
         checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP2), var(TranslationController.HEAP2), var(TranslationController.STACK2))));
         
+        //invariant
         checkingCommand.addAll(invAssumes);
+        checkingCommand.addAll(localInvAssumes);
         
 
         methodBlocks.add(new BPLBasicBlock(CHECK_BOUNDARY_CALL_LABEL, checkingCommand
                 .toArray(new BPLCommand[checkingCommand.size()]),
                 new BPLGotoCommand(TranslationController.LABEL_PREFIX1 + RETTABLE_LABEL)));
+        
+        
+        // ////////////////////////////////
+        // assertions of the check local block
+        // ////////////////////////////////
+        checkingCommand.clear();
+        checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+                isLocalPlace(stack1(var(PLACE_VARIABLE))),
+                isLocalPlace(stack2(var(PLACE_VARIABLE))))));
+
+        
+        checkingCommand.addAll(localInvAssertions);
+
+        methodBlocks.add(new BPLBasicBlock(CHECK_LOCAL_LABEL, checkingCommand
+                .toArray(new BPLCommand[checkingCommand.size()]),
+                new BPLReturnCommand()));
     }
 
     private void addDefinesMethodAxioms(List<BPLDeclaration> programDecls) {
