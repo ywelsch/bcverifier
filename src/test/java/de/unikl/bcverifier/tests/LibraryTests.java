@@ -1,6 +1,5 @@
 package de.unikl.bcverifier.tests;
 
-import static junitparams.JUnitParamsRunner.$;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -22,8 +21,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.Ostermiller.util.CSVParser;
-import com.Ostermiller.util.LabeledCSVParser;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
@@ -33,6 +30,7 @@ import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.helpers.BCCheckDefinition;
 
 @RunWith(JUnitParamsRunner.class)
 public class LibraryTests {	
@@ -61,7 +59,7 @@ public class LibraryTests {
 	        return buildTestCase(new File(libraryToCheck)).toArray();
 	    } else {
 	        List<Object> testSets = new ArrayList<Object>();
-	        List<Object[]> libTestCases;
+	        List<BCCheckDefinition> libTestCases;
 	        for(String path : libpath.list(new AndFileFilter(DirectoryFileFilter.DIRECTORY, new NotFileFilter(HiddenFileFilter.HIDDEN)))){
 	            libTestCases = buildTestCase(new File(libpath, path));
 	            testSets.addAll(libTestCases);
@@ -70,96 +68,64 @@ public class LibraryTests {
 	    }
 	}
 
-    private List<Object[]> buildTestCase(File libDir) {
-        LabeledCSVParser parser;
-        File testsFile;
-        File invFile;
-        File preconditionsFile;
-        String precondFileName;
-        String[] generatorFlags;
-        int expectedErrorCount;
-        int deadCodePoints;
-        int loopUnrollCap;
-        testsFile = new File(libDir, "tests.csv");
-        
-        List<Object[]> libTestCases = new ArrayList<Object[]>();
-        try{
-            parser = new LabeledCSVParser(new CSVParser(FileUtils.openInputStream(testsFile)));
-            while(parser.getLine() != null){
-                invFile = new File(libDir, parser.getValueByLabel("invariant_file"));
-                precondFileName = parser.getValueByLabel("preconditions_file");
-                if(!precondFileName.isEmpty()){
-                    preconditionsFile = new File(libDir, precondFileName);
-                } else {
-                    preconditionsFile = null;
-                }
-                generatorFlags = parser.getValueByLabel("flags").split("[ ]+");
-                expectedErrorCount = Integer.parseInt(parser.getValueByLabel("expected_errors"));
-                deadCodePoints = Integer.parseInt(parser.getValueByLabel("dead_code_points"));
-                loopUnrollCap = Integer.parseInt(parser.getValueByLabel("loop_unroll_cap"));
-                libTestCases.add($(libDir, invFile, preconditionsFile, generatorFlags, expectedErrorCount, deadCodePoints, loopUnrollCap));
-            }
-        } catch(IOException e){
-            Logger.getLogger(LibraryTests.class).warn("Could not open tests file for library "+libDir.getName());
-        }
-        return libTestCases;
+    private List<BCCheckDefinition> buildTestCase(File libDir) {
+        return BCCheckDefinition.parseDefinitions(libDir, new File(libDir, "tests.csv"));
     }
 	
 	@Test @Parameters(method = "librariesToCheck")
-	public void verifyLibrary(File dir, File invariant, File preconditions, String[] generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException {
+	public void verifyLibrary(BCCheckDefinition test) throws TranslationException {
 		Configuration config = new Configuration();
 		JCommander parser = new JCommander();
 		parser.addObject(config);
 		parser.setProgramName("Main");
 		
 		try {
-            parser.parseWithoutValidation(generatorFlags);
+            parser.parseWithoutValidation(test.getFlags());
         } catch (ParameterException e) {
             Logger.getLogger(LibraryTests.class).warn(e);
         }
 		
-		File specificationFile = new File(dir, "bpl/output.bpl");
-		File lib1 = new File(dir, "old");
-		File lib2 = new File(dir, "new");
-		config.setInvariant(invariant);
-		config.setConfigFile(preconditions);
+		File specificationFile = new File(test.getLibDir(), "bpl/output.bpl");
+		File lib1 = new File(test.getLibDir(), "old");
+		File lib2 = new File(test.getLibDir(), "new");
+		config.setInvariant(test.getInvariant());
+		config.setConfigFile(test.getPreconditions());
 		config.setLibraries(lib1, lib2);
 		config.setOutput(specificationFile);
 		config.setAction(VerifyAction.VERIFY);
-        config.setLoopUnrollCap(loopUnrollCap);
+        config.setLoopUnrollCap(test.getLoopUnrollCap());
         TranslationController tc = new TranslationController();
 		Library library = new Library(config);
 		library.setTranslationController(tc);
 		library.compile();
 		library.translate();
 		library.check();
-		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastErrorCount() == expectedErrorCount);
+		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastErrorCount() == test.getExpectedErrors());
 	}
 	
 	@Test @Parameters(method = "librariesToCheck")
-    public void smokeTestLibrary(File dir, File invariant, File preconditions, String[] generatorFlags, int expectedErrorCount, int expectedDeadCodePoints, int loopUnrollCap) throws TranslationException, IOException {
+    public void smokeTestLibrary(BCCheckDefinition test) throws TranslationException, IOException {
         Configuration config = new Configuration();
         JCommander parser = new JCommander();
         parser.addObject(config);
         parser.setProgramName("Main");
         
         try {
-            parser.parseWithoutValidation(generatorFlags);
+            parser.parseWithoutValidation(test.getFlags());
         } catch (ParameterException e) {
             Logger.getLogger(LibraryTests.class).warn(e);
         }
         
-        File invFile = new File(dir, "bpl/inv.bpl");
-        File specificationFile = new File(dir, "bpl/output.bpl");
-        File lib1 = new File(dir, "old");
-        File lib2 = new File(dir, "new");
-        config.setInvariant(invFile);
-        config.setConfigFile(preconditions);
+        File specificationFile = new File(test.getLibDir(), "bpl/output.bpl");
+        File lib1 = new File(test.getLibDir(), "old");
+        File lib2 = new File(test.getLibDir(), "new");
+        config.setInvariant(test.getInvariant());
+        config.setConfigFile(test.getPreconditions());
         config.setLibraries(lib1, lib2);
         config.setNullChecks(false);
         config.setOutput(specificationFile);
         config.setAction(VerifyAction.VERIFY);
-        config.setLoopUnrollCap(loopUnrollCap);
+        config.setLoopUnrollCap(test.getLoopUnrollCap());
         config.setSmokeTestOn(true);
         TranslationController tc = new TranslationController();
         Library library = new Library(config);
@@ -167,12 +133,12 @@ public class LibraryTests {
         library.compile();
         library.translate();
         library.check();
-        assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastErrorCount() == expectedErrorCount);
+        assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastErrorCount() == test.getExpectedErrors());
         
-        File boogieOutput = new File(dir, "bpl/boogie_output.txt");
+        File boogieOutput = new File(test.getLibDir(), "bpl/boogie_output.txt");
         FileUtils.write(boogieOutput, BoogieRunner.getLastMessage());
         
-        assertTrue(String.format("Expected %d dead code points, but got %d", expectedDeadCodePoints, BoogieRunner.getLastUnreachalbeCodeCount()), BoogieRunner.getLastUnreachalbeCodeCount() == expectedDeadCodePoints);
+        assertTrue(String.format("Expected %d dead code points, but got %d", test.getExpectedDeadCodePoints(), BoogieRunner.getLastUnreachalbeCodeCount()), BoogieRunner.getLastUnreachalbeCodeCount() == test.getExpectedDeadCodePoints());
     }
 	
 	@Test @Parameters(method = "params")
