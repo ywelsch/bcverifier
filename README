@@ -25,8 +25,9 @@ For Eclipse integration, use STS with gradle support: http://static.springsource
 
 Main gradle goals:
 
-- jettyRun: Runs web frontend
+- jettyRun: Runs web frontend locally
 - run: Runs command line interface frontend
 - installApp: Installs the application into a specified directory
 - distZip: Creates a full distribution ZIP archive including runtime libraries and OS specific scripts
 - assemble: Assembles all the archives in the project (jar and war), like build but no tests
+- uploadWar: Upload web frontend to hosted jetty server

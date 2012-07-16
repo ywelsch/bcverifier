@@ -16,6 +16,10 @@ String islGenDir = "$projectDir/src/gen/java"
 String parserSrcDir = "$projectDir/src/main/java/de/unikl/bcverifier/isl/parser"
 String parserGenDir = "$islGenDir/de/unikl/bcverifier/isl/parser"
 
+configurations {
+    sshAntTask
+}
+
 repositories {
 	mavenCentral()
     maven {
@@ -43,6 +47,7 @@ dependencies {
     compile files("$projectDir/lib/beaver-rt.jar")
     compile group: 'com.google.guava', name: 'guava-io', version: 'r03'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.1'
+	sshAntTask group: 'org.apache.ant', name: 'ant-jsch', version: '1.8.4'
 }
 
 sourceSets {
@@ -64,6 +69,19 @@ mainClassName = "de.unikl.bcverifier.Main"
 startScripts {
 	applicationName = "bcv"
 }
+
+war {
+	archiveName = 'bcverifier.war'
+}
+
+task uploadWar {
+	description = 'Deploy war to remote Jetty server.'
+	ant.taskdef(name: 'scp', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.Scp', classpath: configurations.sshAntTask.asPath)
+	ant.scp(todir: 'welsch@byron:/opt/jetty/webapps', file: war.archivePath.path, keyfile: '${user.home}/.ssh/id_rsa')
+	ant.scp(todir: 'welsch@byron:/opt/jetty/contexts', file: "$projectDir/src/main/config/bcverifier.xml", keyfile: '${user.home}/.ssh/id_rsa')
+}
+
+uploadWar.dependsOn war
 
 import org.apache.tools.ant.filters.ReplaceTokens
 
