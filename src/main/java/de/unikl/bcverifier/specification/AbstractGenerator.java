@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class AbstractGenerator implements Generator {
     private Reader reader;
@@ -25,5 +27,25 @@ public abstract class AbstractGenerator implements Generator {
     
     protected Reader getReader() {
         return reader;
+    }
+    
+    @Override
+    public List<String> generateInvariant() {
+        return Collections.emptyList();
+    }
+    
+    @Override
+    public List<String> generateLocalInvariant() {
+        return Collections.emptyList();
+    }
+    
+    @Override
+    public List<String> generatePreconditions() {
+        return Collections.emptyList();
+    }
+    
+    @Override
+    public LocalPlaceDefinitions generateLocalPlaces() {
+        return new LocalPlaceDefinitions(Collections.<Integer,List<Place>>emptyMap(), Collections.<Integer,List<Place>>emptyMap());
     }
 }

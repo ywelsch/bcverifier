@@ -34,6 +34,7 @@ import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.helpers.BCCheckDefinition;
 import de.unikl.bcverifier.helpers.CheckRunner;
 import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
+import de.unikl.bcverifier.specification.MultiFileGenerator;
 
 @RunWith(JUnitParamsRunner.class)
 public class LibraryTests {	
@@ -100,7 +101,7 @@ public class LibraryTests {
 		config.setOutput(specificationFile);
         config.setAction(VerifyAction.TYPECHECK);
         TranslationController tc = new TranslationController();
-		Library library = new Library(config);
+		Library library = new Library(config, new MultiFileGenerator(config.invariant(), config.localInvariant(), config.configFile()));
 		library.setTranslationController(tc);
 		library.compile();
 		library.translate();

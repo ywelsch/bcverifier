@@ -15,6 +15,7 @@ import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.specification.MultiFileGenerator;
 
 public class SingleLibraryTest {
 	File dir = new File("libraries/cell");
@@ -36,7 +37,7 @@ public class SingleLibraryTest {
 		config.setOutput(specificationFile);
         config.setAction(VerifyAction.VERIFY);
         TranslationController tc = new TranslationController();
-		Library library = new Library(config);
+		Library library = new Library(config, new MultiFileGenerator(config.invariant(), config.localInvariant(), config.configFile()));
 		library.setTranslationController(tc);
 		library.compile();
 		library.translate();

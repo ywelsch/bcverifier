@@ -47,7 +47,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -106,6 +105,9 @@ import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
+import de.unikl.bcverifier.specification.Generator;
+import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
+import de.unikl.bcverifier.specification.Place;
 
 public class Library implements ITroubleReporter, ITranslationConstants {
     public static class TranslationException extends Exception {
@@ -123,117 +125,21 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     private static final Logger log = Logger.getLogger(Library.class);
     
     private final Configuration config;
+    private final Generator specGen;
 
     private TranslationController tc;
     
     public void setTranslationController(TranslationController controller){
         this.tc = controller;
-        if(config.getLocalPlaces() != null){
-            tc.setLocalPlaces(parseLocalPlaces(config.getLocalPlaces()));
-        }
+        tc.setLocalPlaces(specGen.generateLocalPlaces());
     }
     
-    public Library(Configuration config) {
+    public Library(Configuration config, Generator generator) {
         this.config = config;
+        this.specGen = generator;
     }
     
-    public static class LocalPlaceDefinitions{
-        private HashMap<Integer, List<Place>> oldMap;
-        private HashMap<Integer, List<Place>> newMap;
-        
-        public LocalPlaceDefinitions(HashMap<Integer, List<Place>> oldMap, HashMap<Integer,List<Place>> newMap){
-            this.oldMap = oldMap;
-            this.newMap = newMap;
-        }
-        
-        public List<Place> getPlaceInOld(int line1, int line2){
-            return findPlaceBetween(oldMap, line1, line2);
-        }
-        
-        public List<Place> getPlaceInNew(int line1, int line2){
-            return findPlaceBetween(newMap, line1, line2);
-        }
-        
-        private static List<Place> findPlaceBetween(HashMap<Integer,List<Place>> placeMap, int line1, int line2){
-            int pairLine;
-            for(Entry<Integer, List<Place>> pair : placeMap.entrySet()){
-                pairLine = pair.getKey();
-                if(line1 < pairLine && pairLine <= line2){
-                    placeMap.remove(pair.getKey());
-                    return pair.getValue();
-                }
-            }
-            return null;
-        }
-    }
     
-    public static class Place {
-        private String name;
-        private String condition;
-        
-        public Place(String name, String condition){
-            this.name = name;
-            this.condition = condition;
-        }
-        
-        public String getName() {
-            return name;
-        }
-        public void setName(String name) {
-            this.name = name;
-        }
-        public String getCondition() {
-            return condition;
-        }
-        public void setCondition(String condition) {
-            this.condition = condition;
-        }
-    }
-
-    private LocalPlaceDefinitions parseLocalPlaces(File localPlaces) {
-        FileReader reader = null;
-        Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)\\s+(.*)");
-        
-        HashMap<Integer,List<Place>> oldMap = new HashMap<Integer, List<Place>>();
-        HashMap<Integer,List<Place>> newMap = new HashMap<Integer, List<Place>>();
-        try {
-            reader = new FileReader(localPlaces);
-            LineIterator lineIterator = IOUtils.lineIterator(reader);
-            String nextLine;
-            Matcher m;
-            int lineNumber;
-            List<Place> currentPlaceList;
-            while(lineIterator.hasNext()){
-                nextLine = lineIterator.next();
-                m = p.matcher(nextLine);
-                if(m.matches()){
-                    lineNumber = Integer.parseInt(m.group(3));
-                    if(m.group(2).equals("old")){
-                        currentPlaceList = oldMap.get(lineNumber);
-                        if(currentPlaceList == null){
-                            currentPlaceList = new ArrayList<Library.Place>();
-                            oldMap.put(lineNumber, currentPlaceList);
-                        }
-                    } else { // new
-                        currentPlaceList = newMap.get(lineNumber);
-                        if(currentPlaceList == null){
-                            currentPlaceList = new ArrayList<Library.Place>();
-                            newMap.put(lineNumber, currentPlaceList);
-                        }
-                    }
-                    currentPlaceList.add(new Place(m.group(1), m.group(4)));
-                }
-            }
-            
-            return new LocalPlaceDefinitions(oldMap, newMap);
-        } catch (FileNotFoundException e) {
-            log.warn("Could not read local places from "+localPlaces, e);
-            return null;
-        } finally {
-            if(reader!=null)
-                IOUtils.closeQuietly(reader);
-        }
-    }
 
     public void compile() {
         try {
@@ -453,51 +359,21 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             ArrayList<BPLCommand> localInvAssertions,
             ArrayList<BPLCommand> localInvAssumes) {
         BPLCommand cmd;
-        if (config.isSingleFormulaInvariant()) {
-        	try {
-        		String inv = FileUtils.readFileToString(config.invariant(), "UTF-8");
-        		cmd = new BPLAssertCommand(var(inv));
-        		cmd.addComment("invariant");
-        		invAssertions.add(cmd);
-        		cmd = new BPLAssumeCommand(var(inv));
-        		cmd.addComment("invariant");
-        		invAssumes.add(cmd);
-        	} catch (IOException ex) {
-        		//TODO:
-        	}
-        } else {
-        	try {
-        		List<String> invariants = FileUtils.readLines(config.invariant(), "UTF-8");
-                for (String inv : invariants) {
-            		if (inv.length() > 0 && !inv.matches("\\/\\/.*")) {
-            			cmd = new BPLAssertCommand(var(inv));
-            			cmd.addComment("invariant");
-            			invAssertions.add(cmd);
-            			cmd = new BPLAssumeCommand(var(inv));
-            			cmd.addComment("invariant");
-            			invAssumes.add(cmd);
-            		}
-            	}
-            } catch (IOException ex) {
-            	//TODO:
-            }
-        }
-        if(config.localInvariant() != null){
-            try {
-                List<String> invariants = FileUtils.readLines(config.localInvariant(), "UTF-8");
-                for (String inv : invariants) {
-                    if (inv.length() > 0 && !inv.matches("\\/\\/.*")) {
-                        cmd = new BPLAssertCommand(var(inv));
-                        cmd.addComment("local invariant");
-                        localInvAssertions.add(cmd);
-                        cmd = new BPLAssumeCommand(var(inv));
-                        cmd.addComment("local invariant");
-                        localInvAssumes.add(cmd);
-                    }
-                }
-            } catch (IOException ex) {
-                //TODO:
-            }
+        for (String inv : specGen.generateInvariant()) {
+			cmd = new BPLAssertCommand(var(inv));
+			cmd.addComment("invariant");
+			invAssertions.add(cmd);
+			cmd = new BPLAssumeCommand(var(inv));
+			cmd.addComment("invariant");
+			invAssumes.add(cmd);
+    	}
+        for (String inv : specGen.generateLocalInvariant()) {
+            cmd = new BPLAssertCommand(var(inv));
+            cmd.addComment("local invariant");
+            localInvAssertions.add(cmd);
+            cmd = new BPLAssumeCommand(var(inv));
+            cmd.addComment("local invariant");
+            localInvAssumes.add(cmd);
         }
     }
 
@@ -506,13 +382,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             List<BPLBasicBlock> methodBlocks) {
         String sp = "sp";
         BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
-        String v = "v";
-        BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
         
         String unrollCount1 = TranslationController.LABEL_PREFIX1+ITranslationConstants.UNROLL_COUNT;
-        BPLVariable unrollCount1Var = new BPLVariable(unrollCount1, BPLBuiltInType.INT);
         String unrollCount2 = TranslationController.LABEL_PREFIX2+ITranslationConstants.UNROLL_COUNT;
-        BPLVariable unrollCount2Var = new BPLVariable(unrollCount2, BPLBuiltInType.INT);
         
         BPLExpression sp1MinusOne = sub(var(TranslationController.SP1), new BPLIntLiteral(1));
         BPLExpression sp2MinusOne = sub(var(TranslationController.SP2), new BPLIntLiteral(1));
@@ -532,16 +404,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     isEqual(useHavoc(var(address)), BPLBoolLiteral.TRUE)
                 )));
 
-        if(config.configFile() != null){
-            List<String> lines;
-            try {
-                lines = FileUtils.readLines(config.configFile());
-                for(String line : lines){
-                    procAssumes.add(new BPLRawCommand(line));
-                }
-            } catch (IOException e) {
-                log.warn("Can not read config file", e);
-            }
+        for(String line : specGen.generatePreconditions()){
+            procAssumes.add(new BPLRawCommand(line));
         }
         
         methodBlocks.add(

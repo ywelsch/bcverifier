@@ -15,6 +15,7 @@ import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.specification.MultiFileGenerator;
 
 public class CheckRunner {
     public static class CheckRunException extends Exception {
@@ -52,7 +53,7 @@ public class CheckRunner {
         config.setAction(VerifyAction.VERIFY);
         config.setLoopUnrollCap(def.getLoopUnrollCap());
         TranslationController tc = new TranslationController();
-        Library library = new Library(config);
+        Library library = new Library(config, new MultiFileGenerator(config.invariant(), config.localInvariant(), config.configFile()));
         library.setTranslationController(tc);
         library.compile();
         try{
@@ -89,7 +90,7 @@ public class CheckRunner {
         config.setLoopUnrollCap(def.getLoopUnrollCap());
         config.setSmokeTestOn(true);
         TranslationController tc = new TranslationController();
-        Library library = new Library(config);
+        Library library = new Library(config, new MultiFileGenerator(config.invariant(), config.localInvariant(), config.configFile()));
         library.setTranslationController(tc);
         library.compile();
         try{

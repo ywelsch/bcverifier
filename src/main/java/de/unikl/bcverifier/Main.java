@@ -8,6 +8,7 @@ import com.beust.jcommander.ParameterException;
 
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.specification.MultiFileGenerator;
 
 public class Main {
     
@@ -34,7 +35,7 @@ public class Main {
         Logger.getRootLogger().setLevel(config.isDebug() ? Level.DEBUG : Level.INFO);
         try {
             TranslationController tc = new TranslationController();
-        	Library library = new Library(config);
+        	Library library = new Library(config, new MultiFileGenerator(config.invariant(), config.localInvariant(), config.configFile()));
         	library.setTranslationController(tc);
             if(config.isCompileFirst()){
                 library.compile();

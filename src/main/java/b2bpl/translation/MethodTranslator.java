@@ -174,8 +174,8 @@ import b2bpl.bytecode.instructions.VAStoreInstruction;
 import b2bpl.bytecode.instructions.VCastInstruction;
 import b2bpl.bytecode.instructions.VConstantInstruction;
 import b2bpl.translation.helpers.ModifiedHeapLocation;
-import de.unikl.bcverifier.Library.Place;
 import de.unikl.bcverifier.TranslationController;
+import de.unikl.bcverifier.specification.Place;
 
 
 /**
