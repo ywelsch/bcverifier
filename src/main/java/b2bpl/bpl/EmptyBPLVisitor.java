@@ -36,6 +36,7 @@ import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLQuantifierExpression;
 import b2bpl.bpl.ast.BPLRawCommand;
+import b2bpl.bpl.ast.BPLRawDeclaration;
 import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLRequiresClause;
 import b2bpl.bpl.ast.BPLReturnCommand;
@@ -284,6 +285,11 @@ public R visitArrayAssignment(BPLArrayAssignment bplArrayAssignment) {
 }
 
 public R visitRawCommand(BPLRawCommand bplRawCommand) {
+    // do nothing
+    return null;
+}
+
+public R visitRawDeclaration(BPLRawDeclaration bplRawDecl) {
     // do nothing
     return null;
 }

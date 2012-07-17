@@ -15,6 +15,7 @@ String astPackage = "de.unikl.bcverifier.isl.ast"
 String islGenDir = "$projectDir/src/gen/java"
 String parserSrcDir = "$projectDir/src/main/java/de/unikl/bcverifier/isl/parser"
 String parserGenDir = "$islGenDir/de/unikl/bcverifier/isl/parser"
+String astGenDir = "$islGenDir/de/unikl/bcverifier/isl/ast"
 
 configurations {
     sshAntTask
@@ -118,7 +119,7 @@ eclipse {
 
 task runJastAdd {
     inputs.files{fileTree(dir: "$projectDir/src/main/java", includes: ['**/*.ast', '**/*.jrag', '**/*.jadd'])}
-    outputs.dir(islGenDir)
+    outputs.dir(astGenDir)
     doLast {
         ant.taskdef name: 'jastadd', classname: 'jastadd.JastAddTask', classpath: "$projectDir/lib/jastadd2.jar"
         new File(islGenDir).mkdirs()
@@ -135,7 +136,7 @@ task runJastAdd {
 task runBeaver {
     String beaverFile = "$parserSrcDir/ISLParser.beaver"
     inputs.file(beaverFile)
-    outputs.dir(parserGenDir)
+    outputs.files("$parserGenDir/ISLParser.java", "$parserGenDir/ISLParser.stat")
     doLast {
         ant.taskdef name: 'beaver', classname: 'beaver.comp.run.AntTask', classpath: "$projectDir/lib/beaver.jar"
         new File(parserGenDir).mkdirs()
@@ -146,7 +147,7 @@ task runBeaver {
 task runJFlex {
     String flexFile = "$parserSrcDir/isl.flex"
     inputs.file(flexFile)
-    outputs.dir(parserGenDir)
+    outputs.file("$parserGenDir/ISLScanner.java")
     doLast {
         ant.taskdef name: 'jflex', classname: 'JFlex.anttask.JFlexTask', classpath: "$projectDir/lib/JFlex.jar"
     

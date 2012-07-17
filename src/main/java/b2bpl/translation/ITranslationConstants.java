@@ -369,6 +369,8 @@ public static final String CHECK_BOUNDARY_RETURN_LABEL = "check_boundary_return"
 
 public static final String CHECK_BOUNDARY_CALL_LABEL = "check_boundary_call";
 
+public static final String CHECK_LOCAL_LABEL = "check_local";
+
 public static final String METH_FIELD = "meth";
 
 public static final String EXPOSED_FIELD = "exposed";
@@ -388,6 +390,8 @@ public static final String PRECONDITIONS_CALL_LABEL = "preconditions_call";
 public static final String PRECONDITIONS_RETURN_LABEL = "preconditions_return";
 
 public static final String PRECONDITIONS_CONSTRUCTOR_LABEL = "preconditions_constructor";
+
+public static final String PRECONDITIONS_LOCAL_LABEL = "preconditions_local";
 
 public static final String CREATED_BY_CTXT_FIELD = "createdByCtxt";
 

@@ -47,7 +47,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -82,6 +81,7 @@ import b2bpl.bpl.ast.BPLModifiesClause;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLRawCommand;
+import b2bpl.bpl.ast.BPLRawDeclaration;
 import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
 import b2bpl.bpl.ast.BPLTransferCommand;
@@ -106,6 +106,9 @@ import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
+import de.unikl.bcverifier.specification.Generator;
+import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
+import de.unikl.bcverifier.specification.Place;
 
 public class Library implements ITroubleReporter, ITranslationConstants {
     public static class TranslationException extends Exception {
@@ -123,117 +126,21 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     private static final Logger log = Logger.getLogger(Library.class);
     
     private final Configuration config;
+    private final Generator specGen;
 
     private TranslationController tc;
     
     public void setTranslationController(TranslationController controller){
         this.tc = controller;
-        if(config.getLocalPlaces() != null){
-            tc.setLocalPlaces(parseLocalPlaces(config.getLocalPlaces()));
-        }
+        tc.setLocalPlaces(specGen.generateLocalPlaces());
     }
     
-    public Library(Configuration config) {
+    public Library(Configuration config, Generator generator) {
         this.config = config;
+        this.specGen = generator;
     }
     
-    public static class LocalPlaceDefinitions{
-        private HashMap<Integer, List<Place>> oldMap;
-        private HashMap<Integer, List<Place>> newMap;
-        
-        public LocalPlaceDefinitions(HashMap<Integer, List<Place>> oldMap, HashMap<Integer,List<Place>> newMap){
-            this.oldMap = oldMap;
-            this.newMap = newMap;
-        }
-        
-        public List<Place> getPlaceInOld(int line1, int line2){
-            return findPlaceBetween(oldMap, line1, line2);
-        }
-        
-        public List<Place> getPlaceInNew(int line1, int line2){
-            return findPlaceBetween(newMap, line1, line2);
-        }
-        
-        private static List<Place> findPlaceBetween(HashMap<Integer,List<Place>> placeMap, int line1, int line2){
-            int pairLine;
-            for(Entry<Integer, List<Place>> pair : placeMap.entrySet()){
-                pairLine = pair.getKey();
-                if(line1 < pairLine && pairLine <= line2){
-                    placeMap.remove(pair.getKey());
-                    return pair.getValue();
-                }
-            }
-            return null;
-        }
-    }
     
-    public static class Place {
-        private String name;
-        private String condition;
-        
-        public Place(String name, String condition){
-            this.name = name;
-            this.condition = condition;
-        }
-        
-        public String getName() {
-            return name;
-        }
-        public void setName(String name) {
-            this.name = name;
-        }
-        public String getCondition() {
-            return condition;
-        }
-        public void setCondition(String condition) {
-            this.condition = condition;
-        }
-    }
-
-    private LocalPlaceDefinitions parseLocalPlaces(File localPlaces) {
-        FileReader reader = null;
-        Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)\\s+(.*)");
-        
-        HashMap<Integer,List<Place>> oldMap = new HashMap<Integer, List<Place>>();
-        HashMap<Integer,List<Place>> newMap = new HashMap<Integer, List<Place>>();
-        try {
-            reader = new FileReader(localPlaces);
-            LineIterator lineIterator = IOUtils.lineIterator(reader);
-            String nextLine;
-            Matcher m;
-            int lineNumber;
-            List<Place> currentPlaceList;
-            while(lineIterator.hasNext()){
-                nextLine = lineIterator.next();
-                m = p.matcher(nextLine);
-                if(m.matches()){
-                    lineNumber = Integer.parseInt(m.group(3));
-                    if(m.group(2).equals("old")){
-                        currentPlaceList = oldMap.get(lineNumber);
-                        if(currentPlaceList == null){
-                            currentPlaceList = new ArrayList<Library.Place>();
-                            oldMap.put(lineNumber, currentPlaceList);
-                        }
-                    } else { // new
-                        currentPlaceList = newMap.get(lineNumber);
-                        if(currentPlaceList == null){
-                            currentPlaceList = new ArrayList<Library.Place>();
-                            newMap.put(lineNumber, currentPlaceList);
-                        }
-                    }
-                    currentPlaceList.add(new Place(m.group(1), m.group(4)));
-                }
-            }
-            
-            return new LocalPlaceDefinitions(oldMap, newMap);
-        } catch (FileNotFoundException e) {
-            log.warn("Could not read local places from "+localPlaces, e);
-            return null;
-        } finally {
-            if(reader!=null)
-                IOUtils.closeQuietly(reader);
-        }
-    }
 
     public void compile() {
         try {
@@ -277,6 +184,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                                                        // to
                                                                        // generate
                                                                        // Prelude
+            List<BPLDeclaration> preludeAdditions = new ArrayList<BPLDeclaration>();
+            for(String decl : specGen.generatePreludeAddition()){
+                preludeAdditions.add(new BPLRawDeclaration(decl));
+            }
+            programDecls.addAll(preludeAdditions);
 
             tc.activate();
 
@@ -307,13 +219,14 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             programDecls.add(new BPLAxiom(isEqual(var(ITranslationConstants.MAX_LOOP_UNROLL), new BPLIntLiteral(config.getLoopUnrollCap()))));
 
             
-            addCheckingBlocks(invAssertions, invAssumes, methodBlocks);
+            addCheckingBlocks(invAssertions, invAssumes, localInvAssertions, localInvAssumes, methodBlocks);
             
             
             
             for (String place : tc.places()) {
                 programDecls.add(new BPLConstantDeclaration(new BPLVariable(
                         place, new BPLTypeName(ADDRESS_TYPE))));
+                programDecls.add(new BPLAxiom(logicalNot(isLocalPlace(var(place)))));
             }
 
             List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
@@ -323,7 +236,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             
             addLocalVariables(localVariables);
 
-            addPreconditionBlocks(invAssumes, methodBlocks);
+            addPreconditionBlocks(invAssumes, localInvAssumes, methodBlocks);
             
             
             addVariableConstants(programDecls, methodBlocks);
@@ -452,65 +365,32 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             ArrayList<BPLCommand> localInvAssertions,
             ArrayList<BPLCommand> localInvAssumes) {
         BPLCommand cmd;
-        if (config.isSingleFormulaInvariant()) {
-        	try {
-        		String inv = FileUtils.readFileToString(config.invariant(), "UTF-8");
-        		cmd = new BPLAssertCommand(var(inv));
-        		cmd.addComment("invariant");
-        		invAssertions.add(cmd);
-        		cmd = new BPLAssumeCommand(var(inv));
-        		cmd.addComment("invariant");
-        		invAssumes.add(cmd);
-        	} catch (IOException ex) {
-        		//TODO:
-        	}
-        } else {
-        	try {
-        		List<String> invariants = FileUtils.readLines(config.invariant(), "UTF-8");
-                for (String inv : invariants) {
-            		if (inv.length() > 0 && !inv.matches("\\/\\/.*")) {
-            			cmd = new BPLAssertCommand(var(inv));
-            			cmd.addComment("invariant");
-            			invAssertions.add(cmd);
-            			cmd = new BPLAssumeCommand(var(inv));
-            			cmd.addComment("invariant");
-            			invAssumes.add(cmd);
-            		}
-            	}
-            } catch (IOException ex) {
-            	//TODO:
-            }
-        }
-        if(config.localInvariant() != null){
-            try {
-                List<String> invariants = FileUtils.readLines(config.localInvariant(), "UTF-8");
-                for (String inv : invariants) {
-                    if (inv.length() > 0 && !inv.matches("\\/\\/.*")) {
-                        cmd = new BPLAssertCommand(var(inv));
-                        cmd.addComment("local invariant");
-                        localInvAssertions.add(cmd);
-                        cmd = new BPLAssumeCommand(var(inv));
-                        cmd.addComment("local invariant");
-                        localInvAssumes.add(cmd);
-                    }
-                }
-            } catch (IOException ex) {
-                //TODO:
-            }
+        for (String inv : specGen.generateInvariant()) {
+			cmd = new BPLAssertCommand(var(inv));
+			cmd.addComment("invariant");
+			invAssertions.add(cmd);
+			cmd = new BPLAssumeCommand(var(inv));
+			cmd.addComment("invariant");
+			invAssumes.add(cmd);
+    	}
+        for (String inv : specGen.generateLocalInvariant()) {
+            cmd = new BPLAssertCommand(var(inv));
+            cmd.addComment("local invariant");
+            localInvAssertions.add(cmd);
+            cmd = new BPLAssumeCommand(var(inv));
+            cmd.addComment("local invariant");
+            localInvAssumes.add(cmd);
         }
     }
 
     private void addPreconditionBlocks(ArrayList<BPLCommand> invAssumes,
+            ArrayList<BPLCommand> localInvAssumes,
             List<BPLBasicBlock> methodBlocks) {
         String sp = "sp";
         BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
-        String v = "v";
-        BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
         
         String unrollCount1 = TranslationController.LABEL_PREFIX1+ITranslationConstants.UNROLL_COUNT;
-        BPLVariable unrollCount1Var = new BPLVariable(unrollCount1, BPLBuiltInType.INT);
         String unrollCount2 = TranslationController.LABEL_PREFIX2+ITranslationConstants.UNROLL_COUNT;
-        BPLVariable unrollCount2Var = new BPLVariable(unrollCount2, BPLBuiltInType.INT);
         
         BPLExpression sp1MinusOne = sub(var(TranslationController.SP1), new BPLIntLiteral(1));
         BPLExpression sp2MinusOne = sub(var(TranslationController.SP2), new BPLIntLiteral(1));
@@ -530,16 +410,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     isEqual(useHavoc(var(address)), BPLBoolLiteral.TRUE)
                 )));
 
-        if(config.configFile() != null){
-            List<String> lines;
-            try {
-                lines = FileUtils.readLines(config.configFile());
-                for(String line : lines){
-                    procAssumes.add(new BPLRawCommand(line));
-                }
-            } catch (IOException e) {
-                log.warn("Can not read config file", e);
-            }
+        for(String line : specGen.generatePreconditions()){
+            procAssumes.add(new BPLRawCommand(line));
         }
         
         methodBlocks.add(
@@ -547,7 +419,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 new BPLBasicBlock(PRECONDITIONS_LABEL, procAssumes
                         .toArray(new BPLCommand[procAssumes.size()]),
                         new BPLGotoCommand(PRECONDITIONS_CALL_LABEL,
-                                PRECONDITIONS_RETURN_LABEL, PRECONDITIONS_CONSTRUCTOR_LABEL)));
+                                PRECONDITIONS_RETURN_LABEL, PRECONDITIONS_CONSTRUCTOR_LABEL, PRECONDITIONS_LOCAL_LABEL)));
 
         BPLCommand assumeCmd;
 
@@ -790,6 +662,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
         // invariant
         procAssumes.addAll(invAssumes);
+        procAssumes.addAll(localInvAssumes);
 
         // relate all parameters from the outside
         // ///////////////////////////////////////
@@ -840,6 +713,70 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_RETURN_LABEL,
                 procAssumes.toArray(new BPLCommand[procAssumes.size()]),
                 new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
+        
+        
+        // //////////////////////////////////
+        // preconditions of a return to a local place
+        // /////////////////////////////////
+        procAssumes = new ArrayList<BPLCommand>();
+        procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack1(var(PLACE_VARIABLE)))));
+        procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack2(var(PLACE_VARIABLE)))));
+        
+        // relation of the methods initially called on the library
+        // ///////////////////////////////////////////
+        assumeCmd = new BPLAssumeCommand(isEqual(stack1(zero, var(METH_FIELD)),
+                stack2(zero, var(METH_FIELD))));
+        assumeCmd.addComment("Relate the methods that where originally called on the library.");
+        procAssumes.add(assumeCmd);
+
+        assumeCmd = new BPLAssumeCommand(related(stack1(zero, receiver()),
+                stack2(zero, receiver())));
+        assumeCmd.addComment("The receiver and all parameters where initially related.");
+        
+        // relate all parameters from the outside
+        // ///////////////////////////////////////
+        for (BPLVariable var : tc.stackVariables()
+                .values()) {
+            if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
+                assumeCmd = new BPLAssumeCommand(relNull(
+                        stack1(zero, var(var.getName())),
+                        stack2(zero, var(var.getName())), var(RELATED_RELATION)));
+                procAssumes.add(assumeCmd);
+                assumeCmd = new BPLAssumeCommand(implies(
+                        nonNull(stack1(zero, var(var.getName()))),
+                        heap1(stack1(zero, var(var.getName())),
+                                var(EXPOSED_FIELD))));
+                procAssumes.add(assumeCmd);
+                assumeCmd = new BPLAssumeCommand(implies(
+                        nonNull(stack2(zero, var(var.getName()))),
+                        heap2(stack2(zero, var(var.getName())),
+                                var(EXPOSED_FIELD))));
+                procAssumes.add(assumeCmd);
+            } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
+                assumeCmd = new BPLAssumeCommand(isEqual(
+                        stack1(zero, var(var.getName())),
+                        stack2(zero, var(var.getName()))));
+                procAssumes.add(assumeCmd);
+            }
+        }
+        
+        // assume the result of the method is not yet set
+        procAssumes.add(new BPLAssumeCommand(
+                forall(spVar, 
+                        implies(less(var(sp), var(TranslationController.SP1)), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                )));
+        procAssumes.add(new BPLAssumeCommand(
+                forall(spVar, 
+                        implies(less(var(sp), var(TranslationController.SP2)), logicalAnd(isNull(stack2(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                )));
+
+        // invariant
+        procAssumes.addAll(localInvAssumes);
+
+        
+        methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_LOCAL_LABEL,
+                procAssumes.toArray(new BPLCommand[procAssumes.size()]),
+                new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
     }
 
     private void addLocalVariables(List<BPLVariableDeclaration> localVariables) {
@@ -866,7 +803,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     }
 
     private void addCheckingBlocks(ArrayList<BPLCommand> invAssertions,
-            ArrayList<BPLCommand> invAssumes, List<BPLBasicBlock> methodBlocks) {
+            ArrayList<BPLCommand> invAssumes,
+            ArrayList<BPLCommand> localInvAssertions,
+            ArrayList<BPLCommand> localInvAssumes,
+            List<BPLBasicBlock> methodBlocks) {
         // ///////////////////////////////////
         // checking blocks (intern and extern)
         // ///////////////////////////////////
@@ -879,11 +819,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 logicalAnd(
                         greater(var(TranslationController.SP1), new BPLIntLiteral(0)),
                         greater(var(TranslationController.SP2), new BPLIntLiteral(0))
+                        ),
+                logicalAnd(
+                        isLocalPlace(stack1(var(PLACE_VARIABLE))),
+                        isLocalPlace(stack2(var(PLACE_VARIABLE)))
                         )
                 )));
         methodBlocks.add(new BPLBasicBlock(tc
                 .getCheckLabel(), checkingCommand.toArray(new BPLCommand[checkingCommand.size()]), new BPLGotoCommand(
-                CHECK_BOUNDARY_RETURN_LABEL, CHECK_BOUNDARY_CALL_LABEL)));
+                CHECK_BOUNDARY_RETURN_LABEL, CHECK_BOUNDARY_CALL_LABEL, CHECK_LOCAL_LABEL)));
 
         // ////////////////////////////////
         // assertions of the check return block
@@ -947,7 +891,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
         
         checkingCommand.add(new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION))))));
+        
+        //invariant
         checkingCommand.addAll(invAssertions);
+        
         methodBlocks.add(new BPLBasicBlock(CHECK_BOUNDARY_RETURN_LABEL, checkingCommand
                 .toArray(new BPLCommand[checkingCommand.size()]),
                 new BPLReturnCommand()));
@@ -1032,7 +979,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             }
         }
         checkingCommand.add(new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION))))));
+        
+        //invariant
         checkingCommand.addAll(invAssertions);
+        checkingCommand.addAll(localInvAssertions);
         
         // check if we want to use havoc to handle boudary call
         /////////////////////////////////////////////////////////
@@ -1085,12 +1035,30 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP1), var(TranslationController.HEAP1), var(TranslationController.STACK1))));
         checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP2), var(TranslationController.HEAP2), var(TranslationController.STACK2))));
         
+        //invariant
         checkingCommand.addAll(invAssumes);
+        checkingCommand.addAll(localInvAssumes);
         
 
         methodBlocks.add(new BPLBasicBlock(CHECK_BOUNDARY_CALL_LABEL, checkingCommand
                 .toArray(new BPLCommand[checkingCommand.size()]),
                 new BPLGotoCommand(TranslationController.LABEL_PREFIX1 + RETTABLE_LABEL)));
+        
+        
+        // ////////////////////////////////
+        // assertions of the check local block
+        // ////////////////////////////////
+        checkingCommand.clear();
+        checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+                isLocalPlace(stack1(var(PLACE_VARIABLE))),
+                isLocalPlace(stack2(var(PLACE_VARIABLE))))));
+
+        
+        checkingCommand.addAll(localInvAssertions);
+
+        methodBlocks.add(new BPLBasicBlock(CHECK_LOCAL_LABEL, checkingCommand
+                .toArray(new BPLCommand[checkingCommand.size()]),
+                new BPLReturnCommand()));
     }
 
     private void addDefinesMethodAxioms(List<BPLDeclaration> programDecls) {

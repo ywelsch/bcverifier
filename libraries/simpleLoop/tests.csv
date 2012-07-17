@@ -1,3 +1,3 @@
-"invariant_file","preconditions_file","flags","expected_errors","dead_code_points","loop_unroll_cap"
-"bpl/inv2.bpl"   ,"bpl/places.bpl"           ,"-N"   ,2                ,0                 ,3
-"bpl/inv2.bpl"   ,"bpl/places.bpl"           ,"-N"   ,0                ,3                 ,4
+"invariant_file","local_invariant"  ,"preconditions_file","flags","expected_errors","dead_code_points","loop_unroll_cap"
+"bpl/inv.bpl"  ,"bpl/local_inv2.bpl","bpl/places.bpl"    ,"-N"   ,2                ,0                 ,3
+"bpl/inv.bpl"  ,"bpl/local_inv2.bpl","bpl/places.bpl"    ,"-N"   ,0                ,3                 ,4

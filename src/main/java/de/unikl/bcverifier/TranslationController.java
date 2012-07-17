@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import de.unikl.bcverifier.Library.LocalPlaceDefinitions;
-import de.unikl.bcverifier.Library.Place;
+import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
+import de.unikl.bcverifier.specification.Place;
 
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bytecode.BCField;

@@ -132,6 +132,9 @@ public class Configuration implements Serializable {
 	public void setInvariant(File invariant) {
 		this.invariant = invariant;
 	}
+	public void setLocalInvariant(File localInv) {
+	    this.localInvariant = localInv;
+	}
 	public void setLibraries(File lib1, File lib2) {
 		this.dirs = new ArrayList<File>();
 		dirs.add(lib1);

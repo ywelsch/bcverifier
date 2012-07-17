@@ -174,8 +174,8 @@ import b2bpl.bytecode.instructions.VAStoreInstruction;
 import b2bpl.bytecode.instructions.VCastInstruction;
 import b2bpl.bytecode.instructions.VConstantInstruction;
 import b2bpl.translation.helpers.ModifiedHeapLocation;
-import de.unikl.bcverifier.Library.Place;
 import de.unikl.bcverifier.TranslationController;
+import de.unikl.bcverifier.specification.Place;
 
 
 /**
@@ -1612,27 +1612,27 @@ public class MethodTranslator implements ITranslationConstants {
 
             // Assume the type information of the local variables.
             // Assume the type information of the local variables.
-            for (int i = 0; i < frame.getLocalCount(); i++) {
-                JType type = frame.getLocal(i);
-                if (type != null) {
-                    if (type.isBaseType()) {
-                        //            addAssume(isOfType(var(localVar(i, type)), typeRef(type)));
-                    } else if (type != JNullType.NULL) {
-                        addAssume(isEqual(typ(stack(var(localVar(i, type))), var(tc.getHeap())), typeRef(type)));
-                    }
-                }
-            }
+//            for (int i = 0; i < frame.getLocalCount(); i++) {
+//                JType type = frame.getLocal(i);
+//                if (type != null) {
+//                    if (type.isBaseType()) {
+//                        //            addAssume(isOfType(var(localVar(i, type)), typeRef(type)));
+//                    } else if (type != JNullType.NULL) {
+//                        addAssume(isEqual(typ(stack(var(localVar(i, type))), var(tc.getHeap())), typeRef(type)));
+//                    }
+//                }
+//            }
             // Assume the type information of the stack variables.
-            for (int i = 0; i < frame.getStackSize(); i++) {
-                JType type = frame.peek(i);
-                if (type != null) {
-                    if (type.isBaseType()) {
-                        //            addAssume(isOfType(var(stackVar(i, type)), typeRef(type)));
-                    } else if (type != JNullType.NULL) {
-                        addAssume(isEqual(typ(stack(var(stackVar(i, type))), var(tc.getHeap())), typeRef(type)));
-                    }
-                }
-            }
+//            for (int i = 0; i < frame.getStackSize(); i++) {
+//                JType type = frame.peek(i);
+//                if (type != null) {
+//                    if (type.isBaseType()) {
+//                        //            addAssume(isOfType(var(stackVar(i, type)), typeRef(type)));
+//                    } else if (type != JNullType.NULL) {
+//                        addAssume(isEqual(typ(stack(var(stackVar(i, type))), var(tc.getHeap())), typeRef(type)));
+//                    }
+//                }
+//            }
 
             // Assume that objects allocated at the loop entry remain allocated inside
             // the loop. Note that this assumption ignores the effect of any potential
@@ -2783,10 +2783,12 @@ public class MethodTranslator implements ITranslationConstants {
 
         private void translateLocalPlaces(List<Place> localPlaces) {
             final String CONT_POSTFIX = "_cont";
+            final String SKIP_POSTFIX = "_skip";
             final String CHECK_POSTFIX = "_check";
             String contLabel = blockLabel + CONT_POSTFIX;
+            String skipLabel = blockLabel + SKIP_POSTFIX;
             List<String> contLabels = new ArrayList<String>();
-            contLabels.add(contLabel);
+            contLabels.add(skipLabel);
             for(Place place : localPlaces){
                 contLabels.add(place.getName() + CHECK_POSTFIX);
             }
@@ -2807,6 +2809,12 @@ public class MethodTranslator implements ITranslationConstants {
                 tc.addLocalPlace(placeLabel);
                 endBlock(contLabel);
             }
+            
+            startBlock(skipLabel);
+            for(Place place : localPlaces){
+                addAssume(var("!(" + place.getCondition() + ")")); //TODO raw expression here
+            }
+            endBlock(contLabel);
             
             startBlock(contLabel);
         }
