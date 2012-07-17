@@ -22,29 +22,41 @@ public class BoogieRunner {
         }
     }
     
-    public static String BOOGIE_COMMAND = "boogie";
-    static {
-        try{
-            BOOGIE_COMMAND = System.getenv("BOOGIE_CMD");
-            if(BOOGIE_COMMAND == null || BOOGIE_COMMAND.equals("")){
-                log.debug("Could not get boogie cmd from environment");
-                String os = System.getProperty("os.name");
-                String[] cmdArgs;
-                if (os.toLowerCase().indexOf("win") >= 0) {
-                	cmdArgs = new String[]{"where", "boogie"};
-                } else {
-                	cmdArgs = new String[]{"/bin/bash", "-l",  "-c", "which boogie"};
-                }
-                Process p = Runtime.getRuntime().exec(cmdArgs);
-                BOOGIE_COMMAND = IOUtils.toString(p.getInputStream()).trim();
-                log.debug("Which returned "+BOOGIE_COMMAND);
-            	log.debug(IOUtils.toString(p.getErrorStream()));
-            } else {
-                log.debug("Got boogie cmd from environment: "+BOOGIE_COMMAND);
-            }
-        } catch (IOException e){
-            e.printStackTrace();
-        }
+    private static String BOOGIE_COMMAND = null;
+    
+    public static synchronized void setBoogieCommand(String cmd) {
+    	BOOGIE_COMMAND = cmd;
+    }
+    
+    public static synchronized String getBoogieCommand() {
+    	if (BOOGIE_COMMAND == null)	{
+    		try{
+    			BOOGIE_COMMAND = System.getenv("BOOGIE_CMD");
+    			if(BOOGIE_COMMAND == null || BOOGIE_COMMAND.equals("")){
+    				log.debug("Could not get boogie cmd from environment");
+    				String os = System.getProperty("os.name");
+    				String[] cmdArgs;
+    				if (os.toLowerCase().indexOf("win") >= 0) {
+    					cmdArgs = new String[]{"where", "boogie"};
+    				} else {
+    					cmdArgs = new String[]{"/bin/bash", "-l",  "-c", "which boogie"};
+    				}
+    				Process p = Runtime.getRuntime().exec(cmdArgs);
+    				BOOGIE_COMMAND = IOUtils.toString(p.getInputStream()).trim();
+    				log.debug("Which returned "+BOOGIE_COMMAND);
+    				log.debug(IOUtils.toString(p.getErrorStream()));
+    				if(BOOGIE_COMMAND == null || BOOGIE_COMMAND.equals("")){
+    					return BOOGIE_COMMAND = "boogie";
+    				}
+    			} else {
+    				log.debug("Got boogie cmd from environment: "+BOOGIE_COMMAND);
+    			}
+    		} catch (IOException e){
+    			e.printStackTrace();
+    			return BOOGIE_COMMAND = "boogie";
+    		}
+    	}
+    	return BOOGIE_COMMAND;
     }
     
     private static boolean verify = true;
@@ -94,7 +106,7 @@ public class BoogieRunner {
         InputStream processOutput = null;
         try {
             ArrayList<String> parameters = new ArrayList<String>();
-            Collections.addAll(parameters, BOOGIE_COMMAND.split(" "));
+            Collections.addAll(parameters, getBoogieCommand().split(" "));
             parameters.add("/nologo");
             parameters.add("/loopUnroll:" + loopUnroll);
             if(smokeTest){
@@ -115,6 +127,7 @@ public class BoogieRunner {
             lastRunSuccess = parseLastOutputLine(result);
             lastMessage = result;
         } catch (IOException e) {
+        	log.debug("Boogie could not be started " + e.getMessage());
             throw new BoogieRunException("Boogie could not be started.", e);
         } finally {
             if(processOutput != null){
