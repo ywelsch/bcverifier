@@ -16,6 +16,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.log4j.Logger;
 
+import de.unikl.bcverifier.Configuration;
+
 public class MultiFileGenerator extends AbstractGenerator {
     private static final Logger log = Logger.getLogger(MultiFileGenerator.class);
     
@@ -26,12 +28,12 @@ public class MultiFileGenerator extends AbstractGenerator {
     private final File preconditionFile;
     private final File localPlacesFile;
     
-    public MultiFileGenerator(File invariantFile, File localInvariantFile, File preconditionFile, File localPlacesFile) {
-        super((Reader)null);
-        this.invariantFile = invariantFile;
-        this.localInvariantFile = localInvariantFile;
-        this.preconditionFile = preconditionFile;
-        this.localPlacesFile = localPlacesFile;
+    public MultiFileGenerator(Configuration config) {
+        super(config);
+        this.invariantFile = config.invariant();
+        this.localInvariantFile = config.localInvariant();
+        this.preconditionFile = config.configFile();
+        this.localPlacesFile = config.getLocalPlaces();
     }
 
     @Override
@@ -107,7 +109,7 @@ public class MultiFileGenerator extends AbstractGenerator {
     }
     
     @Override
-    public LocalPlaceDefinitions generateLocalPlaces() {
+    public LocalPlaceDefinitions generateLocalPlaces() throws GenerationException {
         if(localPlacesFile != null){
             return parseLocalPlaces();
         } else {

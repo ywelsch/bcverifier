@@ -35,7 +35,7 @@ public class Main {
         Logger.getRootLogger().setLevel(config.isDebug() ? Level.DEBUG : Level.INFO);
         try {
             TranslationController tc = new TranslationController();
-        	Library library = new Library(config, new MultiFileGenerator(config.invariant(), config.localInvariant(), config.configFile(), config.getLocalPlaces()));
+        	Library library = new Library(config, new MultiFileGenerator(config));
         	library.setTranslationController(tc);
             if(config.isCompileFirst()){
                 library.compile();

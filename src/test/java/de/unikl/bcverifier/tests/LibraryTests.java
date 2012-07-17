@@ -101,7 +101,7 @@ public class LibraryTests {
 		config.setOutput(specificationFile);
         config.setAction(VerifyAction.TYPECHECK);
         TranslationController tc = new TranslationController();
-		Library library = new Library(config, new MultiFileGenerator(config.invariant(), config.localInvariant(), config.configFile(), config.getLocalPlaces()));
+		Library library = new Library(config, new MultiFileGenerator(config));
 		library.setTranslationController(tc);
 		library.compile();
 		library.translate();
