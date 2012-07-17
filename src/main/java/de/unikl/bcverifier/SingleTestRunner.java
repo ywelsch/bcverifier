@@ -8,16 +8,10 @@ import javax.swing.JOptionPane;
 
 import org.apache.log4j.Logger;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.ParameterException;
-
-import de.unikl.bcverifier.Configuration.VerifyAction;
-import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.helpers.BCCheckDefinition;
 import de.unikl.bcverifier.helpers.CheckRunner;
 import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
-import de.unikl.bcverifier.tests.LibraryTests;
 
 public class SingleTestRunner {
     

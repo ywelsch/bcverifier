@@ -15,7 +15,6 @@ import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
-import de.unikl.bcverifier.tests.LibraryTests;
 
 public class CheckRunner {
     public static class CheckRunException extends Exception {
@@ -74,7 +73,7 @@ public class CheckRunner {
         try {
             parser.parseWithoutValidation(def.getFlags());
         } catch (ParameterException e) {
-            Logger.getLogger(LibraryTests.class).warn(e);
+            Logger.getLogger(CheckRunner.class).warn(e);
         }
         
         File specificationFile = new File(def.getLibDir(), "bpl/output.bpl");
