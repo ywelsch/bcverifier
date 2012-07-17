@@ -314,6 +314,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             for (String place : tc.places()) {
                 programDecls.add(new BPLConstantDeclaration(new BPLVariable(
                         place, new BPLTypeName(ADDRESS_TYPE))));
+                programDecls.add(new BPLAxiom(logicalNot(isLocalPlace(var(place)))));
             }
 
             List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();

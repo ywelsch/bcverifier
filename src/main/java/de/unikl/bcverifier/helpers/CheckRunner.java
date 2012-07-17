@@ -47,6 +47,7 @@ public class CheckRunner {
         File lib2 = new File(def.getLibDir(), "new");
         config.setInvariant(def.getInvariant());
         config.setConfigFile(def.getPreconditions());
+        config.setLocalInvariant(def.getLocalInv());
         config.setLibraries(lib1, lib2);
         config.setOutput(specificationFile);
         config.setAction(VerifyAction.VERIFY);
@@ -81,6 +82,7 @@ public class CheckRunner {
         File lib2 = new File(def.getLibDir(), "new");
         config.setInvariant(def.getInvariant());
         config.setConfigFile(def.getPreconditions());
+        config.setLocalInvariant(def.getLocalInv());
         config.setLibraries(lib1, lib2);
         config.setNullChecks(false);
         config.setOutput(specificationFile);

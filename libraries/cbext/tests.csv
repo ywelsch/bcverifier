@@ -1,6 +1,6 @@
-"invariant_file","preconditions_file","flags","expected_errors","dead_code_points","loop_unroll_cap"
-"bpl/inv.bpl"   ,""                  ,""     ,0                ,1                 ,4
-"bpl/inv.bpl"   ,""                  ,""     ,1                ,0                 ,3
-"bpl/inv.bpl"   ,""                  ,""     ,1                ,0                 ,2
-"bpl/inv2.bpl"  ,"bpl/noHavoc.bpl"   ,""     ,2                ,0                 ,4
-"bpl/inv2.bpl"  ,""                  ,""     ,0                ,1                 ,4
+"invariant_file","local_invariant"  ,"preconditions_file","flags","expected_errors","dead_code_points","loop_unroll_cap"
+"bpl/inv.bpl"   ,""                 ,"bpl/noHavoc.bpl"   ,""     ,2                ,0                 ,4
+"bpl/inv.bpl"   ,"bpl/local_inv.bpl","bpl/noHavoc.bpl"   ,""     ,0                ,1                 ,4
+"bpl/inv.bpl"   ,""                 ,""                  ,""     ,0                ,1                 ,4
+"bpl/inv.bpl"   ,""                 ,""                  ,""     ,1                ,0                 ,3
+"bpl/inv.bpl"   ,""                 ,""                  ,""     ,1                ,0                 ,2

@@ -21,6 +21,11 @@ public class BCCheckDefinition {
     private int expectedErrors;
     private int expectedDeadCodePoints;
     private int loopUnrollCap;
+    private File localInv;
+
+    public File getLocalInv() {
+        return localInv;
+    }
 
     public File getLibDir() {
         return libDir;
@@ -50,11 +55,12 @@ public class BCCheckDefinition {
         return loopUnrollCap;
     }
 
-    public BCCheckDefinition(File libDir, File invariant, File preconditions,
+    public BCCheckDefinition(File libDir, File invariant, File localInv, File preconditions,
             String[] flags, int expectedErrors, int expectedDeadCodePoints,
             int loopUnrollCap) {
         this.libDir = libDir;
         this.invariant = invariant;
+        this.localInv = localInv;
         this.preconditions = preconditions;
         this.flags = flags;
         this.expectedErrors = expectedErrors;
@@ -66,6 +72,8 @@ public class BCCheckDefinition {
         LabeledCSVParser parser;
         File invFile;
         File preconditionsFile;
+        File localInvariantFile;
+        String localInvariantFileName;
         String precondFileName;
         String[] generatorFlags;
         int expectedErrorCount;
@@ -77,6 +85,12 @@ public class BCCheckDefinition {
             parser = new LabeledCSVParser(new CSVParser(FileUtils.openInputStream(csvFile)));
             while(parser.getLine() != null){
                 invFile = new File(rootDir, parser.getValueByLabel("invariant_file"));
+                localInvariantFileName = parser.getValueByLabel("local_invariant");
+                if(!localInvariantFileName.isEmpty()){
+                    localInvariantFile = new File(rootDir, localInvariantFileName);
+                } else {
+                    localInvariantFile = null;
+                }
                 precondFileName = parser.getValueByLabel("preconditions_file");
                 if(!precondFileName.isEmpty()){
                     preconditionsFile = new File(rootDir, precondFileName);
@@ -87,7 +101,7 @@ public class BCCheckDefinition {
                 expectedErrorCount = Integer.parseInt(parser.getValueByLabel("expected_errors"));
                 deadCodePoints = Integer.parseInt(parser.getValueByLabel("dead_code_points"));
                 loopUnrollCap = Integer.parseInt(parser.getValueByLabel("loop_unroll_cap"));
-                libTestCases.add(new BCCheckDefinition(rootDir, invFile, preconditionsFile, generatorFlags, expectedErrorCount, deadCodePoints, loopUnrollCap));
+                libTestCases.add(new BCCheckDefinition(rootDir, invFile, localInvariantFile, preconditionsFile, generatorFlags, expectedErrorCount, deadCodePoints, loopUnrollCap));
             }
         } catch(IOException e){
             Logger.getLogger(BCCheckDefinition.class).warn("Could not open check definition file for library "+rootDir.getName());
@@ -103,6 +117,12 @@ public class BCCheckDefinition {
         builder.append(": ");
         builder.append("inv: ");
         builder.append(libDirUri.relativize(invariant.toURI()));
+        builder.append(", localInv: ");
+        if(localInv != null){
+            builder.append(libDirUri.relativize(localInv.toURI()));
+        } else {
+            builder.append("none");
+        }
         builder.append(", pre: ");
         if(preconditions != null){
             builder.append(libDirUri.relativize(preconditions.toURI()));
