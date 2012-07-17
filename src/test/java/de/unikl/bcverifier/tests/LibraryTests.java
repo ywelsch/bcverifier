@@ -18,6 +18,7 @@ import org.apache.commons.io.filefilter.NotFileFilter;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -31,6 +32,8 @@ import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.helpers.BCCheckDefinition;
+import de.unikl.bcverifier.helpers.CheckRunner;
+import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
 
 @RunWith(JUnitParamsRunner.class)
 public class LibraryTests {	
@@ -73,74 +76,18 @@ public class LibraryTests {
     }
 	
 	@Test @Parameters(method = "librariesToCheck")
-	public void verifyLibrary(BCCheckDefinition test) throws TranslationException {
-		Configuration config = new Configuration();
-		JCommander parser = new JCommander();
-		parser.addObject(config);
-		parser.setProgramName("Main");
-		
-		try {
-            parser.parseWithoutValidation(test.getFlags());
-        } catch (ParameterException e) {
-            Logger.getLogger(LibraryTests.class).warn(e);
-        }
-		
-		File specificationFile = new File(test.getLibDir(), "bpl/output.bpl");
-		File lib1 = new File(test.getLibDir(), "old");
-		File lib2 = new File(test.getLibDir(), "new");
-		config.setInvariant(test.getInvariant());
-		config.setConfigFile(test.getPreconditions());
-		config.setLibraries(lib1, lib2);
-		config.setOutput(specificationFile);
-		config.setAction(VerifyAction.VERIFY);
-        config.setLoopUnrollCap(test.getLoopUnrollCap());
-        TranslationController tc = new TranslationController();
-		Library library = new Library(config);
-		library.setTranslationController(tc);
-		library.compile();
-		library.translate();
-		library.check();
-		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastErrorCount() == test.getExpectedErrors());
+	public void verifyLibrary(BCCheckDefinition test) throws CheckRunException {
+		assertTrue(BoogieRunner.getLastMessage(), CheckRunner.runCheck(test));
 	}
 	
+	@Ignore
 	@Test @Parameters(method = "librariesToCheck")
-    public void smokeTestLibrary(BCCheckDefinition test) throws TranslationException, IOException {
-        Configuration config = new Configuration();
-        JCommander parser = new JCommander();
-        parser.addObject(config);
-        parser.setProgramName("Main");
-        
-        try {
-            parser.parseWithoutValidation(test.getFlags());
-        } catch (ParameterException e) {
-            Logger.getLogger(LibraryTests.class).warn(e);
-        }
-        
-        File specificationFile = new File(test.getLibDir(), "bpl/output.bpl");
-        File lib1 = new File(test.getLibDir(), "old");
-        File lib2 = new File(test.getLibDir(), "new");
-        config.setInvariant(test.getInvariant());
-        config.setConfigFile(test.getPreconditions());
-        config.setLibraries(lib1, lib2);
-        config.setNullChecks(false);
-        config.setOutput(specificationFile);
-        config.setAction(VerifyAction.VERIFY);
-        config.setLoopUnrollCap(test.getLoopUnrollCap());
-        config.setSmokeTestOn(true);
-        TranslationController tc = new TranslationController();
-        Library library = new Library(config);
-        library.setTranslationController(tc);
-        library.compile();
-        library.translate();
-        library.check();
-        assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastErrorCount() == test.getExpectedErrors());
-        
-        File boogieOutput = new File(test.getLibDir(), "bpl/boogie_output.txt");
-        FileUtils.write(boogieOutput, BoogieRunner.getLastMessage());
-        
-        assertTrue(String.format("Expected %d dead code points, but got %d", test.getExpectedDeadCodePoints(), BoogieRunner.getLastUnreachalbeCodeCount()), BoogieRunner.getLastUnreachalbeCodeCount() == test.getExpectedDeadCodePoints());
+    public void smokeTestLibrary(BCCheckDefinition test) throws CheckRunException {
+        assertTrue(String.format("Expected %d dead code points, but got %d", test.getExpectedDeadCodePoints(), BoogieRunner.getLastUnreachalbeCodeCount()),
+                CheckRunner.runSmokeTest(test));
     }
 	
+	@Ignore
 	@Test @Parameters(method = "params")
 	public void genLibrary(File dir) throws TranslationException {
 		Configuration config = new Configuration();
