@@ -8,7 +8,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.Charset;
 
-public abstract class AbstractGenerator {
+public abstract class AbstractGenerator implements Generator {
     private Reader reader;
     
     public AbstractGenerator(Reader reader) {
