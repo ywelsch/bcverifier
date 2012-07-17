@@ -48,4 +48,9 @@ public abstract class AbstractGenerator implements Generator {
     public LocalPlaceDefinitions generateLocalPlaces() {
         return new LocalPlaceDefinitions(Collections.<Integer,List<Place>>emptyMap(), Collections.<Integer,List<Place>>emptyMap());
     }
+    
+    @Override
+    public List<String> generatePreludeAddition() {
+        return Collections.emptyList();
+    }
 }

@@ -21,15 +21,17 @@ public class MultiFileGenerator extends AbstractGenerator {
     
     private static final Pattern lineWithoutComment = Pattern.compile("\\s*(.*?)\\s*//.*");
     
-    private File invariantFile;
-    private File localInvariantFile;
-    private File preconditionFile;
+    private final File invariantFile;
+    private final File localInvariantFile;
+    private final File preconditionFile;
+    private final File localPlacesFile;
     
-    public MultiFileGenerator(File invariantFile, File localInvariantFile, File preconditionFile) {
+    public MultiFileGenerator(File invariantFile, File localInvariantFile, File preconditionFile, File localPlacesFile) {
         super((Reader)null);
         this.invariantFile = invariantFile;
         this.localInvariantFile = localInvariantFile;
         this.preconditionFile = preconditionFile;
+        this.localPlacesFile = localPlacesFile;
     }
 
     @Override
@@ -104,14 +106,23 @@ public class MultiFileGenerator extends AbstractGenerator {
         return preconditions;
     }
     
-    private LocalPlaceDefinitions parseLocalPlaces(File localPlaces) {
+    @Override
+    public LocalPlaceDefinitions generateLocalPlaces() {
+        if(localPlacesFile != null){
+            return parseLocalPlaces();
+        } else {
+            return super.generateLocalPlaces();
+        }
+    }
+    
+    private LocalPlaceDefinitions parseLocalPlaces() {
         FileReader reader = null;
         Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)\\s+(.*)");
         
         HashMap<Integer,List<Place>> oldMap = new HashMap<Integer, List<Place>>();
         HashMap<Integer,List<Place>> newMap = new HashMap<Integer, List<Place>>();
         try {
-            reader = new FileReader(localPlaces);
+            reader = new FileReader(localPlacesFile);
             LineIterator lineIterator = IOUtils.lineIterator(reader);
             String nextLine;
             Matcher m;
@@ -141,7 +152,7 @@ public class MultiFileGenerator extends AbstractGenerator {
             
             return new LocalPlaceDefinitions(oldMap, newMap);
         } catch (FileNotFoundException e) {
-            log.warn("Could not read local places from "+localPlaces, e);
+            log.warn("Could not read local places from "+localPlacesFile, e);
             return null;
         } finally {
             if(reader!=null)

@@ -37,7 +37,7 @@ public class SingleLibraryTest {
 		config.setOutput(specificationFile);
         config.setAction(VerifyAction.VERIFY);
         TranslationController tc = new TranslationController();
-		Library library = new Library(config, new MultiFileGenerator(config.invariant(), config.localInvariant(), config.configFile()));
+		Library library = new Library(config, new MultiFileGenerator(config.invariant(), config.localInvariant(), config.configFile(), config.getLocalPlaces()));
 		library.setTranslationController(tc);
 		library.compile();
 		library.translate();

@@ -7,4 +7,5 @@ public interface Generator {
     public List<String> generateLocalInvariant();
     public List<String> generatePreconditions();
     public LocalPlaceDefinitions generateLocalPlaces();
+    public List<String> generatePreludeAddition();
 }

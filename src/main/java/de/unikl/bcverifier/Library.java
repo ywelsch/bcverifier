@@ -183,6 +183,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                                                        // to
                                                                        // generate
                                                                        // Prelude
+//            List<BPLCommand> preludeAdditions = new ArrayList<BPLCommand>();
+//            for(String cmd : specGen.generatePreludeAddition()){
+//                preludeAdditions.add(new BPLRawCommand(cmd));
+//            }
+//            programDecls.addAll(preludeAdditions);
+            //TODO add prelude additions
 
             tc.activate();
 
