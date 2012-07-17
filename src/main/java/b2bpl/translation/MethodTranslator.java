@@ -1612,27 +1612,27 @@ public class MethodTranslator implements ITranslationConstants {
 
             // Assume the type information of the local variables.
             // Assume the type information of the local variables.
-            for (int i = 0; i < frame.getLocalCount(); i++) {
-                JType type = frame.getLocal(i);
-                if (type != null) {
-                    if (type.isBaseType()) {
-                        //            addAssume(isOfType(var(localVar(i, type)), typeRef(type)));
-                    } else if (type != JNullType.NULL) {
-                        addAssume(isEqual(typ(stack(var(localVar(i, type))), var(tc.getHeap())), typeRef(type)));
-                    }
-                }
-            }
+//            for (int i = 0; i < frame.getLocalCount(); i++) {
+//                JType type = frame.getLocal(i);
+//                if (type != null) {
+//                    if (type.isBaseType()) {
+//                        //            addAssume(isOfType(var(localVar(i, type)), typeRef(type)));
+//                    } else if (type != JNullType.NULL) {
+//                        addAssume(isEqual(typ(stack(var(localVar(i, type))), var(tc.getHeap())), typeRef(type)));
+//                    }
+//                }
+//            }
             // Assume the type information of the stack variables.
-            for (int i = 0; i < frame.getStackSize(); i++) {
-                JType type = frame.peek(i);
-                if (type != null) {
-                    if (type.isBaseType()) {
-                        //            addAssume(isOfType(var(stackVar(i, type)), typeRef(type)));
-                    } else if (type != JNullType.NULL) {
-                        addAssume(isEqual(typ(stack(var(stackVar(i, type))), var(tc.getHeap())), typeRef(type)));
-                    }
-                }
-            }
+//            for (int i = 0; i < frame.getStackSize(); i++) {
+//                JType type = frame.peek(i);
+//                if (type != null) {
+//                    if (type.isBaseType()) {
+//                        //            addAssume(isOfType(var(stackVar(i, type)), typeRef(type)));
+//                    } else if (type != JNullType.NULL) {
+//                        addAssume(isEqual(typ(stack(var(stackVar(i, type))), var(tc.getHeap())), typeRef(type)));
+//                    }
+//                }
+//            }
 
             // Assume that objects allocated at the loop entry remain allocated inside
             // the loop. Note that this assumption ignores the effect of any potential
