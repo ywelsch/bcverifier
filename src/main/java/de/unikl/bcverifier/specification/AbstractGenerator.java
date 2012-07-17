@@ -10,47 +10,41 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 
+import de.unikl.bcverifier.Configuration;
+
 public abstract class AbstractGenerator implements Generator {
-    private Reader reader;
+    private Configuration config;
     
-    public AbstractGenerator(Reader reader) {
-        this.reader = reader;
+    public AbstractGenerator(Configuration config) {
+        this.config = config;
     }
     
-    public AbstractGenerator(File file) throws FileNotFoundException {
-        this.reader = new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8"));
-    }
-    
-    public AbstractGenerator(String s) {
-        this.reader = new StringReader(s);
-    }
-    
-    protected Reader getReader() {
-        return reader;
+    protected Configuration config() {
+        return config;
     }
     
     @Override
-    public List<String> generateInvariant() {
+    public List<String> generateInvariant() throws GenerationException {
         return Collections.emptyList();
     }
     
     @Override
-    public List<String> generateLocalInvariant() {
+    public List<String> generateLocalInvariant() throws GenerationException {
         return Collections.emptyList();
     }
     
     @Override
-    public List<String> generatePreconditions() {
+    public List<String> generatePreconditions() throws GenerationException {
         return Collections.emptyList();
     }
     
     @Override
-    public LocalPlaceDefinitions generateLocalPlaces() {
+    public LocalPlaceDefinitions generateLocalPlaces() throws GenerationException {
         return new LocalPlaceDefinitions(Collections.<Integer,List<Place>>emptyMap(), Collections.<Integer,List<Place>>emptyMap());
     }
     
     @Override
-    public List<String> generatePreludeAddition() {
+    public List<String> generatePreludeAddition() throws GenerationException {
         return Collections.emptyList();
     }
 }

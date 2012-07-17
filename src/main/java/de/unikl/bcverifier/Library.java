@@ -106,6 +106,7 @@ import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
+import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.Generator;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
@@ -132,7 +133,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     
     public void setTranslationController(TranslationController controller){
         this.tc = controller;
-        tc.setLocalPlaces(specGen.generateLocalPlaces());
+        try{
+            tc.setLocalPlaces(specGen.generateLocalPlaces());
+        } catch(GenerationException e){
+            Logger.getLogger(Library.class).warn("Error generating local places.", e);
+            tc.setLocalPlaces(new LocalPlaceDefinitions(Collections.<Integer,List<Place>>emptyMap(), Collections.<Integer,List<Place>>emptyMap()));
+        }
     }
     
     public Library(Configuration config, Generator generator) {
@@ -185,10 +191,14 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                                                        // generate
                                                                        // Prelude
             List<BPLDeclaration> preludeAdditions = new ArrayList<BPLDeclaration>();
-            for(String decl : specGen.generatePreludeAddition()){
-                preludeAdditions.add(new BPLRawDeclaration(decl));
+            try {
+                for(String decl : specGen.generatePreludeAddition()){
+                    preludeAdditions.add(new BPLRawDeclaration(decl));
+                }
+                programDecls.addAll(preludeAdditions);
+            } catch(GenerationException e){
+                Logger.getLogger(Library.class).warn("Error generating prelude addition.", e);
             }
-            programDecls.addAll(preludeAdditions);
 
             tc.activate();
 
@@ -365,21 +375,29 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             ArrayList<BPLCommand> localInvAssertions,
             ArrayList<BPLCommand> localInvAssumes) {
         BPLCommand cmd;
-        for (String inv : specGen.generateInvariant()) {
-			cmd = new BPLAssertCommand(var(inv));
-			cmd.addComment("invariant");
-			invAssertions.add(cmd);
-			cmd = new BPLAssumeCommand(var(inv));
-			cmd.addComment("invariant");
-			invAssumes.add(cmd);
-    	}
-        for (String inv : specGen.generateLocalInvariant()) {
-            cmd = new BPLAssertCommand(var(inv));
-            cmd.addComment("local invariant");
-            localInvAssertions.add(cmd);
-            cmd = new BPLAssumeCommand(var(inv));
-            cmd.addComment("local invariant");
-            localInvAssumes.add(cmd);
+        try{
+            for (String inv : specGen.generateInvariant()) {
+                cmd = new BPLAssertCommand(var(inv));
+                cmd.addComment("invariant");
+                invAssertions.add(cmd);
+                cmd = new BPLAssumeCommand(var(inv));
+                cmd.addComment("invariant");
+                invAssumes.add(cmd);
+            }
+        } catch(GenerationException e){
+            Logger.getLogger(Library.class).warn("Error generating invariant.", e);
+        }
+        try{
+            for (String inv : specGen.generateLocalInvariant()) {
+                cmd = new BPLAssertCommand(var(inv));
+                cmd.addComment("local invariant");
+                localInvAssertions.add(cmd);
+                cmd = new BPLAssumeCommand(var(inv));
+                cmd.addComment("local invariant");
+                localInvAssumes.add(cmd);
+            }
+        } catch(GenerationException e){
+            Logger.getLogger(Library.class).warn("Error generating local invariant.", e);
         }
     }
 
@@ -410,8 +428,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     isEqual(useHavoc(var(address)), BPLBoolLiteral.TRUE)
                 )));
 
-        for(String line : specGen.generatePreconditions()){
-            procAssumes.add(new BPLRawCommand(line));
+        try{
+            for(String line : specGen.generatePreconditions()){
+                procAssumes.add(new BPLRawCommand(line));
+            }
+        } catch(GenerationException e){
+            Logger.getLogger(Library.class).warn("Error generating precondition", e);
         }
         
         methodBlocks.add(
