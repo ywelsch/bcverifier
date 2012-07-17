@@ -44,6 +44,7 @@ import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLQuantifierExpression;
 import b2bpl.bpl.ast.BPLRawCommand;
+import b2bpl.bpl.ast.BPLRawDeclaration;
 import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLRequiresClause;
 import b2bpl.bpl.ast.BPLReturnCommand;
@@ -688,6 +689,11 @@ public Object visitArrayAssignment(BPLArrayAssignment bplArrayAssignment) {
 
 public Object visitRawCommand(BPLRawCommand bplRawCommand) {
     print(bplRawCommand.getCommandString());
+    return null;
+}
+
+public Object visitRawDeclaration(BPLRawDeclaration bplRawDecl) {
+    print(bplRawDecl.getDeclarationString());
     return null;
 }
 

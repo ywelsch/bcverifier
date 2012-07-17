@@ -36,6 +36,7 @@ import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLQuantifierExpression;
 import b2bpl.bpl.ast.BPLRawCommand;
+import b2bpl.bpl.ast.BPLRawDeclaration;
 import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLRequiresClause;
 import b2bpl.bpl.ast.BPLReturnCommand;
@@ -147,6 +148,8 @@ public interface IBPLVisitor<R> {
   R visitArrayAssignment(BPLArrayAssignment bplArrayAssignment);
 
   R visitRawCommand(BPLRawCommand bplRawCommand);
+  
+  R visitRawDeclaration(BPLRawDeclaration bplRawDecl);
 
   R visitIfThenElseExpression(BPLIfThenElseExpression bplIfThenElseExpression);
 

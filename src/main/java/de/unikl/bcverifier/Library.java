@@ -81,6 +81,7 @@ import b2bpl.bpl.ast.BPLModifiesClause;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLRawCommand;
+import b2bpl.bpl.ast.BPLRawDeclaration;
 import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
 import b2bpl.bpl.ast.BPLTransferCommand;
@@ -183,12 +184,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                                                        // to
                                                                        // generate
                                                                        // Prelude
-//            List<BPLCommand> preludeAdditions = new ArrayList<BPLCommand>();
-//            for(String cmd : specGen.generatePreludeAddition()){
-//                preludeAdditions.add(new BPLRawCommand(cmd));
-//            }
-//            programDecls.addAll(preludeAdditions);
-            //TODO add prelude additions
+            List<BPLDeclaration> preludeAdditions = new ArrayList<BPLDeclaration>();
+            for(String decl : specGen.generatePreludeAddition()){
+                preludeAdditions.add(new BPLRawDeclaration(decl));
+            }
+            programDecls.addAll(preludeAdditions);
 
             tc.activate();
 
