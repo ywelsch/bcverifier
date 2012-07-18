@@ -18,6 +18,7 @@ import static b2bpl.translation.CodeGenerator.isLocalPlace;
 import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isPublic;
 import static b2bpl.translation.CodeGenerator.less;
+import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
@@ -785,11 +786,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // assume the result of the method is not yet set
         procAssumes.add(new BPLAssumeCommand(
                 forall(spVar, 
-                        implies(less(var(sp), var(TranslationController.SP1)), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                        implies(lessEqual(var(sp), var(TranslationController.SP1)), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
                 )));
         procAssumes.add(new BPLAssumeCommand(
                 forall(spVar, 
-                        implies(less(var(sp), var(TranslationController.SP2)), logicalAnd(isNull(stack2(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                        implies(lessEqual(var(sp), var(TranslationController.SP2)), logicalAnd(isNull(stack2(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
                 )));
 
         // invariant
@@ -858,6 +859,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         checkingCommand.add(new BPLAssumeCommand(logicalAnd(
                 isEqual(var(TranslationController.SP1), new BPLIntLiteral(0)),
                 isEqual(var(TranslationController.SP2), new BPLIntLiteral(0)))));
+        checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+                logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE)))),
+                logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
 
         checkingCommand.add(new BPLAssertCommand(isEqual(
                 stack1(var(METH_FIELD)), stack2(var(METH_FIELD)))));
@@ -928,6 +932,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         checkingCommand.add(new BPLAssumeCommand(logicalAnd(
                 greater(var(TranslationController.SP1), new BPLIntLiteral(0)),
                 greater(var(TranslationController.SP2), new BPLIntLiteral(0)))));
+        checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+                logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE)))),
+                logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
 
         checkingCommand.add(new BPLAssertCommand(isEqual(
                 stack1(var(METH_FIELD)), stack2(var(METH_FIELD)))));
