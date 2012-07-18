@@ -23,6 +23,10 @@ public class ISLCompiler {
 		in = new StringReader(input);
 	}
 	
+	public ISLCompiler(Reader in) {
+		this.in = in;
+	}
+	
 	public CompilationUnit parse() throws IOException, Exception {
 		ISLScanner scanner = new ISLScanner(in);
 		ISLParser parser = new ISLParser();

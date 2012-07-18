@@ -49,7 +49,7 @@ public class Configuration implements Serializable {
     @Parameter(names = {"-s", "-i" , "--specification"}, description = "Path to the file containing the specification", required = true, validateWith = Configuration.FileValidator.class)
     private File specification;
     @Parameter(names = {"-st" , "--specificationtype"}, description = "The type of the specification (one of [BPL, ISL])", required = false)
-    private SpecificationType specificationType = SpecificationType.BPL;
+    private SpecificationType specificationType = null;
     
     @Parameter(names = {"-o" , "--output"}, description = "Path to generated Boogie file")
     private File output;
@@ -108,7 +108,15 @@ public class Configuration implements Serializable {
     	return specification;
     }
     public SpecificationType specificationType() {
-        return specificationType;
+    	if (specificationType != null) {
+    		return specificationType;
+    	} else {
+    		if (specification().getName().endsWith(".isl")) {
+    			return SpecificationType.ISL;
+    		} else {
+    			return SpecificationType.BPL;
+    		}
+    	}
     }
     public File output() {
     	if (output == null) {

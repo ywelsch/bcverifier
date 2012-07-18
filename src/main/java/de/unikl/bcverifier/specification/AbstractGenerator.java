@@ -26,6 +26,10 @@ public abstract class AbstractGenerator implements Generator {
         }
     }
     
+    protected Configuration getConfig() {
+    	return config;
+    }
+    
     @Override
     public List<String> generateInvariant() throws GenerationException {
         return Collections.emptyList();

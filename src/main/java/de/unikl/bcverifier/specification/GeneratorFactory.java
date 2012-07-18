@@ -7,6 +7,8 @@ public class GeneratorFactory {
         switch(config.specificationType()){
         case BPL:
             return new BoogieGenerator(config);
+        case ISL:
+        	return new ISLGenerator(config);
         default:
             throw new GenerationException("Generator of type "+config.specificationType()+" not supported yet.");
         }

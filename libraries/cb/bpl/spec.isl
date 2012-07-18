@@ -1,0 +1,1 @@
+invariant forall old A a :: a.g % 2 == 0;
