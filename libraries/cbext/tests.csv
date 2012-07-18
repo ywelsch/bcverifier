@@ -1,6 +1,6 @@
 "specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
-"bpl/spec2.bpl",""     ,2                ,0                 ,4
-"bpl/spec3.bpl",""     ,0                ,1                 ,4
-"bpl/spec1.bpl",""     ,0                ,1                 ,4
-"bpl/spec1.bpl",""     ,1                ,0                 ,3
-"bpl/spec1.bpl",""     ,1                ,0                 ,2
+"bpl/spec2.bsl",""     ,2                ,0                 ,4
+"bpl/spec3.bsl",""     ,0                ,1                 ,4
+"bpl/spec1.bsl",""     ,0                ,1                 ,4
+"bpl/spec1.bsl",""     ,1                ,0                 ,3
+"bpl/spec1.bsl",""     ,1                ,0                 ,2

@@ -5,7 +5,7 @@ import de.unikl.bcverifier.Configuration;
 public class GeneratorFactory {
     public static Generator getGenerator(Configuration config) throws GenerationException {
         switch(config.specificationType()){
-        case BPL:
+        case BSL:
             return new BoogieGenerator(config);
         case ISL:
         	return new ISLGenerator(config);

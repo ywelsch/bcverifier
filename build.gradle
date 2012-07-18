@@ -100,7 +100,7 @@ httpPort = 60602
 eclipse {
 	project {
 		name = 'BCVerifier'		
-		natures 'org.eclipse.xtext.ui.shared.xtextNature', 'com.springsource.sts.gradle.core.nature', 'org.eclipse.jdt.groovy.core.groovyNature'
+		natures 'com.springsource.sts.gradle.core.nature', 'org.eclipse.jdt.groovy.core.groovyNature'
 		comment = description
 	}
     classpath {
