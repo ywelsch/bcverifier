@@ -1,10 +1,10 @@
-"invariant_file","local_invariant"   ,"preconditions_file","flags","expected_errors","dead_code_points","loop_unroll_cap"
-"bpl/inv.bpl"   ,"bpl/local_inv.bpl" ,""                  ,""     ,2                ,0                 ,2
-"bpl/inv.bpl"   ,"bpl/local_inv.bpl" ,""                  ,""     ,2                ,0                 ,3
-"bpl/inv.bpl"   ,"bpl/local_inv.bpl" ,""                  ,""     ,0                ,0                 ,4
-"bpl/inv2.bpl"  ,"bpl/local_inv2.bpl",""                  ,""     ,2                ,0                 ,2
-"bpl/inv2.bpl"  ,"bpl/local_inv2.bpl",""                  ,""     ,2                ,0                 ,3
-"bpl/inv2.bpl"  ,"bpl/local_inv2.bpl",""                  ,""     ,0                ,0                 ,4
-"bpl/inv2.bpl"  ,"bpl/local_inv2.bpl","bpl/noHavoc.bpl"   ,""     ,0                ,0                 ,4
-"bpl/inv3.bpl"  ,""                  ,""                  ,""     ,0                ,0                 ,4
-"bpl/inv3.bpl"  ,""                  ,"bpl/noHavoc.bpl"   ,""     ,1                ,0                 ,4
+"specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
+"bpl/spec1.bpl",""     ,2                ,0                 ,2
+"bpl/spec1.bpl",""     ,2                ,0                 ,3
+"bpl/spec1.bpl",""     ,0                ,0                 ,4
+"bpl/spec2.bpl",""     ,2                ,0                 ,2
+"bpl/spec2.bpl",""     ,2                ,0                 ,3
+"bpl/spec2.bpl",""     ,0                ,0                 ,4
+"bpl/spec3.bpl",""     ,0                ,0                 ,4
+"bpl/spec4.bpl",""     ,0                ,0                 ,4
+"bpl/spec5.bpl",""     ,1                ,0                 ,4

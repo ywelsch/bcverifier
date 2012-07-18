@@ -15,7 +15,8 @@ import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
-import de.unikl.bcverifier.specification.MultiFileGenerator;
+import de.unikl.bcverifier.specification.GenerationException;
+import de.unikl.bcverifier.specification.GeneratorFactory;
 
 public class CheckRunner {
     public static class CheckRunException extends Exception {
@@ -45,23 +46,23 @@ public class CheckRunner {
         File specificationFile = new File(def.getLibDir(), "bpl/output.bpl");
         File lib1 = new File(def.getLibDir(), "old");
         File lib2 = new File(def.getLibDir(), "new");
-        config.setInvariant(def.getInvariant());
-        config.setConfigFile(def.getPreconditions());
-        config.setLocalInvariant(def.getLocalInv());
+        config.setSpecification(def.getSpecification());
         config.setLibraries(lib1, lib2);
         config.setOutput(specificationFile);
         config.setAction(VerifyAction.VERIFY);
         config.setLoopUnrollCap(def.getLoopUnrollCap());
         TranslationController tc = new TranslationController();
-        Library library = new Library(config, new MultiFileGenerator(config));
-        library.setTranslationController(tc);
-        library.compile();
         try{
+            Library library = new Library(config, GeneratorFactory.getGenerator(config));
+            library.setTranslationController(tc);
+            library.compile();
             library.translate();
+            library.check();
         } catch (TranslationException ex){
             throw new CheckRunException("Error translating bytecode", ex);
+        } catch (GenerationException e) {
+            throw new CheckRunException("Error generating specification", e);
         }
-        library.check();
         return BoogieRunner.getLastErrorCount() == def.getExpectedErrors();
     }
     
@@ -80,9 +81,7 @@ public class CheckRunner {
         File specificationFile = new File(def.getLibDir(), "bpl/output.bpl");
         File lib1 = new File(def.getLibDir(), "old");
         File lib2 = new File(def.getLibDir(), "new");
-        config.setInvariant(def.getInvariant());
-        config.setConfigFile(def.getPreconditions());
-        config.setLocalInvariant(def.getLocalInv());
+        config.setSpecification(def.getSpecification());
         config.setLibraries(lib1, lib2);
         config.setNullChecks(false);
         config.setOutput(specificationFile);
@@ -90,15 +89,17 @@ public class CheckRunner {
         config.setLoopUnrollCap(def.getLoopUnrollCap());
         config.setSmokeTestOn(true);
         TranslationController tc = new TranslationController();
-        Library library = new Library(config, new MultiFileGenerator(config));
-        library.setTranslationController(tc);
-        library.compile();
         try{
+            Library library = new Library(config, GeneratorFactory.getGenerator(config));
+            library.setTranslationController(tc);
+            library.compile();
             library.translate();
+            library.check();
         } catch(TranslationException ex){
             throw new CheckRunException("Error translating bytecode", ex);
+        } catch (GenerationException e) {
+            throw new CheckRunException("Error generating specification", e);
         }
-        library.check();
         
         if(BoogieRunner.getLastErrorCount() != def.getExpectedErrors()){
             Logger.getLogger(CheckRunner.class).debug(BoogieRunner.getLastMessage());

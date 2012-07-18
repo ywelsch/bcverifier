@@ -8,7 +8,8 @@ import com.beust.jcommander.ParameterException;
 
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
-import de.unikl.bcverifier.specification.MultiFileGenerator;
+import de.unikl.bcverifier.specification.GenerationException;
+import de.unikl.bcverifier.specification.GeneratorFactory;
 
 public class Main {
     
@@ -35,7 +36,7 @@ public class Main {
         Logger.getRootLogger().setLevel(config.isDebug() ? Level.DEBUG : Level.INFO);
         try {
             TranslationController tc = new TranslationController();
-        	Library library = new Library(config, new MultiFileGenerator(config));
+        	Library library = new Library(config, GeneratorFactory.getGenerator(config));
         	library.setTranslationController(tc);
             if(config.isCompileFirst()){
                 library.compile();
@@ -50,6 +51,9 @@ public class Main {
             }
         } catch (TranslationException e) {
             System.err.println("Error while translating to Boogie:");
+            e.printStackTrace();
+        } catch (GenerationException e) {
+            System.err.println("Error while generating specification:");
             e.printStackTrace();
         }
    }

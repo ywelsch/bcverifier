@@ -15,7 +15,8 @@ import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
-import de.unikl.bcverifier.specification.MultiFileGenerator;
+import de.unikl.bcverifier.specification.GenerationException;
+import de.unikl.bcverifier.specification.GeneratorFactory;
 
 public class SingleLibraryTest {
 	File dir = new File("libraries/cell");
@@ -26,18 +27,18 @@ public class SingleLibraryTest {
 	}
 	
 	@Test
-	public void verifySingleLibrary() throws TranslationException {
+	public void verifySingleLibrary() throws TranslationException, GenerationException {
 		Configuration config = new Configuration();
 		File invFile = new File(dir, "bpl/inv.bpl");
 		File specificationFile = new File(dir, "bpl/output.bpl");
 		File lib1 = new File(dir, "old");
 		File lib2 = new File(dir, "new");
-		config.setInvariant(invFile);
+		config.setSpecification(invFile);
 		config.setLibraries(lib1, lib2);
 		config.setOutput(specificationFile);
         config.setAction(VerifyAction.VERIFY);
         TranslationController tc = new TranslationController();
-		Library library = new Library(config, new MultiFileGenerator(config));
+		Library library = new Library(config, GeneratorFactory.getGenerator(config));
 		library.setTranslationController(tc);
 		library.compile();
 		library.translate();

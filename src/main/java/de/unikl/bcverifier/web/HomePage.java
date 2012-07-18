@@ -56,7 +56,8 @@ import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
-import de.unikl.bcverifier.specification.MultiFileGenerator;
+import de.unikl.bcverifier.specification.GenerationException;
+import de.unikl.bcverifier.specification.GeneratorFactory;
 
 public class HomePage extends WebPage {
 	private static final long serialVersionUID = 1L;
@@ -418,7 +419,10 @@ public class HomePage extends WebPage {
 			} catch (CompileException e) {
 				HomePage.this.setOutput(e.getMessage());
 				e.printStackTrace();
-			}
+			} catch (GenerationException e) {
+			    HomePage.this.setOutput(e.getMessage());
+                e.printStackTrace();
+            }
 		}
 		
 		private String linkify(String lastMessage) {
@@ -427,7 +431,7 @@ public class HomePage extends WebPage {
     		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$2,$3);\">$1($2,$3):</a>");
 		}
 
-		private void compile() throws IOException, TranslationException, CompileException {
+		private void compile() throws IOException, TranslationException, CompileException, GenerationException {
 			File dir = Files.createTempDir();
 			System.out.println("Creating test in " + dir);
 			File oldDir = new File(dir, "old");
@@ -440,11 +444,11 @@ public class HomePage extends WebPage {
 			File output = new File(bplDir, "output.bpl");
 			Configuration config = ConfigSession.get().getConfig();
 			config.setLibraries(oldDir, newDir);
-			config.setInvariant(invFile);
+			config.setSpecification(invFile);
 			config.setSingleFormulaInvariant(true);
 			config.setOutput(output);
 			TranslationController tc = new TranslationController();
-			Library library = new Library(config, new MultiFileGenerator(config));;
+			Library library = new Library(config, GeneratorFactory.getGenerator(config));;
 			library.setTranslationController(tc);
 			LibraryCompiler.compile(config.library1());
 			LibraryCompiler.compile(config.library2());

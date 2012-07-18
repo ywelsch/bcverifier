@@ -1,14 +1,12 @@
 package de.unikl.bcverifier.specification;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
+import java.io.FileReader;
 import java.io.Reader;
-import java.io.StringReader;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
+
+import org.apache.log4j.Logger;
 
 import de.unikl.bcverifier.Configuration;
 
@@ -19,8 +17,13 @@ public abstract class AbstractGenerator implements Generator {
         this.config = config;
     }
     
-    protected Configuration config() {
-        return config;
+    protected Reader getReader() {
+        try {
+            return new FileReader(config.specification());
+        } catch(FileNotFoundException e){
+            Logger.getLogger(AbstractGenerator.class).error("Opening specificaiton file failed (should have been checked by configuration)", e);
+            throw new RuntimeException("Internal error in configuration: Existance check of specification file not working.", e);
+        }
     }
     
     @Override

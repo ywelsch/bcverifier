@@ -17,6 +17,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterDescription;
 import com.beust.jcommander.ParameterException;
 
+import de.unikl.bcverifier.specification.SpecificationType;
 import de.unikl.bcverifier.web.WebGUI;
 
 public class Configuration implements Serializable {
@@ -44,21 +45,19 @@ public class Configuration implements Serializable {
 	private boolean disableNullChecks = false;
 	@Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])") @WebGUI
     private VerifyAction action = VerifyAction.VERIFY;
-    @Parameter(names = {"-i" , "--invariant"}, description = "Path to the file containing the coupling invariant", required = true, validateWith = Configuration.FileValidator.class)
-    private File invariant;
-    @Parameter(names = {"-li" , "--localinvariant"}, description = "Path to the file containing the local coupling invariant", required = false, validateWith = Configuration.FileValidator.class)
-    private File localInvariant = null;
+    
+    @Parameter(names = {"-s", "-i" , "--specification"}, description = "Path to the file containing the specification", required = true, validateWith = Configuration.FileValidator.class)
+    private File specification;
+    @Parameter(names = {"-st" , "--specificationtype"}, description = "The type of the specification (one of [BPL, ISL])", required = false)
+    private SpecificationType specificationType = SpecificationType.BPL;
+    
     @Parameter(names = {"-o" , "--output"}, description = "Path to generated Boogie file")
     private File output;
-    @Parameter(names = {"-p" , "--places"}, description = "Path to places configuration file", validateWith = Configuration.FileValidator.class)
-    private File places;
     @Parameter(names = {"-l", "--libs"}, description = "Path to the libraries to compare", arity = 2, required = true, validateWith = Configuration.DirectoryValidator.class)
     private List<File> dirs = new ArrayList<File>();
 	private String versionString;
 	@Parameter(names = {"-sfi", "--singleformulainvariant"}, description = "Invariant is packaged as a single Boogie formula") @WebGUI
     private boolean singleFormulaInvariant = false;
-	@Parameter(names = {"-lp", "--localplaces"}, description = "Path to a file containing definitions for local places", validateWith = Configuration.FileValidator.class)
-	private File local_places;
     
     public static class DirectoryValidator implements IParameterValidator {
 		public void validate(String name, String value) throws ParameterException {
@@ -105,15 +104,15 @@ public class Configuration implements Serializable {
     public File library2() {
     	return dirs.get(1);
     }
-    public File invariant() {
-    	return invariant;
+    public File specification() {
+    	return specification;
     }
-    public File localInvariant() {
-        return localInvariant;
+    public SpecificationType specificationType() {
+        return specificationType;
     }
     public File output() {
     	if (output == null) {
-    		output = new File(invariant().getParentFile(), "output.bpl");
+    		output = new File(specification().getParentFile(), "output.bpl");
     	}
     	return output;
     }
@@ -129,11 +128,8 @@ public class Configuration implements Serializable {
 	public void setAction(VerifyAction action) {
 		this.action = action;
 	}
-	public void setInvariant(File invariant) {
-		this.invariant = invariant;
-	}
-	public void setLocalInvariant(File localInv) {
-	    this.localInvariant = localInv;
+	public void setSpecification(File specification) {
+		this.specification = specification;
 	}
 	public void setLibraries(File lib1, File lib2) {
 		this.dirs = new ArrayList<File>();
@@ -173,9 +169,6 @@ public class Configuration implements Serializable {
     public void setLoopUnrollCap(int loopUnroll) {
         this.loopUnrollCap = loopUnroll;
     }
-    public File configFile() {
-    	return places;
-    }
     public String getVersionString() {
     	if (versionString == null) {
     		Properties prop = new Properties();
@@ -198,15 +191,6 @@ public class Configuration implements Serializable {
 	}
 	public void setSingleFormulaInvariant(boolean singleFormulaInvariant) {
 		this.singleFormulaInvariant = singleFormulaInvariant;
-	}
-	public File getLocalPlaces() {
-        return local_places;
-    }
-    public void setLocalPlaces(File localPlaces) {
-        this.local_places = localPlaces;
-    }
-    public void setConfigFile(File places) {
-		this.places = places;
 	}
 	public void setWebDefaults() {
 		singleFormulaInvariant = true;
