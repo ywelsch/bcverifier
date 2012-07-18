@@ -1,23 +1,16 @@
 package de.unikl.bcverifier.specification;
 
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.wicket.util.string.Strings;
-
 import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLExpression;
 import beaver.Parser.Exception;
-
 import de.unikl.bcverifier.Configuration;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.checking.LibEnvironment;
