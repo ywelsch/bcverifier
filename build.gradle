@@ -87,11 +87,27 @@ task uploadWar {
 }
 uploadWar.dependsOn war
 
-import org.apache.tools.ant.filters.ReplaceTokens
+def getHGRevision = {
+	def res = ""
+	try {
+	new ByteArrayOutputStream().withStream { os ->
+		def result = exec {
+			executable = 'hg'
+			args = ['parent', '--template', '"rev.{rev} ({date|shortdate})"']
+			standardOutput = os
+		}
+		res = os.toString().replaceAll (/"/, '')
+		}
+	} catch (Exception e) {}
+	return res
+}
 
+import org.apache.tools.ant.filters.ReplaceTokens
 processResources {
+	ext.hgrevision = getHGRevision()
+	inputs.property('hgrevision', ext.hgrevision)
 	from('src/main/resources/project.properties') {
-		filter(ReplaceTokens, tokens: [version: project.version])
+		filter(ReplaceTokens, tokens: [version: hgrevision])
 	}
 }
 

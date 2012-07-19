@@ -41,6 +41,11 @@ body { margin:0;padding:0;}
 	font-size:36pt;
 	display: inline;
 }
+#logo h2 {
+	color : white;
+	font-size:12pt;
+	display: inline;
+}
 #logo select {
 	margin-left : 50px;
 }

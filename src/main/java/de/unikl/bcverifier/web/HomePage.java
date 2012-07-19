@@ -62,7 +62,7 @@ import de.unikl.bcverifier.specification.GeneratorFactory;
 public class HomePage extends WebPage {
 	private static final long serialVersionUID = 1L;
 	private String output;
-	private String inv = "true";
+	private String inv = "invariant true;";
 	private String boogieinput;
 	private List<String> lib1contents = new ArrayList<String>();
 	private List<String> lib2contents = new ArrayList<String>();
@@ -125,6 +125,7 @@ public class HomePage extends WebPage {
 		lib1contents.add("public class C {\n  public int m() {\n    return 0;\n  }\n}");
 		lib2contents.add("public class C {\n  public int m() {\n    return 2 - 1;\n  }\n}");
 		populateExamples();
+		selectExample(examples.get(0));
 		bipanel.setVisible(false);
     }
     
@@ -136,13 +137,7 @@ public class HomePage extends WebPage {
             protected void onUpdate(AjaxRequestTarget target) {
                 Example ex = selectedExample.getObject();
                 if (ex != null) {
-                	lib1contents.clear();
-                	lib1contents.addAll(ex.getLib1files());
-                	lib2contents.clear();
-                	lib2contents.addAll(ex.getLib2files());
-                	setInv(ex.getInvariant());
-                	setOutput("");
-                	setBoogieinput("");
+                	selectExample(ex);
                 	if (target != null) {
                 		target.add(pan1, pan2, pan3, bipanel, olabel);
                 	}
@@ -168,7 +163,7 @@ public class HomePage extends WebPage {
 			FileObject topDir = fsManager.resolveFile(loader.getResource(dir).toURI().toString());
 			FileObject oldDir = topDir.getChild("old");
 			FileObject newDir = topDir.getChild("new");
-			FileObject invFile = topDir.getChild("bpl").getChild("webinv.bpl");
+			FileObject invFile = topDir.getChild("bpl").getChild("spec.isl");
 			
 			class JavaFileSelector implements FileSelector {
 
@@ -236,6 +231,16 @@ public class HomePage extends WebPage {
 			bipanel.setVisible(true);
 		}
 		this.boogieinput = boogieinput;
+	}
+
+	private void selectExample(Example ex) {
+		lib1contents.clear();
+		lib1contents.addAll(ex.getLib1files());
+		lib2contents.clear();
+		lib2contents.addAll(ex.getLib2files());
+		setInv(ex.getInvariant());
+		setOutput("");
+		setBoogieinput("");
 	}
 
 	public class LibForm extends Form {
@@ -439,13 +444,12 @@ public class HomePage extends WebPage {
 			createFiles(oldDir, lib1contents);
 			createFiles(newDir, lib2contents);
 			File bplDir = new File(dir, "bpl");
-			File invFile = new File(bplDir, "inv.bpl");
+			File invFile = new File(bplDir, "spec.isl");
 			FileUtils.writeStringToFile(invFile, getInv());
 			File output = new File(bplDir, "output.bpl");
 			Configuration config = ConfigSession.get().getConfig();
 			config.setLibraries(oldDir, newDir);
 			config.setSpecification(invFile);
-			config.setSingleFormulaInvariant(true);
 			config.setOutput(output);
 			TranslationController tc = new TranslationController();
 			Library library = new Library(config, GeneratorFactory.getGenerator(config));;

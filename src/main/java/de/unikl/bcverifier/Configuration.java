@@ -56,7 +56,7 @@ public class Configuration implements Serializable {
     @Parameter(names = {"-l", "--libs"}, description = "Path to the libraries to compare", arity = 2, required = true, validateWith = Configuration.DirectoryValidator.class)
     private List<File> dirs = new ArrayList<File>();
 	private String versionString;
-	@Parameter(names = {"-sfi", "--singleformulainvariant"}, description = "Invariant is packaged as a single Boogie formula") @WebGUI
+	@Parameter(names = {"-sfi", "--singleformulainvariant"}, description = "Invariant is packaged as a single Boogie formula")
     private boolean singleFormulaInvariant = false;
     
     public static class DirectoryValidator implements IParameterValidator {
