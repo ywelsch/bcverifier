@@ -38,17 +38,26 @@ public class ISLGenerator extends AbstractGenerator {
 		try {
 			ISLCompiler compiler = new ISLCompiler(getReader());
 			cu = compiler.parse();
+			StringBuilder errors = new StringBuilder();
 			for (ParserError err : compiler.getErrors()) {
-				throw new GenerationException(err.toString());
+				errors.append(err);
+				errors.append("\n");
+			}
+			if (errors.length() > 0) {
+				throw new GenerationException(errors.toString());
 			}
 			File oldLib = getConfig().library1();
 			File newLib = getConfig().library2();
 			cu.setLibEnvironment(new LibEnvironment(oldLib, newLib));
 			cu.typecheck();
+			errors = new StringBuilder();
 			for (TypeError err : cu.getErrors()) {
-				throw new GenerationException(err.toString());
+				errors.append(err);
+				errors.append("\n");
 			}
-			
+			if (errors.length() > 0) {
+				throw new GenerationException(errors.toString());
+			}
 		} catch (IOException e) {
 			throw new GenerationException("", e);
 		} catch (Exception e) {

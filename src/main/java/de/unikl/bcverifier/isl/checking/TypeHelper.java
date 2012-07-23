@@ -94,6 +94,7 @@ public class TypeHelper {
 				return JavaType.create(e.getRight(), javaType.getVersion(), field.getType());
 			}
 		}
+		e.addError("Left hand side of member acces is of type " + leftType + " (expected Java type).");
 		return UnknownType.instance();
 	}
 
