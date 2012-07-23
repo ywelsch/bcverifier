@@ -27,6 +27,7 @@ import de.unikl.bcverifier.isl.ast.ForallExpr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.IntConst;
+import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NullConst;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
@@ -87,15 +88,28 @@ public class ExprTranslation {
 	}
 
 	public static BPLExpression translate(ForallExpr e) {
-		BPLVariable[] variables = new BPLVariable[e.getNumBoundVar()];
+		BPLExpression rightExpr = e.getExpr().translateExpr();
+		List<VarDef> boundVars = e.getBoundVars();
+		return createForallExpr(boundVars, rightExpr);
+	}
+
+	/**
+	 * creates a forall expression including the assumptions about the types
+	 * of the bound variables
+	 * @param rightExpr
+	 * @param boundVars
+	 * @return
+	 */
+	public static BPLExpression createForallExpr(List<VarDef> boundVars, BPLExpression rightExpr) {
+		BPLVariable[] variables = new BPLVariable[boundVars.getNumChild()];
 		int i = 0;
-		for (VarDef boundVar : e.getBoundVars()) {
+		for (VarDef boundVar : boundVars) {
 			BPLType type = new BPLTypeName("Ref"); //$NON-NLS-1$
 			variables[i] = new BPLVariable(boundVar.attrName(), type);
 			i++;
 		}
 		BPLExpression leftExpr = null;
-		for (VarDef boundVar : e.getBoundVars()) {
+		for (VarDef boundVar : boundVars) {
 			if (boundVar.attrType() instanceof JavaType) {
 				JavaType javaType = (JavaType) boundVar.attrType();
 				BPLExpression typeAssumtion = makeTypeAssumption(boundVar, javaType);
@@ -107,7 +121,7 @@ public class ExprTranslation {
 			}
 			 
 		}
-		BPLExpression rightExpr = e.getExpr().translateExpr();
+		
 		b2bpl.bpl.ast.BPLBinaryLogicalExpression.Operator implies = BPLBinaryLogicalExpression.Operator.IMPLIES;
 		BPLExpression expr;
 		if (leftExpr != null) {

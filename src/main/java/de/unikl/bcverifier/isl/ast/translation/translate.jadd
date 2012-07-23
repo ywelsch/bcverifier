@@ -29,4 +29,22 @@ aspect translate {
 		}
 		return result;
 	}
+	
+	
+	syn BPLExpression Expr.translateExprWellDefinedness();
+	
+	eq BinaryOperation.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq UnaryOperation.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq BoolConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq IntConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq NullConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq ErrorExpr.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq ForallExpr.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq FuncCall.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq IfThenElse.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq MemberAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq VarAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	
+	
+	
 }
