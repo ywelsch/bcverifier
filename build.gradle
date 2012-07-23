@@ -104,8 +104,8 @@ def getHGRevision = {
 
 import org.apache.tools.ant.filters.ReplaceTokens
 processResources {
-	ext.hgrevision = getHGRevision()
-	inputs.property('hgrevision', ext.hgrevision)
+	def hgrevision = getHGRevision()
+	inputs.property('hgrevision', hgrevision)
 	from('src/main/resources/project.properties') {
 		filter(ReplaceTokens, tokens: [version: hgrevision])
 	}
@@ -123,7 +123,7 @@ eclipse {
         //customizing the classes output directory:
         defaultOutputDir = file('build-eclipse')
 		
-		containers 'GROOVY_SUPPORT', 'com.springsource.sts.gradle.classpathcontainer', 'com.springsource.sts.gradle.dsld.classpathcontainer', 'GROOVY_DSL_SUPPORT'
+		containers 'com.springsource.sts.gradle.classpathcontainer', 'com.springsource.sts.gradle.dsld.classpathcontainer', 'GROOVY_DSL_SUPPORT'
     
 		//minusConfigurations += configurations.compile
 		//minusConfigurations += configurations.testCompile
