@@ -30,6 +30,8 @@ import static b2bpl.translation.CodeGenerator.related;
 import static b2bpl.translation.CodeGenerator.stack;
 import static b2bpl.translation.CodeGenerator.stack1;
 import static b2bpl.translation.CodeGenerator.stack2;
+import static b2bpl.translation.CodeGenerator.stall1;
+import static b2bpl.translation.CodeGenerator.stall2;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.useHavoc;
@@ -427,6 +429,19 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(forall(
                 addressVar,
                     isEqual(useHavoc(var(address)), BPLBoolLiteral.TRUE)
+                )));
+        
+        String a1 = "a1";
+        String a2 = "a2";
+        BPLVariable a1Var = new BPLVariable(a1, new BPLTypeName(ADDRESS_TYPE));
+        BPLVariable a2Var = new BPLVariable(a2, new BPLTypeName(ADDRESS_TYPE));
+        procAssumes.add(new BPLAssumeCommand(forall(
+                a1Var, a2Var,
+                logicalNot(stall1(var(a1), var(a2)))
+                )));
+        procAssumes.add(new BPLAssumeCommand(forall(
+                a1Var, a2Var,
+                logicalNot(stall2(var(a1), var(a2)))
                 )));
 
         try{

@@ -1578,6 +1578,9 @@ public class Translator implements ITranslationConstants {
             
             addFunction(IS_LOCAL_PLACE_FUNC, new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL);
             
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(TranslationController.STALL1, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(TranslationController.STALL2, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
+            
             flushPendingTheory(); //TODO this is needed at the moment to generate information about the long values (which should be printed into the program code directly)
         }
     }

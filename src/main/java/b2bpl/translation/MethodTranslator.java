@@ -29,6 +29,7 @@ import static b2bpl.translation.CodeGenerator.libType;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
+import static b2bpl.translation.CodeGenerator.map;
 import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.modulo;
 import static b2bpl.translation.CodeGenerator.multiply;
@@ -39,6 +40,8 @@ import static b2bpl.translation.CodeGenerator.nullLiteral;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.stack;
+import static b2bpl.translation.CodeGenerator.stack1;
+import static b2bpl.translation.CodeGenerator.stack2;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.type;
@@ -56,6 +59,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
+
+import com.sun.org.apache.bcel.internal.classfile.Code;
 
 import b2bpl.Project;
 import b2bpl.bpl.ast.BPLArrayExpression;
@@ -2785,6 +2790,7 @@ public class MethodTranslator implements ITranslationConstants {
             final String CONT_POSTFIX = "_cont";
             final String SKIP_POSTFIX = "_skip";
             final String CHECK_POSTFIX = "_check";
+            final String STALL_POSTFIX = "_stall";
             String contLabel = blockLabel + CONT_POSTFIX;
             String skipLabel = blockLabel + SKIP_POSTFIX;
             List<String> contLabels = new ArrayList<String>();
@@ -2794,7 +2800,10 @@ public class MethodTranslator implements ITranslationConstants {
             }
             endBlock(contLabels.toArray(new String[contLabels.size()]));
             
+            String placeStallLabel;
             for(Place localPlace : localPlaces){
+                placeStallLabel = localPlace.getName() + STALL_POSTFIX;
+                
                 startBlock(localPlace.getName() + CHECK_POSTFIX);
                 Logger.getLogger(InstructionTranslator.class).debug("adding local place "+localPlace.getName());
                 addAssume(var(localPlace.getCondition())); //TODO raw expression here
@@ -2807,7 +2816,11 @@ public class MethodTranslator implements ITranslationConstants {
                 addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(localPlace.getName())));
                 String placeLabel = tc.prefix(getProcedureName(method) + "_" + localPlace.getName());
                 tc.addLocalPlace(placeLabel);
-                endBlock(contLabel);
+                endBlock(contLabel, placeStallLabel);
+                
+                startBlock(placeStallLabel);
+                addAssume(map(var(tc.getStallMap()), stack1(var(PLACE_VARIABLE)), stack2(var(PLACE_VARIABLE))));
+                rawEndBlock(tc.getCheckLabel());
             }
             
             startBlock(skipLabel);
@@ -2817,6 +2830,7 @@ public class MethodTranslator implements ITranslationConstants {
             endBlock(contLabel);
             
             startBlock(contLabel);
+            addAssume(logicalNot(map(var(tc.getStallMap()), stack1(var(PLACE_VARIABLE)), stack2(var(PLACE_VARIABLE)))));
         }
 
         //@ requires insn != null;
