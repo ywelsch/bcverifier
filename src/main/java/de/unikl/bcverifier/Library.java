@@ -455,6 +455,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             Logger.getLogger(Library.class).warn("Error generating precondition", e);
         }
         
+        // safty check: Do not stall both execution at once
+        procAssumes.add(new BPLAssertCommand(forall(
+                a1Var, a2Var,
+                logicalNot(logicalAnd(stall1(var(a1), var(a2)), stall2(var(a1), var(a2))))
+                )));
+        
         methodBlocks.add(
                 0,
                 new BPLBasicBlock(PRECONDITIONS_LABEL, procAssumes
