@@ -322,7 +322,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                 new BPLVariableExpression(TranslationController.SP1),
                                 new BPLVariableExpression(TranslationController.SP2),
                                 new BPLVariableExpression(RELATED_RELATION),
-                                new BPLVariableExpression(USE_HAVOC))),
+                                new BPLVariableExpression(USE_HAVOC),
+                                new BPLVariableExpression(TranslationController.STALL1),
+                                new BPLVariableExpression(TranslationController.STALL2)
+                                )),
                         methodImpl));
     }
 

@@ -5,5 +5,6 @@ public class C{
 		for(int i=0; i<5; i++){
 			list.set(i, new Object());
 		}
+		return;
 	}
 }
