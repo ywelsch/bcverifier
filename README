@@ -18,6 +18,10 @@ Repository
 --------------
 https://softech.cs.uni-kl.de/hg/public/bcverifier
 
+Website
+--------------
+https://softech.cs.uni-kl.de/bcverifier
+
 Build System
 --------------
 Gradle: http://gradle.org/
@@ -30,4 +34,4 @@ Main gradle goals:
 - installApp: Installs the application into a specified directory
 - distZip: Creates a full distribution ZIP archive including runtime libraries and OS specific scripts
 - assemble: Assembles all the archives in the project (jar and war), like build but no tests
-- uploadWar: Upload web frontend to hosted jetty server
+- uploadWar: Upload web frontend to hosted tomcat server on website

@@ -111,6 +111,7 @@ import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.Generator;
+import de.unikl.bcverifier.specification.SpecInvariant;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
 
@@ -382,11 +383,18 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             ArrayList<BPLCommand> localInvAssumes) {
         BPLCommand cmd;
         try{
-            for (String inv : specGen.generateInvariant()) {
-                cmd = new BPLAssertCommand(var(inv));
+            for (SpecInvariant inv : specGen.generateInvariant()) {
+            	if (inv.getWelldefinednessExpr() != null) {
+            		cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
+            		cmd.addComment(inv.getComment());
+            		cmd.addComment("check welldefinedness:");
+            		invAssumes.add(cmd);
+            		invAssertions.add(cmd);
+            	}
+                cmd = new BPLAssertCommand(inv.getInvExpr());
                 cmd.addComment("invariant");
                 invAssertions.add(cmd);
-                cmd = new BPLAssumeCommand(var(inv));
+                cmd = new BPLAssumeCommand(inv.getInvExpr());
                 cmd.addComment("invariant");
                 invAssumes.add(cmd);
             }

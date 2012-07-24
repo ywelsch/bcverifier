@@ -1,5 +1,6 @@
 import de.unikl.bcverifier.isl.ast.translation.*;
 import b2bpl.bpl.ast.BPLExpression;
+import de.unikl.bcverifier.specification.SpecInvariant;
 
 
 aspect translate {
@@ -18,15 +19,26 @@ aspect translate {
 	eq MemberAccess.translateExpr() = ExprTranslation.translate(this);
 	eq VarAccess.translateExpr() = ExprTranslation.translate(this);
 	
-
-	public java.util.List<BPLExpression> CompilationUnit.translate() {
-		ArrayList<BPLExpression> result = new ArrayList<BPLExpression>();
-		for (Statement s: getStatements()) {
-			if (s instanceof Invariant) {
-				Invariant invariant = (Invariant) s;
-				result.add(invariant.getExpr().translateExpr());
-			}
-		}
-		return result;
+	
+	public java.util.List<SpecInvariant> CompilationUnit.generateInvariants() {
+		return Translation.generateInvariants(this);
 	}
+	
+	
+	syn BPLExpression Expr.translateExprWellDefinedness();
+	
+	eq BinaryOperation.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq UnaryOperation.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq BoolConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq IntConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq NullConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq ErrorExpr.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq ForallExpr.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq FuncCall.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq IfThenElse.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq MemberAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	eq VarAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+	
+	
+	
 }

@@ -8,9 +8,11 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import b2bpl.bpl.ast.BPLCommand;
+
 import de.unikl.bcverifier.Configuration;
 
-public abstract class AbstractGenerator implements Generator {
+public class AbstractGenerator implements Generator {
     private Configuration config;
     
     public AbstractGenerator(Configuration config) {
@@ -31,10 +33,10 @@ public abstract class AbstractGenerator implements Generator {
     }
     
     @Override
-    public List<String> generateInvariant() throws GenerationException {
-        return Collections.emptyList();
-    }
-    
+	public List<SpecInvariant> generateInvariant() throws GenerationException {
+    	return Collections.emptyList();
+	}
+	
     @Override
     public List<String> generateLocalInvariant() throws GenerationException {
         return Collections.emptyList();
@@ -54,4 +56,7 @@ public abstract class AbstractGenerator implements Generator {
     public List<String> generatePreludeAddition() throws GenerationException {
         return Collections.emptyList();
     }
+
+	
+
 }

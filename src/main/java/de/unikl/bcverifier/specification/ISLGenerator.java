@@ -9,7 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import b2bpl.bpl.BPLPrinter;
+import b2bpl.bpl.ast.BPLAssertCommand;
+import b2bpl.bpl.ast.BPLAssumeCommand;
+import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLExpression;
+import b2bpl.bpl.ast.BPLVariableExpression;
 import beaver.Parser.Exception;
 import de.unikl.bcverifier.Configuration;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
@@ -38,17 +42,26 @@ public class ISLGenerator extends AbstractGenerator {
 		try {
 			ISLCompiler compiler = new ISLCompiler(getReader());
 			cu = compiler.parse();
+			StringBuilder errors = new StringBuilder();
 			for (ParserError err : compiler.getErrors()) {
-				throw new GenerationException(err.toString());
+				errors.append(err);
+				errors.append("\n");
+			}
+			if (errors.length() > 0) {
+				throw new GenerationException(errors.toString());
 			}
 			File oldLib = getConfig().library1();
 			File newLib = getConfig().library2();
 			cu.setLibEnvironment(new LibEnvironment(oldLib, newLib));
 			cu.typecheck();
+			errors = new StringBuilder();
 			for (TypeError err : cu.getErrors()) {
-				throw new GenerationException(err.toString());
+				errors.append(err);
+				errors.append("\n");
 			}
-			
+			if (errors.length() > 0) {
+				throw new GenerationException(errors.toString());
+			}
 		} catch (IOException e) {
 			throw new GenerationException("", e);
 		} catch (Exception e) {
@@ -58,16 +71,14 @@ public class ISLGenerator extends AbstractGenerator {
 	}
 
 
-	@Override
-	public List<String> generateInvariant() throws GenerationException {
-		init();
-		List<BPLExpression> invariants = cu.translate();
-		List<String> result = new ArrayList<String>();
-		for (BPLExpression inv : invariants) {
-			result.add(exprToString(inv));
-		}
-		return result;
+	
+    @Override
+	public List<SpecInvariant> generateInvariant() throws GenerationException {
+    	init();
+    	return cu.generateInvariants();
 	}
+
+	
 
 
 	private String exprToString(BPLExpression inv) {
