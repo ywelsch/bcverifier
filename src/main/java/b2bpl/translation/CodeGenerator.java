@@ -1062,6 +1062,14 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLArrayExpression(var(USE_HAVOC), address);
     }
     
+    public static BPLExpression stall1(BPLExpression a1, BPLExpression a2){
+        return new BPLArrayExpression(var(TranslationController.STALL1), a1, a2);
+    }
+    
+    public static BPLExpression stall2(BPLExpression a1, BPLExpression a2){
+        return new BPLArrayExpression(var(TranslationController.STALL2), a1, a2);
+    }
+    
     public static BPLExpression heap1(BPLExpression exp1, BPLExpression exp2){
         return new BPLArrayExpression(var(TranslationController.HEAP1), exp1, exp2);
     }

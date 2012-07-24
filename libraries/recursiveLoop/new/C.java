@@ -3,6 +3,7 @@ public class C{
 
 	public void m(){
 		loop(0);
+		return;
 	}
 	
 	private void loop(int i){
@@ -10,5 +11,6 @@ public class C{
 	        return;
 	    list.set(i, new Object());
 	    loop(i+1);
+	    return;
 	}
 }

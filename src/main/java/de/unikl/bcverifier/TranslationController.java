@@ -31,6 +31,8 @@ public class TranslationController implements ITranslationConstants {
     public static final String CHECK_LABEL2 = VERIFY_LABEL;
     public static final String CONSTRUCTOR_LABEL1 = LABEL_PREFIX2 + CONSTRUCTOR_TABLE_LABEL;
     public static final String CONSTRUCTOR_LABEL2 = VERIFY_LABEL;
+    public static final String STALL1 = "stall1";
+    public static final String STALL2 = "stall2";
     
     private boolean isActive = false;
     private Configuration config;
@@ -219,6 +221,17 @@ public class TranslationController implements ITranslationConstants {
             return CONSTRUCTOR_LABEL2;
         default:
             return CONSTRUCTOR_TABLE_LABEL;
+        }
+    }
+    
+    public String getStallMap() {
+        switch(round) {
+        case 1:
+            return STALL1;
+        case 2:
+            return STALL2;
+        default:
+            return "stall";
         }
     }
     

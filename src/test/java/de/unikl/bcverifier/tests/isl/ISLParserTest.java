@@ -16,6 +16,8 @@ import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLExpression;
 import beaver.Parser.Exception;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
+import de.unikl.bcverifier.isl.ast.Invariant;
+import de.unikl.bcverifier.isl.ast.Statement;
 import de.unikl.bcverifier.isl.checking.LibEnvironment;
 import de.unikl.bcverifier.isl.checking.TypeError;
 import de.unikl.bcverifier.isl.parser.ISLCompiler;
@@ -67,6 +69,17 @@ public class ISLParserTest {
 				new File("./libraries/obool/new"), cu);
 		System.out.println("obool output:");
 		translateAndPrint(cu);
+		
+		System.out.println("well definedness:");
+		for (Statement s : cu.getStatementList()) {
+			Invariant i = (Invariant) s;
+			BPLExpression df = i.getExpr().translateExprWellDefinedness();
+			PrintWriter pw = new PrintWriter(System.out);
+			BPLPrinter printer = new BPLPrinter(pw);
+			df.accept(printer);
+			pw.flush();
+			System.out.println();
+		}
 	}
 	
 	
