@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import b2bpl.bpl.BPLPrinter;
+import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLExpression;
 import beaver.Parser.Exception;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
@@ -22,6 +23,7 @@ import de.unikl.bcverifier.isl.checking.LibEnvironment;
 import de.unikl.bcverifier.isl.checking.TypeError;
 import de.unikl.bcverifier.isl.parser.ISLCompiler;
 import de.unikl.bcverifier.isl.parser.ParserError;
+import de.unikl.bcverifier.specification.SpecInvariant;
 
 public class ISLParserTest {
 
@@ -106,11 +108,11 @@ public class ISLParserTest {
 	}
 	
 	protected void translateAndPrint(CompilationUnit cu) {
-		List<BPLExpression> translated = cu.translate();
-		for (BPLExpression e : translated) {
+		List<SpecInvariant> translated = cu.generateInvariants();
+		for (SpecInvariant inv : translated) {
 			PrintWriter pw = new PrintWriter(System.out);
 			BPLPrinter printer = new BPLPrinter(pw);
-			e.accept(printer);
+			inv.getInvExpr().accept(printer);
 			pw.flush();
 			System.out.println();
 		}
