@@ -81,6 +81,7 @@ task uploadWar {
 		ant.taskdef(name: 'sshexec', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.SSHExec', classpath: configurations.sshAntTask.asPath)
 		ant.taskdef(name: 'scp', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.Scp', classpath: configurations.sshAntTask.asPath)
 		ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: '/bin/bash -l /home/yoz/bcverifier/tomcat/bin/catalina.sh stop', verbose: 'true')
+		ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: 'rm -rf /home/yoz/bcverifier/tomcat/webapps/bcverifier*', verbose: 'true')
 		ant.scp(todir: 'yoz@welsch.lu:~/bcverifier/tomcat/webapps', port: '54321', file: war.archivePath.path, keyfile: '${user.home}/.ssh/id_rsa')
 		ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: '/bin/bash -l /home/yoz/bcverifier/tomcat/bin/catalina.sh start', verbose: 'true')
 	}

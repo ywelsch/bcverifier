@@ -125,6 +125,10 @@ a, a:visited, a:hover, a:active {
 a.add, a.remove {
 	text-decoration:none;
 }
+a.titlelink, a.titlelink:visited, a.titlelink:active {
+	text-decoration:none;
+	color : white;
+}
 h2 {
 	padding : 0; margin:0;
 	font-size:24pt;
