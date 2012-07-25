@@ -3,6 +3,7 @@ package de.unikl.bcverifier.specification;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -11,6 +12,13 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.log4j.Logger;
+
+import b2bpl.bpl.IBPLVisitor;
+import b2bpl.bpl.ast.BPLAssertCommand;
+import b2bpl.bpl.ast.BPLAssumeCommand;
+import b2bpl.bpl.ast.BPLCommand;
+import b2bpl.bpl.ast.BPLLiteral;
+import b2bpl.bpl.ast.BPLVariableExpression;
 
 import de.unikl.bcverifier.Configuration;
 
@@ -68,7 +76,7 @@ public class BoogieGenerator extends AbstractGenerator {
     }
 
     private void parsePlaces(BufferedReader reader) throws GenerationException {
-        Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)\\s+(.*)");
+        Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)\\s+([(].*?[)])(\\s+([(].*?[)]))?");
         
         HashMap<Integer,List<Place>> oldMap = new HashMap<Integer, List<Place>>();
         HashMap<Integer,List<Place>> newMap = new HashMap<Integer, List<Place>>();
@@ -97,7 +105,8 @@ public class BoogieGenerator extends AbstractGenerator {
                         newMap.put(lineNumber, currentPlaceList);
                     }
                 }
-                currentPlaceList.add(new Place(m.group(1), m.group(4)));
+                currentPlaceList.add(new Place(m.group(1), m.group(4), m.group(6)));
+                Logger.getLogger(BoogieGenerator.class).debug("Parsed place :" + new Place(m.group(1), m.group(4), m.group(6))); 
             } else  {
                 Logger.getLogger(BoogieGenerator.class).warn("Unmatched line in preconditions: "+nextLine);
             }
@@ -176,9 +185,13 @@ public class BoogieGenerator extends AbstractGenerator {
     }
     
     @Override
-    public List<String> generateInvariant(){
-        return invariants;
-    }
+	public List<SpecInvariant> generateInvariant() throws GenerationException {
+    	List<SpecInvariant> result = new ArrayList<SpecInvariant>();
+		for (String inv : invariants) {
+			result.add(new SpecInvariant(new BPLVariableExpression(inv), null));
+		}
+		return result;
+	}
     
     @Override
     public List<String> generateLocalInvariant() {

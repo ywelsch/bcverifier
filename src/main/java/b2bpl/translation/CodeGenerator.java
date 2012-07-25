@@ -1090,6 +1090,10 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK1), var(TranslationController.SP1)), exp);
     }
     
+    public static BPLExpression old_stack1(BPLExpression exp){
+        return new BPLArrayExpression(new BPLArrayExpression(var(OLD_STACK1), var(TranslationController.SP1)), exp);
+    }
+    
     public static BPLExpression stack1(BPLExpression sp, BPLExpression exp){
         return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK1), sp), exp);
     }
@@ -1104,6 +1108,10 @@ public final class CodeGenerator implements ITranslationConstants {
     
     public static BPLExpression stack2(BPLExpression exp){
         return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK2), var(TranslationController.SP2)), exp);
+    }
+    
+    public static BPLExpression old_stack2(BPLExpression exp){
+        return new BPLArrayExpression(new BPLArrayExpression(var(OLD_STACK2), var(TranslationController.SP2)), exp);
     }
     
     public static BPLExpression stack2(BPLExpression sp, BPLExpression exp){

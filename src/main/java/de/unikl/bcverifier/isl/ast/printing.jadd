@@ -1,0 +1,36 @@
+
+
+aspect printing {
+
+	syn Void Expr.printTo(Appendable r);
+	
+	eq ForallExpr.printTo(Appendable r) = PrintingHelper.print(r, this);
+
+	eq VarAccess.printTo(Appendable r) = PrintingHelper.print(r, this);
+
+	eq MemberAccess.printTo(Appendable r) = PrintingHelper.print(r, this);
+
+	eq FuncCall.printTo(Appendable r) = PrintingHelper.print(r, this);
+
+	eq BinaryOperation.printTo(Appendable r) = PrintingHelper.print(r, this);
+	
+	eq UnaryOperation.printTo(Appendable r) = PrintingHelper.print(r, this);
+
+	eq IfThenElse.printTo(Appendable r) = PrintingHelper.print(r, this);
+
+	eq ErrorExpr.printTo(Appendable r) = PrintingHelper.print(r, this);
+	
+	eq BoolConst.printTo(Appendable r) = PrintingHelper.print(r, this);
+	
+	eq IntConst.printTo(Appendable r) = PrintingHelper.print(r, this);
+	
+	eq NullConst.printTo(Appendable r) = PrintingHelper.print(r, this);
+	
+	
+	public String Expr.print() {
+		StringBuilder sb = new StringBuilder();
+		printTo(sb);
+		return sb.toString();
+	}
+	
+}

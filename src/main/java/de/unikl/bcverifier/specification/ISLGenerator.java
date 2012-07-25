@@ -9,7 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import b2bpl.bpl.BPLPrinter;
+import b2bpl.bpl.ast.BPLAssertCommand;
+import b2bpl.bpl.ast.BPLAssumeCommand;
+import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLExpression;
+import b2bpl.bpl.ast.BPLVariableExpression;
 import beaver.Parser.Exception;
 import de.unikl.bcverifier.Configuration;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
@@ -67,16 +71,14 @@ public class ISLGenerator extends AbstractGenerator {
 	}
 
 
-	@Override
-	public List<String> generateInvariant() throws GenerationException {
-		init();
-		List<BPLExpression> invariants = cu.translate();
-		List<String> result = new ArrayList<String>();
-		for (BPLExpression inv : invariants) {
-			result.add(exprToString(inv));
-		}
-		return result;
+	
+    @Override
+	public List<SpecInvariant> generateInvariant() throws GenerationException {
+    	init();
+    	return cu.generateInvariants();
 	}
+
+	
 
 
 	private String exprToString(BPLExpression inv) {

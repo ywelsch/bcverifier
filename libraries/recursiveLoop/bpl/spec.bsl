@@ -19,7 +19,7 @@ useHavoc[lib2_C.loop$int_set$int$java.lang.Object0] := false;
 stall1[afterLoop, endLoop] := true;
 <<<
 >>>places
-afterLoop = old 8 true
-endLoop = new 14 true
-afterRec = new 6 true
+afterLoop = old 8 (true)
+endLoop = new 14 (true)
+afterRec = new 6 (true)
 <<<

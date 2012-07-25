@@ -22,8 +22,13 @@ import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
+import static b2bpl.translation.CodeGenerator.map;
+import static b2bpl.translation.CodeGenerator.map1;
 import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.nonNull;
+import static b2bpl.translation.CodeGenerator.notEqual;
+import static b2bpl.translation.CodeGenerator.old_stack1;
+import static b2bpl.translation.CodeGenerator.old_stack2;
 import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.relNull;
 import static b2bpl.translation.CodeGenerator.related;
@@ -111,6 +116,7 @@ import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.Generator;
+import de.unikl.bcverifier.specification.SpecInvariant;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
 
@@ -382,11 +388,18 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             ArrayList<BPLCommand> localInvAssumes) {
         BPLCommand cmd;
         try{
-            for (String inv : specGen.generateInvariant()) {
-                cmd = new BPLAssertCommand(var(inv));
+            for (SpecInvariant inv : specGen.generateInvariant()) {
+            	if (inv.getWelldefinednessExpr() != null) {
+            		cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
+            		cmd.addComment(inv.getComment());
+            		cmd.addComment("check welldefinedness:");
+            		invAssumes.add(cmd);
+            		invAssertions.add(cmd);
+            	}
+                cmd = new BPLAssertCommand(inv.getInvExpr());
                 cmd.addComment("invariant");
                 invAssertions.add(cmd);
-                cmd = new BPLAssumeCommand(var(inv));
+                cmd = new BPLAssumeCommand(inv.getInvExpr());
                 cmd.addComment("invariant");
                 invAssumes.add(cmd);
             }
@@ -427,6 +440,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2), new BPLIntLiteral(0))));
         
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP1), var(TranslationController.HEAP1)));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(TranslationController.HEAP2)));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK1), var(TranslationController.STACK1)));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK2), var(TranslationController.STACK2)));
+        
         String address = "address";
         BPLVariable addressVar = new BPLVariable(address, new BPLTypeName(ADDRESS_TYPE));
         procAssumes.add(new BPLAssumeCommand(forall(
@@ -454,6 +472,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         } catch(GenerationException e){
             Logger.getLogger(Library.class).warn("Error generating precondition", e);
         }
+        
+        // safty check: Do not stall both execution at once
+        procAssumes.add(new BPLAssertCommand(forall(
+                a1Var, a2Var,
+                logicalNot(logicalAnd(stall1(var(a1), var(a2)), stall2(var(a1), var(a2))))
+                )));
         
         methodBlocks.add(
                 0,
@@ -825,7 +849,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         BPLVariable unrollCount1Var = new BPLVariable(unrollCount1, BPLBuiltInType.INT);
         String unrollCount2 = TranslationController.LABEL_PREFIX2+ITranslationConstants.UNROLL_COUNT;
         BPLVariable unrollCount2Var = new BPLVariable(unrollCount2, BPLBuiltInType.INT);
-        BPLVariable maxLoopUnrollVar = new BPLVariable(ITranslationConstants.MAX_LOOP_UNROLL, BPLBuiltInType.INT);
         
         for (BPLVariable var : tc.usedVariables()
                 .values()) {
@@ -841,6 +864,18 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         //////////////////////////////////////////////
         localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_HEAP1, new BPLTypeName(HEAP_TYPE))));
         localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_HEAP2, new BPLTypeName(HEAP_TYPE))));
+        
+        // add variables for saving away the old stack
+        //////////////////////////////////////////////
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK1, new BPLTypeName(STACK_TYPE))));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK2, new BPLTypeName(STACK_TYPE))));
+        
+        // add variables for measuring progress of local loops
+        //////////////////////////////////////////////////////
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(MEASURE1, BPLBuiltInType.INT)));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_MEASURE1, BPLBuiltInType.INT)));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(MEASURE2, BPLBuiltInType.INT)));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_MEASURE2, BPLBuiltInType.INT)));
     }
 
     private void addCheckingBlocks(ArrayList<BPLCommand> invAssertions,
@@ -1099,6 +1134,26 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         checkingCommand.add(new BPLAssumeCommand(logicalAnd(
                 isLocalPlace(stack1(var(PLACE_VARIABLE))),
                 isLocalPlace(stack2(var(PLACE_VARIABLE))))));
+
+        
+        // check for progress while stalled
+        checkingCommand.add(new BPLAssertCommand(
+                ifThenElse(map(var(TranslationController.STALL1), stack1(var(PLACE_VARIABLE)), stack2(var(PLACE_VARIABLE))),
+                logicalOr(
+                        notEqual(stack2(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
+                        less(var(MEASURE2), var(OLD_MEASURE2))
+                        ),
+                BPLBoolLiteral.TRUE
+                )));
+        checkingCommand.add(new BPLAssertCommand(
+                ifThenElse(map(var(TranslationController.STALL2), stack1(var(PLACE_VARIABLE)), stack2(var(PLACE_VARIABLE))),
+                logicalOr(
+                        notEqual(stack1(var(PLACE_VARIABLE)), old_stack1(var(PLACE_VARIABLE))),
+                        less(var(MEASURE1), var(OLD_MEASURE1))
+                        ),
+                BPLBoolLiteral.TRUE
+                )));
+        
 
         
         checkingCommand.addAll(localInvAssertions);
