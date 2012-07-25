@@ -1,3 +1,5 @@
+import org.pegdown.PegDownProcessor
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'jetty'
@@ -16,6 +18,8 @@ String islGenDir = "$projectDir/src/gen/java"
 String parserSrcDir = "$projectDir/src/main/java/de/unikl/bcverifier/isl/parser"
 String parserGenDir = "$islGenDir/de/unikl/bcverifier/isl/parser"
 String astGenDir = "$islGenDir/de/unikl/bcverifier/isl/ast"
+String srcDocDir = "$projectDir/doc"
+String destDocDir = "$buildDir/doc"
 
 configurations {
     sshAntTask
@@ -26,6 +30,18 @@ repositories {
     maven {
         url "https://repository.apache.org/content/repositories/snapshots/"
     }
+}
+
+buildscript {
+	repositories {
+		mavenCentral()
+		maven {
+			url "http://scala-tools.org/repo-releases"
+		}
+	}
+	dependencies {
+		classpath group: 'org.pegdown', name: 'pegdown', version: '1.1.0'
+	}
 }
 
 dependencies {
@@ -50,6 +66,36 @@ dependencies {
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.1'
 	sshAntTask group: 'org.apache.ant', name: 'ant-jsch', version: '1.8.4'
 }
+
+task doc {
+	inputs.files{fileTree(dir: srcDocDir, includes: ['**/*.markdown','**/*.mdown'])}
+	outputs.dir(destDocDir)
+	
+	doLast {
+		new File(destDocDir).mkdirs();
+		inputs.files.each{ source ->
+	       def mp = new PegDownProcessor()
+		   def relrenamed = new File(srcDocDir).toURI().relativize(source.toURI()).getPath().replaceFirst('(markdown|mdown)$', 'html')
+		   def target = new File(new File(destDocDir), relrenamed)
+		   target.getParentFile().mkdirs();
+	       target.text = mp.markdownToHtml(source.text);
+		}
+	}
+}
+
+task docReadme {
+	def readme = file("$projectDir/README")
+	inputs.file(readme)
+	outputs.dir(destDocDir)
+	doLast {
+		new File(destDocDir).mkdirs();
+		def mp = new PegDownProcessor()
+	    def target = new File(destDocDir, 'readme.html')
+	    target.text = mp.markdownToHtml(readme.text);
+	}
+}
+
+doc.dependsOn docReadme
 
 sourceSets {
     main {
