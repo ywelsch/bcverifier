@@ -383,6 +383,10 @@ public static final String OLD_HEAP1 = "old_heap1";
 
 public static final String OLD_HEAP2 = "old_heap2";
 
+public static final String OLD_STACK1 = "old_stack1";
+
+public static final String OLD_STACK2 = "old_stack2";
+
 public static final String PRECONDITIONS_LABEL = "preconditions";
 
 public static final String PRECONDITIONS_CALL_LABEL = "preconditions_call";
@@ -418,4 +422,12 @@ public static final String DYN_TYPE_FIELD = "dynType";
 public static final String ALLOC_FIELD = "alloc";
 
 public static final String IS_LOCAL_PLACE_FUNC = "isLocalPlace";
+
+public static final String MEASURE1 = "measure1";
+
+public static final String OLD_MEASURE1 = "old_measure1";
+
+public static final String MEASURE2 = "measure2";
+
+public static final String OLD_MEASURE2 = "old_measure2";
 }

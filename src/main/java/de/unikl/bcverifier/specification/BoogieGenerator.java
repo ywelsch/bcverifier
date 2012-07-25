@@ -76,7 +76,7 @@ public class BoogieGenerator extends AbstractGenerator {
     }
 
     private void parsePlaces(BufferedReader reader) throws GenerationException {
-        Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)\\s+(.*)");
+        Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)\\s+([(].*?[)])(\\s+([(].*?[)]))?");
         
         HashMap<Integer,List<Place>> oldMap = new HashMap<Integer, List<Place>>();
         HashMap<Integer,List<Place>> newMap = new HashMap<Integer, List<Place>>();
@@ -105,7 +105,8 @@ public class BoogieGenerator extends AbstractGenerator {
                         newMap.put(lineNumber, currentPlaceList);
                     }
                 }
-                currentPlaceList.add(new Place(m.group(1), m.group(4)));
+                currentPlaceList.add(new Place(m.group(1), m.group(4), m.group(6)));
+                Logger.getLogger(BoogieGenerator.class).debug("Parsed place :" + new Place(m.group(1), m.group(4), m.group(6))); 
             } else  {
                 Logger.getLogger(BoogieGenerator.class).warn("Unmatched line in preconditions: "+nextLine);
             }
