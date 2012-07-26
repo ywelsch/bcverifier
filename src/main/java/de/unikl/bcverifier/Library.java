@@ -1138,18 +1138,26 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // check for progress while stalled
         checkingCommand.add(new BPLAssertCommand(
-                ifThenElse(map(var(TranslationController.STALL1), stack1(var(PLACE_VARIABLE)), stack2(var(PLACE_VARIABLE))),
+                ifThenElse(map(var(TranslationController.STALL1), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
                 logicalOr(
                         notEqual(stack2(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
-                        less(var(MEASURE2), var(OLD_MEASURE2))
+                        logicalAnd(
+                                less(var(MEASURE2), var(OLD_MEASURE2)),
+                                lessEqual(new BPLIntLiteral(0), var(MEASURE2)),
+                                lessEqual(new BPLIntLiteral(0), var(OLD_MEASURE2))
+                        )
                         ),
                 BPLBoolLiteral.TRUE
                 )));
         checkingCommand.add(new BPLAssertCommand(
-                ifThenElse(map(var(TranslationController.STALL2), stack1(var(PLACE_VARIABLE)), stack2(var(PLACE_VARIABLE))),
+                ifThenElse(map(var(TranslationController.STALL2), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
                 logicalOr(
                         notEqual(stack1(var(PLACE_VARIABLE)), old_stack1(var(PLACE_VARIABLE))),
-                        less(var(MEASURE1), var(OLD_MEASURE1))
+                        logicalAnd(
+                                less(var(MEASURE1), var(OLD_MEASURE1)),
+                                lessEqual(new BPLIntLiteral(0), var(MEASURE1)),
+                                lessEqual(new BPLIntLiteral(0), var(OLD_MEASURE1))
+                        )
                         ),
                 BPLBoolLiteral.TRUE
                 )));
