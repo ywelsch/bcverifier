@@ -2806,7 +2806,8 @@ public class MethodTranslator implements ITranslationConstants {
                 context.addLocalPlace(localPlace.getName());
                 addAssignment(stack(var(PLACE_VARIABLE)), var(localPlace.getName()), "local place");
                 if(localPlace.getMeasure() != null){
-                    addAssignment(var(tc.getOldMeasure()), var(localPlace.getMeasure()));
+                    addAssignment(var(tc.getMeasure()), var(localPlace.getMeasure()));
+                    addAssert(lessEqual(intLiteral(0), var(tc.getMeasure())));
                 }
                 rawEndBlock(tc.getCheckLabel());
                 
@@ -2816,7 +2817,8 @@ public class MethodTranslator implements ITranslationConstants {
                 addAssignment(var(tc.getOldHeap()), var(tc.getHeap()));
                 addAssignment(var(tc.getOldStack()), var(tc.getStack()));
                 if(localPlace.getMeasure() != null){
-                    addAssignment(var(tc.getMeasure()), var(localPlace.getMeasure()));
+                    addAssignment(var(tc.getOldMeasure()), var(localPlace.getMeasure()));
+                    addAssert(lessEqual(intLiteral(0), var(tc.getOldMeasure())));
                 }
                 String placeLabel = tc.prefix(getProcedureName(method) + "_" + localPlace.getName());
                 tc.addLocalPlace(placeLabel);
