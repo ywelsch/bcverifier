@@ -1141,4 +1141,8 @@ public final class CodeGenerator implements ITranslationConstants {
     public static BPLExpression map1(BPLExpression prefix, BPLExpression accessor1, BPLExpression accessor2){
         return new BPLArrayExpression(new BPLArrayExpression(prefix, accessor1), accessor2);
     }
+    
+    public static BPLExpression map1(BPLExpression prefix, BPLExpression accessor1, BPLExpression accessor2, BPLExpression accessor3){
+        return new BPLArrayExpression(new BPLArrayExpression(new BPLArrayExpression(prefix, accessor1), accessor2), accessor3);
+    }
 }

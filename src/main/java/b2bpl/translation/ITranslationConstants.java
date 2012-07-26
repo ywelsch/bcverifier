@@ -110,6 +110,10 @@ public interface ITranslationConstants {
   String STACK_PTR_TYPE = "StackPtr";
 
   String STACK_FRAME_TYPE = "StackFrame";
+  
+  String INTERACTION_FRAME_TYPE = "InteractionFrame";
+  
+  String IP_VAR = "ip";
 
   String STACK_TYPE = "Stack";
   

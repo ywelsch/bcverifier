@@ -15,7 +15,6 @@ stall2[oldInLoop, newBeforeReturn] := true;
 (stack1[sp1][place] == oldBeforeReturn || stack1[sp1][place] == oldInLoop) <==> (stack2[sp2][place] == newBeforeReturn)
 stack1[sp1][place] == oldBeforeReturn ==> stack1[sp1][reg2_i] == stack2[sp2][reg2_i] //value of both x variables is equal before return
 stack1[sp1][place] == oldInLoop ==> (stack1[sp1][reg1_i] == stack2[sp2][reg1_i])     //n on both sides is the same
-stack1[sp1][place] == oldInLoop ==> (stack1[sp1][reg2_i] < stack2[sp2][reg2_i])      //the x in the old lib is smaller as the x on the new lib (inside the loop)
 stack1[sp1][place] == oldInLoop ==> (stack1[sp1][reg2_i] == stack1[sp1][reg3_i])     //the value of x is the value of i (before adding)
 stack1[sp1][place] == oldInLoop ==> (stack1[sp1][reg3_i] < stack1[sp1][reg1_i])      //i runs until n
 stack1[sp1][place] == oldInLoop ==> (stack1[sp1][reg3_i] >= 0)                       //i starts at 0

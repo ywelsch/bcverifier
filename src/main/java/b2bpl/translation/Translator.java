@@ -1190,9 +1190,8 @@ public class Translator implements ITranslationConstants {
             BPLVariable uVar = new BPLVariable(u, new BPLTypeName(NAME_TYPE));
             final String sp1 = TranslationController.SP1;
             final String sp2 = TranslationController.SP2;
-            final String stack1 = TranslationController.STACK1;
-            final String stack2 = TranslationController.STACK2;
-            final String thisName = "this";
+            final String stack1 = TranslationController.STACK1+"IF";
+            final String stack2 = TranslationController.STACK2+"IF";
             final String stack = "stack";
             BPLVariable stackVar = new BPLVariable(stack, new BPLTypeName(STACK_TYPE));
             final String sp = "sp";
@@ -1218,6 +1217,10 @@ public class Translator implements ITranslationConstants {
             final String c3 = "c3";
             BPLVariable c3Var = new BPLVariable(c3, new BPLTypeName(NAME_TYPE));
             final String dynType = DYN_TYPE_FIELD;
+            
+            final String iframe = "iframe";
+            BPLVariable iframeVar = new BPLVariable(iframe, new BPLTypeName(INTERACTION_FRAME_TYPE));
+            
             
             
             addAxiom(forall(tVar, uVar, oVar, heapVar,
@@ -1409,19 +1412,21 @@ public class Translator implements ITranslationConstants {
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(sp2, new BPLTypeName(STACK_PTR_TYPE))));
 
             addDeclaration(new BPLTypeAlias(STACK_FRAME_TYPE, new BPLParameterizedType(new BPLArrayType(new BPLTypeName(VAR_TYPE, new BPLTypeName("alpha")), new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
-            addDeclaration(new BPLTypeAlias(STACK_TYPE, new BPLArrayType(new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(STACK_FRAME_TYPE))));
+            addDeclaration(new BPLTypeAlias(INTERACTION_FRAME_TYPE, new BPLArrayType(new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(STACK_FRAME_TYPE))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(IP_VAR, BPLBuiltInType.INT)));
+            addDeclaration(new BPLTypeAlias(STACK_TYPE, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(INTERACTION_FRAME_TYPE))));
 
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack1, new BPLTypeName(STACK_TYPE), wellformedStack(var(stack1), var(sp1), var(heap1)))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack2, new BPLTypeName(STACK_TYPE), wellformedStack(var(stack2), var(sp2), var(heap2)))));
 
             addFunction(WELLFORMED_STACK_FUNC, new BPLTypeName(STACK_TYPE), new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
-                    stackVar, spVar, heapVar,
+                    iVar, stackVar, spVar, heapVar,
                     isEquiv(wellformedStack(var(stack), var(sp), var(heap)),
                     logicalAnd(
-                            forall(pVar, vVar, implies(logicalAnd(lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp))), new BPLArrayExpression(var(heap), new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), var(alloc)))),
-                            forall(pVar, vVar, implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), nullLiteral()))),
-                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), intLiteral(0))))
+                            forall(pVar, vVar, implies(logicalAnd(lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp))), new BPLArrayExpression(var(heap), map1(var(stack), var(i), var(p), var(v)), var(alloc)))),
+                            forall(pVar, vVar, implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(map1(var(stack), var(i), var(p), var(v)), nullLiteral()))),
+                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(map1(var(stack), var(i), var(p), var(v)), intLiteral(0))))
                             )
                     )
                     ));
@@ -1429,8 +1434,8 @@ public class Translator implements ITranslationConstants {
             if (tc.getConfig().extensionalityEnabled()) {
             	addComment("Extensionality for stacks");
             	addAxiom(forall(
-            			spVar, stackVar,
-            			isEqual(new BPLArrayExpression(var(stack), new BPLArrayAssignment(new BPLVariableExpression[]{var(sp)}, new BPLArrayExpression(var(stack), var(sp)))), var(stack))
+            			iVar, spVar, stackVar,
+            			isEqual(map1(var(stack), var(i), new BPLArrayAssignment(new BPLVariableExpression[]{var(sp)}, map1(var(stack), var(i), var(sp)))), var(stack))
             			));
             }
 
@@ -1522,14 +1527,14 @@ public class Translator implements ITranslationConstants {
             
             addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             
-            addFunction(VALID_HEAP_SUCC_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(STACK_TYPE), BPLBuiltInType.BOOL);
+            addFunction(VALID_HEAP_SUCC_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(INTERACTION_FRAME_TYPE), BPLBuiltInType.BOOL);
 
             String oldHeap = "oldHeap";
             BPLVariable oldHeapVar = new BPLVariable(oldHeap, new BPLTypeName(HEAP_TYPE));
             String newHeap = "newHeap";
             BPLVariable newHeapVar = new BPLVariable(newHeap, new BPLTypeName(HEAP_TYPE));
-            addAxiom(forall(oldHeapVar, newHeapVar, stackVar,
-                    isEquiv(validHeapSucc(var(oldHeap), var(newHeap), var(stack)),
+            addAxiom(forall(oldHeapVar, newHeapVar, iframeVar,
+                    isEquiv(validHeapSucc(var(oldHeap), var(newHeap), var(iframe)),
                             forall(
                                     spVar, oVar,
                                     logicalAnd(

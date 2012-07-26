@@ -323,8 +323,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                         new BPLSpecification(new BPLModifiesClause(
                                 new BPLVariableExpression(TranslationController.HEAP1),
                                 new BPLVariableExpression(TranslationController.HEAP2),
-                                new BPLVariableExpression(TranslationController.STACK1),
-                                new BPLVariableExpression(TranslationController.STACK2),
+                                new BPLVariableExpression(TranslationController.STACK1+"IF"),
+                                new BPLVariableExpression(TranslationController.STACK2+"IF"),
                                 new BPLVariableExpression(TranslationController.SP1),
                                 new BPLVariableExpression(TranslationController.SP2),
                                 new BPLVariableExpression(RELATED_RELATION),
@@ -437,6 +437,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // preconditions of before checking
         // //////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
+        procAssumes.add(new BPLAssignmentCommand(var(TranslationController.STACK1), map(var(TranslationController.STACK1+"IF"), var(IP_VAR))));
+        procAssumes.add(new BPLAssignmentCommand(var(TranslationController.STACK2), map(var(TranslationController.STACK2+"IF"), var(IP_VAR))));
+        
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2), new BPLIntLiteral(0))));
         
@@ -855,6 +858,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             localVariables.add(new BPLVariableDeclaration(var));
         }
         
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(TranslationController.STACK1, new BPLTypeName(INTERACTION_FRAME_TYPE))));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(TranslationController.STACK2, new BPLTypeName(INTERACTION_FRAME_TYPE))));
+        
         // add variables for loop unroll checking
         //////////////////////////////////////
         localVariables.add(new BPLVariableDeclaration(unrollCount1Var));
@@ -867,8 +873,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // add variables for saving away the old stack
         //////////////////////////////////////////////
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK1, new BPLTypeName(STACK_TYPE))));
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK2, new BPLTypeName(STACK_TYPE))));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK1, new BPLTypeName(INTERACTION_FRAME_TYPE))));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK2, new BPLTypeName(INTERACTION_FRAME_TYPE))));
         
         // add variables for measuring progress of local loops
         //////////////////////////////////////////////////////
