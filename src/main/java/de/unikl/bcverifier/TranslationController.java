@@ -16,10 +16,6 @@ import b2bpl.bytecode.JClassType;
 import b2bpl.translation.ITranslationConstants;
 
 public class TranslationController implements ITranslationConstants {
-    public static final String HEAP1 = "heap1";
-    public static final String HEAP2 = "heap2";
-    public static final String STACK1 = "stack1";
-    public static final String STACK2 = "stack2";
     public static final String SP1 = "sp1";
     public static final String SP2 = "sp2";
     public static final String LABEL_PREFIX1 = "lib1_";
@@ -31,8 +27,6 @@ public class TranslationController implements ITranslationConstants {
     public static final String CHECK_LABEL2 = VERIFY_LABEL;
     public static final String CONSTRUCTOR_LABEL1 = LABEL_PREFIX2 + CONSTRUCTOR_TABLE_LABEL;
     public static final String CONSTRUCTOR_LABEL2 = VERIFY_LABEL;
-    public static final String STALL1 = "stall1";
-    public static final String STALL2 = "stall2";
     
     private boolean isActive = false;
     private Configuration config;

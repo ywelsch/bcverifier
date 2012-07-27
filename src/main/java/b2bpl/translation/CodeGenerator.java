@@ -1063,19 +1063,19 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression stall1(BPLExpression a1, BPLExpression a2){
-        return new BPLArrayExpression(var(TranslationController.STALL1), a1, a2);
+        return new BPLArrayExpression(var(STALL1), a1, a2);
     }
     
     public static BPLExpression stall2(BPLExpression a1, BPLExpression a2){
-        return new BPLArrayExpression(var(TranslationController.STALL2), a1, a2);
+        return new BPLArrayExpression(var(STALL2), a1, a2);
     }
     
     public static BPLExpression heap1(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var(TranslationController.HEAP1), exp1, exp2);
+        return new BPLArrayExpression(var(HEAP1), exp1, exp2);
     }
     
     public static BPLExpression heap2(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var(TranslationController.HEAP2), exp1, exp2);
+        return new BPLArrayExpression(var(HEAP2), exp1, exp2);
     }
     
     public static BPLExpression oldHeap1(BPLExpression exp1, BPLExpression exp2){
@@ -1087,7 +1087,7 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression stack1(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK1), var(TranslationController.SP1)), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(STACK1), var(TranslationController.SP1)), exp);
     }
     
     public static BPLExpression old_stack1(BPLExpression exp){
@@ -1095,19 +1095,19 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression stack1(BPLExpression sp, BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK1), sp), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(STACK1), sp), exp);
     }
     
     public static BPLExpression stack1old(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK1), add(var(TranslationController.SP1), new BPLIntLiteral(1))), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(STACK1), add(var(TranslationController.SP1), new BPLIntLiteral(1))), exp);
     }
     
     public static BPLExpression stack1calling(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK1), sub(var(TranslationController.SP1), new BPLIntLiteral(1))), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(STACK1), sub(var(TranslationController.SP1), new BPLIntLiteral(1))), exp);
     }
     
     public static BPLExpression stack2(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK2), var(TranslationController.SP2)), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(STACK2), var(TranslationController.SP2)), exp);
     }
     
     public static BPLExpression old_stack2(BPLExpression exp){
@@ -1115,15 +1115,15 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression stack2(BPLExpression sp, BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK2), sp), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(STACK2), sp), exp);
     }
     
     public static BPLExpression stack2old(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK2), add(var(TranslationController.SP2), new BPLIntLiteral(1))), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(STACK2), add(var(TranslationController.SP2), new BPLIntLiteral(1))), exp);
     }
     
     public static BPLExpression stack2calling(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(TranslationController.STACK2), sub(var(TranslationController.SP2), new BPLIntLiteral(1))), exp);
+        return new BPLArrayExpression(new BPLArrayExpression(var(STACK2), sub(var(TranslationController.SP2), new BPLIntLiteral(1))), exp);
     }
     
     public static BPLExpression related(BPLExpression exp1, BPLExpression exp2){

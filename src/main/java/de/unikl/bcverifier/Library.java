@@ -321,16 +321,16 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         programDecls
                 .add(new BPLProcedure(methodName, inParams, outParams,
                         new BPLSpecification(new BPLModifiesClause(
-                                new BPLVariableExpression(TranslationController.HEAP1),
-                                new BPLVariableExpression(TranslationController.HEAP2),
-                                new BPLVariableExpression(TranslationController.STACK1+"IF"),
-                                new BPLVariableExpression(TranslationController.STACK2+"IF"),
+                                new BPLVariableExpression(HEAP1),
+                                new BPLVariableExpression(HEAP2),
+                                new BPLVariableExpression(STACK1),
+                                new BPLVariableExpression(STACK2),
                                 new BPLVariableExpression(TranslationController.SP1),
                                 new BPLVariableExpression(TranslationController.SP2),
                                 new BPLVariableExpression(RELATED_RELATION),
                                 new BPLVariableExpression(USE_HAVOC),
-                                new BPLVariableExpression(TranslationController.STALL1),
-                                new BPLVariableExpression(TranslationController.STALL2)
+                                new BPLVariableExpression(STALL1),
+                                new BPLVariableExpression(STALL2)
                                 )),
                         methodImpl));
     }
@@ -437,16 +437,16 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // preconditions of before checking
         // //////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
-        procAssumes.add(new BPLAssignmentCommand(var(TranslationController.STACK1), map(var(TranslationController.STACK1+"IF"), var(IP_VAR))));
-        procAssumes.add(new BPLAssignmentCommand(var(TranslationController.STACK2), map(var(TranslationController.STACK2+"IF"), var(IP_VAR))));
+        procAssumes.add(new BPLAssignmentCommand(var(STACK1), map(var(STACK1+"IF"), var(IP_VAR))));
+        procAssumes.add(new BPLAssignmentCommand(var(STACK2), map(var(STACK2+"IF"), var(IP_VAR))));
         
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2), new BPLIntLiteral(0))));
         
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP1), var(TranslationController.HEAP1)));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(TranslationController.HEAP2)));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK1), var(TranslationController.STACK1)));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK2), var(TranslationController.STACK2)));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP1), var(HEAP1)));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(HEAP2)));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK1), var(STACK1)));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK2), var(STACK2)));
         
         String address = "address";
         BPLVariable addressVar = new BPLVariable(address, new BPLTypeName(ADDRESS_TYPE));
@@ -509,6 +509,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
         // invariant
         procAssumes.addAll(invAssumes);
+        // TODO is this sound?
+//        procAssumes.addAll(localInvAssumes);
 
         // relation between lib1 and lib2
         // ///////////////////////////////////////////
@@ -611,8 +613,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssignmentCommand(heap2(stack2(receiver()), var(EXPOSED_FIELD)), BPLBoolLiteral.TRUE));
         procAssumes.add(new BPLAssignmentCommand(related(stack1(receiver()), stack2(receiver())), BPLBoolLiteral.TRUE));
         if(config.isAssumeWellformedHeap()){
-            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(TranslationController.HEAP1))));
-            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(TranslationController.HEAP2))));
+            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(HEAP1))));
+            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(HEAP2))));
         }
         
         // relate all parameters from the outside
@@ -858,9 +860,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             localVariables.add(new BPLVariableDeclaration(var));
         }
         
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(TranslationController.STACK1, new BPLTypeName(INTERACTION_FRAME_TYPE))));
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(TranslationController.STACK2, new BPLTypeName(INTERACTION_FRAME_TYPE))));
-        
         // add variables for loop unroll checking
         //////////////////////////////////////
         localVariables.add(new BPLVariableDeclaration(unrollCount1Var));
@@ -953,8 +952,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                       stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))))));
         
         if(config.isAssumeWellformedHeap()){
-          checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(TranslationController.HEAP1))));
-          checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(TranslationController.HEAP2))));
+          checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(HEAP1))));
+          checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(HEAP2))));
         }
 
         checkingCommand.add(new BPLAssertCommand(
@@ -1057,8 +1056,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                 stack2(var(var.getName()))))));
                 
                 if(config.isAssumeWellformedHeap()){
-                    checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(TranslationController.HEAP1))));
-                    checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(TranslationController.HEAP2))));
+                    checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(HEAP1))));
+                    checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(HEAP2))));
                 }
             } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
                 checkingCommand.add(new BPLAssertCommand(isEqual(
@@ -1084,10 +1083,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 );
         
         // save away the old heaps
-        checkingCommand.add(new BPLAssignmentCommand(var(OLD_HEAP1), var(TranslationController.HEAP1)));
-        checkingCommand.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(TranslationController.HEAP2)));
+        checkingCommand.add(new BPLAssignmentCommand(var(OLD_HEAP1), var(HEAP1)));
+        checkingCommand.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(HEAP2)));
         
-        checkingCommand.add(new BPLHavocCommand(var(TranslationController.HEAP1), var(TranslationController.HEAP2)));
+        checkingCommand.add(new BPLHavocCommand(var(HEAP1), var(HEAP2)));
         
         // the exposed and createdByCtxt flags have to be preserved for the invariant to be applicable
         String sp = "sp";
@@ -1120,8 +1119,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // relate the new heap with the old one
         ///////////////////////////////////////
-        checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP1), var(TranslationController.HEAP1), var(TranslationController.STACK1))));
-        checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP2), var(TranslationController.HEAP2), var(TranslationController.STACK2))));
+        checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP1), var(HEAP1), var(STACK1))));
+        checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP2), var(HEAP2), var(STACK2))));
         
         //invariant
         checkingCommand.addAll(invAssumes);
@@ -1144,7 +1143,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // check for progress while stalled
         checkingCommand.add(new BPLAssertCommand(
-                ifThenElse(map(var(TranslationController.STALL1), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
+                ifThenElse(map(var(STALL1), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
                 logicalOr(
                         notEqual(stack2(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
                         logicalAnd(
@@ -1156,7 +1155,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 BPLBoolLiteral.TRUE
                 )));
         checkingCommand.add(new BPLAssertCommand(
-                ifThenElse(map(var(TranslationController.STALL2), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
+                ifThenElse(map(var(STALL2), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
                 logicalOr(
                         notEqual(stack1(var(PLACE_VARIABLE)), old_stack1(var(PLACE_VARIABLE))),
                         logicalAnd(

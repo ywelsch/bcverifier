@@ -113,6 +113,10 @@ public interface ITranslationConstants {
   
   String INTERACTION_FRAME_TYPE = "InteractionFrame";
   
+  String SP_MAP1_VAR = "spmap1";
+  
+  String SP_MAP2_VAR = "spmap2";
+  
   String IP_VAR = "ip";
 
   String STACK_TYPE = "Stack";
@@ -383,6 +387,14 @@ public static final String RELATED_RELATION = "related";
 
 public static final String PLACE_VARIABLE = "place";
 
+public static final String STACK1 = "stack1";
+
+public static final String STACK2 = "stack2";
+
+public static final String HEAP1 = "heap1";
+
+public static final String HEAP2 = "heap2";
+
 public static final String OLD_HEAP1 = "old_heap1";
 
 public static final String OLD_HEAP2 = "old_heap2";
@@ -390,6 +402,10 @@ public static final String OLD_HEAP2 = "old_heap2";
 public static final String OLD_STACK1 = "old_stack1";
 
 public static final String OLD_STACK2 = "old_stack2";
+
+public static final String STALL1 = "stall1";
+
+public static final String STALL2 = "stall2";
 
 public static final String PRECONDITIONS_LABEL = "preconditions";
 
