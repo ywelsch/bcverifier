@@ -25,6 +25,7 @@ import static b2bpl.translation.CodeGenerator.logicalOr;
 import static b2bpl.translation.CodeGenerator.map;
 import static b2bpl.translation.CodeGenerator.map1;
 import static b2bpl.translation.CodeGenerator.memberOf;
+import static b2bpl.translation.CodeGenerator.modulo;
 import static b2bpl.translation.CodeGenerator.nonNull;
 import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.old_stack1;
@@ -32,6 +33,7 @@ import static b2bpl.translation.CodeGenerator.old_stack2;
 import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.relNull;
 import static b2bpl.translation.CodeGenerator.related;
+import static b2bpl.translation.CodeGenerator.spmap;
 import static b2bpl.translation.CodeGenerator.stack;
 import static b2bpl.translation.CodeGenerator.stack1;
 import static b2bpl.translation.CodeGenerator.stack2;
@@ -437,8 +439,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // preconditions of before checking
         // //////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
-        procAssumes.add(new BPLAssignmentCommand(var(STACK1), map(var(STACK1+"IF"), var(IP_VAR))));
-        procAssumes.add(new BPLAssignmentCommand(var(STACK2), map(var(STACK2+"IF"), var(IP_VAR))));
         
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2), new BPLIntLiteral(0))));
@@ -500,7 +500,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(isEqual(var(TranslationController.SP2),
                 new BPLIntLiteral(0))));
         
-
+        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        
         // assume the result of the method is not yet set
         procAssumes.add(new BPLAssumeCommand(isNull(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)))));
         procAssumes.add(new BPLAssumeCommand(isNull(stack2(var(RESULT_PARAM + REF_TYPE_ABBREV)))));
@@ -558,6 +559,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(var(TranslationController.SP2),
                 new BPLIntLiteral(0))));
+        
+        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
 
         // initialize int return values to be zero, so the relation check of the check_boundary_return block only checks the ref-result
         procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
@@ -662,6 +665,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(greater(var(TranslationController.SP2),
                 new BPLIntLiteral(0))));
+        
+        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
         
         // this return path may not be taken if havoc is used to handle it
         /////////////////////////////////////////////////////////////////
@@ -791,6 +796,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes = new ArrayList<BPLCommand>();
         procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack1(var(PLACE_VARIABLE)))));
         procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack2(var(PLACE_VARIABLE)))));
+        
+        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
         
         // relation of the methods initially called on the library
         // ///////////////////////////////////////////
@@ -1402,7 +1409,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // /////////////////////////////////////////
         // commands before callTableInit (preconditions of the calltable)
         // /////////////////////////////////////////
-        BPLExpression sp = var(tc.getStackPointer());
+        BPLExpression sp = spmap();
 
         dispatchCommands = new ArrayList<BPLCommand>();
         dispatchCommands.add(new BPLAssumeCommand(isEqual(sp,

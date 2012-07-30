@@ -972,12 +972,24 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
 
-    public static BPLExpression stack(BPLExpression sp, BPLExpression exp) {
-        return new BPLArrayExpression(new BPLArrayExpression(var(tc.getStack()), sp), exp);
+    public static BPLExpression spmap() {
+        return map(var(tc.getStackPointerMap()), var(IP_VAR));
     }
-
+    
+    public static BPLExpression spmap(BPLExpression ip) {
+        return map(var(tc.getStackPointerMap()), ip);
+    }
+    
+    public static BPLExpression stack(BPLExpression ip, BPLExpression sp, BPLExpression exp) {
+        return map1(var(tc.getStack()), ip, sp, exp);
+    }
+    
+    public static BPLExpression stack(BPLExpression ip, BPLExpression exp) {
+        return map1(var(tc.getStack()), ip, spmap(ip), exp);
+    }
+    
     public static BPLExpression stack(BPLExpression exp) {
-        return stack(var(tc.getStackPointer()), exp);
+        return map1(var(tc.getStack()), var(IP_VAR), spmap(var(IP_VAR)), exp);
     }
 
     public static BPLExpression heap(BPLExpression exp1, BPLExpression exp2) {
@@ -1086,44 +1098,44 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLArrayExpression(var(OLD_HEAP2), exp1, exp2);
     }
     
+    public static BPLExpression spmap1(BPLExpression exp){
+        return new BPLArrayExpression(map(var(SP_MAP1_VAR), exp));
+    }
+    
+    public static BPLExpression spmap2(BPLExpression exp){
+        return new BPLArrayExpression(map(var(SP_MAP2_VAR), exp));
+    }
+    
     public static BPLExpression stack1(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(STACK1), var(TranslationController.SP1)), exp);
+        return map1(var(STACK1), var(IP_VAR), spmap1(var(IP_VAR)), exp);
     }
     
     public static BPLExpression old_stack1(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(OLD_STACK1), var(TranslationController.SP1)), exp);
+        return map1(var(OLD_STACK1), var(IP_VAR), spmap1(var(IP_VAR)), exp);
     }
     
     public static BPLExpression stack1(BPLExpression sp, BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(STACK1), sp), exp);
+        return map1(var(STACK1), var(IP_VAR), sp, exp);
     }
     
-    public static BPLExpression stack1old(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(STACK1), add(var(TranslationController.SP1), new BPLIntLiteral(1))), exp);
-    }
-    
-    public static BPLExpression stack1calling(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(STACK1), sub(var(TranslationController.SP1), new BPLIntLiteral(1))), exp);
+    public static BPLExpression stack1(BPLExpression ip, BPLExpression sp, BPLExpression exp){
+        return map1(var(STACK1), ip, sp, exp);
     }
     
     public static BPLExpression stack2(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(STACK2), var(TranslationController.SP2)), exp);
+        return map1(var(STACK2), var(IP_VAR), spmap2(var(IP_VAR)), exp);
     }
     
     public static BPLExpression old_stack2(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(OLD_STACK2), var(TranslationController.SP2)), exp);
+        return map1(var(OLD_STACK2), var(IP_VAR), spmap2(var(IP_VAR)), exp);
     }
     
     public static BPLExpression stack2(BPLExpression sp, BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(STACK2), sp), exp);
+        return map1(var(STACK2), var(IP_VAR), sp, exp);
     }
     
-    public static BPLExpression stack2old(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(STACK2), add(var(TranslationController.SP2), new BPLIntLiteral(1))), exp);
-    }
-    
-    public static BPLExpression stack2calling(BPLExpression exp){
-        return new BPLArrayExpression(new BPLArrayExpression(var(STACK2), sub(var(TranslationController.SP2), new BPLIntLiteral(1))), exp);
+    public static BPLExpression stack2(BPLExpression ip, BPLExpression sp, BPLExpression exp){
+        return map1(var(STACK2), ip, sp, exp);
     }
     
     public static BPLExpression related(BPLExpression exp1, BPLExpression exp2){

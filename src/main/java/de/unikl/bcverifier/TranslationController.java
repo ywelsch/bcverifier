@@ -185,14 +185,14 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public String getStackPointer() {
+    public String getStackPointerMap() {
         switch(round){
         case 1:
-            return SP1;
+            return SP_MAP1_VAR;
         case 2:
-            return SP2;
+            return SP_MAP2_VAR;
         default:
-            return "sp";
+            return "spmap";
         }
     }
     
