@@ -196,6 +196,17 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
+    public String getInteractionFramePointer() {
+        switch(round){
+        case 1:
+            return IP1_VAR;
+        case 2:
+            return IP2_VAR;
+        default:
+            return "ip";
+        }
+    }
+    
     public String prefix(String label) {
         switch(round){
         case 1:

@@ -973,7 +973,7 @@ public final class CodeGenerator implements ITranslationConstants {
     
 
     public static BPLExpression spmap() {
-        return map(var(tc.getStackPointerMap()), var(IP_VAR));
+        return map(var(tc.getStackPointerMap()), var(tc.getInteractionFramePointer()));
     }
     
     public static BPLExpression spmap(BPLExpression ip) {
@@ -989,7 +989,7 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression stack(BPLExpression exp) {
-        return map1(var(tc.getStack()), var(IP_VAR), spmap(var(IP_VAR)), exp);
+        return map1(var(tc.getStack()), var(tc.getInteractionFramePointer()), spmap(var(tc.getInteractionFramePointer())), exp);
     }
 
     public static BPLExpression heap(BPLExpression exp1, BPLExpression exp2) {
@@ -1107,15 +1107,15 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression stack1(BPLExpression exp){
-        return map1(var(STACK1), var(IP_VAR), spmap1(var(IP_VAR)), exp);
+        return map1(var(STACK1), var(tc.getInteractionFramePointer()), spmap1(var(IP1_VAR)), exp);
     }
     
     public static BPLExpression old_stack1(BPLExpression exp){
-        return map1(var(OLD_STACK1), var(IP_VAR), spmap1(var(IP_VAR)), exp);
+        return map1(var(OLD_STACK1), var(IP1_VAR), spmap1(var(IP1_VAR)), exp);
     }
     
     public static BPLExpression stack1(BPLExpression sp, BPLExpression exp){
-        return map1(var(STACK1), var(IP_VAR), sp, exp);
+        return map1(var(STACK1), var(IP1_VAR), sp, exp);
     }
     
     public static BPLExpression stack1(BPLExpression ip, BPLExpression sp, BPLExpression exp){
@@ -1123,15 +1123,15 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression stack2(BPLExpression exp){
-        return map1(var(STACK2), var(IP_VAR), spmap2(var(IP_VAR)), exp);
+        return map1(var(STACK2), var(IP2_VAR), spmap2(var(IP2_VAR)), exp);
     }
     
     public static BPLExpression old_stack2(BPLExpression exp){
-        return map1(var(OLD_STACK2), var(IP_VAR), spmap2(var(IP_VAR)), exp);
+        return map1(var(OLD_STACK2), var(IP2_VAR), spmap2(var(IP2_VAR)), exp);
     }
     
     public static BPLExpression stack2(BPLExpression sp, BPLExpression exp){
-        return map1(var(STACK2), var(IP_VAR), sp, exp);
+        return map1(var(STACK2), var(IP2_VAR), sp, exp);
     }
     
     public static BPLExpression stack2(BPLExpression ip, BPLExpression sp, BPLExpression exp){

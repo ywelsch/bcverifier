@@ -3176,13 +3176,13 @@ public class MethodTranslator implements ITranslationConstants {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
                         methodParams.add(new BPLVariableExpression(args[i]));
                         if(invokedMethodParams[i].isBaseType()){
-                            addAssert(isInRange(stack(var(IP_VAR), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
                         } else if(invokedMethodParams[i].isClassType()){
-                            addAssert(isOfType(stack(var(IP_VAR), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
                         } else {
                             //TODO array type
                         }
-                        addAssignment(stack(var(paramVar(i, invokedMethodParams[i]))), stack(var(IP_VAR), spmapMinus1, var(args[i])));
+                        addAssignment(stack(var(paramVar(i, invokedMethodParams[i]))), stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])));
                     }
                     
                     addAssignment(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName));
@@ -3203,13 +3203,13 @@ public class MethodTranslator implements ITranslationConstants {
                     ////////////////////////////////////////////////////////////////////
                     
                     startBlock(boundaryLabel);
-                    addAssignment(var(IP_VAR), add(var(IP_VAR), new BPLIntLiteral(1)), "create new interaction frame");
+                    addAssignment(var(tc.getInteractionFramePointer()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1)), "create new interaction frame");
                     addAssignment(spmap(), new BPLIntLiteral(0), "create the initial stack frame of the new interaction frame");
                     
                     // Pass all other method arguments (the first of which refers to the "this" object
                     // if the method is not static).
                     args = new String[invokedMethodParams.length];
-                    BPLExpression ipMinus1 = sub(var(IP_VAR), new BPLIntLiteral(1));
+                    BPLExpression ipMinus1 = sub(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1));
                     for (int i = 0; i < invokedMethodParams.length; i++) {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
                         methodParams.add(new BPLVariableExpression(args[i]));
@@ -3251,16 +3251,16 @@ public class MethodTranslator implements ITranslationConstants {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
                         methodParams.add(new BPLVariableExpression(args[i]));
                         if(invokedMethodParams[i].isBaseType()){
-                            addAssert(isInRange(stack(var(IP_VAR), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
                         } else if(invokedMethodParams[i].isClassType()){
-                            addAssert(isOfType(stack(var(IP_VAR), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
                         } else {
                             //TODO array type
                         }
                         if(invokedMethod.isStatic()){
-                            addAssignment(stack(var(paramVar(i+1, invokedMethodParams[i]))), stack(var(IP_VAR), spmapMinus1, var(args[i])));
+                            addAssignment(stack(var(paramVar(i+1, invokedMethodParams[i]))), stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])));
                         } else {
-                            addAssignment(stack(var(paramVar(i, invokedMethodParams[i]))), stack(var(IP_VAR), spmapMinus1, var(args[i])));
+                            addAssignment(stack(var(paramVar(i, invokedMethodParams[i]))), stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])));
                         }
                     }
                     
@@ -3297,13 +3297,13 @@ public class MethodTranslator implements ITranslationConstants {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
                         methodParams.add(new BPLVariableExpression(args[i]));
                         if(invokedMethodParams[i].isBaseType()){
-                            addAssert(isInRange(stack(var(IP_VAR), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
                         } else if(invokedMethodParams[i].isClassType()){
-                            addAssert(isOfType(stack(var(IP_VAR), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
                         } else {
                             //TODO array type
                         }
-                        addAssignment(stack(var(paramVar(i+1, invokedMethodParams[i]))), stack(var(IP_VAR), spmapMinus1, var(args[i])));
+                        addAssignment(stack(var(paramVar(i+1, invokedMethodParams[i]))), stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])));
                     }
                     
                     addAssignment(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName));
@@ -3440,6 +3440,11 @@ public class MethodTranslator implements ITranslationConstants {
 //                            );
 //                    blocks.add(block);
 //                }
+                
+                
+                
+                
+                
                 
                 startBlock(tc.nextLabel());
 //                addAssignment(stack(receiver()), var("reg0_r"));//TODO correct expression here

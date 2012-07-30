@@ -1407,14 +1407,16 @@ public class Translator implements ITranslationConstants {
 
             addDeclaration(new BPLTypeAlias(STACK_FRAME_TYPE, new BPLParameterizedType(new BPLArrayType(new BPLTypeName(VAR_TYPE, new BPLTypeName("alpha")), new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
             addDeclaration(new BPLTypeAlias(INTERACTION_FRAME_TYPE, new BPLArrayType(new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(STACK_FRAME_TYPE))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(IP_VAR, BPLBuiltInType.INT, lessEqual(intLiteral(0), var(IP_VAR)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(IP1_VAR, BPLBuiltInType.INT, lessEqual(intLiteral(0), var(IP1_VAR)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(IP2_VAR, BPLBuiltInType.INT, lessEqual(intLiteral(0), var(IP2_VAR)))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(SP_MAP1_VAR, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(SP_MAP2_VAR, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)))));
-            addAxiom(forall(iVar, implies(logicalAnd(lessEqual(intLiteral(0), var(i)), lessEqual(var(i), var(IP_VAR))),
-                    logicalAnd(
-                            lessEqual(intLiteral(0), map(var(SP_MAP1_VAR), var(i))),
-                            lessEqual(intLiteral(0), map(var(SP_MAP2_VAR), var(i)))
-                    ))));
+            addAxiom(forall(iVar, implies(logicalAnd(lessEqual(intLiteral(0), var(i)), lessEqual(var(i), var(IP1_VAR))),
+                        lessEqual(intLiteral(0), map(var(SP_MAP1_VAR), var(i)))
+                    )));
+            addAxiom(forall(iVar, implies(logicalAnd(lessEqual(intLiteral(0), var(i)), lessEqual(var(i), var(IP2_VAR))),
+                        lessEqual(intLiteral(0), map(var(SP_MAP2_VAR), var(i)))
+                    )));
             addDeclaration(new BPLTypeAlias(STACK_TYPE, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(INTERACTION_FRAME_TYPE))));
 
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK1, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK1), var(sp1), var(HEAP1)))));

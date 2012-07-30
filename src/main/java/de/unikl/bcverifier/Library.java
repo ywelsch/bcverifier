@@ -431,8 +431,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         String unrollCount1 = TranslationController.LABEL_PREFIX1+ITranslationConstants.UNROLL_COUNT;
         String unrollCount2 = TranslationController.LABEL_PREFIX2+ITranslationConstants.UNROLL_COUNT;
         
-        BPLExpression sp1MinusOne = sub(var(TranslationController.SP1), new BPLIntLiteral(1));
-        BPLExpression sp2MinusOne = sub(var(TranslationController.SP2), new BPLIntLiteral(1));
         List<BPLCommand> procAssumes;
 
         // ///////////////////////////////////
@@ -447,6 +445,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(HEAP2)));
         procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK1), var(STACK1)));
         procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK2), var(STACK2)));
+        
+        procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), var(IP2_VAR))));
         
         String address = "address";
         BPLVariable addressVar = new BPLVariable(address, new BPLTypeName(ADDRESS_TYPE));
@@ -500,7 +500,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(isEqual(var(TranslationController.SP2),
                 new BPLIntLiteral(0))));
         
-        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
         
         // assume the result of the method is not yet set
         procAssumes.add(new BPLAssumeCommand(isNull(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)))));
@@ -560,7 +560,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(isEqual(var(TranslationController.SP2),
                 new BPLIntLiteral(0))));
         
-        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
 
         // initialize int return values to be zero, so the relation check of the check_boundary_return block only checks the ref-result
         procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
@@ -666,13 +666,13 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(greater(var(TranslationController.SP2),
                 new BPLIntLiteral(0))));
         
-        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
         
         // this return path may not be taken if havoc is used to handle it
         /////////////////////////////////////////////////////////////////
         //TODO maybe add consistency check useHavoc[stack1[sp1][place]] <=> useHavoc[stack2[sp2][place]] 
-        procAssumes.add(new BPLAssumeCommand(logicalNot(useHavoc(stack1(sp1MinusOne, var(PLACE_VARIABLE))))));
-        procAssumes.add(new BPLAssumeCommand(logicalNot(useHavoc(stack2(sp2MinusOne, var(PLACE_VARIABLE))))));
+        procAssumes.add(new BPLAssumeCommand(logicalNot(useHavoc(stack1(sub(var(IP1_VAR), new BPLIntLiteral(1)), var(PLACE_VARIABLE))))));
+        procAssumes.add(new BPLAssumeCommand(logicalNot(useHavoc(stack2(sub(var(IP2_VAR), new BPLIntLiteral(1)), var(PLACE_VARIABLE))))));
         
         // can not return to a static method call site
         //////////////////////////////////////////////
@@ -797,7 +797,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack1(var(PLACE_VARIABLE)))));
         procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack2(var(PLACE_VARIABLE)))));
         
-        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
         
         // relation of the methods initially called on the library
         // ///////////////////////////////////////////
