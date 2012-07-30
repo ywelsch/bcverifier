@@ -922,7 +922,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 logicalAnd(
                         isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
                         isEqual(spmap1(), new BPLIntLiteral(0)),
-                        isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
+                        isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
                         isEqual(spmap2(), new BPLIntLiteral(0))
                         ),
                 logicalAnd(
@@ -1017,7 +1017,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         checkingCommand.add(new BPLAssumeCommand(logicalAnd(
                 isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
                 isEqual(spmap1(), new BPLIntLiteral(0)),
-                isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
+                isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
                 isEqual(spmap2(), new BPLIntLiteral(0))
                 )));
         checkingCommand.add(new BPLAssumeCommand(logicalAnd(

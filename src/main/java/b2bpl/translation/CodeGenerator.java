@@ -1115,7 +1115,7 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression stack1(BPLExpression exp){
-        return map1(var(STACK1), var(tc.getInteractionFramePointer()), spmap1(var(IP1_VAR)), exp);
+        return map1(var(STACK1), var(IP1_VAR), spmap1(var(IP1_VAR)), exp);
     }
     
     public static BPLExpression old_stack1(BPLExpression exp){
