@@ -1,4 +1,4 @@
-BCVerifier - Bytecode Verifier based on Boogie 2
+BCVerifier -- Verifying backward compatibility for Java packages
 ==============
 
 Organization
