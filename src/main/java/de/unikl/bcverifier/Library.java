@@ -168,8 +168,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
     /**
      * @throws TranslationException
+     * @throws GenerationException 
      */
-    public void translate() throws TranslationException {
+    public void translate() throws TranslationException, GenerationException {
         
         ArrayList<BPLCommand> invAssertions = new ArrayList<BPLCommand>();
         ArrayList<BPLCommand> invAssumes = new ArrayList<BPLCommand>();
@@ -385,39 +386,33 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     private void readInvariants(ArrayList<BPLCommand> invAssertions,
             ArrayList<BPLCommand> invAssumes,
             ArrayList<BPLCommand> localInvAssertions,
-            ArrayList<BPLCommand> localInvAssumes) {
+            ArrayList<BPLCommand> localInvAssumes) throws GenerationException {
         BPLCommand cmd;
-        try{
-            for (SpecInvariant inv : specGen.generateInvariant()) {
-            	if (inv.getWelldefinednessExpr() != null) {
-            		cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
-            		cmd.addComment(inv.getComment());
-            		cmd.addComment("check welldefinedness:");
-            		invAssumes.add(cmd);
-            		invAssertions.add(cmd);
-            	}
-                cmd = new BPLAssertCommand(inv.getInvExpr());
-                cmd.addComment("invariant");
-                invAssertions.add(cmd);
-                cmd = new BPLAssumeCommand(inv.getInvExpr());
-                cmd.addComment("invariant");
-                invAssumes.add(cmd);
-            }
-        } catch(GenerationException e){
-            Logger.getLogger(Library.class).warn("Error generating invariant.", e);
+
+        for (SpecInvariant inv : specGen.generateInvariant()) {
+        	if (inv.getWelldefinednessExpr() != null) {
+        		cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
+        		cmd.addComment(inv.getComment());
+        		cmd.addComment("check welldefinedness:");
+        		invAssumes.add(cmd);
+        		invAssertions.add(cmd);
+        	}
+        	cmd = new BPLAssertCommand(inv.getInvExpr());
+        	cmd.addComment("invariant");
+        	invAssertions.add(cmd);
+        	cmd = new BPLAssumeCommand(inv.getInvExpr());
+        	cmd.addComment("invariant");
+        	invAssumes.add(cmd);
         }
-        try{
-            for (String inv : specGen.generateLocalInvariant()) {
-                cmd = new BPLAssertCommand(var(inv));
-                cmd.addComment("local invariant");
-                localInvAssertions.add(cmd);
-                cmd = new BPLAssumeCommand(var(inv));
-                cmd.addComment("local invariant");
-                localInvAssumes.add(cmd);
-            }
-        } catch(GenerationException e){
-            Logger.getLogger(Library.class).warn("Error generating local invariant.", e);
-        }
+
+        for (String inv : specGen.generateLocalInvariant()) {
+        	cmd = new BPLAssertCommand(var(inv));
+        	cmd.addComment("local invariant");
+        	localInvAssertions.add(cmd);
+        	cmd = new BPLAssumeCommand(var(inv));
+        	cmd.addComment("local invariant");
+        	localInvAssumes.add(cmd);
+        }        
     }
 
     private void addPreconditionBlocks(ArrayList<BPLCommand> invAssumes,
