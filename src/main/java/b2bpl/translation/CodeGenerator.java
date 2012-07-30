@@ -1099,11 +1099,19 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression spmap1(BPLExpression exp){
-        return new BPLArrayExpression(map(var(SP_MAP1_VAR), exp));
+        return map(var(SP_MAP1_VAR), exp);
+    }
+    
+    public static BPLExpression spmap1(){
+        return map(var(SP_MAP1_VAR), var(IP1_VAR));
     }
     
     public static BPLExpression spmap2(BPLExpression exp){
-        return new BPLArrayExpression(map(var(SP_MAP2_VAR), exp));
+        return map(var(SP_MAP2_VAR), exp);
+    }
+    
+    public static BPLExpression spmap2(){
+        return map(var(SP_MAP2_VAR), var(IP2_VAR));
     }
     
     public static BPLExpression stack1(BPLExpression exp){

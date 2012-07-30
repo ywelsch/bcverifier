@@ -57,6 +57,8 @@ import static b2bpl.translation.CodeGenerator.oneClassDown;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.refOfType;
 import static b2bpl.translation.CodeGenerator.relNull;
+import static b2bpl.translation.CodeGenerator.spmap1;
+import static b2bpl.translation.CodeGenerator.spmap2;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.trigger;
 import static b2bpl.translation.CodeGenerator.typ;
@@ -1184,8 +1186,6 @@ public class Translator implements ITranslationConstants {
             BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
             final String u = "u";
             BPLVariable uVar = new BPLVariable(u, new BPLTypeName(NAME_TYPE));
-            final String sp1 = TranslationController.SP1;
-            final String sp2 = TranslationController.SP2;
             final String stack = "stack";
             BPLVariable stackVar = new BPLVariable(stack, new BPLTypeName(STACK_TYPE));
             final String sp = "sp";
@@ -1401,9 +1401,6 @@ public class Translator implements ITranslationConstants {
 
             addType(VAR_TYPE, "_");
             addDeclaration(new BPLTypeAlias(STACK_PTR_TYPE, BPLBuiltInType.INT));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(sp1, new BPLTypeName(STACK_PTR_TYPE))));
-
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(sp2, new BPLTypeName(STACK_PTR_TYPE))));
 
             addDeclaration(new BPLTypeAlias(STACK_FRAME_TYPE, new BPLParameterizedType(new BPLArrayType(new BPLTypeName(VAR_TYPE, new BPLTypeName("alpha")), new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
             addDeclaration(new BPLTypeAlias(INTERACTION_FRAME_TYPE, new BPLArrayType(new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(STACK_FRAME_TYPE))));
@@ -1411,16 +1408,11 @@ public class Translator implements ITranslationConstants {
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(IP2_VAR, BPLBuiltInType.INT, lessEqual(intLiteral(0), var(IP2_VAR)))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(SP_MAP1_VAR, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(SP_MAP2_VAR, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)))));
-            addAxiom(forall(iVar, implies(logicalAnd(lessEqual(intLiteral(0), var(i)), lessEqual(var(i), var(IP1_VAR))),
-                        lessEqual(intLiteral(0), map(var(SP_MAP1_VAR), var(i)))
-                    )));
-            addAxiom(forall(iVar, implies(logicalAnd(lessEqual(intLiteral(0), var(i)), lessEqual(var(i), var(IP2_VAR))),
-                        lessEqual(intLiteral(0), map(var(SP_MAP2_VAR), var(i)))
-                    )));
+            
             addDeclaration(new BPLTypeAlias(STACK_TYPE, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(INTERACTION_FRAME_TYPE))));
 
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK1, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK1), var(sp1), var(HEAP1)))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK2, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK2), var(sp2), var(HEAP2)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK1, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK1), spmap1(), var(HEAP1))))); // TODO extend to all interaction frames
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK2, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK2), spmap2(), var(HEAP2))))); // TODO extend to all interaction frames
 
             addFunction(WELLFORMED_STACK_FUNC, new BPLTypeName(STACK_TYPE), new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
@@ -1530,14 +1522,14 @@ public class Translator implements ITranslationConstants {
             
             addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             
-            addFunction(VALID_HEAP_SUCC_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(INTERACTION_FRAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(VALID_HEAP_SUCC_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(STACK_TYPE), BPLBuiltInType.BOOL);
 
             String oldHeap = "oldHeap";
             BPLVariable oldHeapVar = new BPLVariable(oldHeap, new BPLTypeName(HEAP_TYPE));
             String newHeap = "newHeap";
             BPLVariable newHeapVar = new BPLVariable(newHeap, new BPLTypeName(HEAP_TYPE));
-            addAxiom(forall(oldHeapVar, newHeapVar, iframeVar,
-                    isEquiv(validHeapSucc(var(oldHeap), var(newHeap), var(iframe)),
+            addAxiom(forall(oldHeapVar, newHeapVar, stackVar,
+                    isEquiv(validHeapSucc(var(oldHeap), var(newHeap), var(stack)),
                             forall(
                                     spVar, oVar,
                                     logicalAnd(

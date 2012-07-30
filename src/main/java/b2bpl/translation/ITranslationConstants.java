@@ -117,9 +117,9 @@ public interface ITranslationConstants {
   
   String SP_MAP2_VAR = "spmap2";
   
-  String IP1_VAR = "ip";
+  String IP1_VAR = "ip1";
   
-  String IP2_VAR = "ip";
+  String IP2_VAR = "ip2";
 
   String STACK_TYPE = "Stack";
   

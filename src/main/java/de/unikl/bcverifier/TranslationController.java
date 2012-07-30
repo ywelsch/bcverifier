@@ -16,8 +16,6 @@ import b2bpl.bytecode.JClassType;
 import b2bpl.translation.ITranslationConstants;
 
 public class TranslationController implements ITranslationConstants {
-    public static final String SP1 = "sp1";
-    public static final String SP2 = "sp2";
     public static final String LABEL_PREFIX1 = "lib1_";
     public static final String LABEL_PREFIX2 = "lib2_";
     public static final String DISPATCH_LABEL1 = "dispatch1";

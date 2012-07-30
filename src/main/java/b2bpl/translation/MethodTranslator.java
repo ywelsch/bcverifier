@@ -1381,7 +1381,7 @@ public class MethodTranslator implements ITranslationConstants {
         endBlock(boundaryReturnLabel, internReturnLabel);
         
         startBlock(boundaryReturnLabel);
-        addAssume(logicalAnd(isEqual(spmap(), intLiteral(0)), isEqual(modulo(var(IP_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        addAssume(logicalAnd(isEqual(spmap(), intLiteral(0)), isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
         addAssignment(stack(var(PLACE_VARIABLE)), var(tc.buildPlace(getProcedureName(method), true)));
         if(method.isConstructor()){
             rawEndBlock(tc.getNextConstructorLabel());
@@ -1391,7 +1391,7 @@ public class MethodTranslator implements ITranslationConstants {
         
         String retTableLabel = tc.prefix("rettable");
         startBlock(internReturnLabel);
-        addAssume(logicalAnd(greater(spmap(), intLiteral(0)), isEqual(modulo(var(IP_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        addAssume(logicalAnd(greater(spmap(), intLiteral(0)), isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
         rawEndBlock(retTableLabel);
     }
 
@@ -3155,6 +3155,8 @@ public class MethodTranslator implements ITranslationConstants {
                                 : invokedMethod.getReturnType()
                         );
                 
+                BPLExpression spmapMinus1 = sub(spmap(), new BPLIntLiteral(1));
+                BPLExpression ipMinus1 = sub(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1));
                 if(!invokedMethod.isConstructor() && !invokedMethod.isStatic()){
                     BPLTransferCommand transCmd = new BPLGotoCommand(boundaryLabel, internLabel);
                     transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
@@ -3170,7 +3172,6 @@ public class MethodTranslator implements ITranslationConstants {
                     
                     // Pass all other method arguments (the first of which refers to the "this" object
                     // if the method is not static).
-                    BPLExpression spmapMinus1 = sub(spmap(), new BPLIntLiteral(1));
                     String[] args = new String[invokedMethodParams.length];
                     for (int i = 0; i < invokedMethodParams.length; i++) {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
@@ -3209,7 +3210,6 @@ public class MethodTranslator implements ITranslationConstants {
                     // Pass all other method arguments (the first of which refers to the "this" object
                     // if the method is not static).
                     args = new String[invokedMethodParams.length];
-                    BPLExpression ipMinus1 = sub(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1));
                     for (int i = 0; i < invokedMethodParams.length; i++) {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
                         methodParams.add(new BPLVariableExpression(args[i]));
@@ -3245,7 +3245,6 @@ public class MethodTranslator implements ITranslationConstants {
                     
                     // Pass all other method arguments (the first of which refers to the "this" object
                     // if the method is not static).
-                    BPLExpression spmapMinus1 = sub(spmap(), new BPLIntLiteral(1));
                     String[] args = new String[invokedMethodParams.length];
                     for (int i = 0; i < invokedMethodParams.length; i++) {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
@@ -3291,7 +3290,6 @@ public class MethodTranslator implements ITranslationConstants {
                     
                     // Pass all other method arguments (the first of which refers to the "this" object
                     // if the method is not static).
-                    BPLExpression spmapMinus1 = sub(spmap(), new BPLIntLiteral(1));
                     String[] args = new String[invokedMethodParams.length];
                     for (int i = 0; i < invokedMethodParams.length; i++) {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
@@ -3444,69 +3442,160 @@ public class MethodTranslator implements ITranslationConstants {
                 
                 
                 
-                
+                String internalReturnLabel = tc.nextLabel() + "_internal_return";
+                String boundaryReturnLabel = tc.nextLabel() + "boundary_return";
+                String contLabel = tc.nextLabel() + "_cont";
                 
                 startBlock(tc.nextLabel());
-//                addAssignment(stack(receiver()), var("reg0_r"));//TODO correct expression here
+//              addAssignment(stack(receiver()), var("reg0_r"));//TODO correct expression here
 
-                if(!invokedMethod.isConstructor()){
-                    addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
-                } else {
-                    addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
-                    if(!isSuperConstructor){
-                        addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
-                        addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
-                    }
-                }
-                addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName)));
+              if(!invokedMethod.isConstructor()){
+                  addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
+              } else {
+                  addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we have constructed the object
+                  if(!isSuperConstructor){
+                      addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we have constructed the object on our own
+                      addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+                  }
+              }
+              addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName)));
+              
+              if(hasReturnValue){
+                  if(retType.isBaseType()){
+                      addAssume(isInRange(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), typeRef(retType)));
+                  } else if(retType.isClassType()){
+                      addAssume(isOfType(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(tc.getHeap()), typeRef(retType)));
+                  } else {
+                      //TODO array
+                  }
+              }
+              endBlock(new BPLGotoCommand(boundaryReturnLabel, internalReturnLabel));
+              
+              // internal return: read result from other stack frame and remove it
+              ////////////////////////////////////////////////////////////////////
+              startBlock(internalReturnLabel);
+              addAssume(isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1)));
+              if(hasReturnValue){
+                  addAssignment(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
+              }
+              addAssignment(spmap(), sub(spmap(), new BPLIntLiteral(1)));
+              endBlock(new BPLGotoCommand(contLabel));
+              
+              
+              // boundary return: read result from other interaction frame and remove it
+              ///////////////////////////////////////////////////////////////////////////
+              startBlock(boundaryReturnLabel);
+              addAssume(isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(0)));
+              if(hasReturnValue){
+                  addAssignment(stack(ipMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
+              }
+              addAssignment(var(tc.getInteractionFramePointer()), sub(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1)));
+              endBlock(new BPLGotoCommand(contLabel));
+              
+              startBlock(contLabel);
+              
+              // type informations of the stack
+              StackFrame stackFrame = handle.getFrame();
+              JType elemType;
+              for(int i=0; i<first; i++){
+                  elemType = stackFrame.getLocal(i);
+                  if(elemType.isBaseType()){
+                      addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
+                  } else {
+                      addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
+                  }
+              }
+              
+              // type information of the method parameters
+              JType[] params = new JType[method.getParameterCount() + 1];
+              params[0] = method.getOwner();
+              System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
+              for(int i=0; i<params.length; i++){
+                  if(params[i].isBaseType()){
+                      addAssume(isInRange(stack(var(paramVar(i, params[i]))), typeRef(params[i])));
+                  } else {
+                      addAssume(isOfType(stack(var(paramVar(i, params[i]))), var(tc.getHeap()), typeRef(params[i])));
+                  }
+                  if(method.isStatic()){
+                      if(i>0){
+                          addAssignment(stack(var(localVar(i-1, params[i]))), stack(var(paramVar(i, params[i]))));
+                      }
+                  } else {
+                      addAssignment(stack(var(localVar(i, params[i]))), stack(var(paramVar(i, params[i]))));
+                  }
+              }
+              
+              addAssume(nonNull(stack(receiver())));
+              
+              addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
+              addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(thisPlace)));
                 
-                if(hasReturnValue){
-                    if(retType.isBaseType()){
-                        addAssume(isInRange(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), typeRef(retType)));
-                    } else if(retType.isClassType()){
-                        addAssume(isOfType(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(tc.getHeap()), typeRef(retType)));
-                    } else {
-                        //TODO array
-                    }
-                    addAssignment(stack(spMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
-                }
-                addAssignment(sp, sub(sp, intLiteral(1)));
                 
-                // type informations of the stack
-                StackFrame stackFrame = handle.getFrame();
-                JType elemType;
-                for(int i=0; i<first; i++){
-                    elemType = stackFrame.getLocal(i);
-                    if(elemType.isBaseType()){
-                        addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
-                    } else {
-                        addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
-                    }
-                }
                 
-                // type information of the method parameters
-                JType[] params = new JType[method.getParameterCount() + 1];
-                params[0] = method.getOwner();
-                System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
-                for(int i=0; i<params.length; i++){
-                    if(params[i].isBaseType()){
-                        addAssume(isInRange(stack(var(paramVar(i, params[i]))), typeRef(params[i])));
-                    } else {
-                        addAssume(isOfType(stack(var(paramVar(i, params[i]))), var(tc.getHeap()), typeRef(params[i])));
-                    }
-                    if(method.isStatic()){
-                        if(i>0){
-                            addAssignment(stack(var(localVar(i-1, params[i]))), stack(var(paramVar(i, params[i]))));
-                        }
-                    } else {
-                        addAssignment(stack(var(localVar(i, params[i]))), stack(var(paramVar(i, params[i]))));
-                    }
-                }
                 
-                addAssume(nonNull(stack(receiver())));
                 
-                addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
-                addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(thisPlace)));
+                
+//                startBlock(tc.nextLabel());
+////                addAssignment(stack(receiver()), var("reg0_r"));//TODO correct expression here
+//
+//                if(!invokedMethod.isConstructor()){
+//                    addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
+//                } else {
+//                    addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
+//                    if(!isSuperConstructor){
+//                        addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
+//                        addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+//                    }
+//                }
+//                addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName)));
+//                
+//                if(hasReturnValue){
+//                    if(retType.isBaseType()){
+//                        addAssume(isInRange(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), typeRef(retType)));
+//                    } else if(retType.isClassType()){
+//                        addAssume(isOfType(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(tc.getHeap()), typeRef(retType)));
+//                    } else {
+//                        //TODO array
+//                    }
+//                    addAssignment(stack(spMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
+//                }
+//                addAssignment(sp, sub(sp, intLiteral(1)));
+//                
+//                // type informations of the stack
+//                StackFrame stackFrame = handle.getFrame();
+//                JType elemType;
+//                for(int i=0; i<first; i++){
+//                    elemType = stackFrame.getLocal(i);
+//                    if(elemType.isBaseType()){
+//                        addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
+//                    } else {
+//                        addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
+//                    }
+//                }
+//                
+//                // type information of the method parameters
+//                JType[] params = new JType[method.getParameterCount() + 1];
+//                params[0] = method.getOwner();
+//                System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
+//                for(int i=0; i<params.length; i++){
+//                    if(params[i].isBaseType()){
+//                        addAssume(isInRange(stack(var(paramVar(i, params[i]))), typeRef(params[i])));
+//                    } else {
+//                        addAssume(isOfType(stack(var(paramVar(i, params[i]))), var(tc.getHeap()), typeRef(params[i])));
+//                    }
+//                    if(method.isStatic()){
+//                        if(i>0){
+//                            addAssignment(stack(var(localVar(i-1, params[i]))), stack(var(paramVar(i, params[i]))));
+//                        }
+//                    } else {
+//                        addAssignment(stack(var(localVar(i, params[i]))), stack(var(paramVar(i, params[i]))));
+//                    }
+//                }
+//                
+//                addAssume(nonNull(stack(receiver())));
+//                
+//                addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
+//                addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(thisPlace)));
                 
                 callStatements++;
             }

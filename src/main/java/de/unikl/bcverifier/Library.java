@@ -34,6 +34,8 @@ import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.relNull;
 import static b2bpl.translation.CodeGenerator.related;
 import static b2bpl.translation.CodeGenerator.spmap;
+import static b2bpl.translation.CodeGenerator.spmap1;
+import static b2bpl.translation.CodeGenerator.spmap2;
 import static b2bpl.translation.CodeGenerator.stack;
 import static b2bpl.translation.CodeGenerator.stack1;
 import static b2bpl.translation.CodeGenerator.stack2;
@@ -327,8 +329,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                 new BPLVariableExpression(HEAP2),
                                 new BPLVariableExpression(STACK1),
                                 new BPLVariableExpression(STACK2),
-                                new BPLVariableExpression(TranslationController.SP1),
-                                new BPLVariableExpression(TranslationController.SP2),
+                                new BPLVariableExpression(SP_MAP1_VAR),
+                                new BPLVariableExpression(SP_MAP2_VAR),
+                                new BPLVariableExpression(IP1_VAR),
+                                new BPLVariableExpression(IP2_VAR),
                                 new BPLVariableExpression(RELATED_RELATION),
                                 new BPLVariableExpression(USE_HAVOC),
                                 new BPLVariableExpression(STALL1),
@@ -446,6 +450,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK1), var(STACK1)));
         procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK2), var(STACK2)));
         
+        final String i = "i";
+        BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+        procAssumes.add(new BPLAssumeCommand(forall(iVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(i)), lessEqual(var(i), var(IP1_VAR))),
+                lessEqual(new BPLIntLiteral(0), map(var(SP_MAP1_VAR), var(i)))
+            ))));
+        procAssumes.add(new BPLAssumeCommand(forall(iVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(i)), lessEqual(var(i), var(IP2_VAR))),
+                lessEqual(new BPLIntLiteral(0), map(var(SP_MAP2_VAR), var(i)))
+            ))));
+        
         procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), var(IP2_VAR))));
         
         String address = "address";
@@ -495,9 +508,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // preconditions of a call
         // /////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
-        procAssumes.add(new BPLAssumeCommand(isEqual(var(TranslationController.SP1),
+        procAssumes.add(new BPLAssumeCommand(isEqual(spmap1(),
                 new BPLIntLiteral(0))));
-        procAssumes.add(new BPLAssumeCommand(isEqual(var(TranslationController.SP2),
+        procAssumes.add(new BPLAssumeCommand(isEqual(spmap2(),
                 new BPLIntLiteral(0))));
         
         procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
@@ -555,9 +568,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // preconditions of a constructor call
         // /////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
-        procAssumes.add(new BPLAssumeCommand(isEqual(var(TranslationController.SP1),
+        procAssumes.add(new BPLAssumeCommand(isEqual(spmap1(),
                 new BPLIntLiteral(0))));
-        procAssumes.add(new BPLAssumeCommand(isEqual(var(TranslationController.SP2),
+        procAssumes.add(new BPLAssumeCommand(isEqual(spmap2(),
                 new BPLIntLiteral(0))));
         
         procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
@@ -661,9 +674,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // preconditions of a return
         // /////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
-        procAssumes.add(new BPLAssumeCommand(greater(var(TranslationController.SP1),
+        procAssumes.add(new BPLAssumeCommand(greater(spmap1(),
                 new BPLIntLiteral(0))));
-        procAssumes.add(new BPLAssumeCommand(greater(var(TranslationController.SP2),
+        procAssumes.add(new BPLAssumeCommand(greater(spmap2(),
                 new BPLIntLiteral(0))));
         
         procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
@@ -728,11 +741,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // assume the result of the method is not yet set
         procAssumes.add(new BPLAssumeCommand(
                 forall(spVar, 
-                        implies(less(var(sp), var(TranslationController.SP1)), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                        implies(less(var(sp), spmap1()), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
                 )));
         procAssumes.add(new BPLAssumeCommand(
                 forall(spVar, 
-                        implies(less(var(sp), var(TranslationController.SP2)), logicalAnd(isNull(stack2(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                        implies(less(var(sp), spmap2()), logicalAnd(isNull(stack2(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
                 )));
 
         // invariant
@@ -840,11 +853,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // assume the result of the method is not yet set
         procAssumes.add(new BPLAssumeCommand(
                 forall(spVar, 
-                        implies(lessEqual(var(sp), var(TranslationController.SP1)), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                        implies(lessEqual(var(sp), spmap1()), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
                 )));
         procAssumes.add(new BPLAssumeCommand(
                 forall(spVar, 
-                        implies(lessEqual(var(sp), var(TranslationController.SP2)), logicalAnd(isNull(stack2(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                        implies(lessEqual(var(sp), spmap2()), logicalAnd(isNull(stack2(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
                 )));
 
         // invariant
@@ -879,8 +892,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // add variables for saving away the old stack
         //////////////////////////////////////////////
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK1, new BPLTypeName(INTERACTION_FRAME_TYPE))));
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK2, new BPLTypeName(INTERACTION_FRAME_TYPE))));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK1, new BPLTypeName(STACK_TYPE))));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK2, new BPLTypeName(STACK_TYPE))));
         
         // add variables for measuring progress of local loops
         //////////////////////////////////////////////////////
@@ -901,12 +914,16 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
         checkingCommand.add(new BPLAssertCommand(logicalOr(
                 logicalAnd(
-                        isEqual(var(TranslationController.SP1), new BPLIntLiteral(0)),
-                        isEqual(var(TranslationController.SP2), new BPLIntLiteral(0))
+                        isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
+                        isEqual(spmap1(), new BPLIntLiteral(0)),
+                        isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
+                        isEqual(spmap2(), new BPLIntLiteral(0))
                         ),
                 logicalAnd(
-                        greater(var(TranslationController.SP1), new BPLIntLiteral(0)),
-                        greater(var(TranslationController.SP2), new BPLIntLiteral(0))
+                        isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
+                        isEqual(spmap1(), new BPLIntLiteral(0)),
+                        isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
+                        isEqual(spmap2(), new BPLIntLiteral(0))
                         ),
                 logicalAnd(
                         isLocalPlace(stack1(var(PLACE_VARIABLE))),
@@ -922,8 +939,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // ///////////////////////////////
         checkingCommand = new ArrayList<BPLCommand>();
         checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-                isEqual(var(TranslationController.SP1), new BPLIntLiteral(0)),
-                isEqual(var(TranslationController.SP2), new BPLIntLiteral(0)))));
+                isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
+                isEqual(spmap1(), new BPLIntLiteral(0)),
+                isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
+                isEqual(spmap2(), new BPLIntLiteral(0))
+                )));
         checkingCommand.add(new BPLAssumeCommand(logicalAnd(
                 logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE)))),
                 logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
@@ -995,8 +1015,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // ////////////////////////////////
         checkingCommand.clear();
         checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-                greater(var(TranslationController.SP1), new BPLIntLiteral(0)),
-                greater(var(TranslationController.SP2), new BPLIntLiteral(0)))));
+                isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
+                isEqual(spmap1(), new BPLIntLiteral(0)),
+                isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
+                isEqual(spmap2(), new BPLIntLiteral(0))
+                )));
         checkingCommand.add(new BPLAssumeCommand(logicalAnd(
                 logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE)))),
                 logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
@@ -1080,13 +1103,13 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // check if we want to use havoc to handle boudary call
         /////////////////////////////////////////////////////////
-        BPLExpression sp1MinusOne = sub(var(TranslationController.SP1), new BPLIntLiteral(1));
-        BPLExpression sp2MinusOne = sub(var(TranslationController.SP2), new BPLIntLiteral(1));
+        BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
+        BPLExpression ip2MinusOne = sub(var(IP2_VAR), new BPLIntLiteral(1));
         checkingCommand.add(new BPLAssertCommand(
-                isEquiv(useHavoc(stack1(sp1MinusOne, var(PLACE_VARIABLE))), useHavoc(stack2(sp2MinusOne, var(PLACE_VARIABLE)))))
+                isEquiv(useHavoc(stack1(ip1MinusOne, var(PLACE_VARIABLE))), useHavoc(stack2(ip2MinusOne, var(PLACE_VARIABLE)))))
                 );
         checkingCommand.add(new BPLAssumeCommand(
-                logicalAnd(useHavoc(stack1(sp1MinusOne, var(PLACE_VARIABLE))), useHavoc(stack2(sp2MinusOne, var(PLACE_VARIABLE)))))
+                logicalAnd(useHavoc(stack1(ip1MinusOne, var(PLACE_VARIABLE))), useHavoc(stack2(ip2MinusOne, var(PLACE_VARIABLE)))))
                 );
         
         // save away the old heaps
