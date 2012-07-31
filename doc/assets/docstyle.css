@@ -1,0 +1,22 @@
+.keyword {
+	font-weight: bold;
+	color: #7F0055;	
+}
+
+/* overwrite from common style: */
+
+#bd {
+	position: relative;
+	margin-top: -30px;
+	margin-bottom: -80px;
+	padding-bottom: 50px;
+	top: 0px;
+}
+
+#ft {
+	position: relative;	
+}
+
+h2, h3, h4, h5 {
+	color: black;
+}

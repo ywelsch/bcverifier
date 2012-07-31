@@ -79,10 +79,25 @@ task doc {
 		   def relrenamed = new File(srcDocDir).toURI().relativize(source.toURI()).getPath().replaceFirst('(markdown|mdown)$', 'html')
 		   def target = new File(new File(destDocDir), relrenamed)
 		   target.getParentFile().mkdirs();
-	       target.text = mp.markdownToHtml(source.text);
+	       target.text = new File(srcDocDir + "/assets/template.html").text.replace("{{{content}}}", mp.markdownToHtml(source.text));
 		}
 	}
 }
+
+
+task copyDocAssets(type:Copy) {
+	from (srcDocDir + "/assets") {
+		include '**/*.js'
+		include '**/*.css'
+	}
+	from ('src/main/webapp/') {
+		include '**/*.woff'
+		include '**/*.css'
+	}
+	into (destDocDir + "/assets")
+}
+
+doc.dependsOn copyDocAssets
 
 task docReadme {
 	def readme = file("$projectDir/README")
