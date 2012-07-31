@@ -51,6 +51,7 @@ import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.type;
 import static b2bpl.translation.CodeGenerator.var;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
+import static b2bpl.translation.CodeGenerator.wellformedStack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -3204,6 +3205,15 @@ public class MethodTranslator implements ITranslationConstants {
                     ////////////////////////////////////////////////////////////////////
                     
                     startBlock(boundaryLabel);
+                    
+                    final String iftmp = "iftmp";
+                    BPLVariable iftmpVar = new BPLVariable(iftmp, new BPLTypeName(INTERACTION_FRAME_TYPE));
+                    tc.usedVariables().put(iftmp, iftmpVar);
+                    
+                    addHavoc(var(iftmp));
+                    addAssignment(map(var(tc.getStack()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1))), var(iftmp));
+                    addAssume(wellformedStack(var(tc.getStack()), var(tc.getInteractionFramePointer()), var(tc.getStackPointerMap()), var(tc.getHeap())));
+                    
                     addAssignment(var(tc.getInteractionFramePointer()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1)), "create new interaction frame");
                     addAssignment(spmap(), new BPLIntLiteral(0), "create the initial stack frame of the new interaction frame");
                     
