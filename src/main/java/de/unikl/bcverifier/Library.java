@@ -856,14 +856,24 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             }
         }
         
-        // assume the result of the method is not yet set
+     // assume the result of the method is not yet set
         procAssumes.add(new BPLAssumeCommand(
-                forall(spVar, 
-                        implies(lessEqual(var(sp), spmap1()), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                forall(spVar, iVar,
+                        implies(
+                                logicalAnd(
+                                        lessEqual(var(i), var(IP1_VAR)),
+                                        lessEqual(var(sp), spmap1(var(i)))
+                                        ),
+                                logicalAnd(isNull(stack1(var(i) ,var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
                 )));
         procAssumes.add(new BPLAssumeCommand(
-                forall(spVar, 
-                        implies(lessEqual(var(sp), spmap2()), logicalAnd(isNull(stack2(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                forall(spVar, iVar,
+                        implies(
+                                logicalAnd(
+                                        lessEqual(var(i), var(IP2_VAR)),
+                                        lessEqual(var(sp), spmap2(var(i)))
+                                        ),
+                                logicalAnd(isNull(stack2(var(i), var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
                 )));
 
         // invariant
