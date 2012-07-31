@@ -1122,8 +1122,8 @@ public final class CodeGenerator implements ITranslationConstants {
         return map1(var(OLD_STACK1), var(IP1_VAR), spmap1(var(IP1_VAR)), exp);
     }
     
-    public static BPLExpression stack1(BPLExpression sp, BPLExpression exp){
-        return map1(var(STACK1), var(IP1_VAR), sp, exp);
+    public static BPLExpression stack1(BPLExpression ip, BPLExpression exp){
+        return map1(var(STACK1), ip, spmap1(ip), exp);
     }
     
     public static BPLExpression stack1(BPLExpression ip, BPLExpression sp, BPLExpression exp){
@@ -1138,8 +1138,8 @@ public final class CodeGenerator implements ITranslationConstants {
         return map1(var(OLD_STACK2), var(IP2_VAR), spmap2(var(IP2_VAR)), exp);
     }
     
-    public static BPLExpression stack2(BPLExpression sp, BPLExpression exp){
-        return map1(var(STACK2), var(IP2_VAR), sp, exp);
+    public static BPLExpression stack2(BPLExpression ip, BPLExpression exp){
+        return map1(var(STACK2), ip, spmap2(ip), exp);
     }
     
     public static BPLExpression stack2(BPLExpression ip, BPLExpression sp, BPLExpression exp){
