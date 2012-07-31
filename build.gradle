@@ -20,6 +20,7 @@ String parserGenDir = "$islGenDir/de/unikl/bcverifier/isl/parser"
 String astGenDir = "$islGenDir/de/unikl/bcverifier/isl/ast"
 String srcDocDir = "$projectDir/doc"
 String destDocDir = "$buildDir/doc"
+int docOptions = org.pegdown.Extensions.AUTOLINKS | org.pegdown.Extensions.WIKILINKS | org.pegdown.Extensions.SMARTYPANTS 
 
 configurations {
     sshAntTask
@@ -74,7 +75,7 @@ task doc {
 	doLast {
 		new File(destDocDir).mkdirs();
 		inputs.files.each{ source ->
-	       def mp = new PegDownProcessor()
+	       def mp = new PegDownProcessor(docOptions)
 		   def relrenamed = new File(srcDocDir).toURI().relativize(source.toURI()).getPath().replaceFirst('(markdown|mdown)$', 'html')
 		   def target = new File(new File(destDocDir), relrenamed)
 		   target.getParentFile().mkdirs();
@@ -89,7 +90,7 @@ task docReadme {
 	outputs.dir(destDocDir)
 	doLast {
 		new File(destDocDir).mkdirs();
-		def mp = new PegDownProcessor()
+		def mp = new PegDownProcessor(docOptions)
 	    def target = new File(destDocDir, 'readme.html')
 	    target.text = mp.markdownToHtml(readme.text);
 	}

@@ -6,6 +6,12 @@ BCVerifier is a tool that allows to automatically check backward compatibility b
 
 More documentation will be made available soon.
 
+Contents
+--------
+
+- [Invariant Specification Language](./invariant-specification-language.html)
+
+
 Organization
 --------------
 
