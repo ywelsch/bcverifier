@@ -1196,6 +1196,8 @@ public class Translator implements ITranslationConstants {
             BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
             final String i = "i";
             BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+            final String j = "j";
+            BPLVariable jVar = new BPLVariable(j, BPLBuiltInType.INT);
             final String bool = "b";
             BPLVariable boolVar = new BPLVariable(bool, BPLBuiltInType.BOOL);
             final String x = "x";
@@ -1212,8 +1214,8 @@ public class Translator implements ITranslationConstants {
             BPLVariable c3Var = new BPLVariable(c3, new BPLTypeName(NAME_TYPE));
             final String dynType = DYN_TYPE_FIELD;
             
-            final String iframe = "iframe";
-            BPLVariable iframeVar = new BPLVariable(iframe, new BPLTypeName(INTERACTION_FRAME_TYPE));
+            final String spmap = "spmap";
+            BPLVariable spmapVar = new BPLVariable(spmap, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)));
             
             
             
@@ -1411,17 +1413,17 @@ public class Translator implements ITranslationConstants {
             
             addDeclaration(new BPLTypeAlias(STACK_TYPE, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(INTERACTION_FRAME_TYPE))));
 
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK1, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK1), spmap1(), var(HEAP1))))); // TODO extend to all interaction frames
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK2, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK2), spmap2(), var(HEAP2))))); // TODO extend to all interaction frames
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK1, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))))); // TODO extend to all interaction frames
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK2, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))))); // TODO extend to all interaction frames
 
-            addFunction(WELLFORMED_STACK_FUNC, new BPLTypeName(STACK_TYPE), new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
+            addFunction(WELLFORMED_STACK_FUNC, new BPLType[]{new BPLTypeName(STACK_TYPE), BPLBuiltInType.INT, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)), new BPLTypeName(HEAP_TYPE)}, BPLBuiltInType.BOOL);
             addAxiom(forall(
-                    iVar, stackVar, spVar, heapVar,
-                    isEquiv(wellformedStack(var(stack), var(sp), var(heap)),
+                    stackVar, iVar, spmapVar, heapVar,
+                    isEquiv(wellformedStack(var(stack), var(i), var(spmap), var(heap)),
                     logicalAnd(
-                            forall(pVar, vVar, implies(logicalAnd(lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp))), new BPLArrayExpression(var(heap), map1(var(stack), var(i), var(p), var(v)), var(alloc)))),
-                            forall(pVar, vVar, implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(map1(var(stack), var(i), var(p), var(v)), nullLiteral()))),
-                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(map1(var(stack), var(i), var(p), var(v)), intLiteral(0))))
+                            forall(jVar, pVar, vVar, implies(logicalAnd(lessEqual(var(j), var(i)), lessEqual(intLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), new BPLArrayExpression(var(heap), map1(var(stack), var(j), var(p), var(v)), var(alloc)))),
+                            forall(jVar, pVar, vVar, implies(logicalOr(greater(var(j), var(i)), logicalAnd(lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), nullLiteral()))),
+                            forall(jVar, pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr(greater(var(j), var(i)), logicalAnd(lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), intLiteral(0))))
                             )
                     )
                     ));
