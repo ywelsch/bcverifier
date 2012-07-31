@@ -7,7 +7,7 @@ between two libraries.
 Syntax
 ------
 	
-	compilation unit ::= statement* 
+	compilationunit ::= statement* 
 
 	statement ::= invariant expr;
 	
@@ -33,17 +33,79 @@ Syntax
 Available operators: 
 
 - Some standard Java operators: + - * / %  == < <= > >= && ||
-- Implies operator: ==>
-- Relation operator: ~ 
+- Implication operator: ==>
+- Correspondence relation operator: ~ 
 
-...
+
+Semantics
+---------
+
+The defined invariants have to hold at every observable point.
+Invariants are assumed to hold at the beginning of each method call and
+after returning from a method call. The invariant has to be proven at the end of each method
+and before calling a method.
+
+### Types
+
+Currently the following types are supported:
+
+- Java primitives: 
+	- boolean
+	- int
+- Java class types with library version. The library version is either "old" or "new".
+	The Java type can be referenced by the fully qualified name or just by the name of the class.
 	
-### Example
 
-	invariant forall old Cell o1, new Cell o2 ::
-					o1 ~ o2 ==>	if o2.f then o1.c ~ o2.c1 else o1.c ~ o2.c2;
-					
-This invariant states that for all Cell objects o1 from the old library
-and all Cell objects o2 from the new library the the following holds:
-If o1 and o2 are in relation then the value stored in field o1.c is in relation 
-with the value o2.c1 or o2.c2 depending on the value of o2.f.
+### Correspondence Relation Operator
+
+The Correspondence Relation operator (~) expects an object from the 
+old library on the left hand side and an object from the new library on the right hand side.
+
+An expression `o1 ~ o2` is true when o1 and o2 are in correspondence 
+(see [Correspondence Relation](blablub.html#bum)) or if both objects are null.
+
+
+
+### Well formed invariants
+
+Invariants have to be well formed:
+
+- There must not be any division by zero
+- Null must not be dereferenced
+
+To check whether an invariant is well formed, a separate proof obligation is generated
+and it has to be shown before the invariant is assumed or has to be proven.
+
+All boolean operators are short-circuit operators and evaluated from left to right. 
+The right expression is only evaluated if the value of the left expression does not already
+fix the value of the overall expression. Therefore expression a) is well formed and
+expression b) is not well formed in the following example.
+
+	a) x > 0    && y/x == 2
+	b) y/x == 2 && x > 0
+ 
+The order in which invariants are defined is important. Invariants defined at the top
+can be used to show that following invariants are well formed. In the following example
+the first invariant states that c.x is never zero and thus the second  invariant is
+well formed. If the invariants were defined in reverse error, the well formedness of
+the division could not be shown.
+	
+	invariant forall C c :: c.x != 0
+	invariant forall C c :: 10 / c.x > 3 
+
+
+ 
+
+### Built-in Functions
+
+	boolean exposed(Object o)
+	
+Returns true when the object o is exposed to the context 
+and false when it is internal to the library.
+
+	boolean createdByCtxt(Object o)
+
+Returns true when the object o is created by the context and false
+when it was created by the library.
+ 
+

@@ -9,7 +9,7 @@ More documentation will be made available soon.
 Contents
 --------
 
-- [Invariant Specification Language](./invariant-specification-language.html)
+- [[Invariant Specification Language]]
 
 
 Organization
