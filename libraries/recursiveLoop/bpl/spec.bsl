@@ -5,7 +5,7 @@
 (ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object0) ==> (stack2[ip2-1][spmap2[ip2-1]][place] == lib2_C.loop$int_set$int$java.lang.Object0)
 (ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object0) ==> (stack1[ip1-1][spmap1[ip1-1]][reg1_i] == stack2[ip2-1][spmap2[ip2-1]][param1_i])
 (ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object0) ==> (stack1[ip1-1][spmap1[ip1-1]][reg1_i] <= 5)
-(ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object0) ==> (spmap1[ip1] == 1 && spmap2[ip2] == (spmap1[ip1] + 1 + stack1[ip1-1][spmap1[ip1-1]][reg1_i]))
+(ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object0) ==> (spmap1[ip1-1] == 0 && spmap2[ip2-1] == (spmap1[ip1-1] + 1 + stack1[ip1-1][spmap1[ip1-1]][reg1_i]))
 (ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object0) ==> (stack1[ip1-1][spmap1[ip1-1]][param0_r] == stack1[ip1-1][0][param0_r] && stack2[ip2-1][spmap2[ip2-1]][param0_r] == stack2[ip2-1][0][param0_r])
 
 //stack1[ip1][spmap1[ip1]][place] == afterLoop ==> spmap1[ip1] == 0

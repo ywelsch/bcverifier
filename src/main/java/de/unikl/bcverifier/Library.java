@@ -692,24 +692,20 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(logicalNot(CodeGenerator.isStaticMethod(stack1(var(METH_FIELD))))));
 
         BPLExpression zero = new BPLIntLiteral(0);
+        BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
+        BPLExpression ip2MinusOne = sub(var(IP2_VAR), new BPLIntLiteral(1));
         
         // relation of the called methods (context)
         // ///////////////////////////////////////////
-        assumeCmd = new BPLAssumeCommand(isEqual(stack1(var(METH_FIELD)),
-                stack2(var(METH_FIELD))));
-        assumeCmd
-                .addComment("The methods called on the context have to be the same.");
+        assumeCmd = new BPLAssumeCommand(isEqual(stack1(var(METH_FIELD)), stack2(var(METH_FIELD))));
+        assumeCmd.addComment("The methods called on the context have to be the same.");
         procAssumes.add(assumeCmd);
-        assumeCmd = new BPLAssumeCommand(isEqual(stack1(zero, var(METH_FIELD)),
-                stack2(zero, var(METH_FIELD))));
-        assumeCmd
-                .addComment("Relate the methods that where originally called on the library.");
+        assumeCmd = new BPLAssumeCommand(isEqual(stack1(ip1MinusOne, zero, var(METH_FIELD)), stack2(ip2MinusOne, zero, var(METH_FIELD))));
+        assumeCmd.addComment("Relate the methods that where originally called on the library.");
         procAssumes.add(assumeCmd);
 
-        assumeCmd = new BPLAssumeCommand(related(stack1(zero, receiver()),
-                stack2(zero, receiver())));
-        assumeCmd
-                .addComment("The receiver and all parameters where initially related.");
+        assumeCmd = new BPLAssumeCommand(related(stack1(ip1MinusOne, zero, receiver()), stack2(ip2MinusOne, zero, receiver())));
+        assumeCmd.addComment("The receiver and all parameters where initially related.");
         
         // relate all parameters from the outside
         // ///////////////////////////////////////
@@ -717,35 +713,45 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 .values()) {
             if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_r")) {
                 assumeCmd = new BPLAssumeCommand(relNull(
-                        stack1(zero, var(var.getName())),
-                        stack2(zero, var(var.getName())), var(RELATED_RELATION)));
+                        stack1(ip1MinusOne, zero, var(var.getName())),
+                        stack2(ip2MinusOne, zero, var(var.getName())), var(RELATED_RELATION)));
                 procAssumes.add(assumeCmd);
                 assumeCmd = new BPLAssumeCommand(implies(
-                        nonNull(stack1(zero, var(var.getName()))),
-                        heap1(stack1(zero, var(var.getName())),
+                        nonNull(stack1(ip1MinusOne, zero, var(var.getName()))),
+                        heap1(stack1(ip1MinusOne, zero, var(var.getName())),
                                 var(EXPOSED_FIELD))));
                 procAssumes.add(assumeCmd);
                 assumeCmd = new BPLAssumeCommand(implies(
-                        nonNull(stack2(zero, var(var.getName()))),
-                        heap2(stack2(zero, var(var.getName())),
+                        nonNull(stack2(ip2MinusOne, zero, var(var.getName()))),
+                        heap2(stack2(ip2MinusOne, zero, var(var.getName())),
                                 var(EXPOSED_FIELD))));
                 procAssumes.add(assumeCmd);
             } else if (var.getName().matches(PARAM_VAR_PREFIX + "\\d+_i")) {
                 assumeCmd = new BPLAssumeCommand(isEqual(
-                        stack1(zero, var(var.getName())),
-                        stack2(zero, var(var.getName()))));
+                        stack1(ip1MinusOne, zero, var(var.getName())),
+                        stack2(ip2MinusOne, zero, var(var.getName()))));
                 procAssumes.add(assumeCmd);
             }
         }
         
         // assume the result of the method is not yet set
         procAssumes.add(new BPLAssumeCommand(
-                forall(spVar, 
-                        implies(less(var(sp), spmap1()), logicalAnd(isNull(stack1(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                forall(spVar, iVar,
+                        implies(
+                                logicalAnd(
+                                        less(var(i), var(IP1_VAR)),
+                                        lessEqual(var(sp), spmap1(var(i)))
+                                        ),
+                                logicalAnd(isNull(stack1(var(i) ,var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
                 )));
         procAssumes.add(new BPLAssumeCommand(
-                forall(spVar, 
-                        implies(less(var(sp), spmap2()), logicalAnd(isNull(stack2(var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                forall(spVar, iVar,
+                        implies(
+                                logicalAnd(
+                                        less(var(i), var(IP2_VAR)),
+                                        lessEqual(var(sp), spmap2(var(i)))
+                                        ),
+                                logicalAnd(isNull(stack2(var(i), var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
                 )));
 
         // invariant
@@ -926,6 +932,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                         isEqual(spmap2(), new BPLIntLiteral(0))
                         ),
                 logicalAnd(
+                        isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
+                        isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
                         isLocalPlace(stack1(var(PLACE_VARIABLE))),
                         isLocalPlace(stack2(var(PLACE_VARIABLE)))
                         )
@@ -1167,8 +1175,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // ////////////////////////////////
         checkingCommand.clear();
         checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+                isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
+                isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
                 isLocalPlace(stack1(var(PLACE_VARIABLE))),
-                isLocalPlace(stack2(var(PLACE_VARIABLE))))));
+                isLocalPlace(stack2(var(PLACE_VARIABLE)))
+                )));
 
         
         // check for progress while stalled
