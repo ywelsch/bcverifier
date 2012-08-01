@@ -29,6 +29,7 @@ import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.helpers.BCCheckDefinition;
 import de.unikl.bcverifier.helpers.CheckRunner;
 import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
+import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.GeneratorFactory;
 
@@ -86,7 +87,7 @@ public class LibraryTests {
 	
 	@Ignore
 	@Test @Parameters(method = "params")
-	public void genLibrary(File dir) throws TranslationException, GenerationException {
+	public void genLibrary(File dir) throws TranslationException, GenerationException, SourceInCompatibilityException {
 		Configuration config = new Configuration();
 		File invFile = new File(dir, "bpl/inv.bpl");
 		File specificationFile = new File(dir, "bpl/output.bpl");
@@ -100,6 +101,7 @@ public class LibraryTests {
 		Library library = new Library(config, GeneratorFactory.getGenerator(config));
 		library.setTranslationController(tc);
 		library.compile();
+		library.checkSourceCompatibility();
 		library.translate();
 		library.check();
 		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastReturn());

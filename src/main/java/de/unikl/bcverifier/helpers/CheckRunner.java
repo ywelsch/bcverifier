@@ -15,6 +15,7 @@ import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.GeneratorFactory;
 
@@ -31,7 +32,7 @@ public class CheckRunner {
         }
     }
     
-    public static boolean runCheck(BCCheckDefinition def) throws CheckRunException{
+    public static boolean runCheck(BCCheckDefinition def) throws CheckRunException {
         Configuration config = new Configuration();
         JCommander parser = new JCommander();
         parser.addObject(config);
@@ -56,13 +57,16 @@ public class CheckRunner {
             Library library = new Library(config, GeneratorFactory.getGenerator(config));
             library.setTranslationController(tc);
             library.compile();
+            library.checkSourceCompatibility();
             library.translate();
             library.check();
         } catch (TranslationException ex){
             throw new CheckRunException("Error translating bytecode", ex);
         } catch (GenerationException e) {
             throw new CheckRunException("Error generating specification", e);
-        }
+        } catch (SourceInCompatibilityException e) {
+        	throw new CheckRunException("Source incompatibility", e);
+		}
         return BoogieRunner.getLastErrorCount() == def.getExpectedErrors();
     }
     
@@ -93,13 +97,16 @@ public class CheckRunner {
             Library library = new Library(config, GeneratorFactory.getGenerator(config));
             library.setTranslationController(tc);
             library.compile();
+            library.checkSourceCompatibility();
             library.translate();
             library.check();
         } catch(TranslationException ex){
             throw new CheckRunException("Error translating bytecode", ex);
         } catch (GenerationException e) {
             throw new CheckRunException("Error generating specification", e);
-        }
+        } catch (SourceInCompatibilityException e) {
+        	throw new CheckRunException("Source incompatibility", e);
+		}
         
         if(BoogieRunner.getLastErrorCount() != def.getExpectedErrors()){
             Logger.getLogger(CheckRunner.class).debug(BoogieRunner.getLastMessage());

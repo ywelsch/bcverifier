@@ -8,6 +8,7 @@ import com.beust.jcommander.ParameterException;
 
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.GeneratorFactory;
 
@@ -41,6 +42,7 @@ public class Main {
             if(config.isCompileFirst()){
                 library.compile();
             }
+            library.checkSourceCompatibility();
             library.translate();
             if(config.isCheck()){
                 library.check();
@@ -55,6 +57,9 @@ public class Main {
         } catch (GenerationException e) {
             System.err.println("Error while generating specification:");
             e.printStackTrace();
-        }
+        } catch (SourceInCompatibilityException e) {
+        	System.err.println("Error while checking source compatibility:");
+            e.printStackTrace();
+		}
    }
 }

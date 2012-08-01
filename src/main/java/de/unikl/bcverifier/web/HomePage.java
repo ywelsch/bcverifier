@@ -56,6 +56,7 @@ import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.GeneratorFactory;
 
@@ -427,7 +428,10 @@ public class HomePage extends WebPage {
 			} catch (GenerationException e) {
 			    HomePage.this.setOutput(e.getMessage());
                 e.printStackTrace();
-            }
+            } catch (SourceInCompatibilityException e) {
+            	HomePage.this.setOutput(e.getMessage());
+                e.printStackTrace();
+			}
 		}
 		
 		private String linkify(String lastMessage) {
@@ -436,7 +440,7 @@ public class HomePage extends WebPage {
     		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$2,$3);\">$1($2,$3):</a>");
 		}
 
-		private void compile() throws IOException, TranslationException, CompileException, GenerationException {
+		private void compile() throws IOException, TranslationException, CompileException, GenerationException, SourceInCompatibilityException {
 			File dir = Files.createTempDir();
 			System.out.println("Creating test in " + dir);
 			File oldDir = new File(dir, "old");
@@ -456,6 +460,7 @@ public class HomePage extends WebPage {
 			library.setTranslationController(tc);
 			LibraryCompiler.compile(config.library1());
 			LibraryCompiler.compile(config.library2());
+			library.checkSourceCompatibility();
 			library.translate();
 			HomePage.this.setBoogieinput(FileUtils.readFileToString(output));
 			if(config.isCheck()) {

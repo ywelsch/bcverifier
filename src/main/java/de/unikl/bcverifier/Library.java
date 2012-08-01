@@ -118,6 +118,8 @@ import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
+import de.unikl.bcverifier.sourcecomp.SourceCompChecker;
+import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.Generator;
 import de.unikl.bcverifier.specification.SpecInvariant;
@@ -1617,4 +1619,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             throw new CompilationAbortedException();
         }
     }
+
+	public void checkSourceCompatibility() throws SourceInCompatibilityException {
+		SourceCompChecker scc = new SourceCompChecker(config);
+		scc.check();
+	}
 }
