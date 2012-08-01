@@ -22,5 +22,5 @@ stack1[ip1][spmap1[ip1]][place] == oldBeforeReturn ==> stack1[ip1][spmap1[ip1]][
 stack1[ip1][spmap1[ip1]][place] == oldInLoop ==> (stack1[ip1][spmap1[ip1]][reg2_i] == (((stack1[ip1][spmap1[ip1]][reg3_i] - 1) * stack1[ip1][spmap1[ip1]][reg3_i]) / 2))
 stack1[ip1][spmap1[ip1]][place] == oldInLoop ==> (stack1[ip1][spmap1[ip1]][reg3_i] <= stack1[ip1][spmap1[ip1]][reg1_i])
 stack1[ip1][spmap1[ip1]][place] == oldInLoop ==> (stack1[ip1][spmap1[ip1]][reg3_i] >= 0)
-stack2[ip2][spmap2[ip2]][place] == newBeforeReturn ==> (if(stack2[ip2][spmap2[ip2]][reg1_i] >= 0) then (stack2[ip2][spmap2[ip2]][reg2_i] == ((stack1[ip1][spmap1[ip1]][reg1_i] * (stack1[ip1][spmap1[ip1]][reg1_i] + 1)) / 2)) else (stack2[ip2][spmap2[ip2]][reg2_i] == 0))
+stack2[ip2][spmap2[ip2]][place] == newBeforeReturn ==> (if(stack2[ip2][spmap2[ip2]][reg1_i] >= 0) then (stack2[ip2][spmap2[ip2]][reg2_i] == ((stack2[ip2][spmap2[ip2]][reg1_i] * (stack2[ip2][spmap2[ip2]][reg1_i] + 1)) / 2)) else (stack2[ip2][spmap2[ip2]][reg2_i] == 0))
 <<<
