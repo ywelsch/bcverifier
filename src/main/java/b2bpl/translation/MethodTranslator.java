@@ -42,6 +42,7 @@ import static b2bpl.translation.CodeGenerator.old_stack1;
 import static b2bpl.translation.CodeGenerator.old_stack2;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.receiver;
+import static b2bpl.translation.CodeGenerator.spmap;
 import static b2bpl.translation.CodeGenerator.stack;
 import static b2bpl.translation.CodeGenerator.stack1;
 import static b2bpl.translation.CodeGenerator.stack2;
@@ -50,6 +51,7 @@ import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.type;
 import static b2bpl.translation.CodeGenerator.var;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
+import static b2bpl.translation.CodeGenerator.wellformedStack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1380,7 +1382,7 @@ public class MethodTranslator implements ITranslationConstants {
         endBlock(boundaryReturnLabel, internReturnLabel);
         
         startBlock(boundaryReturnLabel);
-        addAssume(isEqual(var(tc.getStackPointer()), intLiteral(0)));
+        addAssume(logicalAnd(isEqual(spmap(), intLiteral(0)), isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
         addAssignment(stack(var(PLACE_VARIABLE)), var(tc.buildPlace(getProcedureName(method), true)));
         if(method.isConstructor()){
             rawEndBlock(tc.getNextConstructorLabel());
@@ -1390,7 +1392,7 @@ public class MethodTranslator implements ITranslationConstants {
         
         String retTableLabel = tc.prefix("rettable");
         startBlock(internReturnLabel);
-        addAssume(greater(var(tc.getStackPointer()), intLiteral(0)));
+        addAssume(logicalAnd(greater(spmap(), intLiteral(0)), isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
         rawEndBlock(retTableLabel);
     }
 
@@ -3137,39 +3139,15 @@ public class MethodTranslator implements ITranslationConstants {
             }
             
             if(true){ //TODO remove if, if handling is working
-                BPLExpression sp = var(tc.getStackPointer());
-                BPLExpression spMinus1 = sub(sp, intLiteral(1)); 
-                addAssignment(sp, add(sp, intLiteral(1)), "create new stack frame");
+                final String callPostfix = "_call";
+
+                String invokedMethodName = getMethodName(invokedMethod);
+                String thisPlace = tc.buildPlace(getProcedureName(method), invokedMethodName);
+                addAssignment(stack(var(PLACE_VARIABLE)), var(thisPlace), "methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner()+" in sourceline "+handle.getSourceLine());
+                String nextLabel = tc.nextLabel();
+                String boundaryLabel = nextLabel + BOUNDARY_LABEL_POSTFIX;
+                String internLabel =  nextLabel + INTERN_LABEL_POSTFIX;
                 
-                // if the method is static, pass the class object as param0
-                if(invokedMethod.isStatic()){
-                    addAssignment(stack(var(paramVar(0, invokedMethod.getOwner()))), CodeGenerator.classRepr(typeRef(invokedMethod.getOwner())));
-                }
-                // Pass all other method arguments (the first of which refers to the "this" object
-                // if the method is not static).
-                String[] args = new String[invokedMethodParams.length];
-                for (int i = 0; i < invokedMethodParams.length; i++) {
-                    args[i] = stackVar(first + i, invokedMethodParams[i]);
-                    methodParams.add(new BPLVariableExpression(args[i]));
-                    if(invokedMethodParams[i].isBaseType()){
-                        addAssert(isInRange(stack(spMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
-                    } else if(invokedMethodParams[i].isClassType()){
-                        addAssert(isOfType(stack(spMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
-                    } else {
-                        //TODO array type
-                    }
-                    if(invokedMethod.isStatic()){
-                        addAssignment(stack(var(paramVar(i+1, invokedMethodParams[i]))), stack(spMinus1, var(args[i])));
-                    } else {
-                        addAssignment(stack(var(paramVar(i, invokedMethodParams[i]))), stack(spMinus1, var(args[i])));
-                    }
-                }
-
-                /*
-      boolean isSuperConstructor = method.isConstructor() && invokedMethod.isConstructor() &&
-                                   (args.length > 0) ? (args[0].equals(stackVar(0, params[0]))) : false;
-                 */
-
                 // get return type of method
                 //   - normal method: explicitely declared return type
                 //   - constructor: type of the owner object
@@ -3177,157 +3155,40 @@ public class MethodTranslator implements ITranslationConstants {
                         ? invokedMethod.getOwner()
                                 : invokedMethod.getReturnType()
                         );
-
-                 
-                //
-                //      // Prepare return values of method call
-                //      List<BPLVariableExpression> resultVars = new ArrayList<BPLVariableExpression>();
-                //      resultVars.add(new BPLVariableExpression(returnStateVar(callStatements)));            // return state
-                //      if (hasReturnValue) {
-                //        resultVars.add(new BPLVariableExpression(returnValueVar(callStatements, retType))); // return value
-                //      }
-                //      resultVars.add(new BPLVariableExpression(exceptionVar(callStatements)));              // exception
-                //      
-                //      // Create call command with input and output parameters
-                //      BPLCommand callCmd = new BPLCallCommand(
-                //          getProcedureName(invokedMethod),
-                //          methodParams.toArray(new BPLExpression[methodParams.size()]),
-                //          resultVars.toArray(new BPLVariableExpression[resultVars.size()])
-                //      );
-                //      
-                //      if (isSuperConstructor) {
-                //        callCmd.addComment("Super-Constructor:");
-                //      }
-                //      
-                //      addCommand(callCmd);
-                //      
-                //      // Make sure that constructor's return values are added to the list of aliases
-                //      if (invokedMethod.isConstructor()) {
-                //        for (String v : getAliasedValues(stackVar(first, params[0]))) {
-                //          addAlias(v, returnValueVar(callStatements, retType));
-                //        }
-                //      }
-                //      
-                //      // For all object which have not been modified by the method call,
-                //      // assume their object invariants
-                //      addAssume(getInvariantAfterLeavingMethod());
-                //      
-                //      // If the invoked method is a super-constructor, we need to assign
-                //      // the result value to the correct register variable.
-                //      if (isSuperConstructor) {
-                //        addAssignment(var(refLocalVar(0)), var(returnValueVar(callStatements, retType)));
-                //      }
-                //                 
-                // Assume exceptional postcondition for all exceptions
-                // and jump to the appropriate exception handler defined below.
-
-//                JClassType[] exceptions = invokedMethod.getExceptionTypes();
-                //      
-                //      if (exceptions.length > 0) {
-                //        // For every exception thrown by the method call, we create a synthetic
-                //        // BoogiePL block in which we assume the corresponding exceptional
-                //        // postcondition.
-                //
-                //        // Branch to the blocks modeling the normal and the individual
-                //        // exceptional terminations of the method call.
-                //        String[] labels = new String[exceptions.length + 1];
-                //        labels[0] = normalPostBlockLabel(cfgBlock) + UNDERSCORE + callStatements;
-                //        for (int i = 0; i < exceptions.length; i++) {
-                //          labels[i + 1] = exceptionalPostBlockLabel(cfgBlock, exceptions[i]) + UNDERSCORE + callStatements;
-                //        }
-                //
-                //        endBlock(labels);
-                //
-                //        for (JClassType exception : exceptions) {
-                //          // Create the actual blocks for the individual exceptions.
-                //          // It is not necessary to check the exceptional postcondition,
-                //          // for this will be implicitely done by Boogie.
-                //          startBlock(exceptionalPostBlockLabel(cfgBlock, exception) + UNDERSCORE + callStatements);
-                //
-                //          // Havoc the exception object and assume its static type.
-                //          /* TODO: REMOVE this deprecated implementation:
-                //          addHavoc(var(exceptionVar(callStatements)));
-                //          addAssume(alive(
-                //              rval(var(exceptionVar(callStatements))),
-                //              var(tc.getHeap())));
-                //          */
-                //          
-                //          addAssume(logicalAnd(
-                //              isExceptionalReturnState(var(RETURN_STATE_VAR + callStatements)),
-                //              isInstanceOf(
-                //                  rval(var(exceptionVar(callStatements))),
-                //                  typeRef(exception))
-                //          ));
-                //
-                //          // Assume the corresponding exceptional postcondition.
-                //          // addAssume(translateXPostcondition( invokedMethod, exception, PRE_HEAP_VAR, refStackVar(0), args));
-                //
-                //          // Now, branch to the actual exception handlers.
-                //          branchToHandlers(exception);
-                //        }
-                //
-                //        translateReachableExceptionHandlers();
-                //
-                //        // Finally, open the BoogiePL block representing the normal termination
-                //        // of the method. The subsequent translation can simply continue inside
-                //        // this block.
-                //        startBlock(normalPostBlockLabel(cfgBlock) + UNDERSCORE + callStatements);
-                //      }
-                //
-                //      // JType returnType = invokedMethod.getReturnType();
-                //      String resultVar = returnValueVar(callStatements, retType);
-                //
-                //      // Upon normal method termination, assume properties about the return value
-                //      if (hasReturnValue) {
-                //        // addHavoc(var(resultVar)); // do not havoc: we need to know whether the return value is null
-                //        if (retType.isReferenceType()) {
-                //          addAssume(alive(rval(var(resultVar)), var(tc.getHeap())));
-                //          addAssume(isOfType(rval(var(resultVar)), typeRef(retType)));
-                //        } else {
-                //          addAssume(isOfType(ival(var(resultVar)), typeRef(retType)));
-                //        }
-                //      }
-                //      addAssume(isNormalReturnState(var(RETURN_STATE_VAR + callStatements)));
-                //
-                //      // If the method has a return value, we copy the helper variable
-                //      // callResult to the actual stack variable which will hold the value.
-                //      if (hasReturnValue) {
-                //        //String resultStackVar = stackVar(first, retType);
-                //        String lhs = "";
-                //        if (isSuperConstructor) {
-                //          lhs = stackVar(first, retType);
-                //        } else {
-                //          // lhs = stackVar(first - 1, retType);
-                //          lhs = stackVar(first, retType);
-                //        }        
-                //        addAssignment(var(lhs), var(resultVar));
-                //      }
-
-                //new code
-                String invokedMethodName = getMethodName(invokedMethod);
-                String thisPlace = tc.buildPlace(getProcedureName(method), invokedMethodName);
-                addAssignment(stack(spMinus1, var(PLACE_VARIABLE)), var(thisPlace));
-                addAssignment(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName));
-
+                
+                BPLExpression spmapMinus1 = sub(spmap(), new BPLIntLiteral(1));
+                BPLExpression ipMinus1 = sub(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1));
                 if(!invokedMethod.isConstructor() && !invokedMethod.isStatic()){
-                    //                rawEndBlock(tc.getCheckLabel());
-                    String boundaryLabel = blockLabel + BOUNDARY_LABEL_POSTFIX;
-                    String internLabel =  blockLabel + INTERN_LABEL_POSTFIX;
-
-                    BPLTransferCommand transCmd = new BPLGotoCommand(
-                            tc.prefix(getProcedureName(method) + "_" + boundaryLabel),
-                            tc.prefix(getProcedureName(method) + "_" + internLabel));
+                    BPLTransferCommand transCmd = new BPLGotoCommand(boundaryLabel, internLabel);
                     transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
                     transCmd.addComment("Sourceline: "+handle.getSourceLine());
-                    BPLBasicBlock block = new BPLBasicBlock(
-                            tc.prefix(getProcedureName(method) + "_" + blockLabel),
-                            commands.toArray(new BPLCommand[commands.size()]),
-                            transCmd
-                            );
-                    blocks.add(block);
-
-
+                    endBlock(transCmd);
+                    
+                    ///////////////////////////////////////////////////////////////////////
+                    // generate internal call block
+                    ///////////////////////////////////////////////////////////////////////
+                    
                     startBlock(internLabel);
+                    addAssignment(spmap(), add(spmap(), new BPLIntLiteral(1)), "create new stack frame");
+                    
+                    // Pass all other method arguments (the first of which refers to the "this" object
+                    // if the method is not static).
+                    String[] args = new String[invokedMethodParams.length];
+                    for (int i = 0; i < invokedMethodParams.length; i++) {
+                        args[i] = stackVar(first + i, invokedMethodParams[i]);
+                        methodParams.add(new BPLVariableExpression(args[i]));
+                        if(invokedMethodParams[i].isBaseType()){
+                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                        } else if(invokedMethodParams[i].isClassType()){
+                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+                        } else {
+                            //TODO array type
+                        }
+                        addAssignment(stack(var(paramVar(i, invokedMethodParams[i]))), stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])));
+                    }
+                    
+                    addAssignment(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName));
+                    
                     String t = "t";
                     BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
                     addAssume(exists(tVar, 
@@ -3336,16 +3197,44 @@ public class MethodTranslator implements ITranslationConstants {
                                     libType(var(t))
                                     )
                             ));
-                    //                block = new BPLBasicBlock(
-                    //                        tc.prefix(getProcedureName(method) + "_" + blockLabel),
-                    //                        commands.toArray(new BPLCommand[commands.size()]),
-                    //                        transCmd
-                    //                        );
-                    //                blocks.add(block);
                     rawEndBlock(tc.prefix(CALLTABLE_LABEL));
-
-
+                    
+                    
+                    ///////////////////////////////////////////////////////////////////
+                    // generate boundary call block
+                    ////////////////////////////////////////////////////////////////////
+                    
                     startBlock(boundaryLabel);
+                    
+                    final String iftmp = "iftmp";
+                    BPLVariable iftmpVar = new BPLVariable(iftmp, new BPLTypeName(INTERACTION_FRAME_TYPE));
+                    tc.usedVariables().put(iftmp, iftmpVar);
+                    
+                    addCommentedCommand(new BPLHavocCommand(var(iftmp)), "this empties the frame we will use for the boundary call");
+                    addAssignment(map(var(tc.getStack()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1))), var(iftmp));
+                    addAssume(wellformedStack(var(tc.getStack()), var(tc.getInteractionFramePointer()), var(tc.getStackPointerMap()), var(tc.getHeap())));
+                    
+                    addAssignment(var(tc.getInteractionFramePointer()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1)), "create new interaction frame");
+                    addAssignment(spmap(), new BPLIntLiteral(0), "create the initial stack frame of the new interaction frame");
+                    
+                    // Pass all other method arguments (the first of which refers to the "this" object
+                    // if the method is not static).
+                    args = new String[invokedMethodParams.length];
+                    for (int i = 0; i < invokedMethodParams.length; i++) {
+                        args[i] = stackVar(first + i, invokedMethodParams[i]);
+                        methodParams.add(new BPLVariableExpression(args[i]));
+                        if(invokedMethodParams[i].isBaseType()){
+                            addAssert(isInRange(stack(ipMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                        } else if(invokedMethodParams[i].isClassType()){
+                            addAssert(isOfType(stack(ipMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+                        } else {
+                            //TODO array type
+                        }
+                        addAssignment(stack(var(paramVar(i, invokedMethodParams[i]))), stack(ipMinus1, var(args[i])));
+                    }
+                    
+                    addAssignment(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName));
+                    
                     addAssume(exists(tVar, 
                             logicalAnd(
                                     memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
@@ -3354,13 +3243,39 @@ public class MethodTranslator implements ITranslationConstants {
                             ));
                     addAssume(isCallable(typeRef(method.getOwner()), var(GLOBAL_VAR_PREFIX+invokedMethodName)), "rule out private methods");
                     addAssume(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)));
-                    //TODO more detailed information about the type here
                     rawEndBlock(tc.getCheckLabel());
                 } else if(invokedMethod.isConstructor()) {
                     //the invoked method is a constructor of an internal type, but not a superconstructor call
                     if(!isSuperConstructor){
                         first = first - 1; //the stack index is one off if we have a constructor
                     }
+                    
+                    
+                    addAssignment(spmap(), add(spmap(), new BPLIntLiteral(1)), "create new stack frame");
+                    
+                    // Pass all other method arguments (the first of which refers to the "this" object
+                    // if the method is not static).
+                    String[] args = new String[invokedMethodParams.length];
+                    for (int i = 0; i < invokedMethodParams.length; i++) {
+                        args[i] = stackVar(first + i, invokedMethodParams[i]);
+                        methodParams.add(new BPLVariableExpression(args[i]));
+                        if(invokedMethodParams[i].isBaseType()){
+                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                        } else if(invokedMethodParams[i].isClassType()){
+                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+                        } else {
+                            //TODO array type
+                        }
+                        if(invokedMethod.isStatic()){
+                            addAssignment(stack(var(paramVar(i+1, invokedMethodParams[i]))), stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])));
+                        } else {
+                            addAssignment(stack(var(paramVar(i, invokedMethodParams[i]))), stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])));
+                        }
+                    }
+                    
+                    addAssignment(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName));
+                    
+                    
                     
                     BPLTransferCommand transCmd = new BPLGotoCommand(tc.prefix(getProcedureName(invokedMethod))); //this is a static call
                     transCmd.addComment("constructor call: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
@@ -3379,6 +3294,29 @@ public class MethodTranslator implements ITranslationConstants {
                             );
                     blocks.add(block);
                 } else { //method is static
+                    addAssignment(spmap(), add(spmap(), new BPLIntLiteral(1)), "create new stack frame");
+                    // if the method is static, pass the class object as param0
+                    addAssignment(stack(var(paramVar(0, invokedMethod.getOwner()))), CodeGenerator.classRepr(typeRef(invokedMethod.getOwner())));
+                    
+                    // Pass all other method arguments (the first of which refers to the "this" object
+                    // if the method is not static).
+                    String[] args = new String[invokedMethodParams.length];
+                    for (int i = 0; i < invokedMethodParams.length; i++) {
+                        args[i] = stackVar(first + i, invokedMethodParams[i]);
+                        methodParams.add(new BPLVariableExpression(args[i]));
+                        if(invokedMethodParams[i].isBaseType()){
+                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                        } else if(invokedMethodParams[i].isClassType()){
+                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+                        } else {
+                            //TODO array type
+                        }
+                        addAssignment(stack(var(paramVar(i+1, invokedMethodParams[i]))), stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])));
+                    }
+                    
+                    addAssignment(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName));
+                    
+                    
                     BPLTransferCommand transCmd = new BPLGotoCommand(tc.prefix(getProcedureName(invokedMethod)));
                     transCmd.addComment("static methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
                     transCmd.addComment("Sourceline: "+handle.getSourceLine());
@@ -3390,67 +3328,284 @@ public class MethodTranslator implements ITranslationConstants {
                     blocks.add(block);
                 }
                 
+                
+                
+                
+//                BPLExpression sp = var(tc.getStackPointer());
+//                BPLExpression spMinus1 = sub(sp, intLiteral(1)); 
+//                addAssignment(sp, add(sp, intLiteral(1)), "create new stack frame");
+//                
+//                // if the method is static, pass the class object as param0
+//                if(invokedMethod.isStatic()){
+//                    addAssignment(stack(var(paramVar(0, invokedMethod.getOwner()))), CodeGenerator.classRepr(typeRef(invokedMethod.getOwner())));
+//                }
+//                // Pass all other method arguments (the first of which refers to the "this" object
+//                // if the method is not static).
+//                String[] args = new String[invokedMethodParams.length];
+//                for (int i = 0; i < invokedMethodParams.length; i++) {
+//                    args[i] = stackVar(first + i, invokedMethodParams[i]);
+//                    methodParams.add(new BPLVariableExpression(args[i]));
+//                    if(invokedMethodParams[i].isBaseType()){
+//                        addAssert(isInRange(stack(spMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+//                    } else if(invokedMethodParams[i].isClassType()){
+//                        addAssert(isOfType(stack(spMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+//                    } else {
+//                        //TODO array type
+//                    }
+//                    if(invokedMethod.isStatic()){
+//                        addAssignment(stack(var(paramVar(i+1, invokedMethodParams[i]))), stack(spMinus1, var(args[i])));
+//                    } else {
+//                        addAssignment(stack(var(paramVar(i, invokedMethodParams[i]))), stack(spMinus1, var(args[i])));
+//                    }
+//                }
+//
+//                /*
+//      boolean isSuperConstructor = method.isConstructor() && invokedMethod.isConstructor() &&
+//                                   (args.length > 0) ? (args[0].equals(stackVar(0, params[0]))) : false;
+//                 */
+//                 
+//
+//                //new code
+//                addAssignment(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName));
+//
+//                if(!invokedMethod.isConstructor() && !invokedMethod.isStatic()){
+//                    //                rawEndBlock(tc.getCheckLabel());
+//                    String boundaryLabel = blockLabel + BOUNDARY_LABEL_POSTFIX;
+//                    String internLabel =  blockLabel + INTERN_LABEL_POSTFIX;
+//
+//                    BPLTransferCommand transCmd = new BPLGotoCommand(
+//                            tc.prefix(getProcedureName(method) + "_" + boundaryLabel),
+//                            tc.prefix(getProcedureName(method) + "_" + internLabel));
+//                    transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
+//                    transCmd.addComment("Sourceline: "+handle.getSourceLine());
+//                    BPLBasicBlock block = new BPLBasicBlock(
+//                            tc.prefix(getProcedureName(method) + "_" + blockLabel),
+//                            commands.toArray(new BPLCommand[commands.size()]),
+//                            transCmd
+//                            );
+//                    blocks.add(block);
+//
+//
+//                    startBlock(internLabel);
+//                    String t = "t";
+//                    BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+//                    addAssume(exists(tVar, 
+//                            logicalAnd(
+//                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
+//                                    libType(var(t))
+//                                    )
+//                            ));
+//                    //                block = new BPLBasicBlock(
+//                    //                        tc.prefix(getProcedureName(method) + "_" + blockLabel),
+//                    //                        commands.toArray(new BPLCommand[commands.size()]),
+//                    //                        transCmd
+//                    //                        );
+//                    //                blocks.add(block);
+//                    rawEndBlock(tc.prefix(CALLTABLE_LABEL));
+//
+//
+//                    startBlock(boundaryLabel);
+//                    addAssume(exists(tVar, 
+//                            logicalAnd(
+//                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
+//                                    logicalNot(libType(var(t)))
+//                                    )
+//                            ));
+//                    addAssume(isCallable(typeRef(method.getOwner()), var(GLOBAL_VAR_PREFIX+invokedMethodName)), "rule out private methods");
+//                    addAssume(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)));
+//                    //TODO more detailed information about the type here
+//                    rawEndBlock(tc.getCheckLabel());
+//                } else if(invokedMethod.isConstructor()) {
+//                    //the invoked method is a constructor of an internal type, but not a superconstructor call
+//                    if(!isSuperConstructor){
+//                        first = first - 1; //the stack index is one off if we have a constructor
+//                    }
+//                    
+//                    BPLTransferCommand transCmd = new BPLGotoCommand(tc.prefix(getProcedureName(invokedMethod))); //this is a static call
+//                    transCmd.addComment("constructor call: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
+//                    transCmd.addComment("Sourceline: "+handle.getSourceLine());
+//                    
+//                    if(!isSuperConstructor){
+//                        // we created the object, so it is not createdByCtxt and not exposed
+//                        addAssume(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
+//                        addAssume(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+//                    }
+//                    
+//                    BPLBasicBlock block = new BPLBasicBlock(
+//                            tc.prefix(getProcedureName(method) + "_" + blockLabel),
+//                            commands.toArray(new BPLCommand[commands.size()]),
+//                            transCmd
+//                            );
+//                    blocks.add(block);
+//                } else { //method is static
+//                    BPLTransferCommand transCmd = new BPLGotoCommand(tc.prefix(getProcedureName(invokedMethod)));
+//                    transCmd.addComment("static methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
+//                    transCmd.addComment("Sourceline: "+handle.getSourceLine());
+//                    BPLBasicBlock block = new BPLBasicBlock(
+//                            tc.prefix(getProcedureName(method) + "_" + blockLabel),
+//                            commands.toArray(new BPLCommand[commands.size()]),
+//                            transCmd
+//                            );
+//                    blocks.add(block);
+//                }
+                
+                
+                
+                
+                String internalReturnLabel = tc.nextLabel() + "_internal_return";
+                String boundaryReturnLabel = tc.nextLabel() + "_boundary_return";
+                String contLabel = tc.nextLabel() + "_cont";
+                
                 startBlock(tc.nextLabel());
-//                addAssignment(stack(receiver()), var("reg0_r"));//TODO correct expression here
+//              addAssignment(stack(receiver()), var("reg0_r"));//TODO correct expression here
 
-                if(!invokedMethod.isConstructor()){
-                    addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
-                } else {
-                    addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
-                    if(!isSuperConstructor){
-                        addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
-                        addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
-                    }
-                }
-                addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName)));
+              if(!invokedMethod.isConstructor()){
+                  addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
+              } else {
+                  addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we have constructed the object
+                  if(!isSuperConstructor){
+                      addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we have constructed the object on our own
+                      addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+                  }
+              }
+              addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName)));
+              
+              if(hasReturnValue){
+                  if(retType.isBaseType()){
+                      addAssume(isInRange(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), typeRef(retType)));
+                  } else if(retType.isClassType()){
+                      addAssume(isOfType(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(tc.getHeap()), typeRef(retType)));
+                  } else {
+                      //TODO array
+                  }
+              }
+              endBlock(new BPLGotoCommand(boundaryReturnLabel, internalReturnLabel));
+              
+              // internal return: read result from other stack frame and remove it
+              ////////////////////////////////////////////////////////////////////
+              startBlock(internalReturnLabel);
+              addAssume(isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1)));
+              if(hasReturnValue){
+                  addAssignment(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
+              }
+              addAssignment(spmap(), sub(spmap(), new BPLIntLiteral(1)));
+              endBlock(new BPLGotoCommand(contLabel));
+              
+              
+              // boundary return: read result from other interaction frame and remove it
+              ///////////////////////////////////////////////////////////////////////////
+              startBlock(boundaryReturnLabel);
+              addAssume(isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(0)));
+              if(hasReturnValue){
+                  addAssignment(stack(ipMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
+              }
+              addAssignment(var(tc.getInteractionFramePointer()), sub(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1)));
+              endBlock(new BPLGotoCommand(contLabel));
+              
+              startBlock(contLabel);
+              
+              // type informations of the stack
+              StackFrame stackFrame = handle.getFrame();
+              JType elemType;
+              for(int i=0; i<first; i++){
+                  elemType = stackFrame.getLocal(i);
+                  if(elemType.isBaseType()){
+                      addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
+                  } else {
+                      addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
+                  }
+              }
+              
+              // type information of the method parameters
+              JType[] params = new JType[method.getParameterCount() + 1];
+              params[0] = method.getOwner();
+              System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
+              for(int i=0; i<params.length; i++){
+                  if(params[i].isBaseType()){
+                      addAssume(isInRange(stack(var(paramVar(i, params[i]))), typeRef(params[i])));
+                  } else {
+                      addAssume(isOfType(stack(var(paramVar(i, params[i]))), var(tc.getHeap()), typeRef(params[i])));
+                  }
+                  if(method.isStatic()){
+                      if(i>0){
+                          addAssignment(stack(var(localVar(i-1, params[i]))), stack(var(paramVar(i, params[i]))));
+                      }
+                  } else {
+                      addAssignment(stack(var(localVar(i, params[i]))), stack(var(paramVar(i, params[i]))));
+                  }
+              }
+              
+              addAssume(nonNull(stack(receiver())));
+              
+              addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
+              addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(thisPlace)));
                 
-                if(hasReturnValue){
-                    if(retType.isBaseType()){
-                        addAssume(isInRange(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), typeRef(retType)));
-                    } else if(retType.isClassType()){
-                        addAssume(isOfType(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(tc.getHeap()), typeRef(retType)));
-                    } else {
-                        //TODO array
-                    }
-                    addAssignment(stack(spMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
-                }
-                addAssignment(sp, sub(sp, intLiteral(1)));
                 
-                // type informations of the stack
-                StackFrame stackFrame = handle.getFrame();
-                JType elemType;
-                for(int i=0; i<first; i++){
-                    elemType = stackFrame.getLocal(i);
-                    if(elemType.isBaseType()){
-                        addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
-                    } else {
-                        addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
-                    }
-                }
                 
-                // type information of the method parameters
-                JType[] params = new JType[method.getParameterCount() + 1];
-                params[0] = method.getOwner();
-                System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
-                for(int i=0; i<params.length; i++){
-                    if(params[i].isBaseType()){
-                        addAssume(isInRange(stack(var(paramVar(i, params[i]))), typeRef(params[i])));
-                    } else {
-                        addAssume(isOfType(stack(var(paramVar(i, params[i]))), var(tc.getHeap()), typeRef(params[i])));
-                    }
-                    if(method.isStatic()){
-                        if(i>0){
-                            addAssignment(stack(var(localVar(i-1, params[i]))), stack(var(paramVar(i, params[i]))));
-                        }
-                    } else {
-                        addAssignment(stack(var(localVar(i, params[i]))), stack(var(paramVar(i, params[i]))));
-                    }
-                }
                 
-                addAssume(nonNull(stack(receiver())));
                 
-                addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
-                addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(thisPlace)));
+                
+//                startBlock(tc.nextLabel());
+////                addAssignment(stack(receiver()), var("reg0_r"));//TODO correct expression here
+//
+//                if(!invokedMethod.isConstructor()){
+//                    addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
+//                } else {
+//                    addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we hace constructed the object
+//                    if(!isSuperConstructor){
+//                        addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
+//                        addAssume(logicalNot(heap(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+//                    }
+//                }
+//                addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + invokedMethodName)));
+//                
+//                if(hasReturnValue){
+//                    if(retType.isBaseType()){
+//                        addAssume(isInRange(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), typeRef(retType)));
+//                    } else if(retType.isClassType()){
+//                        addAssume(isOfType(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))), var(tc.getHeap()), typeRef(retType)));
+//                    } else {
+//                        //TODO array
+//                    }
+//                    addAssignment(stack(spMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
+//                }
+//                addAssignment(sp, sub(sp, intLiteral(1)));
+//                
+//                // type informations of the stack
+//                StackFrame stackFrame = handle.getFrame();
+//                JType elemType;
+//                for(int i=0; i<first; i++){
+//                    elemType = stackFrame.getLocal(i);
+//                    if(elemType.isBaseType()){
+//                        addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
+//                    } else {
+//                        addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
+//                    }
+//                }
+//                
+//                // type information of the method parameters
+//                JType[] params = new JType[method.getParameterCount() + 1];
+//                params[0] = method.getOwner();
+//                System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
+//                for(int i=0; i<params.length; i++){
+//                    if(params[i].isBaseType()){
+//                        addAssume(isInRange(stack(var(paramVar(i, params[i]))), typeRef(params[i])));
+//                    } else {
+//                        addAssume(isOfType(stack(var(paramVar(i, params[i]))), var(tc.getHeap()), typeRef(params[i])));
+//                    }
+//                    if(method.isStatic()){
+//                        if(i>0){
+//                            addAssignment(stack(var(localVar(i-1, params[i]))), stack(var(paramVar(i, params[i]))));
+//                        }
+//                    } else {
+//                        addAssignment(stack(var(localVar(i, params[i]))), stack(var(paramVar(i, params[i]))));
+//                    }
+//                }
+//                
+//                addAssume(nonNull(stack(receiver())));
+//                
+//                addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
+//                addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(thisPlace)));
                 
                 callStatements++;
             }

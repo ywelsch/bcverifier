@@ -57,6 +57,8 @@ import static b2bpl.translation.CodeGenerator.oneClassDown;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.refOfType;
 import static b2bpl.translation.CodeGenerator.relNull;
+import static b2bpl.translation.CodeGenerator.spmap1;
+import static b2bpl.translation.CodeGenerator.spmap2;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.trigger;
 import static b2bpl.translation.CodeGenerator.typ;
@@ -574,8 +576,6 @@ public class Translator implements ITranslationConstants {
 
         // needed variable declarations
         {
-            final String heap1 = TranslationController.HEAP1;
-            final String heap2 = TranslationController.HEAP2;
             final String related = RELATED_RELATION;
             final String alloc = ALLOC_FIELD;
             final String exposed = EXPOSED_FIELD;
@@ -588,8 +588,8 @@ public class Translator implements ITranslationConstants {
             BPLVariable fieldRefVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)));
             BPLVariable fieldIntVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT));
             BPLVariable fieldBoolVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL));
-            BPLVariable heap1Var = new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE));
-            BPLVariable heap2Var = new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE));
+            BPLVariable heap1Var = new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE));
+            BPLVariable heap2Var = new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE));
             BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BIJ_TYPE));
             final String r1 = "r1";
             BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
@@ -634,9 +634,9 @@ public class Translator implements ITranslationConstants {
 
             addDeclaration(new BPLTypeAlias(HEAP_TYPE, new BPLParameterizedType(new BPLArrayType(new BPLType[]{new BPLTypeName("Ref"), new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha"))}, new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
 
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(heap1)))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(heap2)))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName(BIJ_TYPE), wellformedCoupling(var(heap1), var(heap2), var(related)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(HEAP1)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(HEAP2)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName(BIJ_TYPE), wellformedCoupling(var(HEAP1), var(HEAP2), var(related)))));
 
             
             addComment("Modified heap, coupling, relation (not original SscBoogie)");
@@ -657,21 +657,21 @@ public class Translator implements ITranslationConstants {
             addFunction(WELLFORMED_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
-                    isEquiv(wellformedCoupling(var(heap1), var(heap2), var(related)),
+                    isEquiv(wellformedCoupling(var(HEAP1), var(HEAP2), var(related)),
                             logicalAnd(
                                     bijective(var(related)),
-                                    objectCoupling(var(heap1), var(heap2), var(related)),
-                                    forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(heap1),  var(r1), var(exposed)), new BPLArrayExpression(var(heap2), var(r2), var(exposed))))),
-                                    forall(r1Var, implies(logicalAnd(obj(var(heap1), var(r1)), new BPLArrayExpression(var(heap1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
-                                    forall(r2Var, implies(logicalAnd(obj(var(heap2), var(r2)), new BPLArrayExpression(var(heap2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2)))))
+                                    objectCoupling(var(HEAP1), var(HEAP2), var(related)),
+                                    forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(HEAP1),  var(r1), var(exposed)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))))),
+                                    forall(r1Var, implies(logicalAnd(obj(var(HEAP1), var(r1)), new BPLArrayExpression(var(HEAP1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
+                                    forall(r2Var, implies(logicalAnd(obj(var(HEAP2), var(r2)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2)))))
                                     ))
                     ));
 
             addFunction(OBJECT_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
-                    isEquiv(objectCoupling(var(heap1), var(heap2), var(related)),
-                            forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(obj(var(heap1), var(r1)), obj(var(heap2), var(r2))))))
+                    isEquiv(objectCoupling(var(HEAP1), var(HEAP2), var(related)),
+                            forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(obj(var(HEAP1), var(r1)), obj(var(HEAP2), var(r2))))))
                     ));
 
 
@@ -1148,8 +1148,6 @@ public class Translator implements ITranslationConstants {
 
 
         {
-            final String heap1 = TranslationController.HEAP1;
-            final String heap2 = TranslationController.HEAP2;
             final String related = RELATED_RELATION;
             final String alloc = ALLOC_FIELD;
             final String exposed = EXPOSED_FIELD;
@@ -1165,8 +1163,8 @@ public class Translator implements ITranslationConstants {
             BPLVariable fieldAlphaVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")));
             String vAlpha = "v";
             BPLVariable vAlphaVar = new BPLVariable(vAlpha, new BPLTypeName("alpha"));
-            BPLVariable heap1Var = new BPLVariable(heap1, new BPLTypeName(HEAP_TYPE));
-            BPLVariable heap2Var = new BPLVariable(heap2, new BPLTypeName(HEAP_TYPE));
+            BPLVariable heap1Var = new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE));
+            BPLVariable heap2Var = new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE));
             BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BIJ_TYPE));
             final String r1 = "r1";
             BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
@@ -1188,11 +1186,6 @@ public class Translator implements ITranslationConstants {
             BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
             final String u = "u";
             BPLVariable uVar = new BPLVariable(u, new BPLTypeName(NAME_TYPE));
-            final String sp1 = TranslationController.SP1;
-            final String sp2 = TranslationController.SP2;
-            final String stack1 = TranslationController.STACK1;
-            final String stack2 = TranslationController.STACK2;
-            final String thisName = "this";
             final String stack = "stack";
             BPLVariable stackVar = new BPLVariable(stack, new BPLTypeName(STACK_TYPE));
             final String sp = "sp";
@@ -1203,6 +1196,8 @@ public class Translator implements ITranslationConstants {
             BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
             final String i = "i";
             BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+            final String j = "j";
+            BPLVariable jVar = new BPLVariable(j, BPLBuiltInType.INT);
             final String bool = "b";
             BPLVariable boolVar = new BPLVariable(bool, BPLBuiltInType.BOOL);
             final String x = "x";
@@ -1218,6 +1213,10 @@ public class Translator implements ITranslationConstants {
             final String c3 = "c3";
             BPLVariable c3Var = new BPLVariable(c3, new BPLTypeName(NAME_TYPE));
             final String dynType = DYN_TYPE_FIELD;
+            
+            final String spmap = "spmap";
+            BPLVariable spmapVar = new BPLVariable(spmap, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)));
+            
             
             
             addAxiom(forall(tVar, uVar, oVar, heapVar,
@@ -1404,24 +1403,27 @@ public class Translator implements ITranslationConstants {
 
             addType(VAR_TYPE, "_");
             addDeclaration(new BPLTypeAlias(STACK_PTR_TYPE, BPLBuiltInType.INT));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(sp1, new BPLTypeName(STACK_PTR_TYPE))));
-
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(sp2, new BPLTypeName(STACK_PTR_TYPE))));
 
             addDeclaration(new BPLTypeAlias(STACK_FRAME_TYPE, new BPLParameterizedType(new BPLArrayType(new BPLTypeName(VAR_TYPE, new BPLTypeName("alpha")), new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
-            addDeclaration(new BPLTypeAlias(STACK_TYPE, new BPLArrayType(new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(STACK_FRAME_TYPE))));
+            addDeclaration(new BPLTypeAlias(INTERACTION_FRAME_TYPE, new BPLArrayType(new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(STACK_FRAME_TYPE))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(IP1_VAR, BPLBuiltInType.INT, lessEqual(intLiteral(0), var(IP1_VAR)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(IP2_VAR, BPLBuiltInType.INT, lessEqual(intLiteral(0), var(IP2_VAR)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(SP_MAP1_VAR, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(SP_MAP2_VAR, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)))));
+            
+            addDeclaration(new BPLTypeAlias(STACK_TYPE, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(INTERACTION_FRAME_TYPE))));
 
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack1, new BPLTypeName(STACK_TYPE), wellformedStack(var(stack1), var(sp1), var(heap1)))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(stack2, new BPLTypeName(STACK_TYPE), wellformedStack(var(stack2), var(sp2), var(heap2)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK1, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))))); // TODO extend to all interaction frames
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK2, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))))); // TODO extend to all interaction frames
 
-            addFunction(WELLFORMED_STACK_FUNC, new BPLTypeName(STACK_TYPE), new BPLTypeName(STACK_PTR_TYPE), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
+            addFunction(WELLFORMED_STACK_FUNC, new BPLType[]{new BPLTypeName(STACK_TYPE), BPLBuiltInType.INT, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)), new BPLTypeName(HEAP_TYPE)}, BPLBuiltInType.BOOL);
             addAxiom(forall(
-                    stackVar, spVar, heapVar,
-                    isEquiv(wellformedStack(var(stack), var(sp), var(heap)),
+                    stackVar, iVar, spmapVar, heapVar,
+                    isEquiv(wellformedStack(var(stack), var(i), var(spmap), var(heap)),
                     logicalAnd(
-                            forall(pVar, vVar, implies(logicalAnd(lessEqual(intLiteral(0), var(p)), lessEqual(var(p), var(sp))), new BPLArrayExpression(var(heap), new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), var(alloc)))),
-                            forall(pVar, vVar, implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), nullLiteral()))),
-                            forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr( less(var(p), intLiteral(0)), greater(var(p), var(sp)) ), isEqual(new BPLArrayExpression(new BPLArrayExpression(var(stack), var(p)), var(v)), intLiteral(0))))
+                            forall(jVar, pVar, vVar, implies(logicalAnd(lessEqual(var(j), var(i)), lessEqual(intLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), new BPLArrayExpression(var(heap), map1(var(stack), var(j), var(p), var(v)), var(alloc)))),
+                            forall(jVar, pVar, vVar, implies(logicalOr(greater(var(j), var(i)), logicalAnd(lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), nullLiteral()))),
+                            forall(jVar, pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr(greater(var(j), var(i)), logicalAnd(lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), intLiteral(0))))
                             )
                     )
                     ));
@@ -1429,8 +1431,8 @@ public class Translator implements ITranslationConstants {
             if (tc.getConfig().extensionalityEnabled()) {
             	addComment("Extensionality for stacks");
             	addAxiom(forall(
-            			spVar, stackVar,
-            			isEqual(new BPLArrayExpression(var(stack), new BPLArrayAssignment(new BPLVariableExpression[]{var(sp)}, new BPLArrayExpression(var(stack), var(sp)))), var(stack))
+            			iVar, spVar, stackVar,
+            			isEqual(map1(var(stack), var(i), new BPLArrayAssignment(new BPLVariableExpression[]{var(sp)}, map1(var(stack), var(i), var(sp)))), var(stack))
             			));
             }
 
@@ -1578,8 +1580,8 @@ public class Translator implements ITranslationConstants {
             
             addFunction(IS_LOCAL_PLACE_FUNC, new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL);
             
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(TranslationController.STALL1, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(TranslationController.STALL2, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STALL1, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STALL2, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
             
             flushPendingTheory(); //TODO this is needed at the moment to generate information about the long values (which should be printed into the program code directly)
         }

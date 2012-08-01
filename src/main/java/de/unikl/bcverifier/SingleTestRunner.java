@@ -41,6 +41,8 @@ public class SingleTestRunner {
             if(!CheckRunner.runCheck(test)){
                 Logger.getLogger(SingleTestRunner.class).error("Check did not succeed!");
                 Logger.getLogger(SingleTestRunner.class).error(BoogieRunner.getLastMessage());
+            } else {
+                Logger.getLogger(SingleTestRunner.class).info("Test completed successfully.");
             }
             return;
         }

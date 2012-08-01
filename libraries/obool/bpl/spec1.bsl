@@ -8,5 +8,5 @@ NonNull($obool.OBool,$obool.OBool.g,heap1) && NonNull($obool.OBool,$obool.OBool.
 Unique($obool.OBool,$obool.OBool.g,heap1) && Unique($obool.OBool,$obool.OBool.g,heap2)
 <<<
 >>>local_invariant
-(stack1[sp1-1][place] == lib1_obool.OBool.getg#boolean_get#boolean0) ==> (!heap1[stack1[sp1][param0_r], createdByCtxt])
+(stack1[ip1-1][spmap1[ip1-1]][place] == lib1_obool.OBool.getg#boolean_get#boolean0) ==> (!heap1[stack1[ip1][spmap1[ip1]][param0_r], createdByCtxt])
 <<<
