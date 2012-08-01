@@ -58,13 +58,23 @@ Currently the following types are supported:
 
 ### Correspondence Relation Operator
 
-The Correspondence Relation operator (~) expects an object from the 
-old library on the left hand side and an object from the new library on the right hand side.
+The Correspondence Relation operator (~) expects two reference values: a value from the 
+old library on the left hand side and a value from the new library on the right hand side.
 
-An expression `o1 ~ o2` is true when o1 and o2 are in correspondence 
-(see [Correspondence Relation](blablub.html#bum)) or if both objects are null.
+An expression `o1 ~ o2` is true if and only if o1 and o2 are two objects in correspondence 
+(see [Correspondence Relation](blablub.html#bum)) or o1 and o2 are both null.
 
+### Built-in Functions
 
+	boolean exposed(Object o)
+	
+Returns true when the object o is exposed to the context 
+and false when it is internal to the library.
+
+	boolean createdByCtxt(Object o)
+
+Returns true when the object o is created by the context and false
+when it was created by the library.
 
 ### Well formed invariants
 
@@ -93,19 +103,4 @@ the division could not be shown.
 	invariant forall C c :: c.x != 0
 	invariant forall C c :: 10 / c.x > 3 
 
-
- 
-
-### Built-in Functions
-
-	boolean exposed(Object o)
-	
-Returns true when the object o is exposed to the context 
-and false when it is internal to the library.
-
-	boolean createdByCtxt(Object o)
-
-Returns true when the object o is created by the context and false
-when it was created by the library.
- 
 
