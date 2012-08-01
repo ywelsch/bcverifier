@@ -3143,7 +3143,7 @@ public class MethodTranslator implements ITranslationConstants {
 
                 String invokedMethodName = getMethodName(invokedMethod);
                 String thisPlace = tc.buildPlace(getProcedureName(method), invokedMethodName);
-                addAssignment(stack(var(PLACE_VARIABLE)), var(thisPlace));
+                addAssignment(stack(var(PLACE_VARIABLE)), var(thisPlace), "methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner()+" in sourceline "+handle.getSourceLine());
                 String nextLabel = tc.nextLabel();
                 String boundaryLabel = nextLabel + BOUNDARY_LABEL_POSTFIX;
                 String internLabel =  nextLabel + INTERN_LABEL_POSTFIX;
@@ -3210,7 +3210,7 @@ public class MethodTranslator implements ITranslationConstants {
                     BPLVariable iftmpVar = new BPLVariable(iftmp, new BPLTypeName(INTERACTION_FRAME_TYPE));
                     tc.usedVariables().put(iftmp, iftmpVar);
                     
-                    addHavoc(var(iftmp));
+                    addCommentedCommand(new BPLHavocCommand(var(iftmp)), "this empties the frame we will use for the boundary call");
                     addAssignment(map(var(tc.getStack()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1))), var(iftmp));
                     addAssume(wellformedStack(var(tc.getStack()), var(tc.getInteractionFramePointer()), var(tc.getStackPointerMap()), var(tc.getHeap())));
                     
