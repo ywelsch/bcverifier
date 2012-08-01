@@ -674,12 +674,31 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // preconditions of a return
         // /////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
-        procAssumes.add(new BPLAssumeCommand(greater(spmap1(),
-                new BPLIntLiteral(0))));
-        procAssumes.add(new BPLAssumeCommand(greater(spmap2(),
-                new BPLIntLiteral(0))));
+        procAssumes.add(new BPLAssumeCommand(
+                logicalOr(
+                    logicalAnd(
+                            isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
+                            greater(spmap1(), new BPLIntLiteral(0))
+                            ),
+                    logicalAnd(
+                            isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
+                            isEqual(spmap1(), new BPLIntLiteral(0))
+                            )
+                )
+                ));
+        procAssumes.add(new BPLAssumeCommand(
+                logicalOr(
+                    logicalAnd(
+                            isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
+                            greater(spmap2(), new BPLIntLiteral(0))
+                            ),
+                    logicalAnd(
+                            isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
+                            isEqual(spmap2(), new BPLIntLiteral(0))
+                            )
+                )
+                ));
         
-        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
         
         // this return path may not be taken if havoc is used to handle it
         /////////////////////////////////////////////////////////////////
@@ -1490,9 +1509,18 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // /////////////////////////////////////////
 
         dispatchCommands = new ArrayList<BPLCommand>();
-        // sp > 0
-        dispatchCommands.add(new BPLAssumeCommand(greater(sp,
-                new BPLIntLiteral(0))));
+        dispatchCommands.add(new BPLAssumeCommand(
+                logicalOr(
+                    logicalAnd(
+                            isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
+                            greater(spmap(), new BPLIntLiteral(0))
+                            ),
+                    logicalAnd(
+                            isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
+                            isEqual(spmap(), new BPLIntLiteral(0))
+                            )
+                )
+                ));
 
         methodBlocks.add(
                 0,
