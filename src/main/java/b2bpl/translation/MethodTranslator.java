@@ -3453,7 +3453,7 @@ public class MethodTranslator implements ITranslationConstants {
                 
                 
                 String internalReturnLabel = tc.nextLabel() + "_internal_return";
-                String boundaryReturnLabel = tc.nextLabel() + "boundary_return";
+                String boundaryReturnLabel = tc.nextLabel() + "_boundary_return";
                 String contLabel = tc.nextLabel() + "_cont";
                 
                 startBlock(tc.nextLabel());

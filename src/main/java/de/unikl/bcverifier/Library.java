@@ -675,28 +675,16 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // /////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
         procAssumes.add(new BPLAssumeCommand(
-                logicalOr(
-                    logicalAnd(
-                            isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                            greater(spmap1(), new BPLIntLiteral(0))
-                            ),
                     logicalAnd(
                             isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
                             isEqual(spmap1(), new BPLIntLiteral(0))
                             )
-                )
                 ));
         procAssumes.add(new BPLAssumeCommand(
-                logicalOr(
-                    logicalAnd(
-                            isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                            greater(spmap2(), new BPLIntLiteral(0))
-                            ),
                     logicalAnd(
                             isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
                             isEqual(spmap2(), new BPLIntLiteral(0))
                             )
-                )
                 ));
         
         
