@@ -24,7 +24,7 @@ public class SourceCompChecker {
 	private void checkR1() throws SourceInCompatibilityException {
 		for (String type : lookup.getAllOldTypes()) {
 			Class<?> t1 = lookup.loadClass(OLD, type);
-			if (t1.isLocalClass() || t1.isLocalClass()) continue;
+			if (t1.isLocalClass() || t1.isMemberClass()) continue;
 			if (t1.isInterface()) {
 				if (Modifier.isPublic(t1.getModifiers())) {
 					Class<?> t2 = lookup.loadClass(NEW, type);
@@ -57,7 +57,7 @@ public class SourceCompChecker {
 	private void checkR2() throws SourceInCompatibilityException {
 		for (String type : lookup.getAllOldTypes()) {
 			Class<?> t1 = lookup.loadClass(OLD, type);
-			if (t1.isLocalClass() || t1.isLocalClass()) continue;
+			if (t1.isLocalClass() || t1.isMemberClass()) continue;
 			if (Modifier.isPublic(t1.getModifiers()) && !Modifier.isFinal(t1.getModifiers())) {
 				Class<?> t2 = lookup.loadClass(NEW, type);
 				if (Modifier.isFinal(t2.getModifiers())) {
@@ -70,10 +70,10 @@ public class SourceCompChecker {
 	private void checkR3() throws SourceInCompatibilityException {
 		for (String type : lookup.getAllOldTypes()) {
 			Class<?> t1 = lookup.loadClass(OLD, type);
-			if (t1.isLocalClass() || t1.isLocalClass()) continue;
+			if (t1.isLocalClass() || t1.isMemberClass()) continue;
 			if (t1.isInterface() && Modifier.isPublic(t1.getModifiers())) {
 				Class<?> t2 = lookup.loadClass(NEW, type);
-				for (Method m1 : t2.getMethods()) {
+				for (Method m1 : t1.getMethods()) {
 					if (methodWithSameSig(t2, m1) == null) {
 						throw new SourceInCompatibilityException("Method " + m1 + " for type " + type + " not found in new implementation");
 					}
@@ -83,7 +83,34 @@ public class SourceCompChecker {
 	}
 
 	private void checkR4() throws SourceInCompatibilityException {
-		
+		for (String type : lookup.getAllOldTypes()) {
+			Class<?> t1 = lookup.loadClass(OLD, type);
+			if (t1.isLocalClass() || t1.isMemberClass()) continue;
+			if (!t1.isInterface() && Modifier.isPublic(t1.getModifiers()) && !Modifier.isFinal(t1.getModifiers())) {
+				Class<?> t2 = lookup.loadClass(NEW, type);
+				for (Method m1 : t1.getMethods()) {
+					if (Modifier.isPublic(m1.getModifiers()) || Modifier.isProtected(m1.getModifiers())) {
+						Method m2 = methodWithSameSig(t2, m1);
+						if (m2 == null) {
+							throw new SourceInCompatibilityException("Method " + m1 + " for type " + type + " not found in new implementation");
+						} else {
+							if (Modifier.isFinal(m2.getModifiers()) && !Modifier.isFinal(m1.getModifiers())) {
+								throw new SourceInCompatibilityException("Non-final method " + m1 + " for type " + type + " can not become final");
+							}
+							if (Modifier.isAbstract(m2.getModifiers()) && !Modifier.isAbstract(m1.getModifiers())) {
+								throw new SourceInCompatibilityException("Non-abstract method " + m1 + " for type " + type + " can not become abstract");
+							}
+							if (Modifier.isPublic(m1.getModifiers()) && !Modifier.isPublic(m2.getModifiers())) {
+								throw new SourceInCompatibilityException("Cannot decrease accessibility of method " + m1 + " in type " + type);
+							}
+							if (Modifier.isProtected(m1.getModifiers()) && !(Modifier.isPublic(m2.getModifiers()) || Modifier.isProtected(m2.getModifiers()))) {
+								throw new SourceInCompatibilityException("Cannot decrease accessibility of method " + m1 + " in type " + type);
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	private Method methodWithSameSig(Class<?> t2, Method m1) {
