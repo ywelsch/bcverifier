@@ -21,11 +21,19 @@ The coupling invariant can be specified using one of two possible syntaxes.
 Both types of specifications are specified using the command line argument `-s <invariant_file>` where `<invariant_file>` is the path to the specification.
 
 
-Generation Process
-------------------
+Layout of the Boogie Program
+----------------------------
 
 Both libraries are transformed into one Boogie procedure by analyzing the byte code of the library implementations. The prelude includes all axioms essential for the verification process. The Boogie procedure `checkLibraries` simulates all possible method calls of both library implementations. The body of this procedure is divided into basic blocks.
 
 The basic blocks starting with `preconditions` include the preconditions of the possible interactions with the library like method calls, constructor calls and method returns into a library method. The coupling invariant is assumed in these blocks. The blocks starting with `check` include the checks that need to be performed when the control switches from the library to the context (boundary call or boundary return) or a local place is reached during simulation. Included in these blocks is the check of the coupling invariant.
 
-The methods of the libraries are generated into blocks starting with `lib1_` or `lib2_`. The blocks starting with `lib1_` are generated from the methods of the old implementation, the other blocks are generated from the new implementation. Additionally there are two blocks, `dispatch1` and `dispatch2`. These blocks include references to the call table, return table, and local places table. The call table includes references to the starting blocks of all methods of the corresponding implementation. So the `lib1_calltable` includes references to all methods of the old implementation.
+The methods of the libraries are generated into blocks starting with `lib1_` or `lib2_`. The blocks starting with `lib1_` are generated from the methods of the old implementation, the other blocks are generated from the new implementation. Additionally there are two blocks, `dispatch1` and `dispatch2`. These blocks include references to the call table, return table, and local places table. The call table includes references to the starting blocks of all methods of the corresponding implementation. So the `lib1_calltable` includes references to all methods of the old implementation. The return table includes references to all program points a method called on the context could return to. These are determined by finding method calls inside the body of library methods. The local places table includes all references to local places. These are used to return to local places after checking the local invariant.
+
+Method calls are translated into a series of basic blocks. The blocks `lib<1/2>_<method_sig>_<method_name><i>_boundary` and `lib<1/2>_<method_sig>_<method_name><i>_intern` stand for calling the method is a boundary call or calling the method is an internal call without interaction with the context. `<method_sig>` is the signature of the method the simulation is currently working on, so the caller of the method invocation. `<method_name>` is the name of the method the is invoked. The index `<i>` is a counter, so for each method invocation these blocks have an unambiguous name. The last block of a method invocation is `lib<1/2>_<method_sig>_<method_name><i>` which is added to the return table of the corresponding library and serves as the point the execution continues after returning from the invoked method.
+
+
+Response from Boogie
+--------------------
+
+TODO
