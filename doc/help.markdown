@@ -23,6 +23,7 @@ Documentation
 
 - [[Formal Model]]
 - [[Invariant Specification Language]]
+- [[Tool]]
 
 Tool Developers
 ---------------
