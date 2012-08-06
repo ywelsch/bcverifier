@@ -26,8 +26,13 @@ import de.unikl.bcverifier.isl.parser.ParserError;
 public class ISLGenerator extends AbstractGenerator {
 
 
+	private TwoLibraryModel twoLibraryModel;
+
+
+
 	public ISLGenerator(Configuration config, TwoLibraryModel twoLibraryModel) {
 		super(config);
+		this.twoLibraryModel = twoLibraryModel;
 	}
 
 
@@ -51,9 +56,7 @@ public class ISLGenerator extends AbstractGenerator {
 			if (errors.length() > 0) {
 				throw new GenerationException(errors.toString());
 			}
-			File oldLib = getConfig().library1();
-			File newLib = getConfig().library2();
-			cu.setLibEnvironment(new LibEnvironment(oldLib, newLib));
+			cu.setTwoLibraryModel(twoLibraryModel);
 			cu.typecheck();
 			errors = new StringBuilder();
 			for (TypeError err : cu.getErrors()) {

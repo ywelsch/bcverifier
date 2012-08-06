@@ -2,6 +2,7 @@ package de.unikl.bcverifier.isl.checking;
 
 import java.lang.reflect.Field;
 
+import de.unikl.bcverifier.TwoLibraryModel;
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
@@ -45,7 +46,7 @@ public class TypeHelper {
 	}
 
 	public static ExprType attrType(BinaryOperation bo) {
-		LibEnvironment env = bo.attrCompilationUnit().getLibEnvironment();
+		TwoLibraryModel env = bo.attrCompilationUnit().getTwoLibraryModel();
 
 		Expr left = bo.getLeft();
 		Expr right = bo.getRight();
@@ -57,8 +58,8 @@ public class TypeHelper {
 			checkIfSubtype(right, ExprTypeBool.instance());
 			return ExprTypeBool.instance();
 		case RELATED:
-			checkIfSubtype(left, JavaType.create(env, Version.OLD, Object.class));
-			checkIfSubtype(right, JavaType.create(env, Version.NEW, Object.class));
+			checkIfSubtype(left, JavaType.getJavaLangObject(env, Version.OLD));
+			checkIfSubtype(right, JavaType.getJavaLangObject(env, Version.NEW));
 			return ExprTypeBool.instance();
 		case UNEQUALS:
 		case EQUALS:

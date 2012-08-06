@@ -16,6 +16,10 @@ import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLExpression;
 import beaver.Parser.Exception;
+import de.unikl.bcverifier.LibraryCompiler;
+import de.unikl.bcverifier.LibraryCompiler.CompileException;
+import de.unikl.bcverifier.LibrarySource;
+import de.unikl.bcverifier.TwoLibraryModel;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Invariant;
 import de.unikl.bcverifier.isl.ast.Statement;
@@ -29,7 +33,7 @@ public class ISLParserTest {
 
 	
 	@Test
-	public void cell() throws IOException, Exception {
+	public void cell() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 				"invariant forall old Cell o1, new Cell o2 ::",
 					"o1 ~ o2 ==>",
@@ -42,7 +46,7 @@ public class ISLParserTest {
 	}
 	
 	@Test
-	public void cb() throws IOException, Exception {
+	public void cb() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk("invariant forall old A a :: a.g % 2 == 0;");
 		testTypeCheckOk(
 				new File("./libraries/cb/old"), 
@@ -52,7 +56,7 @@ public class ISLParserTest {
 	}
 
 	@Test
-	public void obool() throws IOException, Exception {
+	public void obool() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 				"invariant forall old Bool o1, new Bool o2 :: o1 ~ o2 ==> o1.f == o2.f;",
 				"invariant forall old OBool o1, new OBool o2 :: o1 ~ o2 ==> o1.g.f != o2.g.f;",
@@ -98,8 +102,10 @@ public class ISLParserTest {
 		return (CompilationUnit) res;
 	}
 	
-	protected void testTypeCheckOk(File oldLib, File newLib, CompilationUnit cu) {
-		cu.setLibEnvironment(new LibEnvironment(oldLib, newLib));
+	protected void testTypeCheckOk(File oldLib, File newLib, CompilationUnit cu) throws CompileException {
+		LibrarySource libsrc1 = LibraryCompiler.compile(oldLib);
+        LibrarySource libsrc2 = LibraryCompiler.compile(newLib);
+		cu.setTwoLibraryModel(new TwoLibraryModel(libsrc1, libsrc2));
 		cu.typecheck();
 		for (TypeError err : cu.getErrors()) {
 			System.err.println(err);

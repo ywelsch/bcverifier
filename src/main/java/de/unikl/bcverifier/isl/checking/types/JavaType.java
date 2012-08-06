@@ -4,6 +4,7 @@ import static de.unikl.bcverifier.isl.ast.Version.*;
 
 import java.util.List;
 
+import de.unikl.bcverifier.TwoLibraryModel;
 import de.unikl.bcverifier.isl.ast.ASTNode;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.LibEnvironment;
@@ -13,10 +14,10 @@ public class JavaType extends ExprType {
 	private Version version;
 	private String qualifiedName;
 	private Class<?> clazz;
-	private LibEnvironment env;
+	private TwoLibraryModel env;
 
 	
-	private JavaType(LibEnvironment env, Version version, Class<?> clazz) {
+	private JavaType(TwoLibraryModel env, Version version, Class<?> clazz) {
 		this.env = env;
 		this.version = version;
 		this.qualifiedName = clazz.getName();
@@ -24,8 +25,8 @@ public class JavaType extends ExprType {
 	}
 	
 	public static ExprType create(ASTNode<?> loc, Version version, String qualifiedName) {
-		LibEnvironment env = loc.attrCompilationUnit().getLibEnvironment();
-		Class<?> c = env.loadClass(version, qualifiedName);
+		TwoLibraryModel env = loc.attrCompilationUnit().getTwoLibraryModel();
+		Class<?> c = env.loadType(version, qualifiedName);
 		if (c == null) {
 			loc.addError(loc, "Could not find class " + qualifiedName + " in " + version);
 			return UnknownType.instance();
@@ -35,10 +36,10 @@ public class JavaType extends ExprType {
 	
 	
 	public static ExprType create(ASTNode<?> loc, Version version, Class<?> clazz) {
-		return JavaType.create(loc.attrCompilationUnit().getLibEnvironment(), version, clazz);
+		return JavaType.create(loc.attrCompilationUnit().getTwoLibraryModel(), version, clazz);
 	}
 	
-	public static ExprType create(LibEnvironment env, Version version, Class<?> clazz) {
+	public static ExprType create(TwoLibraryModel env, Version version, Class<?> clazz) {
 		if (boolean.class.equals(clazz)) {
 			return ExprTypeBool.instance();
 		}
@@ -86,5 +87,10 @@ public class JavaType extends ExprType {
 
 	public static ExprType object() {
 		return new JavaType(null, Version.BOTH, Object.class);	
+	}
+
+	public static ExprType getJavaLangObject(TwoLibraryModel env2, Version old) {
+		// TODO Auto-generated method stub
+		throw new Error();
 	}
 }
