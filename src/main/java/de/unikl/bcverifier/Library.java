@@ -145,8 +145,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     private final Configuration config;
     private Generator specGen;
     
-    private LibrarySource libsrc1;
-    private LibrarySource libsrc2;
+    private TwoLibraryModel libmodel;
 
     private TranslationController tc;
     
@@ -158,8 +157,13 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
     public void compile() {
         try {
-            libsrc1 = LibraryCompiler.compile(config.library1());
-            libsrc2 = LibraryCompiler.compile(config.library2());
+        	if (config.isCompileFirst()) {
+        		LibraryCompiler.compile(config.library1());
+        		LibraryCompiler.compile(config.library2());
+        	}
+        	LibrarySource libsrc1 = LibraryCompiler.computeAST(config.library1());
+        	LibrarySource libsrc2 = LibraryCompiler.computeAST(config.library2());
+        	libmodel = new TwoLibraryModel(libsrc1, libsrc2);
         } catch (CompileException e) {
             e.printStackTrace();
         }
@@ -176,7 +180,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         ArrayList<BPLCommand> localInvAssertions = new ArrayList<BPLCommand>();
         ArrayList<BPLCommand> localInvAssumes = new ArrayList<BPLCommand>();
         
-        this.specGen = GeneratorFactory.getGenerator(config, new TwoLibraryModel(libsrc1, libsrc2));
+        this.specGen = GeneratorFactory.getGenerator(config, libmodel);
         this.tc = new TranslationController();
         this.tc.setLocalPlaces(specGen.generateLocalPlaces());
         readInvariants(invAssertions, invAssumes, localInvAssertions,
@@ -1616,7 +1620,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     }
 
 	public void checkSourceCompatibility() throws SourceInCompatibilityException {
-		SourceCompChecker scc = new SourceCompChecker(config);
+		SourceCompChecker scc = new SourceCompChecker(config, libmodel);
 		scc.check();
 	}
 }
