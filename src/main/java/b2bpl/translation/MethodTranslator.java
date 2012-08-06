@@ -1349,7 +1349,12 @@ public class MethodTranslator implements ITranslationConstants {
                     ? method.getOwner()
                             : method.getReturnType();
 
+                    
                     BPLExpression topElem = stack(var(resVar(retType)));
+                    
+                    if(tc.isActive() && method.isConstructor()){
+                        addAssignment(topElem, stack(var(stackVar(0, retType))));
+                    }
 
                     if (method.getReturnType().isReferenceType() || method.isConstructor()) {
                         //        addAssume(alive(rval(topElem), var(tc.getHeap())));
@@ -1365,9 +1370,6 @@ public class MethodTranslator implements ITranslationConstants {
 //                    } else {
 //                        addAssignment(var(RESULT_PARAM + typeAbbrev(type(retType))), stack(var(stackVar(0, retType))));
 //                    }
-                    if(tc.isActive() && method.isConstructor()){
-                        addAssignment(stack(var(RESULT_PARAM + typeAbbrev(type(retType)))), stack(var(stackVar(0, retType))));
-                    }
 
         }
         
