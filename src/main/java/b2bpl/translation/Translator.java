@@ -33,6 +33,7 @@ import static b2bpl.translation.CodeGenerator.isLocalPlace;
 import static b2bpl.translation.CodeGenerator.isMemberlessType;
 import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isOfType;
+import static b2bpl.translation.CodeGenerator.isPublic;
 import static b2bpl.translation.CodeGenerator.isStaticField;
 import static b2bpl.translation.CodeGenerator.isStaticMethod;
 import static b2bpl.translation.CodeGenerator.isSubtype;
@@ -57,6 +58,7 @@ import static b2bpl.translation.CodeGenerator.oneClassDown;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.refOfType;
 import static b2bpl.translation.CodeGenerator.relNull;
+import static b2bpl.translation.CodeGenerator.related;
 import static b2bpl.translation.CodeGenerator.spmap1;
 import static b2bpl.translation.CodeGenerator.spmap2;
 import static b2bpl.translation.CodeGenerator.sub;
@@ -649,8 +651,8 @@ public class Translator implements ITranslationConstants {
                                     forall(refVar, fieldRefVar, implies(new BPLArrayExpression(var(heap), var(r), var(alloc)), new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(alloc)))),
                                     forall(refVar, fieldRefVar, implies(logicalNot(obj(var(heap), var(r))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), nullLiteral()))),
                                     forall(refVar, fieldIntVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
-                                    forall(refVar, fieldRefVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(heap), var(t)))),
-                                    forall(refVar, fieldIntVar, tVar, implies(isEqual(fieldType(var(f)), var(t)), isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), var(t))))
+                                    forall(refVar, fieldRefVar, isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(heap), fieldType(var(f)))),
+                                    forall(refVar, fieldIntVar, isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), fieldType(var(f))))
                                     ))
                     ));
 
@@ -663,7 +665,8 @@ public class Translator implements ITranslationConstants {
                                     objectCoupling(var(HEAP1), var(HEAP2), var(related)),
                                     forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(HEAP1),  var(r1), var(exposed)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))))),
                                     forall(r1Var, implies(logicalAnd(obj(var(HEAP1), var(r1)), new BPLArrayExpression(var(HEAP1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
-                                    forall(r2Var, implies(logicalAnd(obj(var(HEAP2), var(r2)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2)))))
+                                    forall(r2Var, implies(logicalAnd(obj(var(HEAP2), var(r2)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
+                                    forall(r1Var, r2Var, tVar, implies(logicalAnd(related(var(r1), var(r2)), isPublic(var(t))), implies(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t)))))
                                     ))
                     ));
 

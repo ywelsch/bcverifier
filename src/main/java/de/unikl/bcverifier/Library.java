@@ -11,7 +11,6 @@ import static b2bpl.translation.CodeGenerator.heap1;
 import static b2bpl.translation.CodeGenerator.heap2;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
 import static b2bpl.translation.CodeGenerator.implies;
-import static b2bpl.translation.CodeGenerator.isCallable;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isLocalPlace;
@@ -23,7 +22,6 @@ import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
 import static b2bpl.translation.CodeGenerator.map;
-import static b2bpl.translation.CodeGenerator.map1;
 import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.modulo;
 import static b2bpl.translation.CodeGenerator.nonNull;
@@ -46,12 +44,11 @@ import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.useHavoc;
 import static b2bpl.translation.CodeGenerator.validHeapSucc;
 import static b2bpl.translation.CodeGenerator.var;
+import static b2bpl.translation.CodeGenerator.wellformedCoupling;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,10 +61,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.LineIterator;
 import org.apache.log4j.Logger;
-import org.eclipse.jetty.http.HttpStatus.Code;
 
 import b2bpl.CompilationAbortedException;
 import b2bpl.Project;
@@ -83,7 +77,6 @@ import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLConstantDeclaration;
 import b2bpl.bpl.ast.BPLDeclaration;
 import b2bpl.bpl.ast.BPLExpression;
-import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLHavocCommand;
 import b2bpl.bpl.ast.BPLImplementation;
@@ -97,7 +90,6 @@ import b2bpl.bpl.ast.BPLRawDeclaration;
 import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
 import b2bpl.bpl.ast.BPLTransferCommand;
-import b2bpl.bpl.ast.BPLType;
 import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableDeclaration;
@@ -660,6 +652,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
         procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
         
+        //assume typ(stack1[ip1][spmap1[ip1]][param0_r], heap1) == typ(stack2[ip2][spmap2[ip2]][param0_r], heap2);
+        procAssumes.add(new BPLAssumeCommand(isEqual(typ(stack1(receiver()), var(HEAP1)), typ(stack2(receiver()), var(HEAP2)))));
+        
         methodBlocks.add(1, new BPLBasicBlock(PRECONDITIONS_CONSTRUCTOR_LABEL,
                 procAssumes.toArray(new BPLCommand[procAssumes.size()]),
                 new BPLGotoCommand(TranslationController.LABEL_PREFIX1 + CONSTRUCTOR_TABLE_LABEL)));
@@ -928,7 +923,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             ArrayList<BPLCommand> localInvAssumes,
             List<BPLBasicBlock> methodBlocks) {
         // ///////////////////////////////////
-        // checking blocks (intern and extern)
+        // checking blocks (boundary return, boundary call and local places)
         // ///////////////////////////////////
         List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
         checkingCommand.add(new BPLAssertCommand(logicalOr(
@@ -1024,6 +1019,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         checkingCommand.add(new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION))))));
         
+        assumeWellformedness(checkingCommand);
+        
         //invariant
         checkingCommand.addAll(invAssertions);
         
@@ -1117,6 +1114,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             }
         }
         checkingCommand.add(new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION))))));
+        assumeWellformedness(checkingCommand);
         
         //invariant
         checkingCommand.addAll(invAssertions);
@@ -1228,6 +1226,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         methodBlocks.add(new BPLBasicBlock(CHECK_LOCAL_LABEL, checkingCommand
                 .toArray(new BPLCommand[checkingCommand.size()]),
                 new BPLReturnCommand()));
+    }
+
+    private void assumeWellformedness(List<BPLCommand> checkingCommand) {
+        //check that the relation is still wellformed
+        checkingCommand.add(new BPLAssertCommand(wellformedCoupling(var(HEAP1), var(HEAP2), var(RELATED_RELATION))));
+        checkingCommand.add(new BPLAssertCommand(wellformedHeap(var(HEAP1))));
+        checkingCommand.add(new BPLAssertCommand(wellformedHeap(var(HEAP2))));
+        checkingCommand.add(new BPLAssertCommand(CodeGenerator.wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
+        checkingCommand.add(new BPLAssertCommand(CodeGenerator.wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
     }
 
     private void addDefinesMethodAxioms(List<BPLDeclaration> programDecls) {
