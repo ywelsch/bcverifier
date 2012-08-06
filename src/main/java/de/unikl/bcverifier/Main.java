@@ -36,9 +36,7 @@ public class Main {
     	}
         Logger.getRootLogger().setLevel(config.isDebug() ? Level.DEBUG : Level.INFO);
         try {
-            TranslationController tc = new TranslationController();
-        	Library library = new Library(config, GeneratorFactory.getGenerator(config));
-        	library.setTranslationController(tc);
+        	Library library = new Library(config);
             if(config.isCompileFirst()){
                 library.compile();
             }

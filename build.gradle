@@ -47,7 +47,7 @@ buildscript {
 
 dependencies {
     compile group: 'commons-io', name: 'commons-io', version: '2.2'
-    compile group: 'org.eclipse.jdt.core.compiler', name: 'ecj', version: '3.7.2'
+    //compile group: 'org.eclipse.jdt.core.compiler', name: 'ecj', version: '3.7.2'
     compile group: 'org.apache.commons', name: 'commons-vfs2', version: '2.0'
     compile group: 'org.apache.wicket', name: 'wicket-core', version: wicketVersion
     compile group: 'org.apache.wicket', name: 'wicket-extensions', version: wicketVersion
@@ -63,6 +63,7 @@ dependencies {
     compile group: 'com.beust', name: 'jcommander', version: '1.25'
     compile files("$projectDir/lib/ostermillerutils-1.08.02.jar")
     compile files("$projectDir/lib/beaver-rt.jar")
+	compile fileTree("$projectDir/lib").include('org.eclipse.*.jar')
     compile group: 'com.google.guava', name: 'guava-io', version: 'r03'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.1'
 	sshAntTask group: 'org.apache.ant', name: 'ant-jsch', version: '1.8.4'

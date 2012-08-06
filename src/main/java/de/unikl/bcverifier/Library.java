@@ -122,6 +122,7 @@ import de.unikl.bcverifier.sourcecomp.SourceCompChecker;
 import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.Generator;
+import de.unikl.bcverifier.specification.GeneratorFactory;
 import de.unikl.bcverifier.specification.SpecInvariant;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
@@ -142,31 +143,23 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     private static final Logger log = Logger.getLogger(Library.class);
     
     private final Configuration config;
-    private final Generator specGen;
+    private Generator specGen;
+    
+    private LibrarySource libsrc1;
+    private LibrarySource libsrc2;
 
     private TranslationController tc;
     
-    public void setTranslationController(TranslationController controller){
-        this.tc = controller;
-        try{
-            tc.setLocalPlaces(specGen.generateLocalPlaces());
-        } catch(GenerationException e){
-            Logger.getLogger(Library.class).warn("Error generating local places.", e);
-            tc.setLocalPlaces(new LocalPlaceDefinitions(Collections.<Integer,List<Place>>emptyMap(), Collections.<Integer,List<Place>>emptyMap()));
-        }
-    }
-    
-    public Library(Configuration config, Generator generator) {
+    public Library(Configuration config) {
         this.config = config;
-        this.specGen = generator;
     }
     
     
 
     public void compile() {
         try {
-            LibraryCompiler.compile(config.library1());
-            LibraryCompiler.compile(config.library2());
+            libsrc1 = LibraryCompiler.compile(config.library1());
+            libsrc2 = LibraryCompiler.compile(config.library2());
         } catch (CompileException e) {
             e.printStackTrace();
         }
@@ -183,12 +176,14 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         ArrayList<BPLCommand> localInvAssertions = new ArrayList<BPLCommand>();
         ArrayList<BPLCommand> localInvAssumes = new ArrayList<BPLCommand>();
         
+        this.specGen = GeneratorFactory.getGenerator(config, new TwoLibraryModel(libsrc1, libsrc2));
+        this.tc = new TranslationController();
+        this.tc.setLocalPlaces(specGen.generateLocalPlaces());
         readInvariants(invAssertions, invAssumes, localInvAssertions,
                 localInvAssumes);
 
         String[] oldFileNames = listLibraryClassFiles(config.library1());
         String[] newFileNames = listLibraryClassFiles(config.library2());
-        
 
         try {
             List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();

@@ -52,10 +52,8 @@ public class CheckRunner {
         config.setOutput(specificationFile);
         config.setAction(VerifyAction.VERIFY);
         config.setLoopUnrollCap(def.getLoopUnrollCap());
-        TranslationController tc = new TranslationController();
         try{
-            Library library = new Library(config, GeneratorFactory.getGenerator(config));
-            library.setTranslationController(tc);
+            Library library = new Library(config);
             library.compile();
             library.checkSourceCompatibility();
             library.translate();
@@ -92,10 +90,8 @@ public class CheckRunner {
         config.setAction(VerifyAction.VERIFY);
         config.setLoopUnrollCap(def.getLoopUnrollCap());
         config.setSmokeTestOn(true);
-        TranslationController tc = new TranslationController();
         try{
-            Library library = new Library(config, GeneratorFactory.getGenerator(config));
-            library.setTranslationController(tc);
+            Library library = new Library(config);
             library.compile();
             library.checkSourceCompatibility();
             library.translate();

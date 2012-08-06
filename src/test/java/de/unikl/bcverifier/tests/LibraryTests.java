@@ -97,9 +97,7 @@ public class LibraryTests {
 		config.setLibraries(lib1, lib2);
 		config.setOutput(specificationFile);
         config.setAction(VerifyAction.TYPECHECK);
-        TranslationController tc = new TranslationController();
-		Library library = new Library(config, GeneratorFactory.getGenerator(config));
-		library.setTranslationController(tc);
+		Library library = new Library(config);
 		library.compile();
 		library.checkSourceCompatibility();
 		library.translate();

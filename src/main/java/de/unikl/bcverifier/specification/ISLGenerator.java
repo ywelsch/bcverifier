@@ -16,6 +16,7 @@ import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import beaver.Parser.Exception;
 import de.unikl.bcverifier.Configuration;
+import de.unikl.bcverifier.TwoLibraryModel;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.checking.LibEnvironment;
 import de.unikl.bcverifier.isl.checking.TypeError;
@@ -25,7 +26,7 @@ import de.unikl.bcverifier.isl.parser.ParserError;
 public class ISLGenerator extends AbstractGenerator {
 
 
-	public ISLGenerator(Configuration config) {
+	public ISLGenerator(Configuration config, TwoLibraryModel twoLibraryModel) {
 		super(config);
 	}
 

@@ -455,9 +455,7 @@ public class HomePage extends WebPage {
 			config.setLibraries(oldDir, newDir);
 			config.setSpecification(invFile);
 			config.setOutput(output);
-			TranslationController tc = new TranslationController();
-			Library library = new Library(config, GeneratorFactory.getGenerator(config));;
-			library.setTranslationController(tc);
+			Library library = new Library(config);
 			LibraryCompiler.compile(config.library1());
 			LibraryCompiler.compile(config.library2());
 			library.checkSourceCompatibility();

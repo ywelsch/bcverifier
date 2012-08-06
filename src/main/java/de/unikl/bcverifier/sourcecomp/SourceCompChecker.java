@@ -15,10 +15,10 @@ public class SourceCompChecker {
 	}
 
 	public void check() throws SourceInCompatibilityException {
-		checkR1();
-		checkR2();
-		checkR3();
-		checkR4();
+		//checkR1();
+		//checkR2();
+		//checkR3();
+		//checkR4();
 	}
 	
 	private void checkR1() throws SourceInCompatibilityException {
@@ -67,7 +67,7 @@ public class SourceCompChecker {
 		}
 	}
 	
-	private void checkR3() throws SourceInCompatibilityException {
+	private void checkR3() throws SourceInCompatibilityException { // WRONG, it should be m \in Y ==> m \in X
 		for (String type : lookup.getAllOldTypes()) {
 			Class<?> t1 = lookup.loadClass(OLD, type);
 			if (t1.isLocalClass() || t1.isMemberClass()) continue;
