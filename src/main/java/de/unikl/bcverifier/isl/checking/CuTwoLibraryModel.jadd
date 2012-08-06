@@ -1,0 +1,17 @@
+import de.unikl.bcverifier.isl.checking.*;
+import de.unikl.bcverifier.TwoLibraryModel;
+
+aspect CuTwoLibraryModel {
+	
+
+	
+	private TwoLibraryModel CompilationUnit.twoLibraryModel = null;
+	
+	public TwoLibraryModel CompilationUnit.getTwoLibraryModel() {
+		return twoLibraryModel;
+	}
+	
+	public void CompilationUnit.setTwoLibraryModel(TwoLibraryModel model) {
+		twoLibraryModel = model;
+	}
+}

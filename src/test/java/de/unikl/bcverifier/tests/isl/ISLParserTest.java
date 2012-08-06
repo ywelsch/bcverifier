@@ -103,8 +103,8 @@ public class ISLParserTest {
 	}
 	
 	protected void testTypeCheckOk(File oldLib, File newLib, CompilationUnit cu) throws CompileException {
-		LibrarySource libsrc1 = LibraryCompiler.compile(oldLib);
-        LibrarySource libsrc2 = LibraryCompiler.compile(newLib);
+		LibrarySource libsrc1 = LibraryCompiler.computeAST(oldLib);
+    	LibrarySource libsrc2 = LibraryCompiler.computeAST(newLib);
 		cu.setTwoLibraryModel(new TwoLibraryModel(libsrc1, libsrc2));
 		cu.typecheck();
 		for (TypeError err : cu.getErrors()) {
