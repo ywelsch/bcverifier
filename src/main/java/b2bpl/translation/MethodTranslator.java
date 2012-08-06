@@ -3160,6 +3160,13 @@ public class MethodTranslator implements ITranslationConstants {
                 
                 BPLExpression spmapMinus1 = sub(spmap(), new BPLIntLiteral(1));
                 BPLExpression ipMinus1 = sub(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1));
+                
+                final String iftmp = "iftmp";
+                BPLVariable iftmpVar = new BPLVariable(iftmp, new BPLTypeName(INTERACTION_FRAME_TYPE));
+                tc.usedVariables().put(iftmp, iftmpVar);
+                final String sftmp = "sftmp";
+                BPLVariable sftmpVar = new BPLVariable(sftmp, new BPLTypeName(STACK_FRAME_TYPE));
+                tc.usedVariables().put(sftmp, sftmpVar);
                 if(!invokedMethod.isConstructor() && !invokedMethod.isStatic()){
                     BPLTransferCommand transCmd = new BPLGotoCommand(boundaryLabel, internLabel);
                     transCmd.addComment("methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner());
@@ -3207,10 +3214,6 @@ public class MethodTranslator implements ITranslationConstants {
                     ////////////////////////////////////////////////////////////////////
                     
                     startBlock(boundaryLabel);
-                    
-                    final String iftmp = "iftmp";
-                    BPLVariable iftmpVar = new BPLVariable(iftmp, new BPLTypeName(INTERACTION_FRAME_TYPE));
-                    tc.usedVariables().put(iftmp, iftmpVar);
                     
                     addCommentedCommand(new BPLHavocCommand(var(iftmp)), "this empties the frame we will use for the boundary call");
                     addAssignment(map(var(tc.getStack()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1))), var(iftmp));
@@ -3486,22 +3489,34 @@ public class MethodTranslator implements ITranslationConstants {
               // internal return: read result from other stack frame and remove it
               ////////////////////////////////////////////////////////////////////
               startBlock(internalReturnLabel);
+              
               addAssume(isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1)));
               if(hasReturnValue){
                   addAssignment(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
               }
               addAssignment(spmap(), sub(spmap(), new BPLIntLiteral(1)));
+
+              addCommentedCommand(new BPLHavocCommand(var(sftmp)), "this empties the frame we used for the internal call");
+              addAssignment(map1(var(tc.getStack()), var(tc.getInteractionFramePointer()), add(spmap(), new BPLIntLiteral(1))), var(sftmp));
+              addAssume(wellformedStack(var(tc.getStack()), var(tc.getInteractionFramePointer()), var(tc.getStackPointerMap()), var(tc.getHeap())));
+              
               endBlock(new BPLGotoCommand(contLabel));
               
               
               // boundary return: read result from other interaction frame and remove it
               ///////////////////////////////////////////////////////////////////////////
               startBlock(boundaryReturnLabel);
+              
               addAssume(isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(0)));
               if(hasReturnValue){
                   addAssignment(stack(ipMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
               }
               addAssignment(var(tc.getInteractionFramePointer()), sub(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1)));
+              
+              addCommentedCommand(new BPLHavocCommand(var(iftmp)), "this empties the frame we used for the boundary call");
+              addAssignment(map(var(tc.getStack()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1))), var(iftmp));
+              addAssume(wellformedStack(var(tc.getStack()), var(tc.getInteractionFramePointer()), var(tc.getStackPointerMap()), var(tc.getHeap())));
+              
               endBlock(new BPLGotoCommand(contLabel));
               
               startBlock(contLabel);

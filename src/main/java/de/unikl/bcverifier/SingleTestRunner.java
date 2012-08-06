@@ -16,9 +16,11 @@ import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
 public class SingleTestRunner {
     
     public static void main(String[] args) throws NumberFormatException, CheckRunException {
-        if(args.length != 1){
+        if(args.length != 1 && args.length != 2){
             JOptionPane.showMessageDialog(null, "Please pass the csv file containing the checking profiles as parameter!");
         }
+        boolean doCheck = args.length == 2 && "yes".equals(args[1]);
+        
         File csvFile = new File(args[0]);
         if(!csvFile.isFile() || !args[0].endsWith(".csv")){
             JOptionPane.showMessageDialog(null, "File is not a csv file: "+csvFile.getPath());
@@ -38,11 +40,16 @@ public class SingleTestRunner {
         if ((s != null) && (s.length() > 0)) {
             int index = Integer.parseInt(s.substring(0, s.indexOf(':')));
             BCCheckDefinition test = tests.get(index);
-            if(!CheckRunner.runCheck(test)){
-                Logger.getLogger(SingleTestRunner.class).error("Check did not succeed!");
-                Logger.getLogger(SingleTestRunner.class).error(BoogieRunner.getLastMessage());
+            if(doCheck){
+                if(!CheckRunner.runCheck(test)){
+                    Logger.getLogger(SingleTestRunner.class).error("Check did not succeed!");
+                    Logger.getLogger(SingleTestRunner.class).error(BoogieRunner.getLastMessage());
+                } else {
+                    Logger.getLogger(SingleTestRunner.class).info("Test completed successfully.");
+                }
             } else {
-                Logger.getLogger(SingleTestRunner.class).info("Test completed successfully.");
+                CheckRunner.generate(test);
+                Logger.getLogger(SingleTestRunner.class).info("Test generated.");
             }
             return;
         }

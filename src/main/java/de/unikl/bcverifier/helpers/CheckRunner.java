@@ -32,7 +32,7 @@ public class CheckRunner {
         }
     }
     
-    public static boolean runCheck(BCCheckDefinition def) throws CheckRunException {
+    private static void run(BCCheckDefinition def, boolean doCheck, boolean doSmoke) throws CheckRunException{
         Configuration config = new Configuration();
         JCommander parser = new JCommander();
         parser.addObject(config);
@@ -50,7 +50,14 @@ public class CheckRunner {
         config.setSpecification(def.getSpecification());
         config.setLibraries(lib1, lib2);
         config.setOutput(specificationFile);
-        config.setAction(VerifyAction.VERIFY);
+        if(doCheck){
+            config.setAction(VerifyAction.VERIFY);
+            if(doSmoke){
+                config.setSmokeTestOn(true);
+            }
+        } else {
+            config.setAction(VerifyAction.TYPECHECK);
+        }
         config.setLoopUnrollCap(def.getLoopUnrollCap());
         try{
             Library library = new Library(config);
@@ -63,46 +70,21 @@ public class CheckRunner {
         } catch (GenerationException e) {
             throw new CheckRunException("Error generating specification", e);
         } catch (SourceInCompatibilityException e) {
-        	throw new CheckRunException("Source incompatibility", e);
-		}
+            throw new CheckRunException("Source incompatibility", e);
+        }
+    }
+    
+    public static void generate(BCCheckDefinition def) throws CheckRunException {
+        run(def, false, false);
+    }
+    
+    public static boolean runCheck(BCCheckDefinition def) throws CheckRunException {
+        run(def, true, false);
         return BoogieRunner.getLastErrorCount() == def.getExpectedErrors();
     }
     
     public static boolean runSmokeTest(BCCheckDefinition def) throws CheckRunException {
-        Configuration config = new Configuration();
-        JCommander parser = new JCommander();
-        parser.addObject(config);
-        parser.setProgramName("Main");
-        
-        try {
-            parser.parseWithoutValidation(def.getFlags());
-        } catch (ParameterException e) {
-            Logger.getLogger(CheckRunner.class).warn(e);
-        }
-        
-        File specificationFile = new File(def.getLibDir(), "bpl/output.bpl");
-        File lib1 = new File(def.getLibDir(), "old");
-        File lib2 = new File(def.getLibDir(), "new");
-        config.setSpecification(def.getSpecification());
-        config.setLibraries(lib1, lib2);
-        config.setNullChecks(false);
-        config.setOutput(specificationFile);
-        config.setAction(VerifyAction.VERIFY);
-        config.setLoopUnrollCap(def.getLoopUnrollCap());
-        config.setSmokeTestOn(true);
-        try{
-            Library library = new Library(config);
-            library.compile();
-            library.checkSourceCompatibility();
-            library.translate();
-            library.check();
-        } catch(TranslationException ex){
-            throw new CheckRunException("Error translating bytecode", ex);
-        } catch (GenerationException e) {
-            throw new CheckRunException("Error generating specification", e);
-        } catch (SourceInCompatibilityException e) {
-        	throw new CheckRunException("Source incompatibility", e);
-		}
+        run(def, true, true);
         
         if(BoogieRunner.getLastErrorCount() != def.getExpectedErrors()){
             Logger.getLogger(CheckRunner.class).debug(BoogieRunner.getLastMessage());

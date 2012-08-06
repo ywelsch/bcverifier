@@ -1029,8 +1029,8 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(UNIQUE_FUNC, exp1, exp2, exp3);
     }
     
-    public static BPLExpression wellformedStack(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3, BPLExpression exp4){
-        return new BPLFunctionApplication(WELLFORMED_STACK_FUNC, exp1, exp2, exp3, exp4);
+    public static BPLExpression wellformedStack(BPLExpression stack, BPLExpression ip, BPLExpression spmap, BPLExpression heap){
+        return new BPLFunctionApplication(WELLFORMED_STACK_FUNC, stack, ip, spmap, heap);
     }
     
     public static BPLExpression obj(BPLExpression heap, BPLExpression ref){
