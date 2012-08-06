@@ -18,8 +18,11 @@ The simulation relation relates program configurations which have the same numbe
 
 Separating the heap into a part that belongs to the program context and a part that belongs to the library is a bit more difficult. With inheritance, some code parts of a class/object can belong to the context and other parts to the library. We differentiate for fields whether they have been defined in classes of the program context or the library. Objects are then mappings from field names to values.
 For the libraries to be indistinguishable, the state reachable from interaction frames of the program context must be similar. To better characterize the state reachable by the program context, we distinguish
-- which objects have been created by code of the library or by code of the context. We use the predicate createdByCtxt(o) to denote whether the object o has been created by code of the program context; if the predicate does not hold, then the object was created by code of the library.
-- which objects created by the program context have been made known to the library or vice-versa. We use the predicate exposed(o) to denote whether the object o has been exposed (by either the program context or the library).
+  
+  - which objects have been created by code of the library or by code of the context. We use the predicate createdByCtxt(o) to denote whether the object o has been created by code of the program context; if the predicate does not hold, then the object was created by code of the library.
+  
+  - which objects created by the program context have been made known to the library or vice-versa. We use the predicate exposed(o) to denote whether the object o has been exposed (by either the program context or the library).
+  
 The objects which are reachable by interaction frames of the program context are then only objects which have been created by program context or those which have been created by the library and which have been exposed.
 
 The simulation relation relates program configurations for which there is a bijective renaming between the exposed objects of the first program configuration and the exposed objects of the second program configuration. The two library implementations might however still create "different" objects as long as these are not exposed to the program context. Exposed objects can have different dynamic types but must have the same public super types as the context can only use the public types to distinguish them.
