@@ -19,7 +19,7 @@ public class SingleTestRunner {
         if(args.length != 1 && args.length != 2){
             JOptionPane.showMessageDialog(null, "Please pass the csv file containing the checking profiles as parameter!");
         }
-        boolean doCheck = args.length == 2 && "yes".equals(args[1]);
+        boolean doCheck = args.length == 1 || "yes".equals(args[1]);
         
         File csvFile = new File(args[0]);
         if(!csvFile.isFile() || !args[0].endsWith(".csv")){
