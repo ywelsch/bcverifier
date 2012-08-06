@@ -5,12 +5,13 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 
 import de.unikl.bcverifier.Configuration;
+import de.unikl.bcverifier.TwoLibraryModel;
 import static de.unikl.bcverifier.isl.ast.Version.NEW;
 import static de.unikl.bcverifier.isl.ast.Version.OLD;
 
 public class SourceCompChecker {
 	private final Lookup lookup;
-	public SourceCompChecker(Configuration c) {
+	public SourceCompChecker(Configuration c, TwoLibraryModel libmodel) {
 		lookup = new Lookup(c.library1(), c.library2());
 	}
 

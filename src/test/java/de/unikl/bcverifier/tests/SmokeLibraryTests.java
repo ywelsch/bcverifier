@@ -13,9 +13,10 @@ import de.unikl.bcverifier.helpers.CheckRunner;
 import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
 
 @RunWith(JUnitParamsRunner.class)
-public class LibraryTests extends AbstractLibraryTests {	
+public class SmokeLibraryTests {
 	@Test @Parameters(method = "librariesToCheck")
-	public void verifyLibrary(BCCheckDefinition test) throws CheckRunException {
-		assertTrue(BoogieRunner.getLastMessage(), CheckRunner.runCheck(test));
-	}
+    public void smokeTestLibrary(BCCheckDefinition test) throws CheckRunException {
+        assertTrue(String.format("Expected %d dead code points, but got %d", test.getExpectedDeadCodePoints(), BoogieRunner.getLastUnreachalbeCodeCount()),
+                CheckRunner.runSmokeTest(test));
+    }
 }

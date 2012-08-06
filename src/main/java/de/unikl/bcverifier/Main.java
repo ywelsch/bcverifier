@@ -37,9 +37,7 @@ public class Main {
         Logger.getRootLogger().setLevel(config.isDebug() ? Level.DEBUG : Level.INFO);
         try {
         	Library library = new Library(config);
-            if(config.isCompileFirst()){
-                library.compile();
-            }
+            library.compile();
             library.checkSourceCompatibility();
             library.translate();
             if(config.isCheck()){

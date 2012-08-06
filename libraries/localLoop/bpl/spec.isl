@@ -11,6 +11,8 @@ place new inLoop:
 invariant (old stack.place == inLoop) <==> (new stack.place == inLoop);
 // b)
 invariant (old stack @ inLoop) <==> (new stack @ inLoop);
+// c)
+invariant (@ old inLoop) <==> (@ new inLoop);
 // which interaction frame? always the latest?
 
 
@@ -20,4 +22,17 @@ invariant old stack.place == inLoop ==>
 	&& old inLoop.x = new inLoop.x
 	&& old inLoop.i = new inLoop.i;
 
-	
+
+
+
+// Yet another variant
+place oldinLoop:
+	 before old.C.m.forLoops[0].body[0]
+	 when true;
+	 
+place newinLoop:
+	 before new.C.m.whileLoops[0].body[0]
+	 when true;
+
+local at(oldinLoop) <==> at(newinLoop);
+		
