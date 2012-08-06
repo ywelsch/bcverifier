@@ -1,6 +1,6 @@
 package de.unikl.bcverifier.isl.ast.translation;
 
-import java.lang.reflect.Field;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
@@ -161,7 +161,7 @@ public class ExprTranslation {
 				new BPLFunctionApplication("RefOfType",  //$NON-NLS-1$
 						new BPLVariableExpression(boundVar.attrName()),
 						getHeap(version), 
-						new BPLVariableExpression("$" + javaType.getJavaClass().getName()) //$NON-NLS-1$
+						new BPLVariableExpression("$" + javaType.getTypeBinding().getQualifiedName()) //$NON-NLS-1$
 						));
 	}
 
@@ -194,7 +194,7 @@ public class ExprTranslation {
 		if (e.getLeft().attrType() instanceof JavaType) {
 			JavaType leftType = (JavaType) e.getLeft().attrType();
 			
-			Field field = e.attrField();
+			IVariableBinding field = e.attrField();
 			if (field == null) {
 				throw new Error();
 			}
@@ -202,9 +202,9 @@ public class ExprTranslation {
 			BPLExpression expr = new BPLArrayExpression(
 					getHeap(leftType.getVersion()), 
 					e.getLeft().translateExpr(),
-					new BPLVariableExpression("$" + leftType.getJavaClass().getCanonicalName() + "." + e.getRight().getName()));
+					new BPLVariableExpression("$" + leftType.getTypeBinding().getQualifiedName() + "." + e.getRight().getName()));
 			
-			if (boolean.class.equals(field.getType())) {
+			if (field.getType().getQualifiedName().equals("boolean")) {
 				// boolean fields must be converted explicitly
 				expr = new BPLFunctionApplication("int2bool", expr);
 			}

@@ -1,5 +1,5 @@
-import java.lang.reflect.Field;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 
 aspect field {
-	syn Field MemberAccess.attrField() = TypeHelper.attrField(this);
+	syn IVariableBinding MemberAccess.attrField() = TypeHelper.attrField(this);
 }

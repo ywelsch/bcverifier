@@ -1,11 +1,12 @@
 import de.unikl.bcverifier.isl.checking.*;
 import de.unikl.bcverifier.TwoLibraryModel;
 
-aspect CuTwoLibraryModel {
+aspect CompilationUnitProperties {
 	
 
 	
 	private TwoLibraryModel CompilationUnit.twoLibraryModel = null;
+	
 	
 	public TwoLibraryModel CompilationUnit.getTwoLibraryModel() {
 		return twoLibraryModel;
@@ -13,5 +14,16 @@ aspect CuTwoLibraryModel {
 	
 	public void CompilationUnit.setTwoLibraryModel(TwoLibraryModel model) {
 		twoLibraryModel = model;
+	}
+	
+	
+	private BuiltinFunctions CompilationUnit.builtinFunctions = null;
+	
+	public BuiltinFunctions CompilationUnit.getBuiltinFunctions() {
+		return builtinFunctions;
+	}
+	
+	public void CompilationUnit.setBuiltinFunctions(BuiltinFunctions builtinFunctions) {
+		this.builtinFunctions = builtinFunctions;
 	}
 }

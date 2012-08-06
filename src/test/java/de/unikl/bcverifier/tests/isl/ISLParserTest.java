@@ -23,6 +23,7 @@ import de.unikl.bcverifier.TwoLibraryModel;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Invariant;
 import de.unikl.bcverifier.isl.ast.Statement;
+import de.unikl.bcverifier.isl.ast.translation.BuiltinFunctions;
 import de.unikl.bcverifier.isl.checking.LibEnvironment;
 import de.unikl.bcverifier.isl.checking.TypeError;
 import de.unikl.bcverifier.isl.parser.ISLCompiler;
@@ -105,7 +106,9 @@ public class ISLParserTest {
 	protected void testTypeCheckOk(File oldLib, File newLib, CompilationUnit cu) throws CompileException {
 		LibrarySource libsrc1 = LibraryCompiler.computeAST(oldLib);
     	LibrarySource libsrc2 = LibraryCompiler.computeAST(newLib);
-		cu.setTwoLibraryModel(new TwoLibraryModel(libsrc1, libsrc2));
+		TwoLibraryModel twoLibraryModel = new TwoLibraryModel(libsrc1, libsrc2);
+		cu.setTwoLibraryModel(twoLibraryModel);
+		cu.setBuiltinFunctions(new BuiltinFunctions(twoLibraryModel ));
 		cu.typecheck();
 		for (TypeError err : cu.getErrors()) {
 			System.err.println(err);

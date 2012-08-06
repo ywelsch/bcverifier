@@ -18,6 +18,7 @@ import beaver.Parser.Exception;
 import de.unikl.bcverifier.Configuration;
 import de.unikl.bcverifier.TwoLibraryModel;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
+import de.unikl.bcverifier.isl.ast.translation.BuiltinFunctions;
 import de.unikl.bcverifier.isl.checking.LibEnvironment;
 import de.unikl.bcverifier.isl.checking.TypeError;
 import de.unikl.bcverifier.isl.parser.ISLCompiler;
@@ -57,6 +58,7 @@ public class ISLGenerator extends AbstractGenerator {
 				throw new GenerationException(errors.toString());
 			}
 			cu.setTwoLibraryModel(twoLibraryModel);
+			cu.setBuiltinFunctions(new BuiltinFunctions(twoLibraryModel));
 			cu.typecheck();
 			errors = new StringBuilder();
 			for (TypeError err : cu.getErrors()) {

@@ -1,6 +1,8 @@
 package de.unikl.bcverifier.isl.checking;
 
-import java.lang.reflect.Field;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.internal.corext.dom.Bindings;
 
 import de.unikl.bcverifier.TwoLibraryModel;
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
@@ -12,6 +14,7 @@ import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NamedTypeDef;
+import de.unikl.bcverifier.isl.ast.NullConst;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VarDef;
@@ -90,9 +93,11 @@ public class TypeHelper {
 		ExprType leftType = e.getLeft().attrType();
 		if (leftType instanceof JavaType) {
 			JavaType javaType = (JavaType) leftType;
-			Field field = e.attrField();
+			IVariableBinding field = e.attrField();
 			if (field != null) {
 				return JavaType.create(e.getRight(), javaType.getVersion(), field.getType());
+			} else {
+				e.addError("Could not find field " + e.getRight().getName() + " in class " + leftType);
 			}
 		}
 		e.addError("Left hand side of member acces is of type " + leftType + " (expected Java type).");
@@ -110,26 +115,15 @@ public class TypeHelper {
 		return thenType;
 	}
 
-	public static Field attrField(MemberAccess e) {
+	public static IVariableBinding attrField(MemberAccess e) {
 		ExprType leftType = e.getLeft().attrType();
 		if (leftType instanceof JavaType) {
 			JavaType javaType = (JavaType) leftType;
 			String fieldName = e.getRight().getName();
-			Class<?> javaClass = javaType.getJavaClass();
-			try {
-				try {
-					return javaClass.getField(fieldName);
-				} catch (NoSuchFieldException e1) {
-					try {
-						return javaClass.getDeclaredField(fieldName);
-					} catch (NoSuchFieldException e2) {
-						e.getRight().addError("No field with name "
-								+ fieldName + " found in " + javaType);
-					}
-				}
-			} catch (SecurityException e1) {
-				e1.printStackTrace();
-			}
+			ITypeBinding typeBinding = javaType.getTypeBinding();
+			IVariableBinding field = Bindings.findFieldInType(typeBinding, fieldName);
+			// TODO search fields in super classes?
+			return field;
 		}
 		return null;
 	}
@@ -175,6 +169,10 @@ public class TypeHelper {
 			e.addError(def.attrName() + " is not a variable.");
 		}
 		return def.attrType();
+	}
+
+	public static ExprType attrType(NullConst e) {
+		return JavaType.object(e.attrCompilationUnit().getTwoLibraryModel());
 	}
 
 }

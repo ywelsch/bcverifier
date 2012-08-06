@@ -16,8 +16,8 @@ aspect lookup {
 	
 	
 	eq CompilationUnit.lookup(String name) {
-		if (BuiltinFunctions.get(name) != null) {
-			return BuiltinFunctions.get(name);
+		if (getBuiltinFunctions().get(name) != null) {
+			return getBuiltinFunctions().get(name);
 		}
 		return new UnknownDef();
 	}

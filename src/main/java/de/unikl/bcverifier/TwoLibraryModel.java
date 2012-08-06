@@ -1,5 +1,7 @@
 package de.unikl.bcverifier;
 
+import org.eclipse.jdt.core.dom.ITypeBinding;
+
 import de.unikl.bcverifier.isl.ast.Version;
 
 
@@ -27,12 +29,19 @@ public class TwoLibraryModel {
 		this.src2 = src2;
 	}
 
-	public Class<?> loadType(Version version, String qualifiedName) {
+	/**
+	 * loads the type with the given name and version
+	 * returns null when the type was not found
+	 * 
+	 * @param version OLD or NEW
+	 * @param name simple name or fully qualified name of the type
+	 */
+	public ITypeBinding loadType(Version version, String name) {
 		switch (version) {
 		case NEW:
-			src2.loadType(qualifiedName);
+			return src2.resolveType(name);
 		case OLD:
-			src1.loadType(qualifiedName);
+			return src1.resolveType(name);
 		case BOTH:
 		default:
 			throw new Error("not implemented");

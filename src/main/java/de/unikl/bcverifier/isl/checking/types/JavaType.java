@@ -1,32 +1,33 @@
 package de.unikl.bcverifier.isl.checking.types;
 
-import static de.unikl.bcverifier.isl.ast.Version.*;
+import static de.unikl.bcverifier.isl.ast.Version.BOTH;
+import static de.unikl.bcverifier.isl.ast.Version.NEW;
+import static de.unikl.bcverifier.isl.ast.Version.OLD;
 
-import java.util.List;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 
 import de.unikl.bcverifier.TwoLibraryModel;
 import de.unikl.bcverifier.isl.ast.ASTNode;
 import de.unikl.bcverifier.isl.ast.Version;
-import de.unikl.bcverifier.isl.checking.LibEnvironment;
 
 public class JavaType extends ExprType {
 
 	private Version version;
 	private String qualifiedName;
-	private Class<?> clazz;
 	private TwoLibraryModel env;
+	private ITypeBinding typeBinding;
 
 	
-	private JavaType(TwoLibraryModel env, Version version, Class<?> clazz) {
+	private JavaType(TwoLibraryModel env, Version version, ITypeBinding type) {
 		this.env = env;
 		this.version = version;
-		this.qualifiedName = clazz.getName();
-		this.clazz = clazz;
+		this.qualifiedName = type.getQualifiedName();
+		this.typeBinding = type;
 	}
 	
 	public static ExprType create(ASTNode<?> loc, Version version, String qualifiedName) {
 		TwoLibraryModel env = loc.attrCompilationUnit().getTwoLibraryModel();
-		Class<?> c = env.loadType(version, qualifiedName);
+		ITypeBinding c = env.loadType(version, qualifiedName);
 		if (c == null) {
 			loc.addError(loc, "Could not find class " + qualifiedName + " in " + version);
 			return UnknownType.instance();
@@ -35,18 +36,20 @@ public class JavaType extends ExprType {
 	}
 	
 	
-	public static ExprType create(ASTNode<?> loc, Version version, Class<?> clazz) {
-		return JavaType.create(loc.attrCompilationUnit().getTwoLibraryModel(), version, clazz);
+	public static ExprType create(ASTNode<?> loc, Version version, ITypeBinding type) {
+		return JavaType.create(loc.attrCompilationUnit().getTwoLibraryModel(), version, type);
 	}
 	
-	public static ExprType create(TwoLibraryModel env, Version version, Class<?> clazz) {
-		if (boolean.class.equals(clazz)) {
-			return ExprTypeBool.instance();
+	public static ExprType create(TwoLibraryModel env, Version version, ITypeBinding type) {
+		if (type.isPrimitive()) {
+			if (type.getQualifiedName().equals("boolean")) {
+				return ExprTypeBool.instance();
+			}
+			if (type.getQualifiedName().equals("int")) {
+				return ExprTypeInt.instance();
+			}
 		}
-		if (int.class.equals(clazz)) {
-			return ExprTypeInt.instance();
-		}
-		return new JavaType(env, version, clazz);
+		return new JavaType(env, version, type);
 	}
 	
 	
@@ -73,10 +76,6 @@ public class JavaType extends ExprType {
 		return version;
 	}
 	
-	public Class<?> getJavaClass() {
-		return clazz;
-	}
-	
 	public boolean isOld() {
 		return version == OLD || version == BOTH;
 	}
@@ -85,12 +84,17 @@ public class JavaType extends ExprType {
 		return version == NEW || version == BOTH;
 	}
 
-	public static ExprType object() {
-		return new JavaType(null, Version.BOTH, Object.class);	
+	public static ExprType object(TwoLibraryModel env) {
+		ITypeBinding t = env.getSrc1().resolveType(Object.class.getName());
+		return new JavaType(null, Version.BOTH, t);
 	}
 
-	public static ExprType getJavaLangObject(TwoLibraryModel env2, Version old) {
-		// TODO Auto-generated method stub
-		throw new Error();
+	public static ExprType getJavaLangObject(TwoLibraryModel env, Version version) {
+		ITypeBinding t = env.loadType(version, Object.class.getName());
+		return new JavaType(env, version, t);
+	}
+
+	public ITypeBinding getTypeBinding() {
+		return typeBinding;
 	}
 }

@@ -26,7 +26,7 @@ aspect exprType {
 	
 	eq IntConst.attrType() = ExprTypeInt.instance();
 	
-	eq NullConst.attrType() = JavaType.create(this, Version.BOTH, java.lang.Object.class);
+	eq NullConst.attrType() = TypeHelper.attrType(this);
 	
 	
 	
