@@ -2956,6 +2956,14 @@ public class MethodTranslator implements ITranslationConstants {
 
             BPLExpression lhs = var(refStackVar(stackLhs));
             BPLExpression rhs = var(stackVar(stackRhs, field.getType()));
+            
+            if(field.getType().isBaseType()){
+                addAssume(isInRange(stack(rhs), typeRef(field.getType())));
+            } else if(field.getType().isArrayType()){
+                //TODO
+            } else {
+                //TODO assume the type is right (assuming the Java compiler did the check for us)
+            }
             //      BPLExpression update = fieldUpdate(context, tc.getHeap(), lhs, field, rhs);
 
             BPLVariableExpression vlhs = (BPLVariableExpression)lhs;
