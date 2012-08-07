@@ -13,6 +13,7 @@ import de.unikl.bcverifier.Configuration;
 import de.unikl.bcverifier.Configuration.VerifyAction;
 import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
+import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
@@ -61,17 +62,16 @@ public class CheckRunner {
         config.setLoopUnrollCap(def.getLoopUnrollCap());
         try{
             Library library = new Library(config);
-            library.compile();
-            library.checkSourceCompatibility();
-            library.translate();
-            library.check();
+            library.runLifecycle();
         } catch (TranslationException ex){
             throw new CheckRunException("Error translating bytecode", ex);
         } catch (GenerationException e) {
             throw new CheckRunException("Error generating specification", e);
         } catch (SourceInCompatibilityException e) {
             throw new CheckRunException("Source incompatibility", e);
-        }
+        } catch (CompileException e) {
+        	throw new CheckRunException("Compilation error", e);
+		}
     }
     
     public static void generate(BCCheckDefinition def) throws CheckRunException {

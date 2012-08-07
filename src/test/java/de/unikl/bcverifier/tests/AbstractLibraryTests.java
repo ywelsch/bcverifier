@@ -16,6 +16,7 @@ import de.unikl.bcverifier.helpers.BCCheckDefinition;
 
 public class AbstractLibraryTests {
 	File libpath = new File("libraries");
+	File truespec = new File(libpath, "true/bpl/spec.isl");
 	
 	@BeforeClass
 	public static void oneTimeSetup() {
@@ -35,6 +36,14 @@ public class AbstractLibraryTests {
 	        }
 	        return testSets.toArray();
 	    }
+	}
+	
+	Object[] libraryFolders() {
+		List<File> dirs = new ArrayList<File>();
+		for(String path : libpath.list(new AndFileFilter(DirectoryFileFilter.DIRECTORY, new NotFileFilter(HiddenFileFilter.HIDDEN)))){
+            dirs.add(new File(libpath, path));
+        }
+		return dirs.toArray();
 	}
 
     private List<BCCheckDefinition> buildTestCase(File libDir) {

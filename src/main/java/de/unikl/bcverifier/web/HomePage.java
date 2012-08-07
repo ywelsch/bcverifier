@@ -414,7 +414,24 @@ public class HomePage extends WebPage {
 			try {
 				HomePage.this.setOutput("");
 				HomePage.this.setBoogieinput("");
-				compile();
+				File dir = Files.createTempDir();
+				System.out.println("Creating test in " + dir);
+				File oldDir = new File(dir, "old");
+				File newDir = new File(dir, "new");
+				createFiles(oldDir, lib1contents);
+				createFiles(newDir, lib2contents);
+				File bplDir = new File(dir, "bpl");
+				File invFile = new File(bplDir, "spec.isl");
+				FileUtils.writeStringToFile(invFile, getInv());
+				File output = new File(bplDir, "output.bpl");
+				Configuration config = ConfigSession.get().getConfig();
+				config.setLibraries(oldDir, newDir);
+				config.setSpecification(invFile);
+				config.setOutput(output);
+				config.setCompileFirst(true);
+				Library library = new Library(config);
+				library.runLifecycle();
+				HomePage.this.setBoogieinput(FileUtils.readFileToString(output));
 				HomePage.this.setOutput(linkify(BoogieRunner.getLastMessage()));
 			} catch (IOException e) {
 				HomePage.this.setOutput(e.getMessage());
@@ -438,32 +455,6 @@ public class HomePage extends WebPage {
 			StringBuilder result = new StringBuilder(Strings.escapeMarkup(lastMessage));
 			Matcher m = BPL_FILE_DEBUG_PATTERN.matcher(result.toString());
     		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$2,$3);\">$1($2,$3):</a>");
-		}
-
-		private void compile() throws IOException, TranslationException, CompileException, GenerationException, SourceInCompatibilityException {
-			File dir = Files.createTempDir();
-			System.out.println("Creating test in " + dir);
-			File oldDir = new File(dir, "old");
-			File newDir = new File(dir, "new");
-			createFiles(oldDir, lib1contents);
-			createFiles(newDir, lib2contents);
-			File bplDir = new File(dir, "bpl");
-			File invFile = new File(bplDir, "spec.isl");
-			FileUtils.writeStringToFile(invFile, getInv());
-			File output = new File(bplDir, "output.bpl");
-			Configuration config = ConfigSession.get().getConfig();
-			config.setLibraries(oldDir, newDir);
-			config.setSpecification(invFile);
-			config.setOutput(output);
-			Library library = new Library(config);
-			LibraryCompiler.compile(config.library1());
-			LibraryCompiler.compile(config.library2());
-			library.checkSourceCompatibility();
-			library.translate();
-			HomePage.this.setBoogieinput(FileUtils.readFileToString(output));
-			if(config.isCheck()) {
-				library.check();
-			}
 		}
 
 		private void createFiles(final File prefix, final List<String> libcontents) throws IOException {

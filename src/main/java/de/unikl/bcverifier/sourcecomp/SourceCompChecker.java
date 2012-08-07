@@ -2,20 +2,40 @@ package de.unikl.bcverifier.sourcecomp;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.List;
 
 import de.unikl.bcverifier.Configuration;
 import de.unikl.bcverifier.TwoLibraryModel;
+
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.internal.corext.dom.Bindings;
 import static de.unikl.bcverifier.isl.ast.Version.NEW;
 import static de.unikl.bcverifier.isl.ast.Version.OLD;
 
 public class SourceCompChecker {
 	private final Lookup lookup;
+	private final TwoLibraryModel libmodel;
 	public SourceCompChecker(Configuration c, TwoLibraryModel libmodel) {
 		lookup = new Lookup(c.library1(), c.library2());
+		this.libmodel = libmodel;
 	}
 
 	public void check() throws SourceInCompatibilityException {
+		for (CompilationUnit cu : libmodel.getSrc1().getUnits()) {
+			cu.accept(new ASTVisitor() {
+				@Override public boolean visit(TypeDeclaration td) {
+					ITypeBinding b = td.resolveBinding();
+					System.out.println(b.getQualifiedName());
+					for (IMethodBinding m : b.getDeclaredMethods()) {
+						System.out.println(m);
+					}
+					return true;
+				}
+			});
+		}
 		//checkR1();
 		//checkR2();
 		//checkR3();

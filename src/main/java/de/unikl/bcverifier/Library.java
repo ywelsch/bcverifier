@@ -145,27 +145,29 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         this.config = config;
     }
     
-    
-
-    public void compile() {
-        try {
-        	if (config.isCompileFirst()) {
-        		LibraryCompiler.compile(config.library1());
-        		LibraryCompiler.compile(config.library2());
-        	}
-        	LibrarySource libsrc1 = LibraryCompiler.computeAST(config.library1());
-        	LibrarySource libsrc2 = LibraryCompiler.computeAST(config.library2());
-        	libmodel = new TwoLibraryModel(libsrc1, libsrc2);
-        } catch (CompileException e) {
-            e.printStackTrace();
+    public void runLifecycle() throws SourceInCompatibilityException, TranslationException, GenerationException, CompileException {
+    	if (config.isCompileFirst()) {
+    		LibraryCompiler.compile(config.library1());
+    		LibraryCompiler.compile(config.library2());
+    	}
+    	LibrarySource libsrc1 = LibraryCompiler.computeAST(config.library1());
+    	LibrarySource libsrc2 = LibraryCompiler.computeAST(config.library2());
+    	libmodel = new TwoLibraryModel(libsrc1, libsrc2);
+    	if (config.checkSourceCompatibility()) {
+    		SourceCompChecker scc = new SourceCompChecker(config, libmodel);
+    		scc.check();
+    	}
+        translate();
+        if(config.isCheck()){
+            check();
         }
     }
 
-    /**
+     /**
      * @throws TranslationException
      * @throws GenerationException 
      */
-    public void translate() throws TranslationException, GenerationException {
+    private void translate() throws TranslationException, GenerationException {
         
         ArrayList<BPLCommand> invAssertions = new ArrayList<BPLCommand>();
         ArrayList<BPLCommand> invAssumes = new ArrayList<BPLCommand>();
@@ -1625,9 +1627,4 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             throw new CompilationAbortedException();
         }
     }
-
-	public void checkSourceCompatibility() throws SourceInCompatibilityException {
-		SourceCompChecker scc = new SourceCompChecker(config, libmodel);
-		scc.check();
-	}
 }

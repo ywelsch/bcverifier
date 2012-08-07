@@ -45,6 +45,8 @@ public class Configuration implements Serializable {
 	private boolean disableNullChecks = false;
 	@Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])") @WebGUI
     private VerifyAction action = VerifyAction.VERIFY;
+	@Parameter(names = {"-k", "--sourcecompatibility"}, description = "Check source compatibility") @WebGUI
+    private boolean checkSourceCompatibility = false;
     
     @Parameter(names = {"-s", "-i" , "--specification"}, description = "Path to the file containing the specification", required = true, validateWith = Configuration.FileValidator.class)
     private File specification;
@@ -199,6 +201,12 @@ public class Configuration implements Serializable {
 	}
 	public void setSingleFormulaInvariant(boolean singleFormulaInvariant) {
 		this.singleFormulaInvariant = singleFormulaInvariant;
+	}
+	public void setCheckSourceCompatibility(boolean check) {
+		this.checkSourceCompatibility = check;
+	}
+	public boolean checkSourceCompatibility() {
+		return checkSourceCompatibility;
 	}
 	public void setWebDefaults() {
 		singleFormulaInvariant = true;

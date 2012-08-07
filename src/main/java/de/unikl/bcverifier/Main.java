@@ -7,6 +7,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
 import de.unikl.bcverifier.Library.TranslationException;
+import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
@@ -37,11 +38,8 @@ public class Main {
         Logger.getRootLogger().setLevel(config.isDebug() ? Level.DEBUG : Level.INFO);
         try {
         	Library library = new Library(config);
-            library.compile();
-            library.checkSourceCompatibility();
-            library.translate();
+        	library.runLifecycle();
             if(config.isCheck()){
-                library.check();
                 System.out.println(BoogieRunner.getLastMessage());
                 if (config.isSmokeTestOn()) {
                 	System.out.println("Found unreachable code points: "+BoogieRunner.getLastUnreachalbeCodeCount());
@@ -51,11 +49,14 @@ public class Main {
             System.err.println("Error while translating to Boogie:");
             e.printStackTrace();
         } catch (GenerationException e) {
-            System.err.println("Error while generating specification:");
+            System.err.println("Error while generating specification:"+e.getMessage());
             e.printStackTrace();
         } catch (SourceInCompatibilityException e) {
-        	System.err.println("Error while checking source compatibility:");
+        	System.err.println("Error while checking source compatibility: "+e.getMessage());
             e.printStackTrace();
+		} catch (CompileException e) {
+			System.err.println("Error while compiling libraries: "+e.getMessage());
+			e.printStackTrace();
 		}
    }
 }
