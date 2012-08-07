@@ -1,4 +1,4 @@
-public class A {
+public final class A {
 	private O o;
 
 	public A(){

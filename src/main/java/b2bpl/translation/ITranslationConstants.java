@@ -427,7 +427,7 @@ public static final String INIT_LABEL_POSTFIX = "_init";
 
 public static final String INTERN_LABEL_POSTFIX = "_intern";
 
-public static final String BOUNDARY_LABEL_POSTFIX = "_boudary";
+public static final String BOUNDARY_LABEL_POSTFIX = "_boundary";
 
 static final String VALID_HEAP_SUCC_FUNC = "ValidHeapSucc";
 

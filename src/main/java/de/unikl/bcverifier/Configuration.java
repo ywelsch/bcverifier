@@ -210,5 +210,6 @@ public class Configuration implements Serializable {
 	}
 	public void setWebDefaults() {
 		singleFormulaInvariant = true;
+		checkSourceCompatibility = true;
 	}
 }
