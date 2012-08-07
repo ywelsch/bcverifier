@@ -666,7 +666,7 @@ public class Translator implements ITranslationConstants {
                                     forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(HEAP1),  var(r1), var(exposed)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))))),
                                     forall(r1Var, implies(logicalAnd(obj(var(HEAP1), var(r1)), new BPLArrayExpression(var(HEAP1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
                                     forall(r2Var, implies(logicalAnd(obj(var(HEAP2), var(r2)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
-                                    forall(r1Var, r2Var, tVar, implies(logicalAnd(related(var(r1), var(r2)), isPublic(var(t))), implies(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t)))))
+                                    forall(r1Var, r2Var, implies(related(var(r1), var(r2)), forall(tVar, implies(isPublic(var(t)), implies(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t)))))))
                                     ))
                     ));
 
@@ -1390,13 +1390,14 @@ public class Translator implements ITranslationConstants {
                             )
                     ));
 
+            
             if (tc.getConfig().extensionalityEnabled()) { 
-            	addComment("Extensionality for simulations");
-            	addAxiom(forall(
-            			r1Var, r2Var, relatedVar,
-            			isEqual(new BPLArrayExpression(var(related), new BPLArrayAssignment(new BPLVariableExpression[]{var(r1), var(r2)}, new BPLArrayExpression(var(related), var(r1), var(r2)))), var(related))
-            			));
-
+                addComment("Extensionality for simulations");
+                addAxiom(forall(
+                        r1Var, r2Var, relatedVar,
+                        isEqual(new BPLArrayExpression(var(related), new BPLArrayAssignment(new BPLVariableExpression[]{var(r1), var(r2)}, new BPLArrayExpression(var(related), var(r1), var(r2)))), var(related))
+                        ));
+                
             	addComment("Extensionality for heaps");
             	addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
             			new BPLVariable[]{refVar, fieldAlphaVar, heapVar},
