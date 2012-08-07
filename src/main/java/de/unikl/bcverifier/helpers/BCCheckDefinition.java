@@ -20,6 +20,11 @@ public class BCCheckDefinition {
     private int expectedErrors;
     private int expectedDeadCodePoints;
     private int loopUnrollCap;
+    private int checkIndex;
+
+    public int getCheckIndex() {
+        return checkIndex;
+    }
 
     public File getSpecification() {
         return specification;
@@ -45,9 +50,10 @@ public class BCCheckDefinition {
         return loopUnrollCap;
     }
 
-    public BCCheckDefinition(File libDir, File specification,
+    public BCCheckDefinition(int index, File libDir, File specification,
             String[] flags, int expectedErrors, int expectedDeadCodePoints,
             int loopUnrollCap) {
+        this.checkIndex = index;
         this.libDir = libDir;
         this.specification = specification;
         this.flags = flags;
@@ -67,13 +73,15 @@ public class BCCheckDefinition {
         List<BCCheckDefinition> libTestCases = new ArrayList<BCCheckDefinition>();
         try{
             parser = new LabeledCSVParser(new CSVParser(FileUtils.openInputStream(csvFile)));
+            int i = 0;
             while(parser.getLine() != null){
                 specFile = new File(rootDir, parser.getValueByLabel("specification"));
                 generatorFlags = parser.getValueByLabel("flags").split("[ ]+");
                 expectedErrorCount = Integer.parseInt(parser.getValueByLabel("expected_errors"));
                 deadCodePoints = Integer.parseInt(parser.getValueByLabel("dead_code_points"));
                 loopUnrollCap = Integer.parseInt(parser.getValueByLabel("loop_unroll_cap"));
-                libTestCases.add(new BCCheckDefinition(rootDir, specFile, generatorFlags, expectedErrorCount, deadCodePoints, loopUnrollCap));
+                libTestCases.add(new BCCheckDefinition(i, rootDir, specFile, generatorFlags, expectedErrorCount, deadCodePoints, loopUnrollCap));
+                i++;
             }
         } catch(IOException e){
             Logger.getLogger(BCCheckDefinition.class).warn("Could not open check definition file for library "+rootDir.getName());

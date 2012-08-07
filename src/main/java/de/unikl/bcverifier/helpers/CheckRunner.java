@@ -33,7 +33,7 @@ public class CheckRunner {
         }
     }
     
-    private static void run(BCCheckDefinition def, boolean doCheck, boolean doSmoke) throws CheckRunException{
+    private static void run(BCCheckDefinition def, File outputDir, boolean doCheck, boolean doSmoke) throws CheckRunException{
         Configuration config = new Configuration();
         JCommander parser = new JCommander();
         parser.addObject(config);
@@ -45,7 +45,7 @@ public class CheckRunner {
             throw new CheckRunException("Error parsing arguments", e);
         }
         
-        File specificationFile = new File(def.getLibDir(), "bpl/output.bpl");
+        File specificationFile = new File(outputDir, "output"+def.getCheckIndex()+".bpl");
         File lib1 = new File(def.getLibDir(), "old");
         File lib2 = new File(def.getLibDir(), "new");
         config.setSpecification(def.getSpecification());
@@ -74,17 +74,17 @@ public class CheckRunner {
 		}
     }
     
-    public static void generate(BCCheckDefinition def) throws CheckRunException {
-        run(def, false, false);
+    public static void generate(BCCheckDefinition def, File outputDir) throws CheckRunException {
+        run(def, outputDir, false, false);
     }
     
     public static boolean runCheck(BCCheckDefinition def) throws CheckRunException {
-        run(def, true, false);
+        run(def, new File(def.getLibDir(), "bpl"), true, false);
         return BoogieRunner.getLastErrorCount() == def.getExpectedErrors();
     }
     
     public static boolean runSmokeTest(BCCheckDefinition def) throws CheckRunException {
-        run(def, true, true);
+        run(def, new File(def.getLibDir(), "bpl"), true, true);
         
         if(BoogieRunner.getLastErrorCount() != def.getExpectedErrors()){
             Logger.getLogger(CheckRunner.class).debug(BoogieRunner.getLastMessage());

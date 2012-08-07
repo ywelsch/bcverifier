@@ -2,7 +2,7 @@
 syntax: glob
 libraries/**/*.class
 syntax: glob
-libraries/**/output.bpl
+libraries/**/output*.bpl
 libraries/**/boogie_output.txt
 syntax: glob
 doc/*.aux

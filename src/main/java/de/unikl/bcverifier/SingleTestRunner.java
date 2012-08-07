@@ -48,7 +48,7 @@ public class SingleTestRunner {
                     Logger.getLogger(SingleTestRunner.class).info("Test completed successfully.");
                 }
             } else {
-                CheckRunner.generate(test);
+                CheckRunner.generate(test, new File(test.getLibDir(), "bpl"));
                 Logger.getLogger(SingleTestRunner.class).info("Test generated.");
             }
             return;
