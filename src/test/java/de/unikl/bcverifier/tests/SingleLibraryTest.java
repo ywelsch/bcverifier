@@ -15,6 +15,7 @@ import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.helpers.VerificationResult;
 import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 
@@ -38,8 +39,8 @@ public class SingleLibraryTest {
 		config.setOutput(specificationFile);
         config.setAction(VerifyAction.VERIFY);
 		Library library = new Library(config);
-		library.runLifecycle();
-		System.out.println(BoogieRunner.getLastMessage());
-		assertTrue(BoogieRunner.getLastMessage(), BoogieRunner.getLastReturn());
+		VerificationResult result = library.runLifecycle();
+		System.out.println(result.getLastMessage());
+		assertTrue(result.getLastMessage(), result.isLastRunSuccess());
 	}
 }

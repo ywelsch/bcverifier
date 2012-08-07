@@ -59,48 +59,48 @@ public class BoogieRunner {
     	return BOOGIE_COMMAND;
     }
     
-    private static boolean verify = true;
-    private static boolean smokeTest = false;
-    private static int loopUnroll = 5;
-    private static boolean lastRunSuccess;
-    private static String lastMessage = "";
-    private static int lastUnreachableCodeCount = 0;
-    private static int lastErrorCount = 0;
-    private static int lastVerified = 0;
+    private boolean verify = true;
+    private boolean smokeTest = false;
+    private int loopUnroll = 5;
+    private boolean lastRunSuccess;
+    private String lastMessage = "";
+    private int lastUnreachableCodeCount = 0;
+    private int lastErrorCount = 0;
+    private int lastVerified = 0;
     
-    public static void setLoopUnroll(int loopUnroll) {
-        BoogieRunner.loopUnroll = loopUnroll;
+    public void setLoopUnroll(int loopUnroll) {
+        this.loopUnroll = loopUnroll;
     }
 
-    public static void setVerify(boolean b){
+    public void setVerify(boolean b){
         verify = b;
     }
     
-    public static void setSmokeTest(boolean b){
+    public void setSmokeTest(boolean b){
         smokeTest = b;
     }
     
-    public static boolean getLastReturn(){
+    public boolean getLastReturn(){
         return lastRunSuccess;
     }
     
-    public static int getLastErrorCount() {
+    public int getLastErrorCount() {
         return lastErrorCount;
     }
     
-    public static int getLastVerifiedCount() {
+    public int getLastVerifiedCount() {
         return lastVerified;
     }
     
-    public static String getLastMessage(){
+    public String getLastMessage(){
     	return lastMessage;
     }
     
-    public static int getLastUnreachalbeCodeCount(){
+    public int getLastUnreachalbeCodeCount(){
         return lastUnreachableCodeCount;
     }
     
-    public static void runBoogie(File boogieFile) throws BoogieRunException{
+    public void runBoogie(File boogieFile) throws BoogieRunException{
         Runtime runtime = Runtime.getRuntime();
         File workingDir = boogieFile.getParentFile();
         InputStream processOutput = null;
@@ -147,7 +147,7 @@ public class BoogieRunner {
         return count;
     }
 
-    private static boolean parseLastOutputLine(String result) {
+    private boolean parseLastOutputLine(String result) {
         String[] lines = result.split("\n");
         String lastLine = lines[lines.length-1];
         Pattern lastLinePattern = Pattern.compile("Boogie program verifier finished with (\\d+) verified, (\\d+) error(s)?");

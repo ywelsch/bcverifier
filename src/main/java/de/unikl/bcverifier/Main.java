@@ -9,6 +9,7 @@ import com.beust.jcommander.ParameterException;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.helpers.VerificationResult;
 import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.GeneratorFactory;
@@ -38,11 +39,11 @@ public class Main {
         Logger.getRootLogger().setLevel(config.isDebug() ? Level.DEBUG : Level.INFO);
         try {
         	Library library = new Library(config);
-        	library.runLifecycle();
+        	VerificationResult result = library.runLifecycle();
             if(config.isCheck()){
-                System.out.println(BoogieRunner.getLastMessage());
+                System.out.println(result.getLastMessage());
                 if (config.isSmokeTestOn()) {
-                	System.out.println("Found unreachable code points: "+BoogieRunner.getLastUnreachalbeCodeCount());
+                	System.out.println("Found unreachable code points: "+result.getLastUnreachableCodeCount());
                 }
             }
         } catch (TranslationException e) {

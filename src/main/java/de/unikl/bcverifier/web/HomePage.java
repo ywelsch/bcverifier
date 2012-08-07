@@ -56,6 +56,7 @@ import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.helpers.VerificationResult;
 import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.GeneratorFactory;
@@ -430,9 +431,9 @@ public class HomePage extends WebPage {
 				config.setOutput(output);
 				config.setCompileFirst(true);
 				Library library = new Library(config);
-				library.runLifecycle();
+				VerificationResult verificationResult = library.runLifecycle();
 				HomePage.this.setBoogieinput(FileUtils.readFileToString(output));
-				HomePage.this.setOutput(linkify(BoogieRunner.getLastMessage()));
+				HomePage.this.setOutput(linkify(verificationResult.getLastMessage()));
 			} catch (IOException e) {
 				HomePage.this.setOutput(e.getMessage());
 				e.printStackTrace();

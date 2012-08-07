@@ -110,6 +110,7 @@ import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
+import de.unikl.bcverifier.helpers.VerificationResult;
 import de.unikl.bcverifier.sourcecomp.SourceCompChecker;
 import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
@@ -145,7 +146,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         this.config = config;
     }
     
-    public void runLifecycle() throws SourceInCompatibilityException, TranslationException, GenerationException, CompileException {
+    public VerificationResult runLifecycle() throws SourceInCompatibilityException, TranslationException, GenerationException, CompileException {
     	if (config.isCompileFirst()) {
     		LibraryCompiler.compile(config.library1());
     		LibraryCompiler.compile(config.library2());
@@ -159,7 +160,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     	}
         translate();
         if(config.isCheck()){
-            check();
+            return VerificationResult.fromBoogie(check());
+        } else {
+            return new VerificationResult();
         }
     }
 
@@ -1575,15 +1578,16 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         return new LibraryDefinition(programDecls, methodBlocks);
     }
 
-    public void check() {
-        BoogieRunner.setVerify(config.isVerify());
-        BoogieRunner.setSmokeTest(config.isSmokeTestOn());
-        BoogieRunner.setLoopUnroll(config.getLoopUnrollCap()+1);
+    public BoogieRunner check() {
+        BoogieRunner runner = new BoogieRunner();
+        runner.setVerify(config.isVerify());
+        runner.setSmokeTest(config.isSmokeTestOn());
+        runner.setLoopUnroll(config.getLoopUnrollCap()+1);
         try {
             log.debug("Checking " + config.output());
-            BoogieRunner.runBoogie(config.output());
-            log.debug(BoogieRunner.getLastMessage());
-            if (BoogieRunner.getLastReturn()) {
+            runner.runBoogie(config.output());
+            log.debug(runner.getLastMessage());
+            if (runner.getLastReturn()) {
                 log.debug("Success");
             } else {
                 log.debug("Error");
@@ -1591,6 +1595,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         } catch (BoogieRunException e) {
             e.printStackTrace();
         }
+        return runner;
     }
 
     public void reportTrouble(TroubleMessage message) {

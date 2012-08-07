@@ -12,6 +12,7 @@ import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.helpers.BCCheckDefinition;
 import de.unikl.bcverifier.helpers.CheckRunner;
 import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
+import de.unikl.bcverifier.helpers.VerificationResult;
 
 public class SingleTestRunner {
     
@@ -41,9 +42,10 @@ public class SingleTestRunner {
             int index = Integer.parseInt(s.substring(0, s.indexOf(':')));
             BCCheckDefinition test = tests.get(index);
             if(doCheck){
-                if(!CheckRunner.runCheck(test)){
+                VerificationResult result = CheckRunner.runCheck(test);
+                if(result.isLastRunSuccess()){
                     Logger.getLogger(SingleTestRunner.class).error("Check did not succeed!");
-                    Logger.getLogger(SingleTestRunner.class).error(BoogieRunner.getLastMessage());
+                    Logger.getLogger(SingleTestRunner.class).error(result.getLastMessage());
                 } else {
                     Logger.getLogger(SingleTestRunner.class).info("Test completed successfully.");
                 }

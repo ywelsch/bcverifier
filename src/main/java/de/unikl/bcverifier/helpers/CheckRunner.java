@@ -33,7 +33,7 @@ public class CheckRunner {
         }
     }
     
-    private static void run(BCCheckDefinition def, File outputDir, boolean doCheck, boolean doSmoke) throws CheckRunException{
+    private static VerificationResult run(BCCheckDefinition def, File outputDir, boolean doCheck, boolean doSmoke) throws CheckRunException{
         Configuration config = new Configuration();
         JCommander parser = new JCommander();
         parser.addObject(config);
@@ -62,7 +62,7 @@ public class CheckRunner {
         config.setLoopUnrollCap(def.getLoopUnrollCap());
         try{
             Library library = new Library(config);
-            library.runLifecycle();
+            return library.runLifecycle();
         } catch (TranslationException ex){
             throw new CheckRunException("Error translating bytecode", ex);
         } catch (GenerationException e) {
@@ -78,26 +78,27 @@ public class CheckRunner {
         run(def, outputDir, false, false);
     }
     
-    public static boolean runCheck(BCCheckDefinition def) throws CheckRunException {
-        run(def, new File(def.getLibDir(), "bpl"), true, false);
-        return BoogieRunner.getLastErrorCount() == def.getExpectedErrors();
+    public static VerificationResult runCheck(BCCheckDefinition def) throws CheckRunException {
+        VerificationResult result = run(def, new File(def.getLibDir(), "bpl"), true, false);
+        result.setLastRunSuccess(result.getLastErrorCount() == def.getExpectedErrors());
+        return result;
     }
     
-    public static boolean runSmokeTest(BCCheckDefinition def) throws CheckRunException {
-        run(def, new File(def.getLibDir(), "bpl"), true, true);
+    public static VerificationResult runSmokeTest(BCCheckDefinition def) throws CheckRunException {
+        VerificationResult result = run(def, new File(def.getLibDir(), "bpl"), true, true);
         
-        if(BoogieRunner.getLastErrorCount() != def.getExpectedErrors()){
-            Logger.getLogger(CheckRunner.class).debug(BoogieRunner.getLastMessage());
-            throw new CheckRunException("Expected "+def.getExpectedErrors()+" errors, but got "+BoogieRunner.getLastErrorCount());
+        if(result.getLastErrorCount() != def.getExpectedErrors()){
+            Logger.getLogger(CheckRunner.class).debug(result.getLastMessage());
+            throw new CheckRunException("Expected "+def.getExpectedErrors()+" errors, but got "+result.getLastErrorCount());
         }
         
         File boogieOutput = new File(def.getLibDir(), "bpl/boogie_output.txt");
         try{
-            FileUtils.write(boogieOutput, BoogieRunner.getLastMessage());
+            FileUtils.write(boogieOutput, result.getLastMessage());
         } catch(IOException ex){
             throw new CheckRunException("Error writing smoke test log", ex);
         }
-        
-        return BoogieRunner.getLastUnreachalbeCodeCount() == def.getExpectedDeadCodePoints();
+        result.setLastRunSuccess(result.getLastUnreachableCodeCount() == def.getExpectedDeadCodePoints());
+        return result;
     }
 }
