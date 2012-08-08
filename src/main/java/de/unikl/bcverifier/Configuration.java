@@ -37,6 +37,8 @@ public class Configuration implements Serializable {
 	private boolean assumeWellformedHeap = false;
 	@Parameter(names = {"-X", "--extensionality"}, description = "Add extensionality axioms") @WebGUI
 	private boolean extensionality = false;
+	@Parameter(names = {"-W", "--wellformedness"}, description = "Add checks of wellformedness of the stacks and heaps")
+	private boolean wellformednessChecks;
 	@Parameter(names = {"-S", "--smoketest"}, description = "Perform smoke test during verification")
     private boolean smoke = false;
 	@Parameter(names = {"-L", "--loopUnroll"}, description = "The cap for loop unrolling") @WebGUI
@@ -155,6 +157,12 @@ public class Configuration implements Serializable {
 	public void setExtensionality(boolean b) {
 	    extensionality = b;
 	}
+    public boolean isWellformednessChecks() {
+        return wellformednessChecks;
+    }
+    public void setWellformednessChecks(boolean wellformednessChecks) {
+        this.wellformednessChecks = wellformednessChecks;
+    }
     public boolean isSmokeTestOn() {
         return smoke;
     }

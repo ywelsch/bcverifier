@@ -1238,10 +1238,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     private void assertWellformedness(List<BPLCommand> checkingCommand) {
         //check that the relation is still wellformed
         checkingCommand.add(new BPLAssertCommand(wellformedCoupling(var(HEAP1), var(HEAP2), var(RELATED_RELATION))));
-//        checkingCommand.add(new BPLAssertCommand(wellformedHeap(var(HEAP1))));
-//        checkingCommand.add(new BPLAssertCommand(wellformedHeap(var(HEAP2))));
-//        checkingCommand.add(new BPLAssertCommand(CodeGenerator.wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
-//        checkingCommand.add(new BPLAssertCommand(CodeGenerator.wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
+        if(config.isWellformednessChecks()){
+            checkingCommand.add(new BPLAssertCommand(wellformedHeap(var(HEAP1))));
+            checkingCommand.add(new BPLAssertCommand(wellformedHeap(var(HEAP2))));
+            checkingCommand.add(new BPLAssertCommand(CodeGenerator.wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
+            checkingCommand.add(new BPLAssertCommand(CodeGenerator.wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
+        }
     }
 
     private void addDefinesMethodAxioms(List<BPLDeclaration> programDecls) {
