@@ -1537,7 +1537,7 @@ public class Translator implements ITranslationConstants {
             addAxiom(forall(oldHeapVar, newHeapVar, stackVar,
                     isEquiv(validHeapSucc(var(oldHeap), var(newHeap), var(stack)),
                             forall(
-                                    spVar, oVar,
+                                    oVar,
                                     logicalAnd(
                                             implies(map(var(oldHeap), var(o), var(EXPOSED_FIELD)), map(var(newHeap), var(o), var(EXPOSED_FIELD))),
                                             implies(map(var(oldHeap), var(o), var(ALLOC_FIELD)), isEqual(map(var(oldHeap), var(o), var(CREATED_BY_CTXT_FIELD)), map(var(newHeap), var(o), var(CREATED_BY_CTXT_FIELD)))),

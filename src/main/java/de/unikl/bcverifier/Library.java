@@ -442,7 +442,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(HEAP2)));
         procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK1), var(STACK1)));
         procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK2), var(STACK2)));
-        
+
         final String i = "i";
         BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
         procAssumes.add(new BPLAssumeCommand(forall(iVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(i)), lessEqual(var(i), var(IP1_VAR))),
@@ -517,7 +517,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // invariant
         procAssumes.addAll(invAssumes);
         // TODO is this sound?
-//        procAssumes.addAll(localInvAssumes);
+        procAssumes.addAll(localInvAssumes);
 
         // relation between lib1 and lib2
         // ///////////////////////////////////////////
@@ -615,6 +615,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // invariant
         procAssumes.addAll(invAssumes);
+        //TODO is this sound?
+        procAssumes.addAll(localInvAssumes);
         
         
         // now pass the receiver over the boundary
@@ -1028,6 +1030,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         //invariant
         checkingCommand.addAll(invAssertions);
+        //TODO is this sound?
+        checkingCommand.addAll(localInvAssertions);
         
         methodBlocks.add(new BPLBasicBlock(CHECK_BOUNDARY_RETURN_LABEL, checkingCommand
                 .toArray(new BPLCommand[checkingCommand.size()]),
