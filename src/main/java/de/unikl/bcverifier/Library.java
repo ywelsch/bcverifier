@@ -1477,10 +1477,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // commands before callTableInit (preconditions of the calltable)
         // /////////////////////////////////////////
         BPLExpression sp = spmap();
+        BPLExpression ip = var(tc.getInteractionFramePointer());
 
         dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(isEqual(sp,
-                new BPLIntLiteral(0))));
+        dispatchCommands.add(new BPLAssumeCommand(
+                logicalAnd(
+                        isEqual(modulo(ip, new BPLIntLiteral(2)), new BPLIntLiteral(1)),
+                        isEqual(sp, new BPLIntLiteral(0))
+                )
+                ));
 
         methodBlocks.add(
                 0,
