@@ -32,9 +32,16 @@ UnknownDef : Def ::= ;
 VarDef : Def ::= TypeDef Name:Ident;
 
 // Statements:
-abstract Statement;
+abstract Statement : Def;
 
 Invariant : Statement ::= Expr;
+LocalInvariant: Statement ::= Expr; 
+PlaceDef: Statement ::= Name:Ident PlacePosition [Condition:Expr] [TerminationMeasure:Expr];
+
+
+abstract PlacePosition;
+
+LineNrPlacePosition: PlacePosition ::= TypeDef <PlaceLineNr:int>;
 
 
 // Types

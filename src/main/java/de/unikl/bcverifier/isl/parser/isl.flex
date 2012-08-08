@@ -81,6 +81,11 @@ IntLiteral = 0 | [1-9][0-9]*
  "else"      { return sym(Terminals.ELSE); }
  "null"		{ return sym(Terminals.NULL); }
  "invariant" { return sym(Terminals.INVARIANT); }
+ "local invariant" { return sym(Terminals.LOCAL_INVARIANT); }
+ "place" { return sym(Terminals.PLACE); }
+ "line" { return sym(Terminals.LINE); }
+ "where" { return sym(Terminals.WHERE); }
+// "termination measure" { return sym(Terminals.TERMINATION_MEASURE); }
 }
 
 //Separators and operators

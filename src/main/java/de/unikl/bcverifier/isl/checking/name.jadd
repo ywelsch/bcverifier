@@ -1,5 +1,8 @@
 aspect name {
 	syn String Def.attrName();
 	eq VarDef.attrName() = getName().getName();
+	eq PlaceDef.attrName() = getName().getName();
 	eq UnknownDef.attrName() = "<unknown>";
+	eq Invariant.attrName() = "<inv>";
+	eq LocalInvariant.attrName() = "<localinv>";
 }

@@ -1,3 +1,4 @@
 "specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
 "bpl/spec.bsl" ,"-N"   ,3                ,0                 ,3
 "bpl/spec.bsl" ,"-N"   ,0                ,3                 ,4
+"bpl/spectest.bsl" ,"-N"   ,0                ,3                 ,4

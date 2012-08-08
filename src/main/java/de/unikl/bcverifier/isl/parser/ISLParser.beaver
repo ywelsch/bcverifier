@@ -59,12 +59,14 @@ import de.unikl.bcverifier.isl.ast.*;
 :};
 
 
-%terminals FORALL, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER, INVARIANT,
+%terminals FORALL, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER, INVARIANT, LOCAL_INVARIANT, 
+	PLACE, LINE, WHERE, 
+	// TERMINATION_MEASURE,
 	IF, THEN, ELSE,
 	DOT,
 	MOD, MULT, DIV, PLUS, MINUS, NOT,
 	EQUALS, UNEQUALS,
-	COLONCOLON, COMMA, LPAREN, RPAREN, SEMI,
+	COLON, COLONCOLON, COMMA, LPAREN, RPAREN, SEMI,
 	IMPLIES, AND, OR, RELATED,
 	INTLITERAL, NULL
 ;
@@ -92,7 +94,7 @@ import de.unikl.bcverifier.isl.ast.*;
 %typeof parameterlist = "List<Expr>";
 %typeof nonEmptyParameterlist = "List<Expr>";
 %typeof statement = "Statement";
-
+%typeof placeposition = "PlacePosition";
 
 %goal cu;
 
@@ -104,8 +106,17 @@ cu =
 ;
 
 statement = 
-	INVARIANT expr.e SEMI
+	  INVARIANT expr.e SEMI
 		{: return new Invariant(e); :}
+	| LOCAL_INVARIANT expr.e SEMI
+		{: return new LocalInvariant(e); :}
+	| PLACE id.i COLON placeposition.pos WHERE expr.cond SEMI
+		{: return new PlaceDef(i, pos, new Opt<Expr>(cond) , new Opt<Expr>()); :}
+;
+
+placeposition = 
+	  typedef.t COMMA LINE INTLITERAL.lineNr
+	  	{: return new LineNrPlacePosition(t, Integer.parseInt((String)lineNr.value)); :}
 ;
 
 expr =

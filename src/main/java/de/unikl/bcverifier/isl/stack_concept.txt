@@ -1,0 +1,40 @@
+
+boolean at(Place p, int i)
+	
+	wf: 0 <= i <= SP1
+	translate: stack1[libip(ip1)][i][place] == p
+	
+	
+boolean at(Place p)
+	
+	== at(p, SP1)
+	
+	
+	
+T stack(Place p, int i, identifier)
+T stack(Place p, int i).identifier
+T stack(Place p, int i)[identifier]
+
+	wf: wf(at(p,i)) && translate(at(p, i))
+	translate: stack1[libip(ip1)][i][identifier]
+	
+T stack(Place p, identifier)
+
+	== stack(p, SP1, identifier)
+	
+int SP1
+	
+	translate: spmap1[libip(ip1)]
+	
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+at(place1, i) && new x < 5
+	
+	== at(place1, i) && stack(place1, i, x) < 5
+
+
+stack(p1, i).x.f
+stack(p1, i)[x].f
+# stack(p1, i, x).f
+

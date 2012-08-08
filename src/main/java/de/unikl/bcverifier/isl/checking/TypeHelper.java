@@ -15,6 +15,8 @@ import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NamedTypeDef;
 import de.unikl.bcverifier.isl.ast.NullConst;
+import de.unikl.bcverifier.isl.ast.PlaceDef;
+import de.unikl.bcverifier.isl.ast.PlacePosition;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VarDef;
@@ -173,6 +175,12 @@ public class TypeHelper {
 
 	public static ExprType attrType(NullConst e) {
 		return JavaType.object(e.attrCompilationUnit().getTwoLibraryModel());
+	}
+
+	public static ExprType placeDefType(PlaceDef placeDef) {
+		PlacePosition pos = placeDef.getPlacePosition();
+		// TODO
+		throw new Error("not implemented");
 	}
 
 }
