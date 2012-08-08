@@ -1176,6 +1176,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP1), var(HEAP1), var(STACK1))));
         checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP2), var(HEAP2), var(STACK2))));
         
+        checkingCommand.add(new BPLAssumeCommand(wellformedCoupling(var(HEAP1), var(HEAP2), var(RELATED_RELATION))));
+        
         //invariant
         checkingCommand.addAll(invAssumes);
         checkingCommand.addAll(localInvAssumes);

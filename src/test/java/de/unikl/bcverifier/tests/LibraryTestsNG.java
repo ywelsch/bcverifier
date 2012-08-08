@@ -1,7 +1,6 @@
 package de.unikl.bcverifier.tests;
 
-import static org.junit.Assert.assertTrue;
-
+import static org.testng.AssertJUnit.assertTrue;
 import java.io.File;
 
 import org.testng.annotations.Test;
