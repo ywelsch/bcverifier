@@ -44,24 +44,39 @@ public class AbstractLibraryTestsNG {
 	
 	@DataProvider(name = "boogieFiles", parallel = true)
 	Object[][] boogieFilesToCheck() throws CheckRunException {
-	    Logger.getLogger(AbstractLibraryTestsNG.class).info("Generating Boogie files.");
-	    File outputdir = new File(FileUtils.getTempDirectory(), "BCCheck_"+System.currentTimeMillis());
-	    outputdir.mkdirs();
-	    File tmpLibPath;
-	    
-	    List<Object> testSets = new ArrayList<Object>();
-        List<BCCheckDefinition> libTestCases;
-        for(String path : libpath.list(new AndFileFilter(DirectoryFileFilter.DIRECTORY, new NotFileFilter(HiddenFileFilter.HIDDEN)))){
-            libTestCases = buildTestCase(new File(libpath, path));
-            for(BCCheckDefinition test : libTestCases){
-                tmpLibPath = new File(outputdir, path);
-                tmpLibPath.mkdirs();
-                CheckRunner.generate(test, tmpLibPath);
-                testSets.add(new Object[]{test, new File(tmpLibPath, "output"+test.getCheckIndex()+".bpl")});
+	    String libraryToCheck = System.getProperty("library");
+	    if(libraryToCheck!=null){
+	        Logger.getLogger(AbstractLibraryTestsNG.class).info("Generating Boogie files for library "+libraryToCheck+".");
+	        List<BCCheckDefinition> libTestCases = buildTestCase(new File(libraryToCheck));
+	        List<Object> testSets = new ArrayList<Object>();
+	        File bplDir;
+	        for(BCCheckDefinition test : libTestCases){
+	            bplDir = new File(test.getLibDir(), "bpl");
+	            CheckRunner.generate(test, bplDir);
+	            testSets.add(new Object[]{test, new File(bplDir, "output"+test.getCheckIndex()+".bpl")});
+	        }
+	        Logger.getLogger(AbstractLibraryTestsNG.class).info("Finished generating Boogie files.");
+	        return testSets.toArray(new Object[testSets.size()][2]);
+	    } else {
+    	    Logger.getLogger(AbstractLibraryTestsNG.class).info("Generating Boogie files.");
+    	    File outputdir = new File(FileUtils.getTempDirectory(), "BCCheck_"+System.currentTimeMillis());
+    	    outputdir.mkdirs();
+    	    File tmpLibPath;
+    	    
+    	    List<Object> testSets = new ArrayList<Object>();
+            List<BCCheckDefinition> libTestCases;
+            for(String path : libpath.list(new AndFileFilter(DirectoryFileFilter.DIRECTORY, new NotFileFilter(HiddenFileFilter.HIDDEN)))){
+                libTestCases = buildTestCase(new File(libpath, path));
+                for(BCCheckDefinition test : libTestCases){
+                    tmpLibPath = new File(outputdir, path);
+                    tmpLibPath.mkdirs();
+                    CheckRunner.generate(test, tmpLibPath);
+                    testSets.add(new Object[]{test, new File(tmpLibPath, "output"+test.getCheckIndex()+".bpl")});
+                }
             }
-        }
-        Logger.getLogger(AbstractLibraryTestsNG.class).info("Finished generating Boogie files.");
-        return testSets.toArray(new Object[testSets.size()][2]);
+            Logger.getLogger(AbstractLibraryTestsNG.class).info("Finished generating Boogie files.");
+            return testSets.toArray(new Object[testSets.size()][2]);
+	    }
 	}
 	
 	Object[] libraryFolders() {
