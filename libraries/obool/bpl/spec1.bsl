@@ -6,7 +6,5 @@
 Internal($obool.OBool,$obool.OBool.g,heap1) && Internal($obool.OBool,$obool.OBool.g,heap2)
 NonNull($obool.OBool,$obool.OBool.g,heap1) && NonNull($obool.OBool,$obool.OBool.g,heap2)
 Unique($obool.OBool,$obool.OBool.g,heap1) && Unique($obool.OBool,$obool.OBool.g,heap2)
-<<<
->>>local_invariant
-(stack1[ip1-1][spmap1[ip1-1]][place] == lib1_obool.OBool.getg#boolean_get#boolean0) ==> (!heap1[stack1[ip1][spmap1[ip1]][param0_r], createdByCtxt])
+(forall iframe: int :: 0<=iframe && iframe<=ip1 && iframe % 2 == 1 ==> ((stack1[ip1-1][spmap1[ip1-1]][place] == lib1_obool.OBool.getg#boolean_get#boolean0) ==> (!heap1[stack1[ip1][spmap1[ip1]][param0_r], createdByCtxt])))
 <<<

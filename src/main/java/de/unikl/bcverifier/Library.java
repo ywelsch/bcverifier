@@ -511,8 +511,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
         // invariant
         procAssumes.addAll(invAssumes);
-        // TODO is this sound?
-        procAssumes.addAll(localInvAssumes);
 
         // relation between lib1 and lib2
         // ///////////////////////////////////////////
@@ -610,8 +608,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // invariant
         procAssumes.addAll(invAssumes);
-        //TODO is this sound?
-        procAssumes.addAll(localInvAssumes);
         
         
         // now pass the receiver over the boundary
@@ -756,7 +752,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
         // invariant
         procAssumes.addAll(invAssumes);
-        procAssumes.addAll(localInvAssumes);
 
         // relate all parameters from the outside
         // ///////////////////////////////////////
@@ -1025,8 +1020,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         //invariant
         checkingCommand.addAll(invAssertions);
-        //TODO is this sound?
-        checkingCommand.addAll(localInvAssertions);
         
         methodBlocks.add(new BPLBasicBlock(CHECK_BOUNDARY_RETURN_LABEL, checkingCommand
                 .toArray(new BPLCommand[checkingCommand.size()]),
@@ -1122,7 +1115,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         //invariant
         checkingCommand.addAll(invAssertions);
-        checkingCommand.addAll(localInvAssertions);
         
         // check if we want to use havoc to handle boudary call
         /////////////////////////////////////////////////////////
