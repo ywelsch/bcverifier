@@ -446,13 +446,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
         final String i = "i";
         BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-        procAssumes.add(new BPLAssumeCommand(forall(iVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(i)), lessEqual(var(i), var(IP1_VAR))),
-                lessEqual(new BPLIntLiteral(0), map(var(SP_MAP1_VAR), var(i)))
-            ))));
-        procAssumes.add(new BPLAssumeCommand(forall(iVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(i)), lessEqual(var(i), var(IP2_VAR))),
-                lessEqual(new BPLIntLiteral(0), map(var(SP_MAP2_VAR), var(i)))
-            ))));
-        
         procAssumes.add(new BPLAssumeCommand(greaterEqual(var(IP1_VAR), new BPLIntLiteral(1))));
         procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), var(IP2_VAR))));
         

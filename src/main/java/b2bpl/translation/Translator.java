@@ -1427,7 +1427,10 @@ public class Translator implements ITranslationConstants {
                     logicalAnd(
                             forall(jVar, pVar, vVar, implies(logicalAnd(lessEqual(var(j), var(i)), lessEqual(intLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), new BPLArrayExpression(var(heap), map1(var(stack), var(j), var(p), var(v)), var(alloc)))),
                             forall(jVar, pVar, vVar, implies(logicalOr(greater(var(j), var(i)), logicalAnd(lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), nullLiteral()))),
-                            forall(jVar, pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr(greater(var(j), var(i)), logicalAnd(lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), intLiteral(0))))
+                            forall(jVar, pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr(greater(var(j), var(i)), logicalAnd(lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), intLiteral(0)))),
+                            forall(jVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i))),
+                                    lessEqual(new BPLIntLiteral(0), map(var(spmap), var(j)))
+                                ))
                             )
                     )
                     ));
