@@ -5,6 +5,7 @@ import static b2bpl.translation.CodeGenerator.definesMethod;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.greater;
+import static b2bpl.translation.CodeGenerator.greaterEqual;
 import static b2bpl.translation.CodeGenerator.hasReturnValue;
 import static b2bpl.translation.CodeGenerator.heap;
 import static b2bpl.translation.CodeGenerator.heap1;
@@ -452,6 +453,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 lessEqual(new BPLIntLiteral(0), map(var(SP_MAP2_VAR), var(i)))
             ))));
         
+        procAssumes.add(new BPLAssumeCommand(greaterEqual(var(IP1_VAR), new BPLIntLiteral(1))));
         procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), var(IP2_VAR))));
         
         String address = "address";
