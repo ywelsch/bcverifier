@@ -28,8 +28,6 @@ import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.modulo;
 import static b2bpl.translation.CodeGenerator.nonNull;
 import static b2bpl.translation.CodeGenerator.notEqual;
-import static b2bpl.translation.CodeGenerator.old_stack1;
-import static b2bpl.translation.CodeGenerator.old_stack2;
 import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.relNull;
 import static b2bpl.translation.CodeGenerator.related;
@@ -48,6 +46,7 @@ import static b2bpl.translation.CodeGenerator.validHeapSucc;
 import static b2bpl.translation.CodeGenerator.var;
 import static b2bpl.translation.CodeGenerator.wellformedCoupling;
 import static b2bpl.translation.CodeGenerator.wellformedHeap;
+import static b2bpl.translation.CodeGenerator.wellformedStack;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -448,10 +447,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2), new BPLIntLiteral(0))));
         
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP1), var(HEAP1)));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(HEAP2)));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK1), var(STACK1)));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK2), var(STACK2)));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
 
         final String i = "i";
         BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
@@ -506,21 +503,52 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // preconditions of a call
         // /////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
-        procAssumes.add(new BPLAssumeCommand(isEqual(spmap1(),
-                new BPLIntLiteral(0))));
-        procAssumes.add(new BPLAssumeCommand(isEqual(spmap2(),
-                new BPLIntLiteral(0))));
         
-        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+        
+
+        // invariant
+        procAssumes.addAll(invAssumes);
+        
+        
+        final String iftmp = "iftmp";
+        BPLVariable iftmpVar = new BPLVariable(iftmp, new BPLTypeName(INTERACTION_FRAME_TYPE));
+        tc.usedVariables().put(iftmp, iftmpVar);
+        BPLCommand command;
+        //create interaction frame and stack frame of the library
+        command = new BPLHavocCommand(var(iftmp));
+        command.addComment("this creates the frame we will use for the library call");
+        procAssumes.add(command);
+        procAssumes.add(new BPLAssignmentCommand(map(var(STACK1), add(var(IP1_VAR), new BPLIntLiteral(1))), var(iftmp)));
+        
+        command = new BPLAssignmentCommand(var(IP1_VAR), add(var(IP1_VAR), new BPLIntLiteral(1)));
+        command.addComment("create new interaction frame");
+        procAssumes.add(command);
+        command = new BPLAssignmentCommand(spmap1(), new BPLIntLiteral(0));
+        command.addComment("create the initial stack frame of the new interaction frame");
+        procAssumes.add(command);
+        procAssumes.add(new BPLAssumeCommand(wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
+        
+        //create interaction frame and stack frame of the library
+        command = new BPLHavocCommand(var(iftmp));
+        command.addComment("this creates the frame we will use for the library call");
+        procAssumes.add(command);
+        procAssumes.add(new BPLAssignmentCommand(map(var(STACK2), add(var(IP2_VAR), new BPLIntLiteral(1))), var(iftmp)));
+        
+        command = new BPLAssignmentCommand(var(IP2_VAR), add(var(IP2_VAR), new BPLIntLiteral(1)));
+        command.addComment("create new interaction frame");
+        procAssumes.add(command);
+        command = new BPLAssignmentCommand(spmap2(), new BPLIntLiteral(0));
+        command.addComment("create the initial stack frame of the new interaction frame");
+        procAssumes.add(command);
+        procAssumes.add(new BPLAssumeCommand(wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
+        
         
         // assume the result of the method is not yet set
         procAssumes.add(new BPLAssumeCommand(isNull(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)))));
         procAssumes.add(new BPLAssumeCommand(isNull(stack2(var(RESULT_PARAM + REF_TYPE_ABBREV)))));
         procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(stack2(var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
-
-        // invariant
-        procAssumes.addAll(invAssumes);
 
         // relation between lib1 and lib2
         // ///////////////////////////////////////////
@@ -911,17 +939,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_HEAP1, new BPLTypeName(HEAP_TYPE))));
         localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_HEAP2, new BPLTypeName(HEAP_TYPE))));
         
-        // add variables for saving away the old stack
-        //////////////////////////////////////////////
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK1, new BPLTypeName(STACK_TYPE))));
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_STACK2, new BPLTypeName(STACK_TYPE))));
-        
         // add variables for measuring progress of local loops
         //////////////////////////////////////////////////////
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(MEASURE1, BPLBuiltInType.INT)));
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_MEASURE1, BPLBuiltInType.INT)));
         localVariables.add(new BPLVariableDeclaration(new BPLVariable(MEASURE2, BPLBuiltInType.INT)));
         localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_MEASURE2, BPLBuiltInType.INT)));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_PLACE1, new BPLTypeName(ADDRESS_TYPE))));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_PLACE2, new BPLTypeName(ADDRESS_TYPE))));
     }
 
     private void addCheckingBlocks(ArrayList<BPLCommand> invAssertions,
@@ -1019,6 +1042,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                         stack2(var(RESULT_VAR
                                                 + INT_TYPE_ABBREV)))))));
 
+        //reduce the interaction frame pointer so we have the same situation (beeing in the context) as at the begin
+        checkingCommand.add(new BPLAssignmentCommand(var(IP1_VAR), sub(var(IP1_VAR), new BPLIntLiteral(1))));
+        checkingCommand.add(new BPLAssignmentCommand(var(IP2_VAR), sub(var(IP2_VAR), new BPLIntLiteral(1))));
+        
+        
         String o1 = "o1";
         BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
         String o2 = "o2";
@@ -1203,9 +1231,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // check for progress while stalled
         checkingCommand.add(new BPLAssertCommand(
-                ifThenElse(map(var(STALL1), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
+                ifThenElse(map(var(STALL1), var(OLD_PLACE1), var(OLD_PLACE2)),
                 logicalOr(
-                        notEqual(stack2(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
+                        logicalNot(isLocalPlace(var(OLD_PLACE2))),
                         logicalAnd(
                                 less(var(MEASURE2), var(OLD_MEASURE2)),
                                 lessEqual(new BPLIntLiteral(0), var(MEASURE2)),
@@ -1214,19 +1242,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                         ),
                 BPLBoolLiteral.TRUE
                 )));
-        checkingCommand.add(new BPLAssertCommand(
-                ifThenElse(map(var(STALL2), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
-                logicalOr(
-                        notEqual(stack1(var(PLACE_VARIABLE)), old_stack1(var(PLACE_VARIABLE))),
-                        logicalAnd(
-                                less(var(MEASURE1), var(OLD_MEASURE1)),
-                                lessEqual(new BPLIntLiteral(0), var(MEASURE1)),
-                                lessEqual(new BPLIntLiteral(0), var(OLD_MEASURE1))
-                        )
-                        ),
-                BPLBoolLiteral.TRUE
-                )));
-        
 
         
         checkingCommand.addAll(localInvAssertions);

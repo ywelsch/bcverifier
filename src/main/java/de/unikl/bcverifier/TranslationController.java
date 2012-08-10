@@ -150,17 +150,6 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public String getOldHeap() {
-        switch(round) {
-        case 1:
-            return OLD_HEAP1;
-        case 2:
-            return OLD_HEAP2;
-        default:
-            return "old_heap";
-        }
-    }
-    
     public String getStack(){
         switch(round){
         case 1:
@@ -169,17 +158,6 @@ public class TranslationController implements ITranslationConstants {
             return STACK2;
         default:
             return "stack";
-        }
-    }
-    
-    public String getOldStack(){
-        switch(round){
-        case 1:
-            return OLD_STACK1;
-        case 2:
-            return OLD_STACK2;
-        default:
-            return "old_stack";
         }
     }
     
@@ -260,26 +238,19 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public String getMeasure() {
+    public String getOldPlaceVar() {
         switch(round) {
         case 1:
-            return MEASURE1;
+            return OLD_PLACE1;
         case 2:
-            return MEASURE2;
+            return OLD_PLACE2;
         default:
-            return "measure";
+            return "old_place";
         }
     }
     
-    public String getOldMeasure() {
-        switch(round) {
-        case 1:
-            return OLD_MEASURE1;
-        case 2:
-            return OLD_MEASURE2;
-        default:
-            return "old_measure";
-        }
+    public boolean isRound2() {
+        return round == 2;
     }
     
     public List<Place> getLocalPlacesBetween(int line1, int line2){

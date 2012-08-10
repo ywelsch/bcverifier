@@ -453,13 +453,13 @@ public static final String ALLOC_FIELD = "alloc";
 
 public static final String IS_LOCAL_PLACE_FUNC = "isLocalPlace";
 
-public static final String MEASURE1 = "measure1";
-
-public static final String OLD_MEASURE1 = "old_measure1";
-
 public static final String MEASURE2 = "measure2";
 
 public static final String OLD_MEASURE2 = "old_measure2";
+
+
+public static final String OLD_PLACE1 = "old_place1";
+public static final String OLD_PLACE2 = "old_place2";
 
 public static final String STACK_FRAME_TEMP = "sftmp";
 public static final String INTERACTION_FRAME_TEMP = "iftmp";
@@ -468,4 +468,5 @@ public static final String SOME_VAL_R_TEMP = "someVal" + REF_TYPE_ABBREV;
 public static final String SOME_VAL_I_TEMP = "someVal" + INT_TYPE_ABBREV;
 public static final String SOME_FIELD_R_TEMP = "someField" + REF_TYPE_ABBREV;
 public static final String SOME_FIELD_I_TEMP = "someField"+ INT_TYPE_ABBREV;
+
 }

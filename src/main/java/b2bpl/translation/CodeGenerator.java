@@ -1090,14 +1090,6 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLArrayExpression(var(HEAP2), exp1, exp2);
     }
     
-    public static BPLExpression oldHeap1(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var(OLD_HEAP1), exp1, exp2);
-    }
-    
-    public static BPLExpression oldHeap2(BPLExpression exp1, BPLExpression exp2){
-        return new BPLArrayExpression(var(OLD_HEAP2), exp1, exp2);
-    }
-    
     public static BPLExpression spmap1(BPLExpression exp){
         return map(var(SP_MAP1_VAR), exp);
     }
@@ -1118,10 +1110,6 @@ public final class CodeGenerator implements ITranslationConstants {
         return map1(var(STACK1), var(IP1_VAR), spmap1(var(IP1_VAR)), exp);
     }
     
-    public static BPLExpression old_stack1(BPLExpression exp){
-        return map1(var(OLD_STACK1), var(IP1_VAR), spmap1(var(IP1_VAR)), exp);
-    }
-    
     public static BPLExpression stack1(BPLExpression ip, BPLExpression exp){
         return map1(var(STACK1), ip, spmap1(ip), exp);
     }
@@ -1132,10 +1120,6 @@ public final class CodeGenerator implements ITranslationConstants {
     
     public static BPLExpression stack2(BPLExpression exp){
         return map1(var(STACK2), var(IP2_VAR), spmap2(var(IP2_VAR)), exp);
-    }
-    
-    public static BPLExpression old_stack2(BPLExpression exp){
-        return map1(var(OLD_STACK2), var(IP2_VAR), spmap2(var(IP2_VAR)), exp);
     }
     
     public static BPLExpression stack2(BPLExpression ip, BPLExpression exp){

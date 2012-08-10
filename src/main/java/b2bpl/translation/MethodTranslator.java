@@ -38,8 +38,6 @@ import static b2bpl.translation.CodeGenerator.neg;
 import static b2bpl.translation.CodeGenerator.nonNull;
 import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.nullLiteral;
-import static b2bpl.translation.CodeGenerator.old_stack1;
-import static b2bpl.translation.CodeGenerator.old_stack2;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.spmap;
@@ -2811,8 +2809,8 @@ public class MethodTranslator implements ITranslationConstants {
                 addAssume(var(localPlace.getCondition())); //TODO raw expression here
                 context.addLocalPlace(localPlace.getName());
                 addAssignment(stack(var(PLACE_VARIABLE)), var(localPlace.getName()), "local place");
-                if(localPlace.getMeasure() != null){
-                    addAssignment(var(tc.getMeasure()), var(localPlace.getMeasure()));
+                if(localPlace.getMeasure() != null && tc.isRound2()){
+                    addAssignment(var(MEASURE2), var(localPlace.getMeasure()));
 //                    addAssert(lessEqual(intLiteral(0), var(tc.getMeasure())));
                 }
                 rawEndBlock(tc.getCheckLabel());
@@ -2820,10 +2818,9 @@ public class MethodTranslator implements ITranslationConstants {
                 startBlock(localPlace.getName());
                 addAssume(var(localPlace.getCondition())); //TODO raw expression here
                 addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(localPlace.getName())));
-                addAssignment(var(tc.getOldHeap()), var(tc.getHeap()));
-                addAssignment(var(tc.getOldStack()), var(tc.getStack()));
-                if(localPlace.getMeasure() != null){
-                    addAssignment(var(tc.getOldMeasure()), var(localPlace.getMeasure()));
+                addAssignment(var(tc.getOldPlaceVar()), stack(var(PLACE_VARIABLE)));
+                if(localPlace.getMeasure() != null && tc.isRound2()){
+                    addAssignment(var(OLD_MEASURE2), var(localPlace.getMeasure()));
 //                    addAssert(lessEqual(intLiteral(0), var(tc.getOldMeasure())));
                 }
                 String placeLabel = tc.prefix(getProcedureName(method) + "_" + localPlace.getName());
@@ -2831,7 +2828,7 @@ public class MethodTranslator implements ITranslationConstants {
                 endBlock(contLabel, placeStallLabel);
                 
                 startBlock(placeStallLabel);
-                addAssume(map(var(tc.getStallMap()), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))));
+                addAssume(map(var(tc.getStallMap()), var(OLD_PLACE1), var(OLD_PLACE2)));
                 rawEndBlock(tc.getCheckLabel());
             }
             
@@ -2842,7 +2839,7 @@ public class MethodTranslator implements ITranslationConstants {
             endBlock(contLabel);
             
             startBlock(contLabel);
-            addAssume(logicalNot(map(var(tc.getStallMap()), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE)))));
+            addAssume(logicalNot(map(var(tc.getStallMap()), var(OLD_PLACE1), var(OLD_PLACE2))));
         }
 
         //@ requires insn != null;
