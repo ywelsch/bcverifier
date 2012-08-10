@@ -23,6 +23,7 @@ import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
 import static b2bpl.translation.CodeGenerator.map;
+import static b2bpl.translation.CodeGenerator.map1;
 import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.modulo;
 import static b2bpl.translation.CodeGenerator.nonNull;
@@ -55,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,6 +69,7 @@ import org.apache.log4j.Logger;
 import b2bpl.CompilationAbortedException;
 import b2bpl.Project;
 import b2bpl.bpl.BPLPrinter;
+import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLAssertCommand;
 import b2bpl.bpl.ast.BPLAssignmentCommand;
 import b2bpl.bpl.ast.BPLAssumeCommand;
@@ -78,12 +81,14 @@ import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLConstantDeclaration;
 import b2bpl.bpl.ast.BPLDeclaration;
 import b2bpl.bpl.ast.BPLExpression;
+import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLGotoCommand;
 import b2bpl.bpl.ast.BPLHavocCommand;
 import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLModifiesClause;
+import b2bpl.bpl.ast.BPLNullLiteral;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLProgram;
 import b2bpl.bpl.ast.BPLRawCommand;
@@ -91,10 +96,12 @@ import b2bpl.bpl.ast.BPLRawDeclaration;
 import b2bpl.bpl.ast.BPLReturnCommand;
 import b2bpl.bpl.ast.BPLSpecification;
 import b2bpl.bpl.ast.BPLTransferCommand;
+import b2bpl.bpl.ast.BPLType;
 import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableDeclaration;
 import b2bpl.bpl.ast.BPLVariableExpression;
+import b2bpl.bytecode.BCField;
 import b2bpl.bytecode.BCMethod;
 import b2bpl.bytecode.ITroubleReporter;
 import b2bpl.bytecode.JClassType;
@@ -225,6 +232,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             programDecls.addAll(libraryDefinition2.getNeededDeclarations());
             methodBlocks.addAll(libraryDefinition2.getMethodBlocks());
 
+            addLibraryFields(programDecls);
+            
             addDefinesMethodAxioms(programDecls);
             
             /////////////////////////////////////
@@ -487,7 +496,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 0,
                 new BPLBasicBlock(PRECONDITIONS_LABEL, procAssumes
                         .toArray(new BPLCommand[procAssumes.size()]),
-                        new BPLGotoCommand(INITIAL_CONFIGS_INV_LABEL, PRECONDITIONS_CALL_LABEL,
+                        new BPLGotoCommand(INITIAL_CONFIGS_INV_LABEL, STEPS_IN_CONTEXT_PRESERVED_LABEL, PRECONDITIONS_CALL_LABEL,
                                 PRECONDITIONS_RETURN_LABEL, PRECONDITIONS_CONSTRUCTOR_LABEL, PRECONDITIONS_LOCAL_LABEL)));
 
         BPLCommand assumeCmd;
@@ -1117,7 +1126,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         //invariant
         checkingCommand.addAll(invAssertions);
         
-        // check if we want to use havoc to handle boudary call
+        // check if we want to use havoc to handle boundary call
         /////////////////////////////////////////////////////////
         BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
         BPLExpression ip2MinusOne = sub(var(IP2_VAR), new BPLIntLiteral(1));
@@ -1251,6 +1260,63 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         methodBlocks.add(new BPLBasicBlock(INITIAL_CONFIGS_INV_LABEL,
         		checkingCommand.toArray(new BPLCommand[checkingCommand.size()]),
                 new BPLReturnCommand()));
+        
+        ////////////////////////////////////
+        // steps in context preserve invariant
+        ///////////////////////////////////
+        checkingCommand.clear();
+        checkingCommand.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+        checkingCommand.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+        checkingCommand.addAll(invAssumes);
+        
+        // modify a field that is not defined in library        
+        BPLVariable someObj = new BPLVariable(SOME_OBJ_TEMP, new BPLTypeName(REF_TYPE));
+        tc.usedVariables().put(SOME_OBJ_TEMP, someObj);
+        BPLVariable someVal_r = new BPLVariable(SOME_VAL_R_TEMP, new BPLTypeName(REF_TYPE));
+        tc.usedVariables().put(SOME_VAL_R_TEMP, someVal_r);
+        BPLVariable someVal_i = new BPLVariable(SOME_VAL_I_TEMP, BPLBuiltInType.INT);
+        tc.usedVariables().put(SOME_VAL_I_TEMP, someVal_i);
+        BPLVariable someField_r = new BPLVariable(SOME_FIELD_R_TEMP, new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)));
+        tc.usedVariables().put(SOME_FIELD_R_TEMP, someField_r);
+        BPLVariable someField_i = new BPLVariable(SOME_FIELD_I_TEMP, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT));
+        tc.usedVariables().put(SOME_FIELD_I_TEMP, someField_i);
+        
+        for (String heap : new String[]{HEAP1, HEAP2}) {
+        	for (String field : new String[]{SOME_FIELD_R_TEMP,SOME_FIELD_I_TEMP}) {
+        		String val = null;
+        		if (field.equals(SOME_FIELD_R_TEMP)) val = SOME_VAL_R_TEMP;
+        		if (field.equals(SOME_FIELD_I_TEMP)) val = SOME_VAL_I_TEMP;
+        		checkingCommand.add(new BPLHavocCommand(var(SOME_OBJ_TEMP), var(field), var(val)));
+                checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+                		notEqual(var(SOME_OBJ_TEMP), BPLNullLiteral.NULL),
+                		new BPLArrayExpression(var(heap), var(SOME_OBJ_TEMP), var(ALLOC_FIELD)),
+                		logicalNot(new BPLFunctionApplication(LIBRARY_FIELD_FUNC, var(field))),
+                		logicalNot(new BPLFunctionApplication(SYNTHETIC_FIELD_FUNC, var(field)))
+                		)));
+                checkingCommand.add(new BPLAssignmentCommand(
+                		new BPLArrayExpression(var(heap), var(SOME_OBJ_TEMP), var(field)),
+                		var(val)
+                		));
+        	}
+        	checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(heap))));
+        }
+        
+        // modify current stack frame
+        BPLVariable sftmpVar = new BPLVariable(STACK_FRAME_TEMP, new BPLTypeName(STACK_FRAME_TYPE));
+        tc.usedVariables().put(STACK_FRAME_TEMP, sftmpVar);
+        checkingCommand.add(new BPLHavocCommand(var(STACK_FRAME_TEMP)));
+        checkingCommand.add(new BPLAssignmentCommand(map1(var(STACK1), var(IP1_VAR), spmap1(var(IP1_VAR))), var(STACK_FRAME_TEMP)));
+        checkingCommand.add(new BPLHavocCommand(var(STACK_FRAME_TEMP)));
+        checkingCommand.add(new BPLAssignmentCommand(map1(var(STACK2), var(IP2_VAR), spmap2(var(IP2_VAR))), var(STACK_FRAME_TEMP)));
+        checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
+        checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
+        
+        checkingCommand.addAll(invAssertions);
+        
+        methodBlocks.add(new BPLBasicBlock(STEPS_IN_CONTEXT_PRESERVED_LABEL,
+        		checkingCommand.toArray(new BPLCommand[checkingCommand.size()]),
+                new BPLReturnCommand()));
+        
     }
 
     private void assertWellformedness(List<BPLCommand> checkingCommand) {
@@ -1261,6 +1327,32 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             checkingCommand.add(new BPLAssertCommand(wellformedHeap(var(HEAP2))));
             checkingCommand.add(new BPLAssertCommand(CodeGenerator.wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
             checkingCommand.add(new BPLAssertCommand(CodeGenerator.wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
+        }
+    }
+    
+    private void addLibraryFields(List<BPLDeclaration> programDecls) {
+    	final String f = "f";
+        BPLVariable fieldAlphaVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")));
+        // generate library fields
+        if (tc.referencedFields() == null || tc.referencedFields().isEmpty()) {
+        	programDecls.add(new BPLAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
+                    new BPLVariable[]{fieldAlphaVar},
+                    isEquiv(
+                    		new BPLFunctionApplication(LIBRARY_FIELD_FUNC, var(fieldAlphaVar.getName())), 
+                    		BPLBoolLiteral.FALSE)
+                    )));
+        } else {
+        	BPLExpression[] comparisons = new BPLExpression[tc.referencedFields().size()];
+        	Iterator<BCField> iter = tc.referencedFields().iterator();
+        	for (int j = 0; j < comparisons.length; j++) {
+        		comparisons[j] = isEqual(var(fieldAlphaVar.getName()), var(tc.boogieFieldName(iter.next())));
+        	}
+        	programDecls.add(new BPLAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
+        			new BPLVariable[]{fieldAlphaVar},
+        			isEquiv(
+        					new BPLFunctionApplication(LIBRARY_FIELD_FUNC, var(fieldAlphaVar.getName())), 
+        					logicalOr(comparisons))
+        			)));
         }
     }
 

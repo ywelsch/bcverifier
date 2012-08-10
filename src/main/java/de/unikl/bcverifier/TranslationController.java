@@ -350,4 +350,12 @@ public class TranslationController implements ITranslationConstants {
     public void setLocalPlaces(LocalPlaceDefinitions localPlaces) {
         this.localPlaceDefinitions = localPlaces;
     }
+
+	public void addReferencedField(BCField field) {
+		referencedFields.add(field);
+	}
+
+	public String boogieFieldName(BCField field) {
+		return GLOBAL_VAR_PREFIX+field.getQualifiedName(); //TODO add type information to make field name unambiguous?
+	}
 }

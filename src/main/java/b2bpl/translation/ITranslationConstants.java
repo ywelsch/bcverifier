@@ -41,6 +41,10 @@ public interface ITranslationConstants {
   
   String BIJECTIVE_FUNC = "Bijective";
   
+  String SYNTHETIC_FIELD_FUNC = "SyntheticField";
+  
+  String LIBRARY_FIELD_FUNC = "LibraryField";
+  
   String CLASS_REPR_FUNC = "ClassRepr";
   
   String CLASS_REPR_INV_FUNC = "ClassReprInv";
@@ -421,6 +425,8 @@ public static final String PRECONDITIONS_LOCAL_LABEL = "preconditions_local";
 
 public static final String INITIAL_CONFIGS_INV_LABEL = "initialConfigsCoupled";
 
+public static final String STEPS_IN_CONTEXT_PRESERVED_LABEL = "stepsInContextPreserved";
+
 public static final String CREATED_BY_CTXT_FIELD = "createdByCtxt";
 
 public static final String CHECK_LIBRARIES_PROCEDURE_NAME = "checkLibraries";
@@ -454,4 +460,12 @@ public static final String OLD_MEASURE1 = "old_measure1";
 public static final String MEASURE2 = "measure2";
 
 public static final String OLD_MEASURE2 = "old_measure2";
+
+public static final String STACK_FRAME_TEMP = "sftmp";
+public static final String INTERACTION_FRAME_TEMP = "iftmp";
+public static final String SOME_OBJ_TEMP = "someObj" + REF_TYPE_ABBREV;
+public static final String SOME_VAL_R_TEMP = "someVal" + REF_TYPE_ABBREV;
+public static final String SOME_VAL_I_TEMP = "someVal" + INT_TYPE_ABBREV;
+public static final String SOME_FIELD_R_TEMP = "someField" + REF_TYPE_ABBREV;
+public static final String SOME_FIELD_I_TEMP = "someField"+ INT_TYPE_ABBREV;
 }

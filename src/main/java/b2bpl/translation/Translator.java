@@ -589,6 +589,7 @@ public class Translator implements ITranslationConstants {
             final String f = "f";
             BPLVariable fieldRefVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)));
             BPLVariable fieldIntVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT));
+            BPLVariable fieldAlphaVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")));
             BPLVariable fieldBoolVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL));
             BPLVariable heap1Var = new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE));
             BPLVariable heap2Var = new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE));
@@ -687,11 +688,30 @@ public class Translator implements ITranslationConstants {
                                     isEquiv(isEqual(var(r1), var(r3)), isEqual(var(r2), var(r4)))))
                     ));
 
-            addConstants(new BPLVariable(alloc, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL)));
-            addConstants(new BPLVariable(exposed, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL)));
-            addConstants(new BPLVariable(createdByCtxt, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL)));
-            addConstants(new BPLVariable(dynType, new BPLTypeName(FIELD_TYPE, new BPLTypeName(NAME_TYPE))));
+            List<BPLVariable> syntheticFields = new ArrayList<BPLVariable>();
+            syntheticFields.add(new BPLVariable(alloc, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL)));
+            syntheticFields.add(new BPLVariable(exposed, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL)));
+            syntheticFields.add(new BPLVariable(createdByCtxt, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL)));
+            syntheticFields.add(new BPLVariable(dynType, new BPLTypeName(FIELD_TYPE, new BPLTypeName(NAME_TYPE))));
             
+            for (BPLVariable syntheticField : syntheticFields) {
+            	addConstants(syntheticField);
+            }
+                        
+            addFunction(SYNTHETIC_FIELD_FUNC+"<alpha>", new BPLTypeName("alpha"), BPLBuiltInType.BOOL);
+            BPLExpression[] comparisons = new BPLExpression[syntheticFields.size()];
+            for (int j = 0; j < comparisons.length; j++) {
+            	comparisons[j] = isEqual(var(fieldAlphaVar.getName()), var(syntheticFields.get(j).getName()));
+            }
+            addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
+                    new BPLVariable[]{fieldAlphaVar},
+                    isEquiv(
+                    		new BPLFunctionApplication(SYNTHETIC_FIELD_FUNC, var(fieldAlphaVar.getName())), 
+                    		logicalOr(comparisons))
+                    ));
+            
+            addFunction(LIBRARY_FIELD_FUNC+"<alpha>", new BPLTypeName("alpha"), BPLBuiltInType.BOOL);
+                        
             addComment("end custom part (below: original SscBoogie)");
             
             
@@ -3549,8 +3569,9 @@ public class Translator implements ITranslationConstants {
          * <i>name</i>.
          */
         public BPLExpression translateFieldReference(BCField field) {
-            String fieldName = GLOBAL_VAR_PREFIX+field.getQualifiedName(); //TODO add type information to make field name unambiguous?
+            String fieldName = tc.boogieFieldName(field);
             if (!fieldReferences.contains(field)) {
+            	tc.addReferencedField(field);
                 fieldReferences.add(field);
 
                 // Declare the constant representing the given field.
