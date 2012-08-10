@@ -419,6 +419,8 @@ public static final String PRECONDITIONS_CONSTRUCTOR_LABEL = "preconditions_cons
 
 public static final String PRECONDITIONS_LOCAL_LABEL = "preconditions_local";
 
+public static final String INITIAL_CONFIGS_INV_LABEL = "initialConfigsCoupled";
+
 public static final String CREATED_BY_CTXT_FIELD = "createdByCtxt";
 
 public static final String CHECK_LIBRARIES_PROCEDURE_NAME = "checkLibraries";

@@ -487,11 +487,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 0,
                 new BPLBasicBlock(PRECONDITIONS_LABEL, procAssumes
                         .toArray(new BPLCommand[procAssumes.size()]),
-                        new BPLGotoCommand(PRECONDITIONS_CALL_LABEL,
+                        new BPLGotoCommand(INITIAL_CONFIGS_INV_LABEL, PRECONDITIONS_CALL_LABEL,
                                 PRECONDITIONS_RETURN_LABEL, PRECONDITIONS_CONSTRUCTOR_LABEL, PRECONDITIONS_LOCAL_LABEL)));
 
         BPLCommand assumeCmd;
-
+        
+        
         // //////////////////////////////////
         // preconditions of a call
         // /////////////////////////////////
@@ -653,7 +654,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         //assume typ(stack1[ip1][spmap1[ip1]][param0_r], heap1) == typ(stack2[ip2][spmap2[ip2]][param0_r], heap2);
         procAssumes.add(new BPLAssumeCommand(isEqual(typ(stack1(receiver()), var(HEAP1)), typ(stack2(receiver()), var(HEAP2)))));
         
-        methodBlocks.add(1, new BPLBasicBlock(PRECONDITIONS_CONSTRUCTOR_LABEL,
+        methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_CONSTRUCTOR_LABEL,
                 procAssumes.toArray(new BPLCommand[procAssumes.size()]),
                 new BPLGotoCommand(TranslationController.LABEL_PREFIX1 + CONSTRUCTOR_TABLE_LABEL)));
         
@@ -799,7 +800,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
         procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
         
-        methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_RETURN_LABEL,
+        methodBlocks.add(3, new BPLBasicBlock(PRECONDITIONS_RETURN_LABEL,
                 procAssumes.toArray(new BPLCommand[procAssumes.size()]),
                 new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
         
@@ -875,7 +876,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.addAll(localInvAssumes);
 
         
-        methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_LOCAL_LABEL,
+        methodBlocks.add(4, new BPLBasicBlock(PRECONDITIONS_LOCAL_LABEL,
                 procAssumes.toArray(new BPLCommand[procAssumes.size()]),
                 new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
     }
@@ -1223,6 +1224,32 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
         methodBlocks.add(new BPLBasicBlock(CHECK_LOCAL_LABEL, checkingCommand
                 .toArray(new BPLCommand[checkingCommand.size()]),
+                new BPLReturnCommand()));
+        
+        ////////////////////////////////////
+        // check invariant for initial heap
+        // /////////////////////////////////
+        checkingCommand.clear();
+        checkingCommand.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(0))));
+        checkingCommand.add(new BPLAssumeCommand(isEqual(var(IP2_VAR), new BPLIntLiteral(0))));
+        String r = "r";
+        BPLVariable rVar = new BPLVariable(r, new BPLTypeName(REF_TYPE));
+        checkingCommand.add(new BPLAssumeCommand(forall(rVar, 
+        		implies(heap1(var(rVar.getName()), var(ALLOC_FIELD)), 
+        				logicalAnd(
+        						heap1(var(rVar.getName()), var(CREATED_BY_CTXT_FIELD)), 
+        						logicalNot(heap1(var(rVar.getName()), var(EXPOSED_FIELD))))))));
+        checkingCommand.add(new BPLAssumeCommand(forall(rVar, 
+        		implies(heap2(var(rVar.getName()), var(ALLOC_FIELD)), 
+        				logicalAnd(
+        						heap2(var(rVar.getName()), var(CREATED_BY_CTXT_FIELD)), 
+        						logicalNot(heap2(var(rVar.getName()), var(EXPOSED_FIELD))))))));
+        
+        // assert inv
+        checkingCommand.addAll(invAssertions);
+        
+        methodBlocks.add(new BPLBasicBlock(INITIAL_CONFIGS_INV_LABEL,
+        		checkingCommand.toArray(new BPLCommand[checkingCommand.size()]),
                 new BPLReturnCommand()));
     }
 
