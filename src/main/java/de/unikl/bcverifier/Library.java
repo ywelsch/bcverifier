@@ -27,8 +27,6 @@ import static b2bpl.translation.CodeGenerator.memberOf;
 import static b2bpl.translation.CodeGenerator.modulo;
 import static b2bpl.translation.CodeGenerator.nonNull;
 import static b2bpl.translation.CodeGenerator.notEqual;
-import static b2bpl.translation.CodeGenerator.old_stack1;
-import static b2bpl.translation.CodeGenerator.old_stack2;
 import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.relNull;
 import static b2bpl.translation.CodeGenerator.related;
@@ -439,10 +437,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2), new BPLIntLiteral(0))));
         
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP1), var(HEAP1)));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(HEAP2)));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK1), var(STACK1)));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK2), var(STACK2)));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
 
         final String i = "i";
         BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
@@ -909,10 +904,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // add variables for measuring progress of local loops
         //////////////////////////////////////////////////////
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(MEASURE1, BPLBuiltInType.INT)));
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_MEASURE1, BPLBuiltInType.INT)));
         localVariables.add(new BPLVariableDeclaration(new BPLVariable(MEASURE2, BPLBuiltInType.INT)));
         localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_MEASURE2, BPLBuiltInType.INT)));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_PLACE1, new BPLTypeName(ADDRESS_TYPE))));
+        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_PLACE2, new BPLTypeName(ADDRESS_TYPE))));
     }
 
     private void addCheckingBlocks(ArrayList<BPLCommand> invAssertions,
@@ -1194,9 +1189,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // check for progress while stalled
         checkingCommand.add(new BPLAssertCommand(
-                ifThenElse(map(var(STALL1), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
+                ifThenElse(map(var(STALL1), var(OLD_PLACE1), var(OLD_PLACE2)),
                 logicalOr(
-                        notEqual(stack2(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
+                        logicalNot(isLocalPlace(var(OLD_PLACE2))),
                         logicalAnd(
                                 less(var(MEASURE2), var(OLD_MEASURE2)),
                                 lessEqual(new BPLIntLiteral(0), var(MEASURE2)),
@@ -1205,19 +1200,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                         ),
                 BPLBoolLiteral.TRUE
                 )));
-        checkingCommand.add(new BPLAssertCommand(
-                ifThenElse(map(var(STALL2), old_stack1(var(PLACE_VARIABLE)), old_stack2(var(PLACE_VARIABLE))),
-                logicalOr(
-                        notEqual(stack1(var(PLACE_VARIABLE)), old_stack1(var(PLACE_VARIABLE))),
-                        logicalAnd(
-                                less(var(MEASURE1), var(OLD_MEASURE1)),
-                                lessEqual(new BPLIntLiteral(0), var(MEASURE1)),
-                                lessEqual(new BPLIntLiteral(0), var(OLD_MEASURE1))
-                        )
-                        ),
-                BPLBoolLiteral.TRUE
-                )));
-        
 
         
         checkingCommand.addAll(localInvAssertions);

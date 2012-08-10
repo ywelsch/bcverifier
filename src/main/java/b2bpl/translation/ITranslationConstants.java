@@ -447,11 +447,10 @@ public static final String ALLOC_FIELD = "alloc";
 
 public static final String IS_LOCAL_PLACE_FUNC = "isLocalPlace";
 
-public static final String MEASURE1 = "measure1";
-
-public static final String OLD_MEASURE1 = "old_measure1";
-
 public static final String MEASURE2 = "measure2";
 
 public static final String OLD_MEASURE2 = "old_measure2";
+
+public static final String OLD_PLACE1 = "old_place1";
+public static final String OLD_PLACE2 = "old_place2";
 }
