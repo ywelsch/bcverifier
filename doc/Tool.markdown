@@ -1,12 +1,14 @@
 Tool
 ====
 
-Library Implementations
------------------------
+The tool BCVerifier is a standalone tool for checking backward compatibility of two Java implementations. As described in the [[Formal Model]] section, the tool takes as input two implementations of a library written in the Java language and a coupling invariant. We provide a command line version and a web front-end to the tool.
 
-The tool BCVerifier is a standalone tool for checking backward compatibility of to Java implementations. It uses the formal model described in "the other section" [ref]. As input the tool uses two implementations made in Java. The implementations that should be checked need to be available as Java source code in two directories. The package structure must be obeyed as usual. These two folders are passed to the verifier using the command line argument `-l <old_implementation> <new_implementation>` where `<old_implementation>` is the path to the source folder of the old library implementation and `<new_implementation>` is the path to the source folder of the new library implementation.
+Command Line Tool
+-----------------
 
-The Java source files are checked for source compatibility first. Source compatibility is a precondition for behavioral backward compatibility. If two library implementations are source compatible then both implementations can be combined with the same program contexts yielding valid Java programs each. [conditions here or in the Formal Model chapter?] By specifying the command line argument `-c` the library files are compiled using the right compiler flags to support all the functionality of the tool.
+The implementations that should be checked need to be available as Java source code in two directories. The package structure must be obeyed as usual. These two folders are passed to the verifier using the command line argument `-l <old_implementation> <new_implementation>` where `<old_implementation>` is the path to the source folder of the old library implementation and `<new_implementation>` is the path to the source folder of the new library implementation.
+
+The Java source files are checked for source compatibility first. Source compatibility is a necessary condition for (behavioral) backward compatibility. If two library implementations are source compatible then both implementations can be combined with the same program contexts yielding valid Java programs each. By specifying the command line argument `-c` the library files are compiled using the right compiler flags to support all the functionality of the tool.
 
 
 Coupling Invariant
@@ -14,9 +16,9 @@ Coupling Invariant
 
 The coupling invariant can be specified using one of two possible syntaxes.
 
-  - The Boogie syntax uses pure Boogie expressions. No afford is made to check that the invariant specified is valid with respect to inconsistencies with the prelude or other essential syntactic and semantic restrictions. The Boogie specifications are directly inserted as is into the generated Boogie program. *Use with care!*
+  - The [[Invariant Specification Language]] is a high level specification language assisting to specify the coupling invariant. Files in this language are validated against the Java code and transformed into a consistent Boogie specification. Specifications of this type must have the file ending `isl`.
 
-  - The Invariant Specification Syntax is a high level specification language assisting to specify the coupling invariant. Files in this language are validated against the Java code and transformed into a consistent Boogie specification.
+  - The Boogie syntax uses pure Boogie expressions. No effort is made to check that the invariant specified is valid with respect to inconsistencies with the prelude or other essential syntactic and semantic restrictions. The Boogie specifications are directly inserted as is into the generated Boogie program. *Use with care!* Specifications of this type must have the file ending `bsl`.
 
 Both types of specifications are specified using the command line argument `-s <invariant_file>` where `<invariant_file>` is the path to the specification.
 

@@ -149,6 +149,13 @@ public class SourceCompChecker {
 			IMethodBinding m2 = Bindings.findMethodInHierarchy(t2, m1.getName(), paramsString);
 			if (m2 == null) {
 				throw new SourceInCompatibilityException("Method " + m1 + " for type " + t1.getQualifiedName() + " not found in new implementation");
+			} else {
+				if (Modifier.isPublic(m1.getModifiers()) && !Modifier.isPublic(m2.getModifiers())) {
+					throw new SourceInCompatibilityException("Cannot decrease accessibility of method " + m2 + " in type " + t2.getQualifiedName());
+				}
+				if (Modifier.isProtected(m1.getModifiers()) && !(Modifier.isPublic(m2.getModifiers()) || Modifier.isProtected(m2.getModifiers()))) {
+					throw new SourceInCompatibilityException("Cannot decrease accessibility of method " + m2 + " in type " + t2.getQualifiedName());
+				}
 			}
 		}
 		// static methods and constructors
