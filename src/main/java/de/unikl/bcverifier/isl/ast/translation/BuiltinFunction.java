@@ -3,6 +3,7 @@ package de.unikl.bcverifier.isl.ast.translation;
 import java.util.ArrayList;
 import java.util.List;
 
+import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLExpression;
 
 import de.unikl.bcverifier.isl.ast.Def;
@@ -44,6 +45,10 @@ public abstract class BuiltinFunction extends Def {
 	public ExprType attrType() {
 		return returnType;
 	}
+	
+	public ExprType exactType(de.unikl.bcverifier.isl.ast.List<Expr> arguments) {
+		return attrType();
+	}
 
 	public List<ExprType> getParameterTypes() {
 		return parameterTypes;
@@ -51,5 +56,8 @@ public abstract class BuiltinFunction extends Def {
 
 	public abstract BPLExpression translateCall(de.unikl.bcverifier.isl.ast.List<Expr> arguments);
 	
+	public BPLExpression translateWelldefinedness(de.unikl.bcverifier.isl.ast.List<Expr> arguments) {
+		return BPLBoolLiteral.TRUE;
+	}
 
 }

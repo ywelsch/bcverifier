@@ -194,8 +194,12 @@ public class BoogieGenerator extends AbstractGenerator {
 	}
     
     @Override
-    public List<String> generateLocalInvariant() {
-        return localInvariants;
+    public List<SpecInvariant> generateLocalInvariant() {
+        List<SpecInvariant> result = new ArrayList<SpecInvariant>();
+		for (String inv : localInvariants) {
+			result.add(new SpecInvariant(new BPLVariableExpression(inv), null));
+		}
+		return result;
     }
     
     @Override

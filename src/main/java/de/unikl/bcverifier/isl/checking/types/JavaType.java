@@ -55,6 +55,9 @@ public class JavaType extends ExprType {
 	
 
 	public boolean isSubtypeOf(ExprType t) {
+		if (t instanceof ExprTypeAny) {
+			return true;
+		}
 		if (t instanceof JavaType) {
 			JavaType j = (JavaType) t;
 			if (j.version != Version.BOTH && j.version != version) {

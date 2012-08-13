@@ -4,7 +4,7 @@ import de.unikl.bcverifier.isl.checking.TypeHelper;
 
 aspect exprType {
 	
-	syn lazy ExprType Expr.attrType();
+	syn ExprType Expr.attrType() circular [UnknownType.instance()];
 	
 	eq ForallExpr.attrType() = ExprTypeBool.instance();
 

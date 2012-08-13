@@ -5,19 +5,17 @@ aspect lookup {
 	syn Def ASTNode.lookup(String name) = getParent().lookup(name); 
 	
 	
-	eq Expr.lookup(String name) {
-		for (Def d : attrDefinedVars()) {
-			if (d.attrName().equals(name)) {
-				return d;
-			}
-		}
-		return getParent().lookup(name);
-	}
+	eq Expr.lookup(String name) = TypeHelper.lookup(this, name);
 	
 	
 	eq CompilationUnit.lookup(String name) {
 		if (getBuiltinFunctions().get(name) != null) {
 			return getBuiltinFunctions().get(name);
+		}
+		for (Def d : attrDefinedVars()) {
+			if (d.attrName().equals(name)) {
+				return d;
+			}
 		}
 		return new UnknownDef();
 	}

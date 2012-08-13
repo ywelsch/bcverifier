@@ -38,7 +38,7 @@ public class AbstractGenerator implements Generator {
 	}
 	
     @Override
-    public List<String> generateLocalInvariant() throws GenerationException {
+    public List<SpecInvariant> generateLocalInvariant() throws GenerationException {
         return Collections.emptyList();
     }
     

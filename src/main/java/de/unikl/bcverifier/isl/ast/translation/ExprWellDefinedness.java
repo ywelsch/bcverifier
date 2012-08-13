@@ -12,6 +12,7 @@ import b2bpl.bpl.ast.BPLLogicalNotExpression;
 import b2bpl.bpl.ast.BPLNullLiteral;
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.BoolConst;
+import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.ErrorExpr;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.ForallExpr;
@@ -50,6 +51,11 @@ public class ExprWellDefinedness {
 		ArrayList<BPLExpression> parameterchecks = new ArrayList<BPLExpression>();
 		for (Expr p : funcCall.getArgumentList()) {
 			parameterchecks.add(p.translateExprWellDefinedness());
+		}
+		Def funcDef = funcCall.attrDef();
+		if (funcDef instanceof BuiltinFunction) {
+			BuiltinFunction builtinFunction = (BuiltinFunction) funcDef;
+			parameterchecks.add(builtinFunction.translateWelldefinedness(funcCall.getArgumentList()));
 		}
 		return conjunction(parameterchecks);
 	}
@@ -151,7 +157,7 @@ public class ExprWellDefinedness {
 		return result;
 	}
 
-	private static BPLExpression conjunction(BPLExpression... exprs) {
+	public static BPLExpression conjunction(BPLExpression... exprs) {
 		BPLExpression result = BPLBoolLiteral.TRUE;
 		for (BPLExpression e : exprs) {
 			if (result == BPLBoolLiteral.TRUE) {

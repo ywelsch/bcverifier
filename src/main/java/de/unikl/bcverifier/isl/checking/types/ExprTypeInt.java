@@ -11,7 +11,7 @@ public class ExprTypeInt extends ExprType {
 	private ExprTypeInt() {}
 
 	public boolean isSubtypeOf(ExprType t) {
-		return t instanceof ExprTypeInt;
+		return t instanceof ExprTypeInt || t instanceof ExprTypeAny;
 	}
 	
 	@Override

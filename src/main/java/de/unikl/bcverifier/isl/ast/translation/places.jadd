@@ -1,0 +1,19 @@
+aspect translate {
+	
+	syn int PlacePosition.attrLine();
+	
+	eq LineNrPlacePosition.attrLine() = getPlaceLineNr();
+	
+	syn Version PlacePosition.attrVersion();
+	
+	eq LineNrPlacePosition.attrVersion() {
+		ExprType t = getTypeDef().attrType();
+    	if (t instanceof JavaType) {
+			JavaType javaType = (JavaType) t;
+    		return javaType.getVersion();
+    	}
+    	throw new Error("could not get version");
+	}
+	
+	
+}

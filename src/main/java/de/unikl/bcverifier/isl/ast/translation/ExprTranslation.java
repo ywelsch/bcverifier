@@ -50,6 +50,8 @@ public class ExprTranslation {
 		switch (e.getOperator()) {
 		case IMPLIES:
 			return new BPLBinaryLogicalExpression(BPLBinaryLogicalExpression.Operator.IMPLIES, left, right);
+		case IFF:
+			return new BPLBinaryLogicalExpression(BPLBinaryLogicalExpression.Operator.EQUIVALENCE, left, right);
 		case AND:
 			return new BPLBinaryLogicalExpression(BPLBinaryLogicalExpression.Operator.AND, left, right);
 		case OR:

@@ -1,5 +1,8 @@
 package de.unikl.bcverifier;
 
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 
 import de.unikl.bcverifier.isl.ast.Version;
@@ -46,6 +49,30 @@ public class TwoLibraryModel {
 		default:
 			throw new Error("not implemented");
 		}
+	}
+	
+	public ASTNode findDeclaringNode(Version version, IBinding binding) {
+		switch (version) {
+		case NEW:
+			return src2.findDeclaringNode(binding);
+		case OLD:
+			return src1.findDeclaringNode(binding);
+		case BOTH:
+		default:
+			throw new Error("not implemented");
+		}
+	}
+
+	public int getLineNr(ASTNode node) {
+		ASTNode n = node;
+		while (n != null && !(n instanceof CompilationUnit)) {
+			n = n.getParent();
+		}
+		if (n instanceof CompilationUnit) {
+			CompilationUnit cu = (CompilationUnit) n;
+			return cu.getLineNumber(node.getStartPosition());
+		}
+		return 0;
 	}
 
 }

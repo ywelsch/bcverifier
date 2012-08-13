@@ -12,6 +12,9 @@ import org.apache.wicket.util.string.Strings;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+
 import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLExpression;
@@ -52,6 +55,16 @@ public class ISLParserTest {
 		testTypeCheckOk(
 				new File("./libraries/cb/old"), 
 				new File("./libraries/cb/new"), cu);
+		System.out.println("cb output:");
+		translateAndPrint(cu);
+	}
+	
+	@Test
+	public void localLoop() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(Files.toString(new File("./libraries/localLoop/bpl/spec4.isl"), Charsets.UTF_8));
+		testTypeCheckOk(
+				new File("./libraries/localLoop/old"), 
+				new File("./libraries/localLoop/new"), cu);
 		System.out.println("cb output:");
 		translateAndPrint(cu);
 	}
@@ -117,14 +130,28 @@ public class ISLParserTest {
 	}
 	
 	protected void translateAndPrint(CompilationUnit cu) {
-		List<SpecInvariant> translated = cu.generateInvariants();
-		for (SpecInvariant inv : translated) {
-			PrintWriter pw = new PrintWriter(System.out);
-			BPLPrinter printer = new BPLPrinter(pw);
-			inv.getInvExpr().accept(printer);
-			pw.flush();
-			System.out.println();
+		PrintWriter pw = new PrintWriter(System.out);
+		for (SpecInvariant inv : cu.generateInvariants()) {
+			print(pw, inv);
 		}
+		
+		for (SpecInvariant inv : cu.generateLocalInvariants()) {
+			print(pw, inv);
+		}
+		
+		
+	}
+
+	private void print(PrintWriter pw, SpecInvariant inv) {
+		BPLPrinter printer = new BPLPrinter(pw);
+		pw.println("// " + inv.getComment());
+		pw.println("// welldefinedness:");
+		inv.getWelldefinednessExpr().accept(printer);
+		pw.println();
+		pw.println("// translated:");
+		inv.getInvExpr().accept(printer);
+		pw.flush();
+		pw.println();
 	}
 	
 	

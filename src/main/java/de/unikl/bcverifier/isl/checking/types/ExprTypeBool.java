@@ -11,7 +11,7 @@ public class ExprTypeBool extends ExprType {
 	private ExprTypeBool() {}
 
 	public boolean isSubtypeOf(ExprType t) {
-		return t instanceof ExprTypeBool;
+		return t instanceof ExprTypeBool || t instanceof ExprTypeAny;
 	}
 	
 	@Override

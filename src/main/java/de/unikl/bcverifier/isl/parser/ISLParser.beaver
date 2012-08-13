@@ -67,7 +67,7 @@ import de.unikl.bcverifier.isl.ast.*;
 	MOD, MULT, DIV, PLUS, MINUS, NOT,
 	EQUALS, UNEQUALS,
 	COLON, COLONCOLON, COMMA, LPAREN, RPAREN, SEMI,
-	IMPLIES, AND, OR, RELATED,
+	IMPLIES, IFF, AND, OR, RELATED,
 	INTLITERAL, NULL
 ;
 
@@ -81,6 +81,7 @@ import de.unikl.bcverifier.isl.ast.*;
 %left AND;
 %left OR;
 %right IMPLIES;
+%left IFF;
 %left THEN;
 %left FORALL;
 
@@ -140,6 +141,8 @@ expr =
     	{: return new BinaryOperation(BinaryOperator.RELATED, left, right); :}
     | expr.left IMPLIES expr.right
     	{: return new BinaryOperation(BinaryOperator.IMPLIES, left, right); :}
+    | expr.left IFF expr.right
+    	{: return new BinaryOperation(BinaryOperator.IFF, left, right); :}
     | expr.left AND expr.right
     	{: return new BinaryOperation(BinaryOperator.AND, left, right); :}
     | expr.left OR expr.right

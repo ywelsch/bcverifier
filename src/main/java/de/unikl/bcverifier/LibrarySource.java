@@ -7,6 +7,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
@@ -68,6 +69,16 @@ public class LibrarySource {
 		}
 		if (result.size() == 1) {
 			return result.get(0);
+		}
+		return null;
+	}
+	
+	public ASTNode findDeclaringNode(IBinding binding) {
+		for (CompilationUnit cu : units) {
+			ASTNode node = cu.findDeclaringNode(binding);
+			if (node != null) {
+				return node;
+			}
 		}
 		return null;
 	}

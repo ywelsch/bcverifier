@@ -12,5 +12,13 @@ aspect definedVars {
 		return result;
 	}
 	
+	syn lazy Collection<Def> CompilationUnit.attrDefinedVars() {
+		ArrayList<Def> result = new ArrayList<Def>();
+		for (Statement d : getStatements()) {
+			result.add(d);
+		}
+		return result;
+	}
+	
 	
 }

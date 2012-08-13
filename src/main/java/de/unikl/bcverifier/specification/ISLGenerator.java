@@ -84,16 +84,15 @@ public class ISLGenerator extends AbstractGenerator {
     	return cu.generateInvariants();
 	}
 
+	@Override
+	public List<SpecInvariant> generateLocalInvariant()	throws GenerationException {
+		init();
+		return cu.generateLocalInvariants();
+	}
 	
-
-
-	private String exprToString(BPLExpression inv) {
-		Writer s = new StringWriter();
-		PrintWriter pw = new PrintWriter(s);
-		BPLPrinter printer = new BPLPrinter(pw );
-		inv.accept(printer);
-		pw.flush();
-		String string = s.toString();
-		return string;
+	@Override
+	public LocalPlaceDefinitions generateLocalPlaces() throws GenerationException {
+		init();
+		return cu.generatePlaces();
 	}
 }

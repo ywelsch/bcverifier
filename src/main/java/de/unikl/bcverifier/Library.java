@@ -418,11 +418,18 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         	invAssumes.add(cmd);
         }
 
-        for (String inv : specGen.generateLocalInvariant()) {
-        	cmd = new BPLAssertCommand(var(inv));
+        for (SpecInvariant inv : specGen.generateLocalInvariant()) {
+        	if (inv.getWelldefinednessExpr() != null) {
+        		cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
+        		cmd.addComment(inv.getComment());
+        		cmd.addComment("check welldefinedness:");
+        		invAssumes.add(cmd);
+        		invAssertions.add(cmd);
+        	}
+        	cmd = new BPLAssertCommand(inv.getInvExpr());
         	cmd.addComment("local invariant");
         	localInvAssertions.add(cmd);
-        	cmd = new BPLAssumeCommand(var(inv));
+        	cmd = new BPLAssumeCommand(inv.getInvExpr());
         	cmd.addComment("local invariant");
         	localInvAssumes.add(cmd);
         }        

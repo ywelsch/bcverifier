@@ -1,7 +1,7 @@
 import de.unikl.bcverifier.isl.ast.translation.*;
 import b2bpl.bpl.ast.BPLExpression;
 import de.unikl.bcverifier.specification.SpecInvariant;
-
+import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 
 aspect translate {
 	
@@ -24,6 +24,13 @@ aspect translate {
 		return Translation.generateInvariants(this);
 	}
 	
+	public java.util.List<SpecInvariant> CompilationUnit.generateLocalInvariants() {
+		return Translation.generateLocalInvariants(this);
+	}
+	
+	public LocalPlaceDefinitions CompilationUnit.generatePlaces() {
+		return Translation.generatePlaces(this);
+	}
 	
 	syn BPLExpression Expr.translateExprWellDefinedness();
 	
