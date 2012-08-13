@@ -44,10 +44,10 @@ public class SingleTestRunner {
             if(doCheck){
                 VerificationResult result = CheckRunner.runCheck(test);
                 if(result.isLastRunSuccess()){
+                    Logger.getLogger(SingleTestRunner.class).info("Test completed successfully.");
+                } else {
                     Logger.getLogger(SingleTestRunner.class).error("Check did not succeed!");
                     Logger.getLogger(SingleTestRunner.class).error(result.getLastMessage());
-                } else {
-                    Logger.getLogger(SingleTestRunner.class).info("Test completed successfully.");
                 }
             } else {
                 CheckRunner.generate(test, new File(test.getLibDir(), "bpl"));

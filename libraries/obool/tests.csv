@@ -1,11 +1,11 @@
 "specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
-"bpl/spec1.bsl",""     ,2                ,0                 ,2
-"bpl/spec1.bsl",""     ,2                ,0                 ,3
-"bpl/spec1.bsl",""     ,0                ,0                 ,7
-"bpl/spec2.bsl",""     ,2                ,0                 ,2
-"bpl/spec2.bsl",""     ,2                ,0                 ,3
-"bpl/spec2.bsl",""     ,0                ,0                 ,7
-"bpl/spec3.bsl",""     ,1                ,0                 ,7
-"bpl/spec4.bsl",""     ,0                ,0                 ,7
-"bpl/spec5.bsl",""     ,1                ,0                 ,7
-"bpl/spec.isl" ,""     ,0                ,0                 ,7
+"bpl/spec1.bsl","--short"     ,2                ,0                 ,2
+"bpl/spec1.bsl","--short"     ,2                ,0                 ,3
+"bpl/spec1.bsl","--short"     ,0                ,0                 ,7
+"bpl/spec2.bsl","--short"     ,2                ,0                 ,2
+"bpl/spec2.bsl","--short"     ,2                ,0                 ,3
+"bpl/spec2.bsl","--short"     ,0                ,0                 ,7
+"bpl/spec3.bsl","--short"     ,1                ,0                 ,7
+"bpl/spec4.bsl","--short"     ,0                ,0                 ,7
+"bpl/spec5.bsl","--short"     ,1                ,0                 ,7
+"bpl/spec.isl" ,"--short"     ,0                ,0                 ,7

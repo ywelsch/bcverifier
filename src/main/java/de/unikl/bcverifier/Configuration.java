@@ -49,7 +49,10 @@ public class Configuration implements Serializable {
     private VerifyAction action = VerifyAction.VERIFY;
 	@Parameter(names = {"-k", "--sourcecompatibility"}, description = "Check source compatibility") @WebGUI
     private boolean checkSourceCompatibility = false;
-    
+    @Parameter(names = {"--short"}, description = "Reduces the time needed to verify backward compatibility by only checking a single interactio frame. Does not detect influences to other interaction frames.")
+	private boolean shortCheck = false;
+	
+	
     @Parameter(names = {"-s", "-i" , "--specification"}, description = "Path to the file containing the specification", required = true, validateWith = Configuration.FileValidator.class)
     private File specification;
     @Parameter(names = {"-st" , "--specificationtype"}, description = "The type of the specification (one of [BSL, ISL])", required = false)
@@ -168,6 +171,12 @@ public class Configuration implements Serializable {
     }
     public void setSmokeTestOn(boolean smoke) {
         this.smoke = smoke;
+    }
+    public boolean isShortCheck() {
+        return shortCheck;
+    }
+    public void setShortCheck(boolean shortCheck) {
+        this.shortCheck = shortCheck;
     }
     public boolean isNullChecks() {
         return !disableNullChecks;
