@@ -1,9 +1,9 @@
 >>>invariant
 (forall o1,o2: Ref :: ObjOfType(o1, $C, heap1) && ObjOfType(o2, $C, heap2) && related[o1, o2] ==> RelNull(heap1[o1, $C.list], heap2[o2, $C.list], related))
 
-ip1 % 2 == 0 ==> (stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object0 <==> stack2[ip2-1][spmap2[ip2-1]][place] == lib2_C.m_set$int$java.lang.Object0)
-(ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object0) ==> (stack1[ip1-1][spmap1[ip1-1]][reg1_i] == stack2[ip2-1][spmap2[ip2-1]][reg1_i])
-(ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object0) ==> (spmap1[ip1-1] == 0 && spmap2[ip2-1] == 0)
+(forall iframe: int :: 0<=iframe && iframe<=ip1 && iframe % 2 == 1 ==> (stack1[iframe][spmap1[iframe]][place] == lib1_C.m_set$int$java.lang.Object0) ==> (stack2[iframe][spmap2[iframe]][place] == lib2_C.m_set$int$java.lang.Object0))
+(forall iframe: int :: 0<=iframe && iframe<=ip1 && iframe % 2 == 1 ==> (stack1[iframe][spmap1[iframe]][place] == lib1_C.m_set$int$java.lang.Object0) ==> (stack1[iframe][spmap1[iframe]][reg1_i] == stack2[iframe][spmap2[iframe]][reg1_i]))
+(forall iframe: int :: 0<=iframe && iframe<=ip1 && iframe % 2 == 1 ==> (stack1[iframe][spmap1[iframe]][place] == lib1_C.m_set$int$java.lang.Object0) ==> (spmap1[iframe] == 0 && spmap2[iframe] == 0))
 <<<
 >>>preconditions
 useHavoc[lib1_C.m_set$int$java.lang.Object0] := false;
