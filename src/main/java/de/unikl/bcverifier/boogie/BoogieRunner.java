@@ -108,6 +108,7 @@ public class BoogieRunner {
             ArrayList<String> parameters = new ArrayList<String>();
             Collections.addAll(parameters, getBoogieCommand().split(" "));
             parameters.add("/nologo");
+            parameters.add("/noinfer");
             parameters.add("/loopUnroll:" + loopUnroll);
             if(smokeTest){
                 parameters.add("/smoke");

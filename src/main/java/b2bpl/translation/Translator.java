@@ -57,6 +57,7 @@ import static b2bpl.translation.CodeGenerator.obj;
 import static b2bpl.translation.CodeGenerator.objectCoupling;
 import static b2bpl.translation.CodeGenerator.oneClassDown;
 import static b2bpl.translation.CodeGenerator.quantVarName;
+import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.refOfType;
 import static b2bpl.translation.CodeGenerator.relNull;
 import static b2bpl.translation.CodeGenerator.related;
@@ -1438,8 +1439,8 @@ public class Translator implements ITranslationConstants {
             
             addDeclaration(new BPLTypeAlias(STACK_TYPE, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(INTERACTION_FRAME_TYPE))));
 
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK1, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))))); // TODO extend to all interaction frames
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK2, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))))); // TODO extend to all interaction frames
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK1, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(STACK2, new BPLTypeName(STACK_TYPE), wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2)))));
 
             addFunction(WELLFORMED_STACK_FUNC, new BPLType[]{new BPLTypeName(STACK_TYPE), BPLBuiltInType.INT, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)), new BPLTypeName(HEAP_TYPE)}, BPLBuiltInType.BOOL);
             addAxiom(forall(
@@ -1452,7 +1453,8 @@ public class Translator implements ITranslationConstants {
                             forall(jVar, pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr(greater(var(j), var(i)), logicalAnd(lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), intLiteral(0)))),
                             forall(jVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i))),
                                     lessEqual(new BPLIntLiteral(0), map(var(spmap), var(j)))
-                                ))
+                                )),
+                            forall(jVar, pVar, implies(logicalAnd(lessEqual(var(j), var(i)), isEqual(modulo(var(j), new BPLIntLiteral(2)), new BPLIntLiteral(0)), lessEqual(new BPLIntLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), map(var(heap), map1(var(stack), var(j), var(p), receiver()), var(CREATED_BY_CTXT_FIELD))))
                             )
                     )
                     ));

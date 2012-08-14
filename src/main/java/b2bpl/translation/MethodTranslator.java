@@ -3135,7 +3135,31 @@ public class MethodTranslator implements ITranslationConstants {
             // is the invoked method a super-constructor called in the current constructor?
             //   - every constructors calls a super-constructor, the most general is Object..init()
             boolean isSuperConstructor = isSuperConstructorCall(invokedMethod, handle);
+            
+            BPLExpression spmapMinus1 = sub(spmap(), new BPLIntLiteral(1));
+            BPLExpression ipMinus1 = sub(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1));
 
+            // get return type of method
+            //   - normal method: explicitely declared return type
+            //   - constructor: type of the owner object
+            JType retType = (invokedMethod.isConstructor()
+                    ? invokedMethod.getOwner()
+                            : invokedMethod.getReturnType()
+                    );
+            
+            
+            
+            //special handling of java.lang.Object.<init>
+            if("<init>".equals(insn.getMethod().getName()) && "java.lang.Object".equals(insn.getMethodOwner().getName()) ){
+                addAssignment(
+                        stack(var(stackVar(first, retType))), 
+                        stack(var(stackVar(first, invokedMethodParams[0]))), 
+                        "constructor call: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner()
+                        );
+                return;
+            }
+            
+            
 
             // Non-static method calls may throw a NullPointerException.
                     
@@ -3154,17 +3178,6 @@ public class MethodTranslator implements ITranslationConstants {
                 String nextLabel = tc.nextLabel();
                 String boundaryLabel = nextLabel + BOUNDARY_LABEL_POSTFIX;
                 String internLabel =  nextLabel + INTERN_LABEL_POSTFIX;
-                
-                // get return type of method
-                //   - normal method: explicitely declared return type
-                //   - constructor: type of the owner object
-                JType retType = (invokedMethod.isConstructor()
-                        ? invokedMethod.getOwner()
-                                : invokedMethod.getReturnType()
-                        );
-                
-                BPLExpression spmapMinus1 = sub(spmap(), new BPLIntLiteral(1));
-                BPLExpression ipMinus1 = sub(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1));
                 
                 BPLVariable iftmpVar = new BPLVariable(INTERACTION_FRAME_TEMP, new BPLTypeName(INTERACTION_FRAME_TYPE));
                 tc.usedVariables().put(INTERACTION_FRAME_TEMP, iftmpVar);

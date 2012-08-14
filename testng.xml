@@ -1,0 +1,9 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+  
+<suite name="LibraryTests" verbose="1" data-provider-thread-count="6">
+  <test name="Libraries" >
+    <classes>
+       <class name="de.unikl.bcverifier.tests.LibraryTestsNG" />
+    </classes>
+  </test>
+</suite>

@@ -264,11 +264,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             BPLVariable[] inParams = new BPLVariable[0];
             BPLVariable[] outParams = new BPLVariable[0];
 
-            
-            addLocalVariables(localVariables);
-
             addPreconditionBlocks(invAssumes, localInvAssumes, methodBlocks);
             
+            addLocalVariables(localVariables);
             
             addVariableConstants(programDecls, methodBlocks);
             
@@ -523,37 +521,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.addAll(invAssumes);
         
         
-        final String iftmp = "iftmp";
-        BPLVariable iftmpVar = new BPLVariable(iftmp, new BPLTypeName(INTERACTION_FRAME_TYPE));
-        tc.usedVariables().put(iftmp, iftmpVar);
-        BPLCommand command;
-        //create interaction frame and stack frame of the library
-        command = new BPLHavocCommand(var(iftmp));
-        command.addComment("this creates the frame we will use for the library call");
-        procAssumes.add(command);
-        procAssumes.add(new BPLAssignmentCommand(map(var(STACK1), add(var(IP1_VAR), new BPLIntLiteral(1))), var(iftmp)));
-        
-        command = new BPLAssignmentCommand(var(IP1_VAR), add(var(IP1_VAR), new BPLIntLiteral(1)));
-        command.addComment("create new interaction frame");
-        procAssumes.add(command);
-        command = new BPLAssignmentCommand(spmap1(), new BPLIntLiteral(0));
-        command.addComment("create the initial stack frame of the new interaction frame");
-        procAssumes.add(command);
-        procAssumes.add(new BPLAssumeCommand(wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
-        
-        //create interaction frame and stack frame of the library
-        command = new BPLHavocCommand(var(iftmp));
-        command.addComment("this creates the frame we will use for the library call");
-        procAssumes.add(command);
-        procAssumes.add(new BPLAssignmentCommand(map(var(STACK2), add(var(IP2_VAR), new BPLIntLiteral(1))), var(iftmp)));
-        
-        command = new BPLAssignmentCommand(var(IP2_VAR), add(var(IP2_VAR), new BPLIntLiteral(1)));
-        command.addComment("create new interaction frame");
-        procAssumes.add(command);
-        command = new BPLAssignmentCommand(spmap2(), new BPLIntLiteral(0));
-        command.addComment("create the initial stack frame of the new interaction frame");
-        procAssumes.add(command);
-        procAssumes.add(new BPLAssumeCommand(wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
+        createLibraryFrame(procAssumes);
         
         
         // assume the result of the method is not yet set
@@ -947,6 +915,40 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         methodBlocks.add(4, new BPLBasicBlock(PRECONDITIONS_LOCAL_LABEL,
                 procAssumes.toArray(new BPLCommand[procAssumes.size()]),
                 new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
+    }
+
+    private void createLibraryFrame(List<BPLCommand> procAssumes) {
+        final String iftmp = "iftmp";
+        BPLVariable iftmpVar = new BPLVariable(iftmp, new BPLTypeName(INTERACTION_FRAME_TYPE));
+        tc.usedVariables().put(iftmp, iftmpVar);
+        BPLCommand command;
+        //create interaction frame and stack frame of the library
+        command = new BPLHavocCommand(var(iftmp));
+        command.addComment("this creates the frame we will use for the library call");
+        procAssumes.add(command);
+        procAssumes.add(new BPLAssignmentCommand(map(var(STACK1), add(var(IP1_VAR), new BPLIntLiteral(1))), var(iftmp)));
+        
+        command = new BPLAssignmentCommand(var(IP1_VAR), add(var(IP1_VAR), new BPLIntLiteral(1)));
+        command.addComment("create new interaction frame");
+        procAssumes.add(command);
+        command = new BPLAssignmentCommand(spmap1(), new BPLIntLiteral(0));
+        command.addComment("create the initial stack frame of the new interaction frame");
+        procAssumes.add(command);
+        procAssumes.add(new BPLAssumeCommand(wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
+        
+        //create interaction frame and stack frame of the library
+        command = new BPLHavocCommand(var(iftmp));
+        command.addComment("this creates the frame we will use for the library call");
+        procAssumes.add(command);
+        procAssumes.add(new BPLAssignmentCommand(map(var(STACK2), add(var(IP2_VAR), new BPLIntLiteral(1))), var(iftmp)));
+        
+        command = new BPLAssignmentCommand(var(IP2_VAR), add(var(IP2_VAR), new BPLIntLiteral(1)));
+        command.addComment("create new interaction frame");
+        procAssumes.add(command);
+        command = new BPLAssignmentCommand(spmap2(), new BPLIntLiteral(0));
+        command.addComment("create the initial stack frame of the new interaction frame");
+        procAssumes.add(command);
+        procAssumes.add(new BPLAssumeCommand(wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
     }
 
     private void addLocalVariables(List<BPLVariableDeclaration> localVariables) {
