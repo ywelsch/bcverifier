@@ -3304,8 +3304,8 @@ public class MethodTranslator implements ITranslationConstants {
                     
                     if(!isSuperConstructor){
                         // we created the object, so it is not createdByCtxt and not exposed
-                        addAssume(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we hace constructed the object on our own
-                        addAssume(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+                        addAssert(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we have constructed the object on our own
+                        addAssert(logicalNot(heap(stack(var(PARAM_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
                     }
                     
                     BPLBasicBlock block = new BPLBasicBlock(
@@ -3478,7 +3478,6 @@ public class MethodTranslator implements ITranslationConstants {
                 String contLabel = tc.nextLabel() + "_cont";
                 
                 startBlock(tc.nextLabel());
-//              addAssignment(stack(receiver()), var("reg0_r"));//TODO correct expression here
 
               if(!invokedMethod.isConstructor()){
                   addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
