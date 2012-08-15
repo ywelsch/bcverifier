@@ -144,7 +144,7 @@ startScripts {
 war {
 	archiveName = 'bcverifier.war'
 	from(destDocDir) {
-		include '**/*.html'
+		include '**/*'
 	}
 }
 
