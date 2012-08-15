@@ -63,6 +63,8 @@ import static b2bpl.translation.CodeGenerator.relNull;
 import static b2bpl.translation.CodeGenerator.related;
 import static b2bpl.translation.CodeGenerator.spmap1;
 import static b2bpl.translation.CodeGenerator.spmap2;
+import static b2bpl.translation.CodeGenerator.stack1;
+import static b2bpl.translation.CodeGenerator.stack2;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.trigger;
 import static b2bpl.translation.CodeGenerator.typ;
@@ -1454,10 +1456,22 @@ public class Translator implements ITranslationConstants {
                             forall(jVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i))),
                                     lessEqual(new BPLIntLiteral(0), map(var(spmap), var(j)))
                                 )),
-                            forall(jVar, pVar, implies(logicalAnd(lessEqual(var(j), var(i)), isEqual(modulo(var(j), new BPLIntLiteral(2)), new BPLIntLiteral(0)), lessEqual(new BPLIntLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), map(var(heap), map1(var(stack), var(j), var(p), receiver()), var(CREATED_BY_CTXT_FIELD))))
+                            forall(jVar, pVar, implies(logicalAnd(lessEqual(var(j), var(i)), isEqual(modulo(var(j), new BPLIntLiteral(2)), new BPLIntLiteral(0)), lessEqual(new BPLIntLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), map(var(heap), map1(var(stack), var(j), var(p), receiver()), var(CREATED_BY_CTXT_FIELD)))),
+                            forall(spVar, jVar,
+                                    implies(
+                                            logicalAnd(
+                                                    less(var(j), var(i)),
+                                                    lessEqual(var(sp), map(var(spmap), var(j)))
+                                                    ),
+                                            logicalAnd(isNull(map1(var(stack), var(j) ,var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(map1(var(stack), var(j), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+                            ),
+                            forall(spVar,
+                                    implies(
+                                            less(var(sp), map(var(spmap), var(i))),
+                                            logicalAnd(isNull(map1(var(stack), var(i) ,var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(map1(var(stack), var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
                             )
                     )
-                    ));
+                    )));
 
             if (tc.getConfig().extensionalityEnabled()) {
             	addComment("Extensionality for stacks");

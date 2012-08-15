@@ -19,6 +19,7 @@ import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isPublic;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
+import static b2bpl.translation.CodeGenerator.libraryField;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
@@ -597,19 +598,25 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 stack2(var(METH_FIELD)))));
 
 //            // the object is not yet initialized (so the fields have their default value)
-        procAssumes.add( // TODO: only for library fields
+        procAssumes.add(
                 new BPLAssumeCommand(logicalAnd(
                         forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT)),
-                                logicalAnd(
-                                        isEqual(heap1(stack1(receiver()), var("f")), new BPLIntLiteral(0)),
-                                        isEqual(heap2(stack2(receiver()), var("f")), new BPLIntLiteral(0))
-                                        )
+                                implies(
+                                    libraryField(var("f")),
+                                    logicalAnd(
+                                            isEqual(heap1(stack1(receiver()), var("f")), new BPLIntLiteral(0)),
+                                            isEqual(heap2(stack2(receiver()), var("f")), new BPLIntLiteral(0))
+                                            )
+                                    )
                                 ),
                         forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE))),
-                                logicalAnd(
-                                        isNull(heap1(stack1(receiver()), var("f"))),
-                                        isNull(heap2(stack2(receiver()), var("f")))
-                                        )
+                                implies(
+                                    libraryField(var("f")),
+                                    logicalAnd(
+                                            isNull(heap1(stack1(receiver()), var("f"))),
+                                            isNull(heap2(stack2(receiver()), var("f")))
+                                            )
+                                    )
                                 )
                         )
                 ));
@@ -762,31 +769,32 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         }
         
         // assume the result of the method is not yet set
-        procAssumes.add(new BPLAssumeCommand( //TODO: put this into wellformedstack
-                forall(spVar, iVar,
-                        implies(
-                                logicalAnd(
-                                        less(var(i), var(IP1_VAR)),
-                                        lessEqual(var(sp), spmap1(var(i)))
-                                        ),
-                                logicalAnd(isNull(stack1(var(i) ,var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
-                )));
-        procAssumes.add(new BPLAssumeCommand( //TODO: put this into wellformedstack
-                forall(spVar, iVar,
-                        implies(
-                                logicalAnd(
-                                        less(var(i), var(IP2_VAR)),
-                                        lessEqual(var(sp), spmap2(var(i)))
-                                        ),
-                                logicalAnd(isNull(stack2(var(i), var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
-                )));
+//        procAssumes.add(new BPLAssumeCommand( //TODO: put this into wellformedstack
+//                forall(spVar, iVar,
+//                        implies(
+//                                logicalAnd(
+//                                        less(var(i), var(IP1_VAR)),
+//                                        lessEqual(var(sp), spmap1(var(i)))
+//                                        ),
+//                                logicalAnd(isNull(stack1(var(i) ,var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+//                )));
+//        procAssumes.add(new BPLAssumeCommand( //TODO: put this into wellformedstack
+//                forall(spVar, iVar,
+//                        implies(
+//                                logicalAnd(
+//                                        less(var(i), var(IP2_VAR)),
+//                                        lessEqual(var(sp), spmap2(var(i)))
+//                                        ),
+//                                logicalAnd(isNull(stack2(var(i), var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+//                )));
 
         // invariant
         procAssumes.addAll(invAssumes);
 
-        assumeCmd = new BPLAssumeCommand(isEqual(stack1(var(METH_FIELD)), stack2(var(METH_FIELD)))); //TODO: this holds for all interaction frames, put this into wellformedstack?
+        assumeCmd = new BPLAssumeCommand(isEqual(stack1(var(METH_FIELD)), stack2(var(METH_FIELD))));
         assumeCmd.addComment("The methods called on the context have to be the same.");
         procAssumes.add(assumeCmd);
+        
         // relate all parameters from the outside
         // ///////////////////////////////////////
         for (BPLVariable var : tc.stackVariables()
@@ -814,12 +822,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
         // the method has to be overridden -> receiver was created by
         // context
-        assumeCmd = new BPLAssumeCommand(heap1(stack1(receiver()), // TODO: put this into wellformedstack (holds for ALL stack frames in context!)
-                var(CREATED_BY_CTXT_FIELD)));
-        procAssumes.add(assumeCmd);
-        assumeCmd = new BPLAssumeCommand(heap2(stack2(receiver()), // TODO: put this into wellformedstack (holds for ALL stack frames in context!)
-                var(CREATED_BY_CTXT_FIELD)));
-        procAssumes.add(assumeCmd);
+//        assumeCmd = new BPLAssumeCommand(heap1(stack1(receiver()), // TODO: put this into wellformedstack (holds for ALL stack frames in context!)
+//                var(CREATED_BY_CTXT_FIELD)));
+//        procAssumes.add(assumeCmd);
+//        assumeCmd = new BPLAssumeCommand(heap2(stack2(receiver()), // TODO: put this into wellformedstack (holds for ALL stack frames in context!)
+//                var(CREATED_BY_CTXT_FIELD)));
+//        procAssumes.add(assumeCmd);
 
         assumeCmd = new BPLAssumeCommand(implies(
                 hasReturnValue(stack1(var(METH_FIELD))),
@@ -1342,7 +1350,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 checkingCommand.add(new BPLAssumeCommand(logicalAnd(
                 		notEqual(var(SOME_OBJ_TEMP), BPLNullLiteral.NULL),
                 		new BPLArrayExpression(var(heap), var(SOME_OBJ_TEMP), var(ALLOC_FIELD)),
-                		logicalNot(new BPLFunctionApplication(LIBRARY_FIELD_FUNC, var(field))),
+                		logicalNot(libraryField(var(field))),
                 		logicalNot(new BPLFunctionApplication(SYNTHETIC_FIELD_FUNC, var(field)))
                 		)));
                 checkingCommand.add(new BPLAssignmentCommand(

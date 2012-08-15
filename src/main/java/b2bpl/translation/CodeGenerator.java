@@ -1,5 +1,7 @@
 package b2bpl.translation;
 
+import static b2bpl.translation.CodeGenerator.var;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1067,6 +1069,10 @@ public final class CodeGenerator implements ITranslationConstants {
     
     public static BPLExpression isLocalPlace(BPLExpression place){
         return new BPLFunctionApplication(IS_LOCAL_PLACE_FUNC, place);
+    }
+    
+    public static BPLExpression libraryField(BPLExpression field) {
+        return new BPLFunctionApplication(LIBRARY_FIELD_FUNC, field);
     }
     
     
