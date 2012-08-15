@@ -4089,6 +4089,8 @@ public class MethodTranslator implements ITranslationConstants {
             addAssignment(heap(stack(var(refStackVar(stack))), var(ALLOC_FIELD)), BPLBoolLiteral.TRUE);
             addAssume(nonNull(stack(var(refStackVar(stack)))));
             addAssume(isEqual(typ(stack(var(refStackVar(stack))), var(tc.getHeap())), typeRef(insn.getType())));
+            addAssume(logicalNot(heap(stack(var(refStackVar(stack))), var(CREATED_BY_CTXT_FIELD))));
+            addAssume(logicalNot(heap(stack(var(refStackVar(stack))), var(EXPOSED_FIELD))));
             if(tc.getConfig().isAssumeWellformedHeap()){
                 addAssume(wellformedHeap(var(tc.getHeap())));
             }
