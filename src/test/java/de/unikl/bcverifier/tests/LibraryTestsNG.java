@@ -16,6 +16,10 @@ public class LibraryTestsNG extends AbstractLibraryTestsNG {
 	    BoogieRunner runner = new BoogieRunner();
 	    runner.setVerify(true);
 	    runner.runBoogie(boogieFile);
-	    assertTrue(runner.getLastMessage(), runner.getLastErrorCount() == test.getExpectedErrors());
+	    if(test.getExpectedErrors()>0){
+	        assertTrue(runner.getLastMessage(), !runner.getLastReturn() && runner.getLastErrorCount() == test.getExpectedErrors());
+	    } else {
+	        assertTrue(runner.getLastMessage(), runner.getLastReturn());
+	    }
 	}
 }
