@@ -582,7 +582,6 @@ public class Translator implements ITranslationConstants {
 
         // needed variable declarations
         {
-            final String related = RELATED_RELATION;
             final String alloc = ALLOC_FIELD;
             final String exposed = EXPOSED_FIELD;
             final String createdByCtxt = CREATED_BY_CTXT_FIELD;
@@ -597,7 +596,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable fieldBoolVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL));
             BPLVariable heap1Var = new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE));
             BPLVariable heap2Var = new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE));
-            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BIJ_TYPE));
+            BPLVariable relatedVar = new BPLVariable(RELATED_RELATION, new BPLTypeName(BIJ_TYPE));
             final String r1 = "r1";
             BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
             final String r2 = "r2";
@@ -643,7 +642,7 @@ public class Translator implements ITranslationConstants {
 
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(HEAP1)))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(HEAP2)))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName(BIJ_TYPE), wellformedCoupling(var(HEAP1), var(HEAP2), var(related)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(RELATED_RELATION, new BPLTypeName(BIJ_TYPE), wellformedCoupling(var(HEAP1), var(HEAP2), var(RELATED_RELATION)))));
 
             
             addComment("Modified heap, coupling, relation (not original SscBoogie)");
@@ -664,31 +663,33 @@ public class Translator implements ITranslationConstants {
             addFunction(WELLFORMED_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
-                    isEquiv(wellformedCoupling(var(HEAP1), var(HEAP2), var(related)),
+                    isEquiv(wellformedCoupling(var(HEAP1), var(HEAP2), var(RELATED_RELATION)),
                             logicalAnd(
-                                    bijective(var(related)),
-                                    objectCoupling(var(HEAP1), var(HEAP2), var(related)),
-                                    forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(HEAP1),  var(r1), var(exposed)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))))),
-                                    forall(r1Var, implies(logicalAnd(obj(var(HEAP1), var(r1)), new BPLArrayExpression(var(HEAP1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
-                                    forall(r2Var, implies(logicalAnd(obj(var(HEAP2), var(r2)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
-                                    forall(r1Var, r2Var, implies(related(var(r1), var(r2)), forall(tVar, implies(isPublic(var(t)), implies(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t)))))))
+                                    bijective(var(RELATED_RELATION)),
+                                    objectCoupling(var(HEAP1), var(HEAP2), var(RELATED_RELATION)),
+                                    map(var(RELATED_RELATION), nullLiteral(), nullLiteral()),
+                                    forall(r1Var, r2Var, implies(related(var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(HEAP1),  var(r1), var(exposed)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))))),
+                                    forall(r1Var, implies(logicalAnd(obj(var(HEAP1), var(r1)), new BPLArrayExpression(var(HEAP1), var(r1), var(exposed))), exists(r2Var, related(var(r1), var(r2))))),
+                                    forall(r2Var, implies(logicalAnd(obj(var(HEAP2), var(r2)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, related(var(r1), var(r2))))),
+                                    forall(r1Var, r2Var, implies(related(var(r1), var(r2)), forall(tVar, implies(isPublic(var(t)), implies(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t))))))),
+                                    forall(r1Var, r2Var, implies(relNull(var(r1), var(r2), var(RELATED_RELATION)), logicalOr(logicalAnd(nonNull(var(r1)), nonNull(var(r2))), logicalAnd(isNull(var(r1)), isNull(var(r2))))))
                                     ))
                     ));
 
             addFunction(OBJECT_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
-                    isEquiv(objectCoupling(var(HEAP1), var(HEAP2), var(related)),
-                            forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(obj(var(HEAP1), var(r1)), obj(var(HEAP2), var(r2))))))
+                    isEquiv(objectCoupling(var(HEAP1), var(HEAP2), var(RELATED_RELATION)),
+                            forall(r1Var, r2Var, implies(related(var(r1), var(r2)), logicalAnd(obj(var(HEAP1), var(r1)), obj(var(HEAP2), var(r2))))))
                     ));
 
 
             addFunction(BIJECTIVE_FUNC, new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     relatedVar, r1Var, r2Var, r3Var, r4Var,
-                    isEquiv(CodeGenerator.bijective(var(related)),
-                            implies(logicalAnd(new BPLArrayExpression(var(related), var(r1) ,var(r2)),
-                                    new BPLArrayExpression(var(related), var(r3) ,var(r4))),
+                    isEquiv(CodeGenerator.bijective(var(RELATED_RELATION)),
+                            implies(logicalAnd(related(var(r1) ,var(r2)),
+                                    related(var(r3) ,var(r4))),
                                     isEquiv(isEqual(var(r1), var(r3)), isEqual(var(r2), var(r4)))))
                     ));
 
@@ -1175,7 +1176,6 @@ public class Translator implements ITranslationConstants {
 
 
         {
-            final String related = RELATED_RELATION;
             final String alloc = ALLOC_FIELD;
             final String exposed = EXPOSED_FIELD;
             final String createdByCtxt = CREATED_BY_CTXT_FIELD;
@@ -1192,7 +1192,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable vAlphaVar = new BPLVariable(vAlpha, new BPLTypeName("alpha"));
             BPLVariable heap1Var = new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE));
             BPLVariable heap2Var = new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE));
-            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BIJ_TYPE));
+            BPLVariable relatedVar = new BPLVariable(RELATED_RELATION, new BPLTypeName(BIJ_TYPE));
             final String r1 = "r1";
             BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
             final String r2 = "r2";
@@ -1291,22 +1291,22 @@ public class Translator implements ITranslationConstants {
             //                            }
             //                            ))));
 
-            addFunction(REL_NULL_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
-            addAxiom(forall(
-                    r1Var, r2Var, relatedVar,
-                    isEquiv(relNull(var(r1), var(r2), var(related)),
-                    logicalOr(
-                            logicalAnd(
-                                    isNull(var(r1)),
-                                    isNull(var(r2))
-                                    )
-                                    ,
-                            logicalAnd(
-                                    nonNull(var(r1)),
-                                    nonNull(var(r2)),
-                                    new BPLArrayExpression(var(related), var(r1), var(r2))
-                                    )
-                            ))));
+//            addFunction(REL_NULL_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
+//            addAxiom(forall(
+//                    r1Var, r2Var, relatedVar,
+//                    isEquiv(relNull(var(r1), var(r2), var(RELATED_RELATION)),
+//                    logicalOr(
+//                            logicalAnd(
+//                                    isNull(var(r1)),
+//                                    isNull(var(r2))
+//                                    )
+//                                    ,
+//                            logicalAnd(
+//                                    nonNull(var(r1)),
+//                                    nonNull(var(r2)),
+//                                    new BPLArrayExpression(var(RELATED_RELATION), var(r1), var(r2))
+//                                    )
+//                            ))));
 
             addFunction(NON_NULL_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
@@ -1419,7 +1419,7 @@ public class Translator implements ITranslationConstants {
                 addComment("Extensionality for simulations");
                 addAxiom(forall(
                         r1Var, r2Var, relatedVar,
-                        isEqual(new BPLArrayExpression(var(related), new BPLArrayAssignment(new BPLVariableExpression[]{var(r1), var(r2)}, new BPLArrayExpression(var(related), var(r1), var(r2)))), var(related))
+                        isEqual(new BPLArrayExpression(var(RELATED_RELATION), new BPLArrayAssignment(new BPLVariableExpression[]{var(r1), var(r2)}, new BPLArrayExpression(var(RELATED_RELATION), var(r1), var(r2)))), var(RELATED_RELATION))
                         ));
                 
             	addComment("Extensionality for heaps");
