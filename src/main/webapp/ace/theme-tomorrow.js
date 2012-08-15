@@ -49,13 +49,13 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #f6f6f6;\
+  color: #4D4D4C;\
 }\
 \
 .ace-tomorrow .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #f6f6f6;\
 }\
 \
 .ace-tomorrow .ace_scroller {\
@@ -63,7 +63,6 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow .ace_text-layer {\
-  cursor: text;\
   color: #4D4D4C;\
 }\
 \
@@ -203,6 +202,10 @@ background-color:#8959A8;\
 \
 .ace-tomorrow .ace_markup.ace_heading {\
   color:#718C00;\
+}\
+\
+.ace-tomorrow .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4////f4bdu3f/BwAlfgctduB85QAAAABJRU5ErkJggg==) right repeat-y;\
 }";
 
     var dom = require("../lib/dom");

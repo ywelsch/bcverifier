@@ -49,13 +49,13 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-bright .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #1a1a1a;\
+  color: #DEDEDE;\
 }\
 \
 .ace-tomorrow-night-bright .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #1a1a1a;\
 }\
 \
 .ace-tomorrow-night-bright .ace_scroller {\
@@ -63,7 +63,6 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-bright .ace_text-layer {\
-  cursor: text;\
   color: #DEDEDE;\
 }\
 \
@@ -99,7 +98,7 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-bright .ace_gutter_active_line {\
-  background-color : #dcdcdc;\
+  background-color: #2A2A2A;\
 }\
 \
 .ace-tomorrow-night-bright .ace_marker-layer .ace_selected_word {\
@@ -203,6 +202,10 @@ background-color:#B798BF;\
 \
 .ace-tomorrow-night-bright .ace_markup.ace_heading {\
   color:#B9CA4A;\
+}\
+\
+.ace-tomorrow-night-bright .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWNgYGD4z7Bq1ar/AAz9A/2naJQKAAAAAElFTkSuQmCC) right repeat-y;\
 }";
 
     var dom = require("../lib/dom");

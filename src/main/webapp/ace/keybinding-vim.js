@@ -62,7 +62,7 @@ var startCommands = {
     },
     "ctrl-b": {
         command: "gotopageup"
-    },
+    }
 };
 
 exports.handler = {
@@ -1051,27 +1051,27 @@ module.exports = {
                 case "(":
                 case "{":
                 case "[":
-                    var cursor = editor.getCursorPosition()
-                    var end = editor.session.$findClosingBracket(param, cursor, /paren/)
+                    var cursor = editor.getCursorPosition();
+                    var end = editor.session.$findClosingBracket(param, cursor, /paren/);
                     if (!end)
                         return;
-                    var start = editor.session.$findOpeningBracket(editor.session.$brackets[param], cursor, /paren/)
+                    var start = editor.session.$findOpeningBracket(editor.session.$brackets[param], cursor, /paren/);
                     if (!start)
                         return;
                     start.column ++;
-                    editor.selection.setSelectionRange(Range.fromPoints(start, end))
-                    break
+                    editor.selection.setSelectionRange(Range.fromPoints(start, end));
+                    break;
                 case "'":
-                case "\"":
+                case '"':
                 case "/":
-                    var end = find(editor, param, 1)
+                    var end = find(editor, param, 1);
                     if (!end)
                         return;
-                    var start = find(editor, param, -1)
+                    var start = find(editor, param, -1);
                     if (!start)
                         return;
-                    editor.selection.setSelectionRange(Range.fromPoints(start.end, end.start))
-                    break
+                    editor.selection.setSelectionRange(Range.fromPoints(start.end, end.start));
+                    break;
             }
         }
     },
@@ -1389,6 +1389,16 @@ module.exports = {
                         editor.selection.selectLine();
                         registers._default.text += editor.getCopyText();
                         var selRange = editor.getSelectionRange();
+                        // check if end of the document was reached
+                        if (!selRange.isMultiLine()) {
+                            lastLineReached = true
+                            var row = selRange.start.row - 1;
+                            var col = editor.session.getLine(row).length
+                            selRange.setStart(row, col);
+                            editor.session.remove(selRange);
+                            editor.selection.clearSelection();
+                            break;
+                        }
                         editor.session.remove(selRange);
                         editor.selection.clearSelection();
                     }

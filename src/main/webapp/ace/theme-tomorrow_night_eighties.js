@@ -49,13 +49,13 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-eighties .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #272727;\
+  color: #CCC;\
 }\
 \
 .ace-tomorrow-night-eighties .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #272727;\
 }\
 \
 .ace-tomorrow-night-eighties .ace_scroller {\
@@ -63,7 +63,6 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-eighties .ace_text-layer {\
-  cursor: text;\
   color: #CCCCCC;\
 }\
 \
@@ -99,7 +98,7 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-eighties .ace_gutter_active_line {\
-  background-color : #dcdcdc;\
+  background-color: #393939;\
 }\
 \
 .ace-tomorrow-night-eighties .ace_marker-layer .ace_selected_word {\
@@ -199,6 +198,10 @@ background-color:#CC99CC;\
 \
 .ace-tomorrow-night-eighties .ace_markup.ace_heading {\
   color:#99CC99;\
+}\
+\
+.ace-tomorrow-night-eighties .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWPQ1dX9z7Bq1ar/ABE1BITwhhuFAAAAAElFTkSuQmCC) right repeat-y;\
 }";
 
     var dom = require("../lib/dom");

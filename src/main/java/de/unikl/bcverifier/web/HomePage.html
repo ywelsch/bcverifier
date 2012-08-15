@@ -9,6 +9,7 @@
 <script src="ace/theme-cobalt.js" type="text/javascript" charset="utf-8"></script>
 <script src="ace/mode-java.js" type="text/javascript" charset="utf-8"></script>
 <script src="ace/mode-boogie.js" type="text/javascript" charset="utf-8"></script>
+<script src="ace/mode-isl.js" type="text/javascript" charset="utf-8"></script>
 <script>
 function updateEditorSize(editor,editorwrap,textarea) {
 	textarea.value = editor.getSession().getValue();
@@ -41,8 +42,8 @@ function connectInv(libname,talibname,container) {
 	var editorwrap = document.getElementById(libname);
 	var containerid = document.getElementById(container);
 	editor.setTheme("ace/theme/cobalt");
-	 var BoogieMode = require("ace/mode/boogie").Mode; // https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode
-	    editor.getSession().setMode(new BoogieMode());
+	 var ISLMode = require("ace/mode/isl").Mode; // https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode
+	    editor.getSession().setMode(new ISLMode());
 	    editor.renderer.setShowGutter(false);
 	    editor.setShowPrintMargin(false);
 	    editor.setHighlightActiveLine(false);

@@ -49,7 +49,7 @@ exports.cssText = "\
 }\
 \
 .ace-solarized-light .ace_gutter {\
-  background: #e8e8e8;\
+  background: #fbf1d3;\
   color: #333;\
 }\
 \
@@ -63,7 +63,6 @@ exports.cssText = "\
 }\
 \
 .ace-solarized-light .ace_text-layer {\
-  cursor: text;\
   color: #586E75;\
 }\
 \
@@ -169,6 +168,10 @@ exports.cssText = "\
 \
 .ace-solarized-light .ace_markup.ace_underline {\
     text-decoration:underline;\
+}\
+\
+.ace-solarized-light .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4++3xf4ZVq1b9BwAjxwbT1g3hiwAAAABJRU5ErkJggg==) right repeat-y;\
 }";
 
     var dom = require("../lib/dom");

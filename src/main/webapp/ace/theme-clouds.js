@@ -49,7 +49,7 @@ exports.cssText = "\
 }\
 \
 .ace-clouds .ace_gutter {\
-  background: #e8e8e8;\
+  background: #ebebeb;\
   color: #333;\
 }\
 \
@@ -63,7 +63,6 @@ exports.cssText = "\
 }\
 \
 .ace-clouds .ace_text-layer {\
-  cursor: text;\
   color: #000000;\
 }\
 \
@@ -157,6 +156,10 @@ exports.cssText = "\
 \
 .ace-clouds .ace_markup.ace_underline {\
     text-decoration:underline;\
+}\
+\
+.ace-clouds .ace_indent-guide {\
+  background: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4////f4bLly//BwAmVgd1/w11/gAAAABJRU5ErkJggg==\") right repeat-y;\
 }";
 
     var dom = require("../lib/dom");

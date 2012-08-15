@@ -108,7 +108,7 @@ public class HomePage extends WebPage {
 		}
 	}
 	
-	public static Pattern BPL_FILE_DEBUG_PATTERN = Pattern.compile(/*"\\s*" +*/ "(\\w+\\.bpl)\\((\\d+)\\,(\\d+)\\)\\:" /*+ ".*"*/);
+	public static Pattern BPL_FILE_DEBUG_PATTERN = Pattern.compile(/*"\\s*" +*/ ".*\\.bpl\\((\\d+)\\,(\\d+)\\)\\:" /*+ ".*"*/);
 	public static Pattern DIRECTORY_NAME_PATTERN = Pattern.compile("package\\s+(\\w+(\\s*\\.\\s*\\w+)*)\\s*\\;");
 	public static Pattern FILE_NAME_PATTERN = Pattern.compile("(class|interface)\\s+(\\w+)\\W");
 	
@@ -455,7 +455,7 @@ public class HomePage extends WebPage {
 		private String linkify(String lastMessage) {
 			StringBuilder result = new StringBuilder(Strings.escapeMarkup(lastMessage));
 			Matcher m = BPL_FILE_DEBUG_PATTERN.matcher(result.toString());
-    		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$2,$3);\">$1($2,$3):</a>");
+    		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$1,$2);\">($1,$2):</a>");
 		}
 
 		private void createFiles(final File prefix, final List<String> libcontents) throws IOException {

@@ -49,13 +49,13 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-blue .ace_gutter {\
-  background: #022346;\
+  background: #00204b;\
   color: #7388b5;\
 }\
 \
 .ace-tomorrow-night-blue .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #00204b;\
 }\
 \
 .ace-tomorrow-night-blue .ace_scroller {\
@@ -63,7 +63,6 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-blue .ace_text-layer {\
-  cursor: text;\
   color: #FFFFFF;\
 }\
 \
@@ -203,6 +202,10 @@ background-color:#EBBBFF;\
 \
 .ace-tomorrow-night-blue .ace_markup.ace_heading {\
   color:#D1F1A9;\
+}\
+\
+.ace-tomorrow-night-blue .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWNgUAn8z7Bq1ar/ABBUBHJ4/r3JAAAAAElFTkSuQmCC) right repeat-y;\
 }";
 
     var dom = require("../lib/dom");

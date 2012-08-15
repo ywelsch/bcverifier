@@ -49,7 +49,7 @@ exports.cssText = ".ace-tm .ace_editor {\
 }\
 \
 .ace-tm .ace_gutter {\
-  background: #e8e8e8;\
+  background: #f0f0f0;\
   color: #333;\
 }\
 \
@@ -63,7 +63,6 @@ exports.cssText = ".ace-tm .ace_editor {\
 }\
 \
 .ace-tm .ace_text-layer {\
-  cursor: text;\
 }\
 \
 .ace-tm .ace_cursor {\
@@ -189,7 +188,8 @@ exports.cssText = ".ace-tm .ace_editor {\
 .ace-tm .ace_marker-layer .ace_active_line {\
   background: rgba(0, 0, 0, 0.07);\
 }\
-.ace-tm .ace_gutter_active_line{\
+\
+.ace-tm .ace_gutter_active_line {\
     background-color : #dcdcdc;\
 }\
 \
@@ -199,12 +199,17 @@ exports.cssText = ".ace-tm .ace_editor {\
 }\
 \
 .ace-tm .ace_meta.ace_tag {\
-  color:rgb(0, 50, 198);\
+  color:rgb(0, 22, 142);\
 }\
 \
 .ace-tm .ace_string.ace_regex {\
   color: rgb(255, 0, 0)\
-}";
+}\
+\
+.ace-tm .ace_indent-guide {\
+  background: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4////f4bLly//BwAmVgd1/w11/gAAAABJRU5ErkJggg==\") right repeat-y;\
+}\
+";
 
 var dom = require("../lib/dom");
 dom.importCssString(exports.cssText, exports.cssClass);

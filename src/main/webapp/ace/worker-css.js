@@ -35,8 +35,8 @@ var require = function(parentId, id) {
     var module = require.modules[id];
     if (module) {
         if (!module.initialized) {
-            module.exports = module.factory().exports;
             module.initialized = true;
+            module.exports = module.factory().exports;
         }
         return module.exports;
     }
@@ -56,6 +56,10 @@ require.tlns = {};
 var define = function(id, deps, factory) {
     if (arguments.length == 2) {
         factory = deps;
+        if (typeof id != "string") {
+            deps = id;
+            id = require.id;
+        }
     } else if (arguments.length == 1) {
         factory = id;
         id = require.id;
@@ -245,7 +249,7 @@ define('ace/lib/regexp', ['require', 'exports', 'module' ], function(require, ex
                (regex.multiline  ? "m" : "") +
                (regex.extended   ? "x" : "") + // Proposed for ES4; included in AS3
                (regex.sticky     ? "y" : "");
-    };
+    }
 
     function indexOf (array, item, from) {
         if (Array.prototype.indexOf) // Use the native array method if available
@@ -255,7 +259,7 @@ define('ace/lib/regexp', ['require', 'exports', 'module' ], function(require, ex
                 return i;
         }
         return -1;
-    };
+    }
 
 });
 // vim: ts=4 sts=4 sw=4 expandtab
@@ -1334,7 +1338,8 @@ EventEmitter._dispatchEvent = function(eventName, e) {
         return;
 
     e = e || {};
-    e.type = eventName;
+    if (!e.type)
+        e.type = eventName;
     
     if (!e.stopPropagation) {
         e.stopPropagation = function() {
@@ -1373,7 +1378,7 @@ EventEmitter.addEventListener = function(eventName, callback) {
 
     var listeners = this._eventRegistry[eventName];
     if (!listeners)
-        var listeners = this._eventRegistry[eventName] = [];
+        listeners = this._eventRegistry[eventName] = [];
 
     if (listeners.indexOf(callback) == -1)
         listeners.push(callback);
@@ -1888,7 +1893,6 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
             this.start.column == range.start.column &&
             this.end.column == range.end.column
     }; 
-
     this.toString = function() {
         return ("Range: [" + this.start.row + "/" + this.start.column +
             "] -> [" + this.end.row + "/" + this.end.column + "]");
@@ -2170,7 +2174,7 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         }
     }
 
-   /** 
+    /** 
      * Range.compareInside(row, column) -> Number
      * - row (Number): A row point to compare with
      * - column (Number): A column point to compare with
@@ -2195,7 +2199,7 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         }
     }
 
-   /** 
+    /** 
      * Range.clipRows(firstRow, lastRow) -> Range
      * - firstRow (Number): The starting row
      * - lastRow (Number): The ending row

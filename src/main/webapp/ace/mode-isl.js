@@ -1,20 +1,20 @@
-define('ace/mode/java', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/javascript', 'ace/tokenizer', 'ace/mode/java_highlight_rules'], function(require, exports, module) {
+define('ace/mode/isl', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/javascript', 'ace/tokenizer', 'ace/mode/isl_highlight_rules'], function(require, exports, module) {
 
 
 var oop = require("../lib/oop");
 var JavaScriptMode = require("./javascript").Mode;
 var Tokenizer = require("../tokenizer").Tokenizer;
-var JavaHighlightRules = require("./java_highlight_rules").JavaHighlightRules;
+var ISLHighlightRules = require("./isl_highlight_rules").ISLHighlightRules;
 
 var Mode = function() {
     JavaScriptMode.call(this);
-    
-    this.$tokenizer = new Tokenizer(new JavaHighlightRules().getRules());
+
+    this.$tokenizer = new Tokenizer(new ISLHighlightRules().getRules());
 };
 oop.inherits(Mode, JavaScriptMode);
 
 (function() {
-    
+
     this.createWorker = function(session) {
         return null;
     };
@@ -1056,7 +1056,7 @@ var FoldMode = exports.FoldMode = function() {};
 }).call(FoldMode.prototype);
 
 });
-define('ace/mode/java_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/lib/lang', 'ace/mode/doc_comment_highlight_rules', 'ace/mode/text_highlight_rules'], function(require, exports, module) {
+define('ace/mode/isl_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/lib/lang', 'ace/mode/doc_comment_highlight_rules', 'ace/mode/text_highlight_rules'], function(require, exports, module) {
 
 
 var oop = require("../lib/oop");
@@ -1064,56 +1064,22 @@ var lang = require("../lib/lang");
 var DocCommentHighlightRules = require("./doc_comment_highlight_rules").DocCommentHighlightRules;
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 
-var JavaHighlightRules = function() {
+var ISLHighlightRules = function() {
 
-    // taken from http://download.oracle.com/javase/tutorial/java/nutsandbolts/_keywords.html
     var keywords = lang.arrayToMap(
-    ("abstract|continue|for|new|switch|" +
-    "assert|default|goto|package|synchronized|" +
-    "boolean|do|if|private|this|" +
-    "break|double|implements|protected|throw|" +
-    "byte|else|import|public|throws|" +
-    "case|enum|instanceof|return|transient|" +
-    "catch|extends|int|short|try|" +
-    "char|final|interface|static|void|" +
-    "class|finally|long|strictfp|volatile|" +
-    "const|float|native|super|while").split("|")
+        (
+            "else|exists|forall|if|invariant|new|old|then"
+        ).split("|")
     );
 
     var buildinConstants = lang.arrayToMap(
-        ("null|Infinity|NaN|undefined").split("|")
+        ("true|false").split("|")
     );
 
-    var langClasses = lang.arrayToMap(
-        ("AbstractMethodError|AssertionError|ClassCircularityError|"+
-        "ClassFormatError|Deprecated|EnumConstantNotPresentException|"+
-        "ExceptionInInitializerError|IllegalAccessError|"+
-        "IllegalThreadStateException|InstantiationError|InternalError|"+
-        "NegativeArraySizeException|NoSuchFieldError|Override|Process|"+
-        "ProcessBuilder|SecurityManager|StringIndexOutOfBoundsException|"+
-        "SuppressWarnings|TypeNotPresentException|UnknownError|"+
-        "UnsatisfiedLinkError|UnsupportedClassVersionError|VerifyError|"+
-        "InstantiationException|IndexOutOfBoundsException|"+
-        "ArrayIndexOutOfBoundsException|CloneNotSupportedException|"+
-        "NoSuchFieldException|IllegalArgumentException|NumberFormatException|"+
-        "SecurityException|Void|InheritableThreadLocal|IllegalStateException|"+
-        "InterruptedException|NoSuchMethodException|IllegalAccessException|"+
-        "UnsupportedOperationException|Enum|StrictMath|Package|Compiler|"+
-        "Readable|Runtime|StringBuilder|Math|IncompatibleClassChangeError|"+
-        "NoSuchMethodError|ThreadLocal|RuntimePermission|ArithmeticException|"+
-        "NullPointerException|Long|Integer|Short|Byte|Double|Number|Float|"+
-        "Character|Boolean|StackTraceElement|Appendable|StringBuffer|"+
-        "Iterable|ThreadGroup|Runnable|Thread|IllegalMonitorStateException|"+
-        "StackOverflowError|OutOfMemoryError|VirtualMachineError|"+
-        "ArrayStoreException|ClassCastException|LinkageError|"+
-        "NoClassDefFoundError|ClassNotFoundException|RuntimeException|"+
-        "Exception|ThreadDeath|Error|Throwable|System|ClassLoader|"+
-        "Cloneable|Class|CharSequence|Comparable|String|Object").split("|")
+    var builtinTypes = lang.arrayToMap(
+        ("int|bool").split("|")
     );
-    
-    var importClasses = lang.arrayToMap(
-        ("").split("|")
-    );
+
     // regexp must not have capturing parentheses. Use (?:) instead.
     // regexps are ordered -> the first match is used
 
@@ -1133,11 +1099,16 @@ var JavaHighlightRules = function() {
                 token : "string.regexp",
                 regex : "[/](?:(?:\\[(?:\\\\]|[^\\]])+\\])|(?:\\\\/|[^\\]/]))*[/]\\w*\\s*(?=[).,;]|$)"
             }, {
-                token : "string", // single line
-                regex : '["](?:(?:\\\\.)|(?:[^"\\\\]))*?["]'
+                token : "string",
+                regex : '"""',
+                next : "tstring"
             }, {
-                token : "string", // single line
-                regex : "['](?:(?:\\\\.)|(?:[^'\\\\]))*?[']"
+                token : "string",
+                regex : '"(?=.)', // " strings can't span multiple lines
+                next : "string"
+            }, {
+                token : "symbol.constant", // single line
+                regex : "'[\\w\\d_]+"
             }, {
                 token : "constant.numeric", // hex
                 regex : "0[xX][0-9a-fA-F]+\\b"
@@ -1153,10 +1124,8 @@ var JavaHighlightRules = function() {
                         return "variable.language";
                     else if (keywords.hasOwnProperty(value))
                         return "keyword";
-                    else if (langClasses.hasOwnProperty(value))
-                        return "support.function";
-                    else if (importClasses.hasOwnProperty(value))
-                        return "support.function";
+                    else if (builtinTypes.hasOwnProperty(value))
+                        return "support.buildin";
                     else if (buildinConstants.hasOwnProperty(value))
                         return "constant.language";
                     else
@@ -1167,12 +1136,12 @@ var JavaHighlightRules = function() {
                 regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
             }, {
                 token : "keyword.operator",
-                regex : "!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|===|==|=|!=|!==|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^=|\\b(?:in|instanceof|new|delete|typeof|void)"
+                regex : "<==>|==>|<==|\\|\\||&&|==|!=|<|>|<=|>=|<\\:|\\+\\+|\\+|\\-|\\*|\\/|%|!|\\-|\\:\\:|\\:=|\\:|~"
             }, {
-                token : "lparen",
+                token : "paren.lparen",
                 regex : "[[({]"
             }, {
-                token : "rparen",
+                token : "paren.rparen",
                 regex : "[\\])}]"
             }, {
                 token : "text",
@@ -1189,14 +1158,44 @@ var JavaHighlightRules = function() {
                 merge : true,
                 regex : ".+"
             }
+        ],
+        "string" : [
+            {
+                token : "escape",
+                regex : '\\\\"',
+            }, {
+                token : "string",
+                merge : true,
+                regex : '"',
+                next : "start"
+            }, {
+                token : "string.invalid",
+                regex : '[^"\\\\]*$',
+                next : "start"
+            }, {
+                token : "string",
+                regex : '[^"\\\\]+',
+                merge : true
+            }
+        ],
+        "tstring" : [
+            {
+                token : "string", // closing comment
+                regex : '"{3,5}',
+                next : "start"
+            }, {
+                token : "string", // comment spanning whole line
+                merge : true,
+                regex : ".+?"
+            }
         ]
     };
-    
+
     this.embedRules(DocCommentHighlightRules, "doc-",
         [ DocCommentHighlightRules.getEndRule("start") ]);
 };
 
-oop.inherits(JavaHighlightRules, TextHighlightRules);
+oop.inherits(ISLHighlightRules, TextHighlightRules);
 
-exports.JavaHighlightRules = JavaHighlightRules;
+exports.ISLHighlightRules = ISLHighlightRules;
 });

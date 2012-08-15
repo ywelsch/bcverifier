@@ -49,13 +49,13 @@ exports.cssText = "\
 }\
 \
 .ace-clouds-midnight .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #232323;\
+  color: #929292;\
 }\
 \
 .ace-clouds-midnight .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #232323;\
 }\
 \
 .ace-clouds-midnight .ace_scroller {\
@@ -63,7 +63,6 @@ exports.cssText = "\
 }\
 \
 .ace-clouds-midnight .ace_text-layer {\
-  cursor: text;\
   color: #929292;\
 }\
 \
@@ -99,7 +98,7 @@ exports.cssText = "\
 }\
 \
 .ace-clouds-midnight .ace_gutter_active_line {\
-  background-color : #dcdcdc;\
+  background-color: rgba(215, 215, 215, 0.031);\
 }\
 \
 .ace-clouds-midnight .ace_marker-layer .ace_selected_word {\
@@ -158,6 +157,10 @@ background-color:#E92E2E;\
 \
 .ace-clouds-midnight .ace_markup.ace_underline {\
     text-decoration:underline;\
+}\
+\
+.ace-clouds-midnight .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWOQlJT8z1BeXv4fAA2KA6+h9Z+2AAAAAElFTkSuQmCC) right repeat-y;\
 }";
 
     var dom = require("../lib/dom");

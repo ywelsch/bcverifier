@@ -49,8 +49,8 @@ exports.cssText = "\
 }\
 \
 .ace-mono-industrial .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #1d2521;\
+  color: #fff;\
 }\
 \
 .ace-mono-industrial .ace_print_margin {\
@@ -63,7 +63,6 @@ exports.cssText = "\
 }\
 \
 .ace-mono-industrial .ace_text-layer {\
-  cursor: text;\
   color: #FFFFFF;\
 }\
 \
@@ -99,7 +98,7 @@ exports.cssText = "\
 }\
 \
 .ace-mono-industrial .ace_gutter_active_line {\
-  background-color : #dcdcdc;\
+  background-color: rgba(12, 13, 12, 0.25);\
 }\
 \
 .ace-mono-industrial .ace_marker-layer .ace_selected_word {\
@@ -187,6 +186,10 @@ background-color:#151C19;\
 \
 .ace-mono-industrial .ace_markup.ace_underline {\
     text-decoration:underline;\
+}\
+\
+.ace-mono-industrial .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWNQ0tH4zzBz5sz/ABAOBECKH+evAAAAAElFTkSuQmCC) right repeat-y;\
 }";
 
     var dom = require("../lib/dom");

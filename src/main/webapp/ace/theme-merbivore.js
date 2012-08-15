@@ -49,8 +49,8 @@ exports.cssText = "\
 }\
 \
 .ace-merbivore .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #202020;\
+  color: #E6E1DC;\
 }\
 \
 .ace-merbivore .ace_print_margin {\
@@ -63,7 +63,6 @@ exports.cssText = "\
 }\
 \
 .ace-merbivore .ace_text-layer {\
-  cursor: text;\
   color: #E6E1DC;\
 }\
 \
@@ -99,7 +98,7 @@ exports.cssText = "\
 }\
 \
 .ace-merbivore .ace_gutter_active_line {\
-  background-color : #dcdcdc;\
+  background-color : #333435;\
 }\
 \
 .ace-merbivore .ace_marker-layer .ace_selected_word {\
@@ -179,6 +178,10 @@ color:#AD2EA4;\
 \
 .ace-merbivore .ace_markup.ace_underline {\
     text-decoration:underline;\
+}\
+\
+.ace-merbivore .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWMQExP7zzBz5sz/AA50BAyDznYhAAAAAElFTkSuQmCC) right repeat-y;\
 }";
 
     var dom = require("../lib/dom");
