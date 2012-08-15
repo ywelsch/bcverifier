@@ -643,7 +643,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // now pass the receiver over the boundary
         procAssumes.add(new BPLAssignmentCommand(heap1(stack1(receiver()), var(EXPOSED_FIELD)), BPLBoolLiteral.TRUE));
         procAssumes.add(new BPLAssignmentCommand(heap2(stack2(receiver()), var(EXPOSED_FIELD)), BPLBoolLiteral.TRUE));
-        procAssumes.add(new BPLAssignmentCommand(related(stack1(receiver()), stack2(receiver())), BPLBoolLiteral.TRUE));
+        procAssumes.add(new BPLAssignmentCommand(map(var(RELATED_RELATION), stack1(receiver()), stack2(receiver())), BPLBoolLiteral.TRUE));
         if(config.isAssumeWellformedHeap()){
             procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(HEAP1))));
             procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(HEAP2))));
@@ -1056,13 +1056,14 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                       BPLBoolLiteral.TRUE,
                       heap2(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                               var(EXPOSED_FIELD)))));
-        checkingCommand.add(new BPLAssignmentCommand(related(
+        checkingCommand.add(new BPLAssignmentCommand(map(var(RELATED_RELATION),
               stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
               stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))), ifThenElse(
               logicalAnd(nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
                       nonNull(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)))),
               BPLBoolLiteral.TRUE,
-              related(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
+              map(var(RELATED_RELATION),
+                      stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                       stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))))));
         
         if(config.isAssumeWellformedHeap()){
@@ -1093,9 +1094,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         String o2 = "o2";
         BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
         
-        BPLCommand trigger = new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION)))));
-        trigger.addComment("Improves trigger behavior");
-        checkingCommand.add(trigger);
+//        BPLCommand trigger = new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION)))));
+//        trigger.addComment("Improves trigger behavior");
+//        checkingCommand.add(trigger);
         
         assertWellformedness(checkingCommand);
         
@@ -1172,13 +1173,14 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                         BPLBoolLiteral.TRUE,
                                         heap2(stack2(var(var.getName())),
                                                 var(EXPOSED_FIELD)))));
-                checkingCommand.add(new BPLAssignmentCommand(related(
+                checkingCommand.add(new BPLAssignmentCommand(map(var(RELATED_RELATION),
                         stack1(var(var.getName())),
                         stack2(var(var.getName()))), ifThenElse(
                         logicalAnd(nonNull(stack1(var(var.getName()))),
                                 nonNull(stack2(var(var.getName())))),
                         BPLBoolLiteral.TRUE,
-                        related(stack1(var(var.getName())),
+                        map(var(RELATED_RELATION),
+                                stack1(var(var.getName())),
                                 stack2(var(var.getName()))))));
                 
                 if(config.isAssumeWellformedHeap()){
@@ -1191,10 +1193,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                         stack2(var(var.getName())))));
             }
         }
-        trigger = new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION)))));
-        trigger.addComment("Improves trigger behavior");
-        checkingCommand.add(trigger);
-        assertWellformedness(checkingCommand);
+//        trigger = new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION)))));
+//        trigger.addComment("Improves trigger behavior");
+//        checkingCommand.add(trigger);
+//        assertWellformedness(checkingCommand);
         
         //invariant
         checkingCommand.addAll(invAssertions);

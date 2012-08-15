@@ -51,6 +51,7 @@ public class CheckRunner {
         config.setSpecification(def.getSpecification());
         config.setLibraries(lib1, lib2);
         config.setOutput(specificationFile);
+        config.setCompileFirst(true);
         if(doCheck){
             config.setAction(VerifyAction.VERIFY);
             if(doSmoke){
@@ -80,14 +81,20 @@ public class CheckRunner {
     
     public static VerificationResult runCheck(BCCheckDefinition def) throws CheckRunException {
         VerificationResult result = run(def, new File(def.getLibDir(), "bpl"), true, false);
-        result.setLastRunSuccess(result.getLastErrorCount() == def.getExpectedErrors());
+        if(def.getExpectedErrors()>0){
+            result.setLastRunSuccess(!result.isLastRunSuccess() && result.getLastErrorCount() == def.getExpectedErrors());    
+        }
+        
         return result;
     }
     
     public static VerificationResult runSmokeTest(BCCheckDefinition def) throws CheckRunException {
         VerificationResult result = run(def, new File(def.getLibDir(), "bpl"), true, true);
+        if(def.getExpectedErrors()>0){
+            result.setLastRunSuccess(!result.isLastRunSuccess() && result.getLastErrorCount() == def.getExpectedErrors());    
+        }
         
-        if(result.getLastErrorCount() != def.getExpectedErrors()){
+        if(!result.isLastRunSuccess()){
             Logger.getLogger(CheckRunner.class).debug(result.getLastMessage());
             throw new CheckRunException("Expected "+def.getExpectedErrors()+" errors, but got "+result.getLastErrorCount());
         }
