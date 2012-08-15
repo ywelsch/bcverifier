@@ -49,7 +49,7 @@ public class Configuration implements Serializable {
     private VerifyAction action = VerifyAction.VERIFY;
 	@Parameter(names = {"-k", "--sourcecompatibility"}, description = "Check source compatibility") @WebGUI
     private boolean checkSourceCompatibility = false;
-    @Parameter(names = {"--short"}, description = "Reduces the time needed to verify backward compatibility by only checking a single interactio frame. Does not detect influences to other interaction frames.")
+    @Parameter(names = {"--short"}, description = "Reduces the time needed to verify backward compatibility by only checking a single interaction frame. Does not detect influences to other interaction frames.") @WebGUI
 	private boolean shortCheck = false;
 	
 	
@@ -228,5 +228,6 @@ public class Configuration implements Serializable {
 	public void setWebDefaults() {
 		singleFormulaInvariant = true;
 		checkSourceCompatibility = true;
+		shortCheck = true;
 	}
 }
