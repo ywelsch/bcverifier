@@ -509,12 +509,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // /////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
         
-//        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
-        if(config.isShortCheck()){
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(0))));
-        } else {
-//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(2))));
+        if(config.getNumberOfIframes() == 0){
             procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+        } else {
+//        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2))));
         }
         
 
@@ -578,11 +577,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(isEqual(spmap2(),
                 new BPLIntLiteral(0))));
         
-        if(config.isShortCheck()){
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(1))));
-        } else {
-//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(3))));
+        if(config.getNumberOfIframes() == 0){
             procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        } else {
+            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2 + 1))));
+//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(3))));
         }
 
         // initialize int return values to be zero, so the relation check of the check_boundary_return block only checks the ref-result
@@ -705,11 +704,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 //                            isEqual(spmap2(), new BPLIntLiteral(0))
 //                            )
 //                ));
-        if(config.isShortCheck()){
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(2))));
-        } else {
-//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(4))));
+        if(config.getNumberOfIframes() == 0){
             procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+        } else {
+            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(config.getNumberOfIframes() * 2))));
+//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(4))));
         }
         procAssumes.add(new BPLAssumeCommand(isEqual(spmap1(), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(spmap2(), new BPLIntLiteral(0))));
@@ -851,11 +850,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack2(var(PLACE_VARIABLE)))));
         
 //        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
-        if(config.isShortCheck()){
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(1))));
-        } else {
-//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(3))));
+        if(config.getNumberOfIframes() == 0){
             procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        } else {
+            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2 + 1))));
+//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(3))));
         }
         
         // relation of the methods initially called on the library

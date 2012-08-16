@@ -1,6 +1,6 @@
 "specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
-"bpl/spec2.bsl","--short"     ,3                ,0                 ,4
-"bpl/spec4.bsl","--short"     ,0                ,1                 ,4
-"bpl/spec1.bsl","--short"     ,0                ,1                 ,4
-"bpl/spec1.bsl","--short"     ,1                ,0                 ,3
-"bpl/spec1.bsl","--short"     ,1                ,0                 ,2
+"bpl/spec2.bsl","--iframes 1"     ,3                ,0                 ,4
+"bpl/spec4.bsl","--iframes 1"     ,0                ,1                 ,4
+"bpl/spec1.bsl","--iframes 1"     ,0                ,1                 ,4
+"bpl/spec1.bsl","--iframes 1"     ,1                ,0                 ,3
+"bpl/spec1.bsl","--iframes 1"     ,1                ,0                 ,2
