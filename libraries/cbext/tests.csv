@@ -1,5 +1,5 @@
 "specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
-"bpl/spec2.bsl","--short"     ,2                ,0                 ,4
+"bpl/spec2.bsl","--short"     ,3                ,0                 ,4
 "bpl/spec4.bsl","--short"     ,0                ,1                 ,4
 "bpl/spec1.bsl","--short"     ,0                ,1                 ,4
 "bpl/spec1.bsl","--short"     ,1                ,0                 ,3

@@ -1008,7 +1008,7 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression relNull(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
-        return new BPLArrayExpression(var(RELATED_RELATION), exp1, exp2);
+        return new BPLFunctionApplication(REL_NULL_FUNC, exp1, exp2, exp3);
     }
     
     public static BPLExpression nonNull(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
@@ -1137,7 +1137,7 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression related(BPLExpression exp1, BPLExpression exp2){
-        return logicalAnd(new BPLArrayExpression(var(RELATED_RELATION), exp1, exp2), nonNull(exp1), nonNull(exp2));
+        return new BPLArrayExpression(var(RELATED_RELATION), exp1, exp2);
     }
     
     public static BPLExpression receiver(){
