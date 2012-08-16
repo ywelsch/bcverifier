@@ -1302,8 +1302,8 @@ public class Translator implements ITranslationConstants {
                                     )
                                     ,
                             logicalAnd(
-                                    nonNull(var(r1)),
-                                    nonNull(var(r2)),
+//                                    nonNull(var(r1)),
+//                                    nonNull(var(r2)),
                                     new BPLArrayExpression(var(related), var(r1), var(r2))
                                     )
                             ))));

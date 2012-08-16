@@ -1093,9 +1093,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         String o2 = "o2";
         BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
         
-        BPLCommand trigger = new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION)))));
-        trigger.addComment("Improves trigger behavior");
-        checkingCommand.add(trigger);
+//        BPLCommand trigger = new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION)))));
+//        trigger.addComment("Improves trigger behavior");
+//        checkingCommand.add(trigger);
         
         assertWellformedness(checkingCommand);
         
@@ -1191,9 +1191,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                         stack2(var(var.getName())))));
             }
         }
-        trigger = new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION)))));
-        trigger.addComment("Improves trigger behavior");
-        checkingCommand.add(trigger);
+//        trigger = new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION)))));
+//        trigger.addComment("Improves trigger behavior");
+//        checkingCommand.add(trigger);
         assertWellformedness(checkingCommand);
         
         //invariant
