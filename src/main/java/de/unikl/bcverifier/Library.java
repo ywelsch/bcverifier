@@ -572,18 +572,22 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // preconditions of a constructor call
         // /////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
-        procAssumes.add(new BPLAssumeCommand(isEqual(spmap1(),
-                new BPLIntLiteral(0))));
-        procAssumes.add(new BPLAssumeCommand(isEqual(spmap2(),
-                new BPLIntLiteral(0))));
         
         if(config.getNumberOfIframes() == 0){
-            procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
         } else {
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2 + 1))));
-//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(3))));
+//        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2))));
         }
+        
 
+        // invariant
+        procAssumes.addAll(invAssumes);
+        
+        
+        createLibraryFrame(procAssumes);
+        
+        
         // initialize int return values to be zero, so the relation check of the check_boundary_return block only checks the ref-result
         procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(stack2(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
@@ -635,8 +639,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                         )
                 );
         
-        // invariant
-        procAssumes.addAll(invAssumes);
         
         
         // now pass the receiver over the boundary
