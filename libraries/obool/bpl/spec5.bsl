@@ -6,6 +6,7 @@
 Internal($obool.OBool,$obool.OBool.g,heap1) && Internal($obool.OBool,$obool.OBool.g,heap2)
 NonNull($obool.OBool,$obool.OBool.g,heap1) && NonNull($obool.OBool,$obool.OBool.g,heap2)
 Unique($obool.OBool,$obool.OBool.g,heap1) && Unique($obool.OBool,$obool.OBool.g,heap2)
+(forall iframe: int :: 0<=iframe && iframe<=ip1 && iframe%2==0 && iframe>0 ==> stack1[iframe-1][spmap1[iframe-1]][place]!=lib1_obool.OBool.getg#boolean_get#boolean0)
 <<<
 >>>preconditions
 useHavoc[lib2_obool.OBool.setg$boolean_set$boolean0] := false;
