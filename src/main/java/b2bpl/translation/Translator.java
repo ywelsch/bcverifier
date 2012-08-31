@@ -654,8 +654,8 @@ public class Translator implements ITranslationConstants {
                             logicalAnd(
                                     new BPLArrayExpression(var(heap), nullLiteral(), var(alloc)),
                                     forall(refVar, fieldRefVar, implies(new BPLArrayExpression(var(heap), var(r), var(alloc)), new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(alloc)))),
-                                    forall(refVar, fieldRefVar, implies(logicalNot(obj(var(heap), var(r))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), nullLiteral()))),
-                                    forall(refVar, fieldIntVar, implies(logicalNot(new BPLArrayExpression(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
+                                    forall(refVar, fieldRefVar, implies(logicalNot(map(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), nullLiteral()))),
+                                    forall(refVar, fieldIntVar, implies(logicalNot(map(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
                                     forall(refVar, fieldRefVar, isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(heap), fieldType(var(f)))),
                                     forall(refVar, fieldIntVar, isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), fieldType(var(f))))
                                     ))
