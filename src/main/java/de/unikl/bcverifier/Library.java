@@ -452,9 +452,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2), new BPLIntLiteral(0))));
-        
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
 
         final String i = "i";
         BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
@@ -523,6 +520,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         createLibraryFrame(procAssumes);
         
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
         
         // assume the result of the method is not yet set
         procAssumes.add(new BPLAssumeCommand(isNull(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)))));
@@ -586,7 +585,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         
         createLibraryFrame(procAssumes);
+
         
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
         
         // initialize int return values to be zero, so the relation check of the check_boundary_return block only checks the ref-result
         procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
@@ -716,6 +718,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(isEqual(spmap2(), new BPLIntLiteral(0))));
         
         
+        
+        
         // this return path may not be taken if havoc is used to handle it
         /////////////////////////////////////////////////////////////////
         //TODO maybe add consistency check useHavoc[stack1[sp1][place]] <=> useHavoc[stack2[sp2][place]] 
@@ -732,6 +736,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         BPLExpression zero = new BPLIntLiteral(0);
         BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
         BPLExpression ip2MinusOne = sub(var(IP2_VAR), new BPLIntLiteral(1));
+
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(ip1MinusOne, var(PLACE_VARIABLE))));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(ip2MinusOne, var(PLACE_VARIABLE))));
         
         // relation of the called methods (context)
         // ///////////////////////////////////////////
@@ -858,6 +865,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2 + 1))));
 //            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(3))));
         }
+        
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
         
         // relation of the methods initially called on the library
         // ///////////////////////////////////////////
