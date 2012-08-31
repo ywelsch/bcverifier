@@ -702,7 +702,7 @@ public class Translator implements ITranslationConstants {
             	addConstants(syntheticField);
             }
                         
-            addFunction(SYNTHETIC_FIELD_FUNC+"<alpha>", new BPLTypeName("alpha"), BPLBuiltInType.BOOL);
+            addFunction(SYNTHETIC_FIELD_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), BPLBuiltInType.BOOL);
             BPLExpression[] comparisons = new BPLExpression[syntheticFields.size()];
             for (int j = 0; j < comparisons.length; j++) {
             	comparisons[j] = isEqual(var(fieldAlphaVar.getName()), var(syntheticFields.get(j).getName()));
@@ -714,7 +714,7 @@ public class Translator implements ITranslationConstants {
                     		logicalOr(comparisons))
                     ));
             
-            addFunction(LIBRARY_FIELD_FUNC+"<alpha>", new BPLTypeName("alpha"), BPLBuiltInType.BOOL);
+            addFunction(LIBRARY_FIELD_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), BPLBuiltInType.BOOL);
                         
             addComment("end custom part (below: original SscBoogie)");
             
@@ -1450,16 +1450,17 @@ public class Translator implements ITranslationConstants {
                     isEquiv(wellformedStack(var(stack), var(i), var(spmap), var(heap)),
                     logicalAnd(
                     		greaterEqual(var(i), intLiteral(0)),
-                            forall(jVar, pVar, vVar, implies(logicalAnd(lessEqual(var(j), var(i)), lessEqual(intLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), new BPLArrayExpression(var(heap), map1(var(stack), var(j), var(p), var(v)), var(alloc)))),
-                            forall(jVar, pVar, vVar, implies(logicalOr(greater(var(j), var(i)), logicalAnd(lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), nullLiteral()))),
-                            forall(jVar, pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr(greater(var(j), var(i)), logicalAnd(lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), intLiteral(0)))),
+                            forall(jVar, pVar, vVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i)), lessEqual(intLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), new BPLArrayExpression(var(heap), map1(var(stack), var(j), var(p), var(v)), var(alloc)))),
+                            forall(jVar, pVar, vVar, implies(logicalOr(less(var(j), new BPLIntLiteral(0)), greater(var(j), var(i)), logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), nullLiteral()))),
+                            forall(jVar, pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)), implies(logicalOr(less(var(j), new BPLIntLiteral(0)), greater(var(j), var(i)), logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i)), logicalOr( less(var(p), intLiteral(0)), greater(var(p), map(var(spmap), var(j))) ))), isEqual(map1(var(stack), var(j), var(p), var(v)), intLiteral(0)))),
                             forall(jVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i))),
                                     lessEqual(new BPLIntLiteral(0), map(var(spmap), var(j)))
                                 )),
-                            forall(jVar, pVar, implies(logicalAnd(lessEqual(var(j), var(i)), isEqual(modulo(var(j), new BPLIntLiteral(2)), new BPLIntLiteral(0)), lessEqual(new BPLIntLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), map(var(heap), map1(var(stack), var(j), var(p), receiver()), var(CREATED_BY_CTXT_FIELD)))),
+                            forall(jVar, pVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i)), isEqual(modulo(var(j), new BPLIntLiteral(2)), new BPLIntLiteral(0)), lessEqual(new BPLIntLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), map(var(heap), map1(var(stack), var(j), var(p), receiver()), var(CREATED_BY_CTXT_FIELD)))),
                             forall(spVar, jVar,
                                     implies(
                                             logicalAnd(
+                                                    lessEqual(new BPLIntLiteral(0), var(j)),
                                                     less(var(j), var(i)),
                                                     lessEqual(var(sp), map(var(spmap), var(j)))
                                                     ),
@@ -3605,16 +3606,17 @@ public class Translator implements ITranslationConstants {
                 BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
                 BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
 
-                if(!field.getType().isBaseType()){
-                    addComment("[SW]: Define field type");
-                    addAxiom(forall(
-                            oVar, hVar,
-                            isSubtype(
-                                    typ(new BPLArrayExpression(var(h), var(o), var(fieldName)), var(h)),
-                                    translateTypeReference(field.getType())
-                                    )
-                            ));
-                }
+                //already defined by fieldType(...)
+//                if(!field.getType().isBaseType()){
+//                    addComment("[SW]: Define field type");
+//                    addAxiom(forall(
+//                            oVar, hVar,
+//                            isSubtype(
+//                                    typ(new BPLArrayExpression(var(h), var(o), var(fieldName)), var(h)),
+//                                    translateTypeReference(field.getType())
+//                                    )
+//                            ));
+//                }
 
                 // For every field referenced, we also translate its owner type.
                 translateTypeReference(field.getOwner());
