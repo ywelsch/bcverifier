@@ -1,7 +1,9 @@
-package de.unikl.bcverifier;
+package de.unikl.bcverifier.librarymodel;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -12,9 +14,12 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
+import org.objectweb.asm.tree.ClassNode;
 
 public class LibrarySource {
 	private List<CompilationUnit> units;
+	private Map<String, ClassNode> asmClasses;
+	private Map<String, AsmClassNodeWrapper> asmClassWrappers;
 
 	public List<CompilationUnit> getUnits() {
 		return units;
@@ -81,6 +86,21 @@ public class LibrarySource {
 			}
 		}
 		return null;
+	}
+
+	public void setAsmClasses(Map<String, ClassNode> asmClasses) {
+		this.asmClasses = asmClasses;
+		this.asmClassWrappers = new HashMap<String, AsmClassNodeWrapper>();
+	}
+
+	public AsmClassNodeWrapper getClassNodeWrapper(ITypeBinding tb) {
+		String qualifiedName = tb.getQualifiedName();
+		AsmClassNodeWrapper wr = asmClassWrappers.get(qualifiedName);
+		if (wr == null) {
+			wr = new AsmClassNodeWrapper(asmClasses.get(qualifiedName));
+			asmClassWrappers.put(qualifiedName, wr);
+		}
+		return wr;
 	}
 
 }

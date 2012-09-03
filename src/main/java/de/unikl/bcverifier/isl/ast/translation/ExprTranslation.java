@@ -34,7 +34,9 @@ import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.isl.checking.JavaVariableDef;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
+import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class ExprTranslation {
 
@@ -216,6 +218,14 @@ public class ExprTranslation {
 	}
 
 	public static BPLExpression translate(VarAccess e) {
+		Def def = e.attrDef();
+		if (def instanceof JavaVariableDef) {
+			JavaVariableDef jv = (JavaVariableDef) def;
+			return BuiltinFunctions.stackProperty(
+					jv.getVersion(), 
+					jv.getStackPointerExpr().translateExpr(), 
+					new BPLVariableExpression(jv.getRegisterName()));
+		}
 		return new BPLVariableExpression(e.getName().getName());
 	}
 

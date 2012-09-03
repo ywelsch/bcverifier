@@ -1,7 +1,7 @@
 package de.unikl.bcverifier.specification;
 
 import de.unikl.bcverifier.Configuration;
-import de.unikl.bcverifier.TwoLibraryModel;
+import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class GeneratorFactory {
     public static Generator getGenerator(Configuration config, TwoLibraryModel twoLibraryModel) throws GenerationException {

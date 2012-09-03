@@ -1,8 +1,12 @@
 package de.unikl.bcverifier.isl.checking.types;
 
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class PlaceType extends ExprType {
 
@@ -38,6 +42,23 @@ public class PlaceType extends ExprType {
 
 	public static PlaceType instance() {
 		return instance;
+	}
+
+	public int getLineNr() {
+		return TwoLibraryModel.getLineNr(getStatement());
+	}
+
+	public ITypeBinding getEnclosingClassType() {
+		ASTNode node = statement;
+		while (node != null) {
+			if (node instanceof TypeDeclaration) {
+				TypeDeclaration typeDeclaration = (TypeDeclaration) node;
+				return typeDeclaration.resolveBinding();
+			}
+			node = node.getParent();
+		}
+			
+		return null;
 	}
 
 }

@@ -15,6 +15,9 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FileASTRequestor;
 
+import de.unikl.bcverifier.librarymodel.AsmBytecodeHelper;
+import de.unikl.bcverifier.librarymodel.LibrarySource;
+
 
 public class LibraryCompiler {
     public static class CompileException extends Exception{
@@ -54,6 +57,7 @@ public class LibraryCompiler {
 		parser.createASTs(sources, null, new String[0], req, null);
 		LibrarySource source = new LibrarySource();
 		source.setUnits(req.getScannedUnits());
+		source.setAsmClasses(AsmBytecodeHelper.loadClasses(libraryPath));
 		return source;
 	}
 	

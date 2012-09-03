@@ -12,4 +12,8 @@ aspect typecheck {
 		attrType();
 	}
 	
+	public void PlaceDef.typecheck() {
+		TypeHelper.checkPlaceDef(this);
+	}
+	
 }

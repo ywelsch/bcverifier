@@ -6,9 +6,9 @@ import static de.unikl.bcverifier.isl.ast.Version.OLD;
 
 import org.eclipse.jdt.core.dom.ITypeBinding;
 
-import de.unikl.bcverifier.TwoLibraryModel;
 import de.unikl.bcverifier.isl.ast.ASTNode;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class JavaType extends ExprType {
 

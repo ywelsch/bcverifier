@@ -21,8 +21,6 @@ import b2bpl.bpl.ast.BPLExpression;
 import beaver.Parser.Exception;
 import de.unikl.bcverifier.LibraryCompiler;
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
-import de.unikl.bcverifier.LibrarySource;
-import de.unikl.bcverifier.TwoLibraryModel;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Invariant;
 import de.unikl.bcverifier.isl.ast.Statement;
@@ -31,6 +29,8 @@ import de.unikl.bcverifier.isl.checking.LibEnvironment;
 import de.unikl.bcverifier.isl.checking.TypeError;
 import de.unikl.bcverifier.isl.parser.ISLCompiler;
 import de.unikl.bcverifier.isl.parser.ParserError;
+import de.unikl.bcverifier.librarymodel.LibrarySource;
+import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 import de.unikl.bcverifier.specification.SpecInvariant;
 
 public class ISLParserTest {
@@ -117,9 +117,7 @@ public class ISLParserTest {
 	}
 	
 	protected void testTypeCheckOk(File oldLib, File newLib, CompilationUnit cu) throws CompileException {
-		LibrarySource libsrc1 = LibraryCompiler.computeAST(oldLib);
-    	LibrarySource libsrc2 = LibraryCompiler.computeAST(newLib);
-		TwoLibraryModel twoLibraryModel = new TwoLibraryModel(libsrc1, libsrc2);
+		TwoLibraryModel twoLibraryModel = new TwoLibraryModel(oldLib, newLib);
 		cu.setTwoLibraryModel(twoLibraryModel);
 		cu.setBuiltinFunctions(new BuiltinFunctions(twoLibraryModel ));
 		cu.typecheck();

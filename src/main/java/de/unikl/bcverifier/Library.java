@@ -119,6 +119,7 @@ import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
 import de.unikl.bcverifier.helpers.VerificationResult;
+import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 import de.unikl.bcverifier.sourcecomp.SourceCompChecker;
 import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
@@ -159,9 +160,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     		LibraryCompiler.compile(config.library1());
     		LibraryCompiler.compile(config.library2());
     	}
-    	LibrarySource libsrc1 = LibraryCompiler.computeAST(config.library1());
-    	LibrarySource libsrc2 = LibraryCompiler.computeAST(config.library2());
-    	libmodel = new TwoLibraryModel(libsrc1, libsrc2);
+    	
+    	libmodel = new TwoLibraryModel(config.library1(), config.library2());
     	if (config.checkSourceCompatibility()) {
     		SourceCompChecker scc = new SourceCompChecker(config, libmodel);
     		scc.check();
@@ -422,8 +422,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         		cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
         		cmd.addComment(inv.getComment());
         		cmd.addComment("check welldefinedness:");
-        		invAssumes.add(cmd);
-        		invAssertions.add(cmd);
+        		localInvAssumes.add(cmd);
+        		localInvAssertions.add(cmd);
         	}
         	cmd = new BPLAssertCommand(inv.getInvExpr());
         	cmd.addComment("local invariant");

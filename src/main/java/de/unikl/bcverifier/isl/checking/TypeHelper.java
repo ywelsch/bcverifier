@@ -1,29 +1,17 @@
 package de.unikl.bcverifier.isl.checking;
 
-import java.lang.reflect.Field;
-
-import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.Block;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.eclipse.jdt.internal.compiler.lookup.BlockScope;
-import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Scope;
-import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
-import org.eclipse.jdt.internal.eval.CodeSnippetScope;
 
-import de.unikl.bcverifier.TwoLibraryModel;
+import com.sun.org.apache.bcel.internal.generic.StackProducer;
+
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
@@ -38,7 +26,6 @@ import de.unikl.bcverifier.isl.ast.NullConst;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
 import de.unikl.bcverifier.isl.ast.PlacePosition;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
-import de.unikl.bcverifier.isl.ast.UnknownDef;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.ast.translation.BuiltinFunction;
@@ -48,6 +35,8 @@ import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.checking.types.PlaceType;
 import de.unikl.bcverifier.isl.checking.types.UnknownType;
+import de.unikl.bcverifier.librarymodel.AsmClassNodeWrapper;
+import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class TypeHelper {
 
@@ -243,8 +232,10 @@ public class TypeHelper {
 					&& funcCall.getArgument(0).attrType() instanceof PlaceType
 					&& funcCall.getArgument(2) == expr) {
 				PlaceType placeType = (PlaceType) funcCall.getArgument(0).attrType();
+				Expr stackPointerExpr = funcCall.getArgument(1);
 				TwoLibraryModel model = expr.attrCompilationUnit().getTwoLibraryModel();
-				Def r = lookupJava(model, placeType, name);
+				
+				Def r = lookupJava(model, placeType, name, stackPointerExpr);
 				if (r != null) {
 					return r;
 				}
@@ -259,14 +250,14 @@ public class TypeHelper {
 		return expr.getParent().lookup(name);
 	}
 
-	private static Def lookupJava(TwoLibraryModel model, PlaceType placeType, String name) {
+	private static Def lookupJava(TwoLibraryModel model, PlaceType placeType, String name, Expr StackPointerExpr) {
 		Statement s = placeType.getStatement();
 		
 		IVariableBinding binding = lookupJavaVar(s, name);
 		if (binding == null) {
 			return null;
 		}
-		return new JavaVariableDef(model, placeType.getVersion(), binding);
+		return new JavaVariableDef(model, placeType, StackPointerExpr, binding);
 	}
 
 	private static IVariableBinding lookupJavaVar(Statement s, final String name) {
@@ -300,9 +291,23 @@ public class TypeHelper {
 		return result[0];
 	}
 
-	private static Scope getJavaScope(Statement s) {
-//				org.eclipse.jdt.internal.compiler.ast.ASTNode
-		return null;
+
+	public static void checkPlaceDef(PlaceDef placeDef) {
+		TwoLibraryModel tlm = placeDef.attrCompilationUnit().getTwoLibraryModel();
+		ExprType type = placeDef.attrType();
+		if (type instanceof PlaceType) {
+			PlaceType placeType = (PlaceType) type;
+			Version version = placeType.getVersion();
+			int line = placeType.getLineNr();
+			AsmClassNodeWrapper cn = tlm.getClassNodeWrapper(version, placeType.getEnclosingClassType());
+			java.util.List<Integer> pcs = cn.getProgramCounterForLine(line);
+			if (pcs.size() == 0) {
+				placeDef.addError("No bytecode statement found in line " + line + ".");
+			} else if (pcs.size() > 1) {
+				// TODO should this be allowed or not?
+				placeDef.addError("More than one bytecode statement found in line " + line + ".");
+			}
+		}
 	}
 
 }

@@ -9,7 +9,6 @@ import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLVariableExpression;
-import de.unikl.bcverifier.TwoLibraryModel;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.Version;
@@ -19,6 +18,7 @@ import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.checking.types.PlaceType;
+import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class BuiltinFunctions {
 	
@@ -111,13 +111,8 @@ public class BuiltinFunctions {
 			
 			@Override
 			public BPLExpression translateCall(List<Expr> arguments) {
-				Expr p = arguments.getChild(0);
-				Expr stackPointer = arguments.getChild(1);
 				Expr exp = arguments.getChild(2);
-				PlaceType placeType = (PlaceType) p.attrType();
-				// stack1[libip(ip1)][stackPointer][v]
-				return stackProperty(placeType.getVersion(), stackPointer.translateExpr(), 
-						exp.translateExpr());
+				return exp.translateExpr();
 			}
 		});
 		
@@ -157,7 +152,7 @@ public class BuiltinFunctions {
 				new BPLVariableExpression(property));
 	}
 	
-	private BPLExpression stackProperty(Version version,
+	public static BPLExpression stackProperty(Version version,
 			BPLExpression stackPointer,
 			BPLExpression property) {
 		// stack1[ip][stackPointer][property]

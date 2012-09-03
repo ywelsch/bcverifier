@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.unikl.bcverifier.Configuration;
-import de.unikl.bcverifier.TwoLibraryModel;
+import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
