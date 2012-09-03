@@ -9,6 +9,7 @@ import static b2bpl.translation.CodeGenerator.bitUShr;
 import static b2bpl.translation.CodeGenerator.bitXor;
 import static b2bpl.translation.CodeGenerator.bool2int;
 import static b2bpl.translation.CodeGenerator.cast;
+import static b2bpl.translation.CodeGenerator.classRepr;
 import static b2bpl.translation.CodeGenerator.divide;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldAccess;
@@ -3317,7 +3318,7 @@ public class MethodTranslator implements ITranslationConstants {
                 } else { //method is static
                     addAssignment(spmap(), add(spmap(), new BPLIntLiteral(1)), "create new stack frame");
                     // if the method is static, pass the class object as param0
-                    addAssignment(stack(var(paramVar(0, invokedMethod.getOwner()))), CodeGenerator.classRepr(typeRef(invokedMethod.getOwner())));
+                    addAssignment(stack(var(paramVar(0, invokedMethod.getOwner()))), classRepr(typeRef(invokedMethod.getOwner())));
                     
                     // Pass all other method arguments (the first of which refers to the "this" object
                     // if the method is not static).
@@ -3480,7 +3481,11 @@ public class MethodTranslator implements ITranslationConstants {
                 startBlock(tc.nextLabel());
 
               if(!invokedMethod.isConstructor()){
-                  addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
+                  if(!invokedMethod.isStatic()){
+                      addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
+                  } else {
+                      addAssume(isEqual(stack(receiver()), classRepr(typeRef(invokedMethod.getOwner()))), "Class representative for static call");
+                  }
               } else {
                   addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we have constructed the object
                   if(!isSuperConstructor){

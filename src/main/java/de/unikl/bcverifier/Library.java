@@ -452,9 +452,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2), new BPLIntLiteral(0))));
-        
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
 
         final String i = "i";
         BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
@@ -509,12 +506,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // /////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
         
-//        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
-        if(config.isShortCheck()){
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(0))));
-        } else {
-//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(2))));
+        if(config.getNumberOfIframes() == 0){
             procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+        } else {
+//        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2))));
         }
         
 
@@ -524,6 +520,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         createLibraryFrame(procAssumes);
         
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
         
         // assume the result of the method is not yet set
         procAssumes.add(new BPLAssumeCommand(isNull(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)))));
@@ -573,18 +571,25 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         // preconditions of a constructor call
         // /////////////////////////////////
         procAssumes = new ArrayList<BPLCommand>();
-        procAssumes.add(new BPLAssumeCommand(isEqual(spmap1(),
-                new BPLIntLiteral(0))));
-        procAssumes.add(new BPLAssumeCommand(isEqual(spmap2(),
-                new BPLIntLiteral(0))));
         
-        if(config.isShortCheck()){
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(1))));
+        if(config.getNumberOfIframes() == 0){
+            procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
         } else {
-//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(3))));
-            procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+//        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2))));
         }
+        
 
+        // invariant
+        procAssumes.addAll(invAssumes);
+        
+        
+        createLibraryFrame(procAssumes);
+
+        
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
+        
         // initialize int return values to be zero, so the relation check of the check_boundary_return block only checks the ref-result
         procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(stack2(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
@@ -636,14 +641,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                         )
                 );
         
-        // invariant
-        procAssumes.addAll(invAssumes);
         
         
         // now pass the receiver over the boundary
         procAssumes.add(new BPLAssignmentCommand(heap1(stack1(receiver()), var(EXPOSED_FIELD)), BPLBoolLiteral.TRUE));
         procAssumes.add(new BPLAssignmentCommand(heap2(stack2(receiver()), var(EXPOSED_FIELD)), BPLBoolLiteral.TRUE));
-        procAssumes.add(new BPLAssignmentCommand(map(var(RELATED_RELATION), stack1(receiver()), stack2(receiver())), BPLBoolLiteral.TRUE));
+        procAssumes.add(new BPLAssignmentCommand(related(stack1(receiver()), stack2(receiver())), BPLBoolLiteral.TRUE));
         if(config.isAssumeWellformedHeap()){
             procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(HEAP1))));
             procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(HEAP2))));
@@ -705,14 +708,16 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 //                            isEqual(spmap2(), new BPLIntLiteral(0))
 //                            )
 //                ));
-        if(config.isShortCheck()){
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(2))));
-        } else {
-//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(4))));
+        if(config.getNumberOfIframes() == 0){
             procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+        } else {
+            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(config.getNumberOfIframes() * 2))));
+//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(4))));
         }
         procAssumes.add(new BPLAssumeCommand(isEqual(spmap1(), new BPLIntLiteral(0))));
         procAssumes.add(new BPLAssumeCommand(isEqual(spmap2(), new BPLIntLiteral(0))));
+        
+        
         
         
         // this return path may not be taken if havoc is used to handle it
@@ -731,6 +736,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         BPLExpression zero = new BPLIntLiteral(0);
         BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
         BPLExpression ip2MinusOne = sub(var(IP2_VAR), new BPLIntLiteral(1));
+
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(ip1MinusOne, var(PLACE_VARIABLE))));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(ip2MinusOne, var(PLACE_VARIABLE))));
         
         // relation of the called methods (context)
         // ///////////////////////////////////////////
@@ -851,12 +859,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack2(var(PLACE_VARIABLE)))));
         
 //        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
-        if(config.isShortCheck()){
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(1))));
-        } else {
-//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(3))));
+        if(config.getNumberOfIframes() == 0){
             procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        } else {
+            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2 + 1))));
+//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(3))));
         }
+        
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
+        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
         
         // relation of the methods initially called on the library
         // ///////////////////////////////////////////
@@ -1056,14 +1067,13 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                       BPLBoolLiteral.TRUE,
                       heap2(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                               var(EXPOSED_FIELD)))));
-        checkingCommand.add(new BPLAssignmentCommand(map(var(RELATED_RELATION),
+        checkingCommand.add(new BPLAssignmentCommand(related(
               stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
               stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))), ifThenElse(
               logicalAnd(nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
                       nonNull(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)))),
               BPLBoolLiteral.TRUE,
-              map(var(RELATED_RELATION),
-                      stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
+              related(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                       stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))))));
         
         if(config.isAssumeWellformedHeap()){
@@ -1173,14 +1183,13 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                         BPLBoolLiteral.TRUE,
                                         heap2(stack2(var(var.getName())),
                                                 var(EXPOSED_FIELD)))));
-                checkingCommand.add(new BPLAssignmentCommand(map(var(RELATED_RELATION),
+                checkingCommand.add(new BPLAssignmentCommand(related(
                         stack1(var(var.getName())),
                         stack2(var(var.getName()))), ifThenElse(
                         logicalAnd(nonNull(stack1(var(var.getName()))),
                                 nonNull(stack2(var(var.getName())))),
                         BPLBoolLiteral.TRUE,
-                        map(var(RELATED_RELATION),
-                                stack1(var(var.getName())),
+                        related(stack1(var(var.getName())),
                                 stack2(var(var.getName()))))));
                 
                 if(config.isAssumeWellformedHeap()){
@@ -1196,7 +1205,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 //        trigger = new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION)))));
 //        trigger.addComment("Improves trigger behavior");
 //        checkingCommand.add(trigger);
-//        assertWellformedness(checkingCommand);
+        assertWellformedness(checkingCommand);
         
         //invariant
         checkingCommand.addAll(invAssertions);
