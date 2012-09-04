@@ -311,9 +311,9 @@ public class Translator implements ITranslationConstants {
 //                    declarations.add(new BPLAxiom(new BPLFunctionApplication(DEFINES_METHOD, typeRef(type), var(methodName))));
                     tc.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
                     if(method.isStatic()){
-                        addAxiom(isStaticMethod(var(methodName)));
+                        addAxiom(isStaticMethod(typeRef(type), var(methodName)));
                     } else {
-                        addAxiom(logicalNot(isStaticMethod(var(methodName))));
+                        addAxiom(logicalNot(isStaticMethod(typeRef(type), var(methodName))));
                     }
                     if(method.isPublic()){
                         addAxiom(new BPLFunctionApplication(IS_CALLABLE_FUNC, typeRef(type), var(methodName)));
@@ -1568,7 +1568,7 @@ public class Translator implements ITranslationConstants {
             
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(ITranslationConstants.USE_HAVOC, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
             
-            addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             
             addFunction(VALID_HEAP_SUCC_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(STACK_TYPE), BPLBuiltInType.BOOL);
 

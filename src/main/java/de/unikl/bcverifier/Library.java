@@ -1,6 +1,7 @@
 package de.unikl.bcverifier;
 
 import static b2bpl.translation.CodeGenerator.add;
+import static b2bpl.translation.CodeGenerator.classReprInv;
 import static b2bpl.translation.CodeGenerator.definesMethod;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.forall;
@@ -17,6 +18,7 @@ import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isLocalPlace;
 import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isPublic;
+import static b2bpl.translation.CodeGenerator.isStaticMethod;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.libraryField;
@@ -731,7 +733,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // can not return to a static method call site
         //////////////////////////////////////////////
-        procAssumes.add(new BPLAssumeCommand(logicalNot(CodeGenerator.isStaticMethod(stack1(var(METH_FIELD))))));
+        procAssumes.add(new BPLAssumeCommand(logicalNot(isStaticMethod(classReprInv(stack1(receiver())), stack1(var(METH_FIELD))))));
 
         BPLExpression zero = new BPLIntLiteral(0);
         BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
