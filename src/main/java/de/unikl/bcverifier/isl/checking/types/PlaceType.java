@@ -57,7 +57,6 @@ public class PlaceType extends ExprType {
 			}
 			node = node.getParent();
 		}
-			
 		return null;
 	}
 

@@ -64,7 +64,7 @@ import de.unikl.bcverifier.isl.ast.*;
 	// TERMINATION_MEASURE,
 	IF, THEN, ELSE,
 	DOT,
-	MOD, MULT, DIV, PLUS, MINUS, NOT,
+	MOD, MULT, DIV, PLUS, MINUS, LT, LTEQ, GT, GTEQ, NOT,
 	EQUALS, UNEQUALS,
 	COLON, COLONCOLON, COMMA, LPAREN, RPAREN, SEMI,
 	IMPLIES, IFF, AND, OR, RELATED,
@@ -77,7 +77,7 @@ import de.unikl.bcverifier.isl.ast.*;
 %left MOD, MULT, DIV;
 %left PLUS, MINUS;
 %left RELATED;
-%left EQUALS, UNEQUALS;
+%left EQUALS, UNEQUALS, LT, LTEQ, GT, GTEQ;
 %left AND;
 %left OR;
 %right IMPLIES;
@@ -161,6 +161,14 @@ expr =
     	{: return new BinaryOperation(BinaryOperator.EQUALS, left, right); :}
     | expr.left UNEQUALS expr.right
     	{: return new BinaryOperation(BinaryOperator.UNEQUALS, left, right); :}
+    | expr.left LT expr.right
+    	{: return new BinaryOperation(BinaryOperator.LT, left, right); :}
+    | expr.left LTEQ expr.right
+    	{: return new BinaryOperation(BinaryOperator.LTEQ, left, right); :}
+    | expr.left GT expr.right
+    	{: return new BinaryOperation(BinaryOperator.GT, left, right); :}
+    | expr.left GTEQ expr.right
+    	{: return new BinaryOperation(BinaryOperator.GTEQ, left, right); :}
     | NOT expr.e
     	{: return new UnaryOperation(UnaryOperator.NOT, e); :}
     | MINUS expr.e

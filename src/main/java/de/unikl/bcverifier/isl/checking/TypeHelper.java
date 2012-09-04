@@ -83,6 +83,7 @@ public class TypeHelper {
 				bo.addError("Cannot compare types " + left.attrType() + " and " + right.attrType());
 			}
 			return ExprTypeBool.instance();
+			
 		case DIV:
 		case MINUS:
 		case MULT:
@@ -91,6 +92,13 @@ public class TypeHelper {
 			checkIfSubtype(left, ExprTypeInt.instance());
 			checkIfSubtype(right, ExprTypeInt.instance());
 			return ExprTypeInt.instance();
+		case GT:
+		case GTEQ:
+		case LT:
+		case LTEQ:
+			checkIfSubtype(left, ExprTypeInt.instance());
+			checkIfSubtype(right, ExprTypeInt.instance());
+			return ExprTypeBool.instance();
 		}
 		bo.addError("Operator not implemented: " + bo.getOperator());
 		return UnknownType.instance();
@@ -299,7 +307,17 @@ public class TypeHelper {
 			PlaceType placeType = (PlaceType) type;
 			Version version = placeType.getVersion();
 			int line = placeType.getLineNr();
-			AsmClassNodeWrapper cn = tlm.getClassNodeWrapper(version, placeType.getEnclosingClassType());
+			if (placeType.getStatement() == null) {
+				placeDef.addError("Place " + placeDef.attrName() + " has no statement.");
+				return;
+			}
+			
+			ITypeBinding enclosingClassType = placeType.getEnclosingClassType();
+			if (enclosingClassType == null) {
+				placeDef.addError("Place " + placeDef.attrName() + " is not in a class.");
+				return;
+			}
+			AsmClassNodeWrapper cn = tlm.getClassNodeWrapper(version, enclosingClassType);
 			java.util.List<Integer> pcs = cn.getProgramCounterForLine(line);
 			if (pcs.size() == 0) {
 				placeDef.addError("No bytecode statement found in line " + line + ".");

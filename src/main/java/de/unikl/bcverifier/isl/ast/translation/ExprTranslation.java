@@ -14,6 +14,7 @@ import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLLogicalNotExpression;
 import b2bpl.bpl.ast.BPLQuantifierExpression;
 import b2bpl.bpl.ast.BPLQuantifierExpression.Operator;
+import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLType;
 import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLUnaryMinusExpression;
@@ -75,6 +76,15 @@ public class ExprTranslation {
 			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.TIMES, left, right);
 		case PLUS:
 			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.PLUS, left, right);
+		case GT:
+			return new BPLRelationalExpression(BPLRelationalExpression.Operator.GREATER, left, right);
+		case GTEQ:
+			return new BPLRelationalExpression(BPLRelationalExpression.Operator.GREATER_EQUAL, left, right);
+		case LT:
+			return new BPLRelationalExpression(BPLRelationalExpression.Operator.LESS, left, right);
+		case LTEQ:
+			return new BPLRelationalExpression(BPLRelationalExpression.Operator.LESS_EQUAL, left, right);
+			
 		}
 		throw new Error("unhandled case: " + e.getOperator()); //$NON-NLS-1$
 	}

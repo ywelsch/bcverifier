@@ -102,6 +102,14 @@ IntLiteral = 0 | [1-9][0-9]*
 "~"           { return sym(Terminals.RELATED); }
 "."           { return sym(Terminals.DOT); }
 "%"          { return sym(Terminals.MOD); }
+"+"          { return sym(Terminals.PLUS); }
+"-"          { return sym(Terminals.MINUS); }
+"*"          { return sym(Terminals.MULT); }
+"/"          { return sym(Terminals.DIV); }
+"<"          { return sym(Terminals.LT); }
+"<="          { return sym(Terminals.LTEQ); }
+">"          { return sym(Terminals.GT); }
+">="          { return sym(Terminals.GTEQ); }
 "=="          { return sym(Terminals.EQUALS); }
 "!="          { return sym(Terminals.UNEQUALS); }
 "!"				{ return sym(Terminals.NOT); }

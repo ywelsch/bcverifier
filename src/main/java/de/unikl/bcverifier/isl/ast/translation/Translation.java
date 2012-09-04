@@ -87,8 +87,7 @@ public class Translation {
 		BPLPrinter printer = new BPLPrinter(pw );
 		inv.accept(printer);
 		pw.flush();
-		String string = s.toString();
-		return string;
+		return "(" + s.toString() + ")";
 	}
 	
 
