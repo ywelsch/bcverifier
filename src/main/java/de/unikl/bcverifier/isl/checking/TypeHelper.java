@@ -28,7 +28,7 @@ import de.unikl.bcverifier.isl.ast.PlacePosition;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.Version;
-import de.unikl.bcverifier.isl.ast.translation.BuiltinFunction;
+import de.unikl.bcverifier.isl.translation.BuiltinFunction;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;

@@ -1,4 +1,4 @@
-package de.unikl.bcverifier.isl.ast.translation;
+package de.unikl.bcverifier.isl.translation;
 
 import org.eclipse.jdt.core.dom.IVariableBinding;
 

@@ -1,4 +1,4 @@
-package de.unikl.bcverifier.isl.ast.translation;
+package de.unikl.bcverifier.isl.translation;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

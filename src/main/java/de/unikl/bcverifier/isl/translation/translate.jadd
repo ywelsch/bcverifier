@@ -1,4 +1,4 @@
-import de.unikl.bcverifier.isl.ast.translation.*;
+import de.unikl.bcverifier.isl.translation.*;
 import b2bpl.bpl.ast.BPLExpression;
 import de.unikl.bcverifier.specification.SpecInvariant;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
