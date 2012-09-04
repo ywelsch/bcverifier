@@ -705,12 +705,12 @@ public final class CodeGenerator implements ITranslationConstants {
                 BPLRelationalExpression.Operator.GREATER_EQUAL, left, right);
     }
 
-    // @ requires left != null && right != null;
-    // @ ensures \result != null;
-    public static BPLExpression isSubtype(BPLExpression left,
-            BPLExpression right) {
-        return new BPLPartialOrderExpression(left, right);
-    }
+//    // @ requires left != null && right != null;
+//    // @ ensures \result != null;
+//    public static BPLExpression isSubtype(BPLExpression left,
+//            BPLExpression right) {
+//        return new BPLPartialOrderExpression(left, right);
+//    }
 
     // @ requires expression != null;
     // @ ensures \result != null;
@@ -1073,6 +1073,14 @@ public final class CodeGenerator implements ITranslationConstants {
     
     public static BPLExpression libraryField(BPLExpression field) {
         return new BPLFunctionApplication(LIBRARY_FIELD_FUNC, field);
+    }
+    
+    public static BPLExpression subtype(BPLExpression impl, BPLExpression t1, BPLExpression t2) {
+        return new BPLFunctionApplication("subtype", impl, t1, t2);
+    }
+    
+    public static BPLExpression libImpl(BPLExpression heap) {
+        return new BPLFunctionApplication("libImpl", heap);
     }
     
     

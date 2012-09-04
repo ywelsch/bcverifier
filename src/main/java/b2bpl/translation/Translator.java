@@ -37,10 +37,10 @@ import static b2bpl.translation.CodeGenerator.isOfType;
 import static b2bpl.translation.CodeGenerator.isPublic;
 import static b2bpl.translation.CodeGenerator.isStaticField;
 import static b2bpl.translation.CodeGenerator.isStaticMethod;
-import static b2bpl.translation.CodeGenerator.isSubtype;
 import static b2bpl.translation.CodeGenerator.isValueType;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
+import static b2bpl.translation.CodeGenerator.libImpl;
 import static b2bpl.translation.CodeGenerator.libType;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
@@ -66,6 +66,7 @@ import static b2bpl.translation.CodeGenerator.spmap2;
 import static b2bpl.translation.CodeGenerator.stack1;
 import static b2bpl.translation.CodeGenerator.stack2;
 import static b2bpl.translation.CodeGenerator.sub;
+import static b2bpl.translation.CodeGenerator.subtype;
 import static b2bpl.translation.CodeGenerator.trigger;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.unique;
@@ -627,22 +628,38 @@ public class Translator implements ITranslationConstants {
             final String y = "y";
             BPLVariable yVar = new BPLVariable(y, new BPLTypeName("alpha"));
             final String dynType = DYN_TYPE_FIELD;
+            final String l = "l";
+            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LIBRARY_IMPL_TYPE));
+            final String l1 = "l1";
+            BPLVariable l1Var = new BPLVariable(l1, new BPLTypeName(LIBRARY_IMPL_TYPE));
+            final String l2 = "l2";
+            BPLVariable l2Var = new BPLVariable(l2, new BPLTypeName(LIBRARY_IMPL_TYPE));
+            final String t1 = "t1";
+            BPLVariable t1Var = new BPLVariable(t1, new BPLTypeName(NAME_TYPE));
+            final String t2 = "t2";
+            BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
+            final String t3 = "t3";
+            BPLVariable t3Var = new BPLVariable(t3, new BPLTypeName(NAME_TYPE));
 
 
             // axiomatization
             addType(NAME_TYPE);
+            addType(LIBRARY_IMPL_TYPE);
             addType(REAL_TYPE);
             addType(ARRAY_TYPE, "alpha");
 
             addType(REF_TYPE);
             addConstants(new BPLVariable("null", new BPLTypeName(REF_TYPE)));
+            
+            addConstants(new BPLVariable(IMPL1, new BPLTypeName(LIBRARY_IMPL_TYPE)));
+            addConstants(new BPLVariable(IMPL2, new BPLTypeName(LIBRARY_IMPL_TYPE)));
 
             addType(FIELD_TYPE, "_");
 
             addDeclaration(new BPLTypeAlias(HEAP_TYPE, new BPLParameterizedType(new BPLArrayType(new BPLType[]{new BPLTypeName("Ref"), new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha"))}, new BPLTypeName("alpha")), new BPLTypeName("alpha"))));
 
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(HEAP1)))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE), wellformedHeap(var(HEAP2)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE), logicalAnd(wellformedHeap(var(HEAP1)), isEqual(libImpl(var(HEAP1)), var(IMPL1))))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE), logicalAnd(wellformedHeap(var(HEAP2)), isEqual(libImpl(var(HEAP2)), var(IMPL2))))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName(BIJ_TYPE), wellformedCoupling(var(HEAP1), var(HEAP2), var(related)))));
 
             
@@ -724,8 +741,8 @@ public class Translator implements ITranslationConstants {
             addFunction(CLASS_REPR_INV_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(NAME_TYPE));
             addAxiom(forall(cVar, isEqual(classReprInv(classRepr(var(c))), var(c)), new BPLTrigger(classRepr(var(c)))));
             addAxiom(forall(
-                    tVar, heapVar,
-                    logicalNot(isSubtype(typ(classRepr(var(t)), var(heap)), var(GLOBAL_VAR_PREFIX+"java.lang.Object")))
+                    lVar, tVar, heapVar,
+                    logicalNot(subtype(var(l), typ(classRepr(var(t)), var(heap)), var(GLOBAL_VAR_PREFIX+"java.lang.Object")))
                     ));
             addAxiom(forall(tVar, notEqual(classRepr(var(t)), var("null"))));
 
@@ -738,44 +755,55 @@ public class Translator implements ITranslationConstants {
 
 
             addComment("Encode type information");
+            
+            addFunction("libImpl", new BPLTypeName(HEAP_TYPE), new BPLTypeName(LIBRARY_IMPL_TYPE));
+            
+            addFunction("subtype", new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addComment("reflexivity");
+            addAxiom(forall(lVar, tVar, subtype(var(l), var(t), var(t))));
+            addComment("transitivity");
+            addAxiom(forall(lVar, t1Var, t2Var, t3Var, implies(logicalAnd(subtype(var(l), var(t1), var(t2)), subtype(var(l), var(t2), var(t3))), subtype(var(l), var(t1), var(t3)))));
+            addComment("antisymetic");
+            addAxiom(forall(lVar, t1Var, t2Var, implies(subtype(var(l), var(t1), var(t2)), logicalNot(subtype(var(l), var(t2), var(t1))))));
+            
+            
+            
             addFunction(TYP_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE));
             addAxiom(forall(heapVar, refVar, isEqual(typ(var(r), var(heap)), new BPLArrayExpression(var(heap), var(r), var(dynType)))));
 
-            addFunction(BASE_CLASS_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(tVar, 
-                    logicalAnd(isSubtype(var(t), baseClass(var(t))), implies(logicalAnd(logicalNot(isValueType(var(t))), notEqual(var(t), var(GLOBAL_VAR_PREFIX+"java.lang.Object"))), notEqual(var(t), baseClass(var(t))))),
-                    new BPLTrigger(baseClass(var(t)))));
-
-            addFunction(AS_DIRECT_SUB_CLASS_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
-            addFunction(ONE_CLASS_DOWN_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
-            addAxiom(forall(
-                    aVar, bVar, cVar,
-                    implies(isSubtype(var(c), asDirectSubClass(var(b), var(a))), isEqual(oneClassDown(var(c), var(a)), var(b))),
-                    new BPLTrigger(isSubtype(var(c), asDirectSubClass(var(b), var(a))))
-                    ));
+//            addFunction(BASE_CLASS_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(tVar, 
+//                    logicalAnd(isSubtype(var(t), baseClass(var(t))), implies(logicalAnd(logicalNot(isValueType(var(t))), notEqual(var(t), var(GLOBAL_VAR_PREFIX+"java.lang.Object"))), notEqual(var(t), baseClass(var(t))))),
+//                    new BPLTrigger(baseClass(var(t)))));
+//
+//            addFunction(AS_DIRECT_SUB_CLASS_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
+//            addFunction(ONE_CLASS_DOWN_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE));
+//            addAxiom(forall(
+//                    aVar, bVar, cVar,
+//                    implies(isSubtype(var(c), asDirectSubClass(var(b), var(a))), isEqual(oneClassDown(var(c), var(a)), var(b))),
+//                    new BPLTrigger(isSubtype(var(c), asDirectSubClass(var(b), var(a))))
+//                    ));
 
             addFunction(IS_VALUE_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     tVar,
                     implies(isValueType(var(t)), logicalAnd(
-                            forall(uVar, implies(isSubtype(var(t), var(u)), isEqual(var(t), var(u)))),
-                            forall(uVar, implies(isSubtype(var(u), var(t)), isEqual(var(t), var(u))))
+                            forall(lVar, uVar, implies(subtype(var(l), var(t), var(u)), isEqual(var(t), var(u)))),
+                            forall(lVar, uVar, implies(subtype(var(l), var(u), var(t)), isEqual(var(t), var(u))))
                             ))
                     ));
 
 //            addConstants(new BPLVariable(GLOBAL_VAR_PREFIX+"java.lang.Object", new BPLTypeName(NAME_TYPE)));
             addAxiom(forall(
-                    tVar, 
-                    implies(isSubtype(var(t), var(GLOBAL_VAR_PREFIX+"java.lang.Object")), logicalNot(isValueType(var(t))))
+                    lVar, tVar, 
+                    implies(subtype(var(l), var(t), var(GLOBAL_VAR_PREFIX+"java.lang.Object")), logicalNot(isValueType(var(t))))
                     ));
 
 
             addFunction(IS_OF_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     oVar, heapVar, tVar,
-                    //TODO use isSubtype or use refOfType here
-//                    isEquiv(isOfType(var(o), var(heap), var(t)), logicalOr(isNull(var(o)), refOfType(var(o), var(heap), var(t)))),
-                    isEquiv(isOfType(var(o), var(heap), var(t)), logicalOr(isNull(var(o)), isSubtype(typ(var(o), var(heap)), var(t)))),
+                    isEquiv(isOfType(var(o), var(heap), var(t)), logicalOr(isNull(var(o)), subtype(libImpl(var(heap)), typ(var(o), var(heap)), var(t)))),
                     new BPLTrigger(isOfType(var(o), var(heap), var(t)))
                     ));
 
@@ -1337,7 +1365,7 @@ public class Translator implements ITranslationConstants {
                     isEquiv(refOfType(var(o), var(heap), var(t)),
                             implies(
                                     obj(var(heap), var(o)),
-                                    isSubtype(new BPLArrayExpression(var(heap), var(o), var(dynType)), var(t))
+                                    subtype(libImpl(var(heap)), new BPLArrayExpression(var(heap), var(o), var(dynType)), var(t))
                                     )
                             )
                     ));
@@ -1584,7 +1612,8 @@ public class Translator implements ITranslationConstants {
                                             implies(map(var(oldHeap), var(o), var(EXPOSED_FIELD)), map(var(newHeap), var(o), var(EXPOSED_FIELD))),
                                             implies(map(var(oldHeap), var(o), var(ALLOC_FIELD)), isEqual(map(var(oldHeap), var(o), var(CREATED_BY_CTXT_FIELD)), map(var(newHeap), var(o), var(CREATED_BY_CTXT_FIELD)))),
                                             implies(map(var(oldHeap), var(o), var(ALLOC_FIELD)), map(var(newHeap), var(o), var(ALLOC_FIELD))),
-                                            isEqual(map(var(oldHeap), var(o), var(DYN_TYPE_FIELD)), map(var(newHeap), var(o), var(DYN_TYPE_FIELD)))
+                                            isEqual(map(var(oldHeap), var(o), var(DYN_TYPE_FIELD)), map(var(newHeap), var(o), var(DYN_TYPE_FIELD))),
+                                            isEqual(libImpl(var(newHeap)), libImpl(var(oldHeap)))
                                     )
                             )
                             )
@@ -3457,22 +3486,22 @@ public class Translator implements ITranslationConstants {
             BPLExpression axiom = isEqual(var(t), translateTypeReference(type));
             JClassType supertype = type.getSupertype();
             if (supertype != null) {
-                addAxiom(isSubtype(typeRef(type), typeRef(supertype)));
+                addAxiom(subtype(var(tc.getImpl()), typeRef(type), typeRef(supertype)));
                 axiom = logicalOr(
                         axiom,
-                        isSubtype(translateTypeReference(supertype), var(t)));
+                        subtype(var(tc.getImpl()), translateTypeReference(supertype), var(t)));
             }
             for (JClassType iface : type.getInterfaces()) {
-                addAxiom(isSubtype(typeRef(type), typeRef(supertype)));
+                addAxiom(subtype(var(tc.getImpl()), typeRef(type), typeRef(supertype)));
                 axiom = logicalOr(
                         axiom,
-                        isSubtype(translateTypeReference(iface), var(t)));
+                        subtype(var(tc.getImpl()), translateTypeReference(iface), var(t)));
             }
             BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
             addAxiom(forall(
                     tVar,
-                    implies(isSubtype(translateTypeReference(type), var(t)), axiom),
-                    trigger(isSubtype(translateTypeReference(type), var(t)))));
+                    implies(subtype(var(tc.getImpl()), translateTypeReference(type), var(t)), axiom),
+                    trigger(subtype(var(tc.getImpl()), translateTypeReference(type), var(t)))));
         }
 
         /**
@@ -3526,10 +3555,10 @@ public class Translator implements ITranslationConstants {
                     addAxiom(forall(
                             tVar,
                             implies(
-                                    isSubtype(var(t), typeRef(classType)),
+                                    subtype(var(tc.getImpl()), var(t), typeRef(classType)),
                                     isEqual(var(t), typeRef(classType))
                                     ),
-                                    trigger(isSubtype(var(t), typeRef(classType)))
+                                    trigger(subtype(var(tc.getImpl()), var(t), typeRef(classType)))
                             ));
                 }
 

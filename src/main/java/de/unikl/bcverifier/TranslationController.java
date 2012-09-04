@@ -150,6 +150,17 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
+    public String getImpl() {
+        switch(round) {
+        case 1:
+            return IMPL1;
+        case 2:
+            return IMPL2;
+        default:
+            return "lib1";
+        }
+    }
+    
     public String getStack(){
         switch(round){
         case 1:

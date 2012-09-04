@@ -469,4 +469,8 @@ public static final String SOME_VAL_I_TEMP = "someVal" + INT_TYPE_ABBREV;
 public static final String SOME_FIELD_R_TEMP = "someField" + REF_TYPE_ABBREV;
 public static final String SOME_FIELD_I_TEMP = "someField"+ INT_TYPE_ABBREV;
 
+public static final String LIBRARY_IMPL_TYPE = "Library";
+public static final String IMPL1 = "lib1";
+public static final String IMPL2 = "lib2";
+
 }
