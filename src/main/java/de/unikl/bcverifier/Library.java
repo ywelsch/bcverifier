@@ -228,15 +228,17 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             LibraryDefinition libraryDefinition1 = compileSpecification(oldFileNames);
             programDecls.addAll(libraryDefinition1.getNeededDeclarations());
             methodBlocks.addAll(libraryDefinition1.getMethodBlocks());
+            
+            addDefinesMethodAxioms(programDecls);
 
             tc.enterRound2();
             LibraryDefinition libraryDefinition2 = compileSpecification(newFileNames);
             programDecls.addAll(libraryDefinition2.getNeededDeclarations());
             methodBlocks.addAll(libraryDefinition2.getMethodBlocks());
 
-            addLibraryFields(programDecls);
-            
             addDefinesMethodAxioms(programDecls);
+            
+            addLibraryFields(programDecls);
             
             /////////////////////////////////////
             // add method definition for java.lang.Object default constructor
@@ -1447,18 +1449,19 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 }
                 programDecls.add(new BPLAxiom(forall(
                         mVar,
-                        isEquiv(definesMethod(var(className), var(m)),
+                        isEquiv(definesMethod(var(tc.getImpl()), var(className), var(m)),
                                 logicalOr(methodExprs
                                         .toArray(new BPLExpression[methodExprs
                                                                    .size()]))))));
             } else {
                 programDecls.add(new BPLAxiom(forall(
                         mVar,
-                        logicalNot(definesMethod(var(className), var(m)))
+                        logicalNot(definesMethod(var(tc.getImpl()), var(className), var(m)))
                         )
                         ));
             }
         }
+        tc.methodDefinitions().clear();
     }
 
     private LibraryDefinition compileSpecification(String[] fileNames)
@@ -1549,7 +1552,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                                     + MethodTranslator
                                     .getMethodName(method)))));
                     if(!method.isStatic()){
-                        preMethodCommands.add(new BPLAssumeCommand(memberOf(
+                        preMethodCommands.add(new BPLAssumeCommand(memberOf(var(tc.getImpl()), 
                                 var(GLOBAL_VAR_PREFIX
                                         + MethodTranslator.getMethodName(method)),
                                         var(GLOBAL_VAR_PREFIX + classType.getName()),

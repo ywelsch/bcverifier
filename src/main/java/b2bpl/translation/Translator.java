@@ -339,7 +339,7 @@ public class Translator implements ITranslationConstants {
             libTypeExpressions.add(isEqual(var(t), typeRef(type)));
             if(!type.isInterface()){
 //                addAxiom(forall(tVar, isEquiv(classExtends(typeRef(type), var(t)), isEqual(var(t), typeRef(type.getSupertype())))));
-                addAxiom(classExtends(typeRef(type), typeRef(type.getSupertype())));
+                addAxiom(classExtends(var(tc.getImpl()), typeRef(type), typeRef(type.getSupertype())));
             }
             
             if(tc.methodDefinitions().get(VALUE_TYPE_PREFIX+type.getName()) == null){ // if we not added any methods up to now, the class does not implement any
@@ -1268,25 +1268,37 @@ public class Translator implements ITranslationConstants {
             final String c3 = "c3";
             BPLVariable c3Var = new BPLVariable(c3, new BPLTypeName(NAME_TYPE));
             final String dynType = DYN_TYPE_FIELD;
+            final String l = "l";
+            BPLVariable lVar = new BPLVariable(l, new BPLTypeName(LIBRARY_IMPL_TYPE));
+            final String l1 = "l1";
+            BPLVariable l1Var = new BPLVariable(l1, new BPLTypeName(LIBRARY_IMPL_TYPE));
+            final String l2 = "l2";
+            BPLVariable l2Var = new BPLVariable(l2, new BPLTypeName(LIBRARY_IMPL_TYPE));
+            final String t1 = "t1";
+            BPLVariable t1Var = new BPLVariable(t1, new BPLTypeName(NAME_TYPE));
+            final String t2 = "t2";
+            BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
+            final String t3 = "t3";
+            BPLVariable t3Var = new BPLVariable(t3, new BPLTypeName(NAME_TYPE));
             
             final String spmap = "spmap";
             BPLVariable spmapVar = new BPLVariable(spmap, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)));
             
             
             
-            addAxiom(forall(tVar, uVar, oVar, heapVar,
+            addAxiom(forall(lVar, tVar, uVar, oVar, heapVar,
                     implies(
                             logicalAnd(
-                                    isClassType(var(t)),
-                                    isClassType(var(u)),
-                                    logicalNot(isSubtype(var(t), var(u))),
-                                    logicalNot(isSubtype(var(u), var(t))),
+                                    isClassType(var(l), var(t)),
+                                    isClassType(var(l), var(u)),
+                                    logicalNot(subtype(var(l), var(t), var(u))),
+                                    logicalNot(subtype(var(l), var(u), var(t))),
                                     nonNull(var(o)),
                                     isOfType(var(o), var(heap), var(t))
                                     ),
                                     logicalNot(isOfType(var(o), var(heap), var(u)))
                             ),
-                    new BPLTrigger(isClassType(var(t)), isClassType(var(u)), isOfType(var(o), var(heap), var(t)))
+                    new BPLTrigger(isClassType(var(l), var(t)), isClassType(var(l), var(u)), isOfType(var(o), var(heap), var(t)))
                     ));
             
 //            addAxiom(forall(tVar, oVar, heapVar,
@@ -1301,7 +1313,7 @@ public class Translator implements ITranslationConstants {
                     )
                     ));
             
-            addFunction(IS_CLASS_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_CLASS_TYPE_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             
             addDeclaration(new BPLTypeAlias(BIJ_TYPE, new BPLArrayType(new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL)));
 
@@ -1513,56 +1525,56 @@ public class Translator implements ITranslationConstants {
             addFunction(FIELD_TYPE_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), new BPLTypeName(NAME_TYPE));
             
             addFunction(IS_PUBLIC_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
-            addFunction(DEFINES_METHOD_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction(DEFINES_METHOD_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             addFunction(IS_CALLABLE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             addFunction(HAS_RETURN_VALUE_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             addComment("memberOf(m, t1, t2) <==> m is member of t2 (implementation is in t1)");
-            addFunction(MEMBER_OF_FUNC, new BPLTypeName(METHOD_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(MEMBER_OF_FUNC, new BPLType[]{new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(METHOD_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE)}, BPLBuiltInType.BOOL);
             addFunction(LIB_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
-            addFunction(CLASS_EXTENDS_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(CLASS_EXTENDS_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             
             addComment("classExtends is a partial function");
             addAxiom(forall(
-                    c1Var, c2Var,
-                    implies(classExtends(var(c1), var(c2)), forall(c3Var, implies(notEqual(var(c2), var(c3)), logicalNot(classExtends(var(c1), var(c3))))))
+                    lVar, c1Var, c2Var,
+                    implies(classExtends(var(l), var(c1), var(c2)), forall(c3Var, implies(notEqual(var(c2), var(c3)), logicalNot(classExtends(var(l), var(c1), var(c3))))))
                     ));
             addAxiom(forall(
-                    tVar,
-                    logicalNot(classExtends(var("$java.lang.Object"), var(t)))
+                    lVar, tVar,
+                    logicalNot(classExtends(var(l), var("$java.lang.Object"), var(t)))
                     ));
             
             addAxiom(forall(
-                    mVar, c1Var, c2Var,
-                    isEquiv(memberOf(var(m), var(c1), var(c2)),
+                    lVar, mVar, c1Var, c2Var,
+                    isEquiv(memberOf(var(l), var(m), var(c1), var(c2)),
                             logicalOr(
-                                    logicalAnd(isEqual(var(c1), var(c2)), definesMethod(var(c2), var(m))),
-                                    logicalAnd(logicalNot(definesMethod(var(c2), var(m))), 
-                                            forall(c3Var, implies(classExtends(var(c2), var(c3)), memberOf(var(m), var(c1), var(c3)))) 
+                                    logicalAnd(isEqual(var(c1), var(c2)), definesMethod(var(l), var(c2), var(m))),
+                                    logicalAnd(logicalNot(definesMethod(var(l), var(c2), var(m))), 
+                                            forall(c3Var, implies(classExtends(var(l), var(c2), var(c3)), memberOf(var(l), var(m), var(c1), var(c3)))) 
                                     )
                             )
                     )
                     ));
             addAxiom(forall(
-                    mVar, c1Var, c2Var,
-                    implies(memberOf(var(m), var(c1), var(c2)),
-                            definesMethod(var(c1), var(m))
+                    lVar, mVar, c1Var, c2Var,
+                    implies(memberOf(var(l), var(m), var(c1), var(c2)),
+                            definesMethod(var(l), var(c1), var(m))
                     )));
             
             addComment("memberOf is a relation (could also be defined as function definedInClass(m, c2) == c1)");
             addAxiom(forall(
-                    mVar, c1Var, c2Var,
-                    implies(memberOf(var(m), var(c1), var(c2)),
+                    lVar, mVar, c1Var, c2Var,
+                    implies(memberOf(var(l), var(m), var(c1), var(c2)),
                             forall(c3Var,
-                                    implies(notEqual(var(c3), var(c1)), logicalNot(memberOf(var(m), var(c3), var(c2))))
+                                    implies(notEqual(var(c3), var(c1)), logicalNot(memberOf(var(l), var(m), var(c3), var(c2))))
                                     )
                             )
                     ));
             
             addComment("memberOf only talks about class types");
             addAxiom(forall(
-                    mVar, c1Var, c2Var,
-                    implies(memberOf(var(m), var(c1), var(c2)),
-                            logicalAnd(isClassType(var(c1)), isClassType(var(c2))))
+                    lVar, mVar, c1Var, c2Var,
+                    implies(memberOf(var(l), var(m), var(c1), var(c2)),
+                            logicalAnd(isClassType(var(l), var(c1)), isClassType(var(l), var(c2))))
                     ));
             
 
@@ -1621,32 +1633,32 @@ public class Translator implements ITranslationConstants {
             
             
             // relation between classExtends and subtype
-            addAxiom(forall(c1Var, c2Var,
-                    implies(classExtends(var(c1), var(c2)), isSubtype(var(c1), var(c2)))
+            addAxiom(forall(lVar, c1Var, c2Var,
+                    implies(classExtends(var(l), var(c1), var(c2)), subtype(var(l), var(c1), var(c2)))
                     ));
-            addAxiom(forall(c1Var, c2Var, 
+            addAxiom(forall(lVar, c1Var, c2Var, 
                     implies(
                             logicalAnd(
-                                    isClassType(var(c1)),
-                                    classExtends(var(c1), var(c2))
+                                    isClassType(var(l), var(c1)),
+                                    classExtends(var(l), var(c1), var(c2))
                             ),
-                            isClassType(var(c2))
+                            isClassType(var(l), var(c2))
                     )));
-            addAxiom(forall(c1Var, c2Var,
+            addAxiom(forall(lVar, c1Var, c2Var,
                     implies(
                             logicalAnd(
-                                    isSubtype(var(c1), var(c2)),
-                                    isClassType(var(c1)),
-                                    isClassType(var(c2))
+                                    subtype(var(l), var(c1), var(c2)),
+                                    isClassType(var(l), var(c1)),
+                                    isClassType(var(l), var(c2))
                                     ),
                             logicalOr(
                                     isEqual(var(c1), var(c2)),
-                                    classExtends(var(c1), var(c2)),
+                                    classExtends(var(l), var(c1), var(c2)),
                                     exists(c3Var,
                                             logicalAnd(
-                                                    isClassType(var(c3)),
-                                                    classExtends(var(c1), var(c3)),
-                                                    isSubtype(var(c3), var(c2))
+                                                    isClassType(var(l), var(c3)),
+                                                    classExtends(var(l), var(c1), var(c3)),
+                                                    subtype(var(l), var(c3), var(c2))
                                                     )
                                             )
                                     )
@@ -3541,9 +3553,9 @@ public class Translator implements ITranslationConstants {
                 
                 // State that the type indeed is a class type.
                 if(!classType.isInterface()){
-                    addAxiom(isClassType(typeRef(classType)));
+                    addAxiom(isClassType(var(tc.getImpl()), typeRef(classType)));
                 } else {
-                    addAxiom(logicalNot(isClassType(typeRef(classType)))); // interfaces are no classes
+                    addAxiom(logicalNot(isClassType(var(tc.getImpl()), typeRef(classType)))); // interfaces are no classes
                     addAxiom(isMemberlessType(typeRef(classType)));
                 }
 

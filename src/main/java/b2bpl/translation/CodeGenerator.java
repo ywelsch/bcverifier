@@ -189,8 +189,8 @@ public final class CodeGenerator implements ITranslationConstants {
 
     // @ requires type != null;
     // @ ensures \result != null;
-    public static BPLExpression isClassType(BPLExpression type) {
-        return new BPLFunctionApplication(IS_CLASS_TYPE_FUNC, type);
+    public static BPLExpression isClassType(BPLExpression impl, BPLExpression type) {
+        return new BPLFunctionApplication(IS_CLASS_TYPE_FUNC, impl, type);
     }
 
     // @ requires type != null;
@@ -1039,20 +1039,20 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(OBJ_FUNC, heap, ref);
     }
     
-    public static BPLExpression memberOf(BPLExpression meth, BPLExpression c1, BPLExpression c2){
-        return new BPLFunctionApplication(MEMBER_OF_FUNC, meth, c1, c2);
+    public static BPLExpression memberOf(BPLExpression impl, BPLExpression meth, BPLExpression c1, BPLExpression c2){
+        return new BPLFunctionApplication(MEMBER_OF_FUNC, impl, meth, c1, c2);
     }
     
-    public static BPLExpression definesMethod(BPLExpression c, BPLExpression m){
-        return new BPLFunctionApplication(DEFINES_METHOD_FUNC, c, m);
+    public static BPLExpression definesMethod(BPLExpression impl, BPLExpression c, BPLExpression m){
+        return new BPLFunctionApplication(DEFINES_METHOD_FUNC, impl, c, m);
     }
     
     public static BPLExpression libType(BPLExpression c){
         return new BPLFunctionApplication(LIB_TYPE_FUNC, c);
     }
     
-    public static BPLExpression classExtends(BPLExpression c1, BPLExpression c2){
-        return new BPLFunctionApplication(CLASS_EXTENDS_FUNC, c1, c2);
+    public static BPLExpression classExtends(BPLExpression impl, BPLExpression c1, BPLExpression c2){
+        return new BPLFunctionApplication(CLASS_EXTENDS_FUNC, impl, c1, c2);
     }
     
     public static BPLExpression hasReturnValue(BPLExpression meth){

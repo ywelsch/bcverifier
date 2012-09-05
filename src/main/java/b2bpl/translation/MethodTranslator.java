@@ -3219,7 +3219,7 @@ public class MethodTranslator implements ITranslationConstants {
                     BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
                     addAssume(exists(tVar, 
                             logicalAnd(
-                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
+                                    memberOf(var(tc.getImpl()), var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
                                     libType(var(t))
                                     )
                             ));
@@ -3259,7 +3259,7 @@ public class MethodTranslator implements ITranslationConstants {
                     
                     addAssume(exists(tVar, 
                             logicalAnd(
-                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
+                                    memberOf(var(tc.getImpl()), var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
                                     logicalNot(libType(var(t)))
                                     )
                             ));
