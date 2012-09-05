@@ -764,7 +764,7 @@ public class Translator implements ITranslationConstants {
             addComment("transitivity");
             addAxiom(forall(lVar, t1Var, t2Var, t3Var, implies(logicalAnd(subtype(var(l), var(t1), var(t2)), subtype(var(l), var(t2), var(t3))), subtype(var(l), var(t1), var(t3)))));
             addComment("antisymetic");
-            addAxiom(forall(lVar, t1Var, t2Var, implies(subtype(var(l), var(t1), var(t2)), logicalNot(subtype(var(l), var(t2), var(t1))))));
+            addAxiom(forall(lVar, t1Var, t2Var, implies(logicalAnd(subtype(var(l), var(t1), var(t2)), notEqual(var(t1), var(t2))), logicalNot(subtype(var(l), var(t2), var(t1))))));
             
             
             
