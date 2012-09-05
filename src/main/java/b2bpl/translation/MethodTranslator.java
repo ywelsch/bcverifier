@@ -3220,7 +3220,7 @@ public class MethodTranslator implements ITranslationConstants {
                     addAssume(exists(tVar, 
                             logicalAnd(
                                     memberOf(var(tc.getImpl()), var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
-                                    libType(var(t))
+                                    libType(var(tc.getImpl()), var(t))
                                     )
                             ));
                     rawEndBlock(tc.prefix(CALLTABLE_LABEL));
@@ -3260,10 +3260,10 @@ public class MethodTranslator implements ITranslationConstants {
                     addAssume(exists(tVar, 
                             logicalAnd(
                                     memberOf(var(tc.getImpl()), var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
-                                    logicalNot(libType(var(t)))
+                                    logicalNot(libType(var(tc.getImpl()), var(t)))
                                     )
                             ));
-                    addAssume(isCallable(typeRef(method.getOwner()), var(GLOBAL_VAR_PREFIX+invokedMethodName)), "rule out private methods");
+                    addAssume(isCallable(var(tc.getImpl()), typeRef(method.getOwner()), var(GLOBAL_VAR_PREFIX+invokedMethodName)), "rule out private methods");
                     addAssume(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)));
                     rawEndBlock(tc.getCheckLabel());
                 } else if(invokedMethod.isConstructor()) {

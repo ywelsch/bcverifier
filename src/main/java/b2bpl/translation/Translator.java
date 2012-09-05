@@ -312,19 +312,19 @@ public class Translator implements ITranslationConstants {
 //                    declarations.add(new BPLAxiom(new BPLFunctionApplication(DEFINES_METHOD, typeRef(type), var(methodName))));
                     tc.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
                     if(method.isStatic()){
-                        addAxiom(isStaticMethod(typeRef(type), var(methodName)));
+                        addAxiom(isStaticMethod(var(tc.getImpl()), typeRef(type), var(methodName)));
                     } else {
-                        addAxiom(logicalNot(isStaticMethod(typeRef(type), var(methodName))));
+                        addAxiom(logicalNot(isStaticMethod(var(tc.getImpl()), typeRef(type), var(methodName))));
                     }
                     if(method.isPublic()){
-                        addAxiom(new BPLFunctionApplication(IS_CALLABLE_FUNC, typeRef(type), var(methodName)));
+                        addAxiom(CodeGenerator.isCallable(var(tc.getImpl()), typeRef(type), var(methodName)));
                     } else {
-                        addAxiom(logicalNot(new BPLFunctionApplication(IS_CALLABLE_FUNC, typeRef(type), var(methodName))));
+                        addAxiom(logicalNot(CodeGenerator.isCallable(var(tc.getImpl()), typeRef(type), var(methodName))));
                     }
                     if(method.isConstructor() || !method.isVoid()){
-                        addAxiom(hasReturnValue(var(methodName)));
+                        addAxiom(hasReturnValue(var(tc.getImpl()), var(methodName)));
                     } else {
-                        addAxiom(logicalNot(hasReturnValue(var(methodName))));
+                        addAxiom(logicalNot(hasReturnValue(var(tc.getImpl()), var(methodName))));
                     }
                     procedures.put(method.getQualifiedBoogiePLName(), proc);
                 } else if(method.isAbstract()){
@@ -347,7 +347,7 @@ public class Translator implements ITranslationConstants {
             }
         }
         if(libTypeExpressions.size() > 0){
-            addAxiom(forall(tVar, isEquiv(libType(var(t)), logicalOr(libTypeExpressions.toArray(new BPLExpression[libTypeExpressions.size()])))));
+            addAxiom(forall(tVar, isEquiv(libType(var(tc.getImpl()), var(t)), logicalOr(libTypeExpressions.toArray(new BPLExpression[libTypeExpressions.size()])))));
         }
 
         return procedures;
@@ -688,7 +688,7 @@ public class Translator implements ITranslationConstants {
                                     forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(HEAP1),  var(r1), var(exposed)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))))),
                                     forall(r1Var, implies(logicalAnd(obj(var(HEAP1), var(r1)), new BPLArrayExpression(var(HEAP1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
                                     forall(r2Var, implies(logicalAnd(obj(var(HEAP2), var(r2)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
-                                    forall(r1Var, r2Var, implies(related(var(r1), var(r2)), forall(tVar, implies(isPublic(var(t)), implies(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t)))))))
+                                    forall(r1Var, r2Var, implies(related(var(r1), var(r2)), forall(tVar, implies(isPublic(libImpl(var(HEAP1)), var(t)), implies(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t)))))))
                                     ))
                     ));
 
@@ -836,11 +836,11 @@ public class Translator implements ITranslationConstants {
                     new BPLTrigger(new BPLArrayExpression(var(heap), classRepr(var(c)), var(alloc)))
                     ));
 
-            addFunction(IS_MEMBERLESS_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_MEMBERLESS_TYPE_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     oVar, heapVar,
-                    logicalNot(isMemberlessType(typ(var(o), var(heap)))),
-                    new BPLTrigger(isMemberlessType(typ(var(o), var(heap))))
+                    logicalNot(isMemberlessType(libImpl(var(heap)), typ(var(o), var(heap)))),
+                    new BPLTrigger(isMemberlessType(libImpl(var(heap)), typ(var(o), var(heap))))
                     ));
 
             // primitive types
@@ -1524,13 +1524,13 @@ public class Translator implements ITranslationConstants {
 
             addFunction(FIELD_TYPE_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), new BPLTypeName(NAME_TYPE));
             
-            addFunction(IS_PUBLIC_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_PUBLIC_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addFunction(DEFINES_METHOD_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
-            addFunction(IS_CALLABLE_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
-            addFunction(HAS_RETURN_VALUE_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_CALLABLE_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction(HAS_RETURN_VALUE_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             addComment("memberOf(m, t1, t2) <==> m is member of t2 (implementation is in t1)");
             addFunction(MEMBER_OF_FUNC, new BPLType[]{new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(METHOD_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE)}, BPLBuiltInType.BOOL);
-            addFunction(LIB_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(LIB_TYPE_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addFunction(CLASS_EXTENDS_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             
             addComment("classExtends is a partial function");
@@ -1608,7 +1608,7 @@ public class Translator implements ITranslationConstants {
             
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(ITranslationConstants.USE_HAVOC, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
             
-            addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             
             addFunction(VALID_HEAP_SUCC_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(STACK_TYPE), BPLBuiltInType.BOOL);
 
@@ -3556,7 +3556,7 @@ public class Translator implements ITranslationConstants {
                     addAxiom(isClassType(var(tc.getImpl()), typeRef(classType)));
                 } else {
                     addAxiom(logicalNot(isClassType(var(tc.getImpl()), typeRef(classType)))); // interfaces are no classes
-                    addAxiom(isMemberlessType(typeRef(classType)));
+                    addAxiom(isMemberlessType(var(tc.getImpl()), typeRef(classType)));
                 }
 
                 // Eventually axiomatize the fact that the type is final.
@@ -3575,9 +3575,9 @@ public class Translator implements ITranslationConstants {
                 }
 
                 if(classType.isPublic()){
-                    addAxiom(new BPLFunctionApplication(IS_PUBLIC_FUNC, typeRef(classType)));
+                    addAxiom(CodeGenerator.isPublic(var(tc.getImpl()), typeRef(classType)));
                 } else {
-                    addAxiom(logicalNot(new BPLFunctionApplication(IS_PUBLIC_FUNC, typeRef(classType))));
+                    addAxiom(logicalNot(CodeGenerator.isPublic(var(tc.getImpl()), typeRef(classType))));
                 }
 
                 // Generate axioms for ruling out "wrong supertypes".

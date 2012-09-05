@@ -735,7 +735,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         // can not return to a static method call site
         //////////////////////////////////////////////
-        procAssumes.add(new BPLAssumeCommand(logicalNot(isStaticMethod(classReprInv(stack1(receiver())), stack1(var(METH_FIELD))))));
+        procAssumes.add(new BPLAssumeCommand(logicalNot(isStaticMethod(var(IMPL1), classReprInv(stack1(receiver())), stack1(var(METH_FIELD))))));
 
         BPLExpression zero = new BPLIntLiteral(0);
         BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
@@ -842,7 +842,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 //        procAssumes.add(assumeCmd);
 
         assumeCmd = new BPLAssumeCommand(implies(
-                hasReturnValue(stack1(var(METH_FIELD))),
+                hasReturnValue(var(IMPL1), stack1(var(METH_FIELD))),
                 logicalAnd(
                 		relNull(
                                 stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)),
@@ -1056,7 +1056,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         checkingCommand.add(new BPLAssignmentCommand(
               heap1(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                       var(EXPOSED_FIELD)), ifThenElse(
-                      logicalAnd(hasReturnValue(stack1(var(METH_FIELD))),
+                      logicalAnd(hasReturnValue(var(IMPL1), stack1(var(METH_FIELD))),
                               nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
                               nonNull(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)))),
                       BPLBoolLiteral.TRUE,
@@ -1065,7 +1065,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         checkingCommand.add(new BPLAssignmentCommand(
               heap2(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                       var(EXPOSED_FIELD)), ifThenElse(
-                      logicalAnd(hasReturnValue(stack2(var(METH_FIELD))),
+                      logicalAnd(hasReturnValue(var(IMPL1), stack2(var(METH_FIELD))),
                               nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
                               nonNull(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)))),
                       BPLBoolLiteral.TRUE,
@@ -1086,7 +1086,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         }
 
         checkingCommand.add(new BPLAssertCommand(
-                implies(hasReturnValue(stack1(var(METH_FIELD))),
+                implies(hasReturnValue(var(IMPL1), stack1(var(METH_FIELD))),
                         logicalAnd(
                                 relNull(stack1(var(RESULT_VAR
                                         + REF_TYPE_ABBREV)),
@@ -1726,7 +1726,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         dispatchCommands = new ArrayList<BPLCommand>();
         dispatchCommands.add(new BPLAssumeCommand(
                 logicalOr(
-                    isPublic(typ(stack(receiver()),var(tc.getHeap()))),
+                    isPublic(var(tc.getImpl()), typ(stack(receiver()),var(tc.getHeap()))),
                     logicalNot(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)))
                 )
                 ));
@@ -1754,7 +1754,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         dispatchCommands = new ArrayList<BPLCommand>();
         dispatchCommands.add(new BPLAssumeCommand(
                 logicalOr(
-                    isPublic(typ(stack(receiver()),var(tc.getHeap()))),
+                    isPublic(var(tc.getImpl()), typ(stack(receiver()),var(tc.getHeap()))),
                     logicalNot(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)))
                 )
                 ));

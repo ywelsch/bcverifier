@@ -886,8 +886,8 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(AS_RANGE_FIELD_FUNC, exp1, exp2);
     }
     
-    public static BPLExpression isMemberlessType(BPLExpression exp1){
-        return new BPLFunctionApplication(IS_MEMBERLESS_TYPE_FUNC, exp1);
+    public static BPLExpression isMemberlessType(BPLExpression impl, BPLExpression exp1){
+        return new BPLFunctionApplication(IS_MEMBERLESS_TYPE_FUNC, impl, exp1);
     }
     
     public static BPLExpression asInterface(BPLExpression exp1){
@@ -999,12 +999,12 @@ public final class CodeGenerator implements ITranslationConstants {
                 exp1, exp2);
     }
     
-    public static BPLExpression isCallable(BPLExpression exp1, BPLExpression exp2){
-        return new BPLFunctionApplication(IS_CALLABLE_FUNC, exp1, exp2);
+    public static BPLExpression isCallable(BPLExpression impl, BPLExpression exp1, BPLExpression exp2){
+        return new BPLFunctionApplication(IS_CALLABLE_FUNC, impl, exp1, exp2);
     }
     
-    public static BPLExpression isPublic(BPLExpression clazz){
-        return new BPLFunctionApplication(IS_PUBLIC_FUNC, clazz);
+    public static BPLExpression isPublic(BPLExpression impl, BPLExpression clazz){
+        return new BPLFunctionApplication(IS_PUBLIC_FUNC, impl, clazz);
     }
     
     public static BPLExpression relNull(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
@@ -1047,20 +1047,20 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(DEFINES_METHOD_FUNC, impl, c, m);
     }
     
-    public static BPLExpression libType(BPLExpression c){
-        return new BPLFunctionApplication(LIB_TYPE_FUNC, c);
+    public static BPLExpression libType(BPLExpression impl, BPLExpression c){
+        return new BPLFunctionApplication(LIB_TYPE_FUNC, impl, c);
     }
     
     public static BPLExpression classExtends(BPLExpression impl, BPLExpression c1, BPLExpression c2){
         return new BPLFunctionApplication(CLASS_EXTENDS_FUNC, impl, c1, c2);
     }
     
-    public static BPLExpression hasReturnValue(BPLExpression meth){
-        return new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, meth);
+    public static BPLExpression hasReturnValue(BPLExpression impl, BPLExpression meth){
+        return new BPLFunctionApplication(HAS_RETURN_VALUE_FUNC, impl, meth);
     }
     
-    public static BPLExpression isStaticMethod(BPLExpression clazz, BPLExpression meth){
-        return new BPLFunctionApplication(IS_STATIC_METHOD_FUNC, clazz, meth);
+    public static BPLExpression isStaticMethod(BPLExpression impl, BPLExpression clazz, BPLExpression meth){
+        return new BPLFunctionApplication(IS_STATIC_METHOD_FUNC, impl, clazz, meth);
     }
     
     public static BPLExpression validHeapSucc(BPLExpression oldHeap, BPLExpression newHeap, BPLExpression stack){
