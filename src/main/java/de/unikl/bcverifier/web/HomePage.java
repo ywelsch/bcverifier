@@ -154,6 +154,7 @@ public class HomePage extends WebPage {
     	//addExample("cell2", "Cell example (Alternative)");
     	addExample("cb", "Callback example");
     	addExample("obool", "OBool example");
+    	addExample("oneOffLoop", "OneOffLoop example");
 	}
 
 	private void addExample(String dir, String description) {

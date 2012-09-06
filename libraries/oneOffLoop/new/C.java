@@ -1,6 +1,4 @@
-public class C{
-	private MyList list;
-
+public class C {
 	public int m(int n){
 		int x = 0;
 		int i = 1;
