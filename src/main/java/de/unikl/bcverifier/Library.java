@@ -257,6 +257,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             
             addCheckingBlocks(invAssertions, invAssumes, localInvAssertions, localInvAssumes, methodBlocks);
             
+            addNoopBlock(methodBlocks);
             
             
             for (String place : tc.places()) {
@@ -291,6 +292,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             throw new TranslationException(
                     "Could not write boogie specification to file.", e);
         }
+    }
+
+    private void addNoopBlock(List<BPLBasicBlock> methodBlocks) {
+        methodBlocks.add(new BPLBasicBlock("noop", new BPLCommand[0], new BPLReturnCommand()));
     }
 
     private void configureCodeGenerator(Project project) {
@@ -1065,7 +1070,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         checkingCommand.add(new BPLAssignmentCommand(
               heap2(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)),
                       var(EXPOSED_FIELD)), ifThenElse(
-                      logicalAnd(hasReturnValue(var(IMPL1), stack2(var(METH_FIELD))),
+                      logicalAnd(hasReturnValue(var(IMPL2), stack2(var(METH_FIELD))),
                               nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
                               nonNull(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)))),
                       BPLBoolLiteral.TRUE,
@@ -1601,11 +1606,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         String retTableLabel = tc.prefix(RETTABLE_LABEL);
         String retTableInitLabel = retTableLabel + INIT_LABEL_POSTFIX;
         String[] returnLabels = tc.returnLabels().toArray(
-                new String[tc.returnLabels().size()]);
+                new String[tc.returnLabels().size() + 1]);
+        //add noop to force the return point to appear in all exception traces
+        returnLabels[tc.returnLabels().size()] = "noop";
         
         String placeTableLabel = tc.prefix(LOCAL_PLACES_TABLE_LABEL);
         String[] placesLabels = tc.getLocalPlaces().toArray(
-                new String[tc.getLocalPlaces().size()]);
+                new String[tc.getLocalPlaces().size() + 1]);
+        //add noop to force the return point to appear in all exception traces
+        placesLabels[tc.getLocalPlaces().size()] = "noop";
         
         String constTableLabel = tc.prefix(CONSTRUCTOR_TABLE_LABEL);
 
@@ -1620,12 +1629,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         BPLExpression unrollLoop = var(tc.prefix(ITranslationConstants.UNROLL_COUNT));
         dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
         dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
-        
-        if (placesLabels.length > 0) {
-            dispatchTransferCmd = new BPLGotoCommand(placesLabels);
-        } else {
-            dispatchTransferCmd = new BPLReturnCommand();
-        }
+        dispatchTransferCmd = new BPLGotoCommand(placesLabels);
+
         methodBlocks.add(
                 0,
                 new BPLBasicBlock(placeTableLabel, dispatchCommands
@@ -1641,12 +1646,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
         dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
         
-        if (methodLabels.size() > 0) {
-            dispatchTransferCmd = new BPLGotoCommand(methodLabels
-                    .toArray(new String[methodLabels.size()]));
-        } else {
-            dispatchTransferCmd = new BPLReturnCommand();
-        }
+        methodLabels.add("noop");
+        dispatchTransferCmd = new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]));
         methodBlocks.add(
                 0,
                 new BPLBasicBlock(callTableLabel, dispatchCommands
@@ -1683,12 +1684,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
         dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
         
-        
-        if (returnLabels.length > 0) {
-            dispatchTransferCmd = new BPLGotoCommand(returnLabels);
-        } else {
-            dispatchTransferCmd = new BPLReturnCommand();
-        }
+        dispatchTransferCmd = new BPLGotoCommand(returnLabels);
+
         methodBlocks.add(
                 0,
                 new BPLBasicBlock(retTableLabel, dispatchCommands
@@ -1736,11 +1733,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
         dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
         
-        if (constructorLabels.size() > 0) {
-            dispatchTransferCmd = new BPLGotoCommand(constructorLabels.toArray(new String[constructorLabels.size()]));
-        } else {
-            dispatchTransferCmd = new BPLReturnCommand();
-        }
+        constructorLabels.add("noop");
+        dispatchTransferCmd = new BPLGotoCommand(constructorLabels.toArray(new String[constructorLabels.size()]));
+
         methodBlocks.add(
                 0,
                 new BPLBasicBlock(constTableLabel, dispatchCommands.toArray(new BPLCommand[dispatchCommands.size()]),

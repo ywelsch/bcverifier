@@ -1313,6 +1313,10 @@ public class Translator implements ITranslationConstants {
                     )
                     ));
             
+            addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")}, new BPLVariable[]{lVar, oVar, heapVar, tVar, fieldAlphaVar, vAlphaVar},
+                    isEquiv(isEqual(libImpl(var(heap)), var(l)), isEqual(libImpl(new BPLArrayExpression(var(heap), new BPLArrayAssignment(new BPLExpression[]{var(o), var(f)}, var(v)))), var(l)))
+                    ));
+            
             addFunction(IS_CLASS_TYPE_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             
             addDeclaration(new BPLTypeAlias(BIJ_TYPE, new BPLArrayType(new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL)));

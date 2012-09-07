@@ -9,6 +9,10 @@ import javax.swing.JOptionPane;
 import org.apache.log4j.Logger;
 
 import de.unikl.bcverifier.boogie.BoogieRunner;
+import de.unikl.bcverifier.exceptionhandling.AssertionException;
+import de.unikl.bcverifier.exceptionhandling.AssertionExceptionPrinter;
+import de.unikl.bcverifier.exceptionhandling.ErrorTraceParser;
+import de.unikl.bcverifier.exceptionhandling.ErrorTraceParser.TraceParseException;
 import de.unikl.bcverifier.helpers.BCCheckDefinition;
 import de.unikl.bcverifier.helpers.CheckRunner;
 import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
@@ -47,7 +51,17 @@ public class SingleTestRunner {
                     Logger.getLogger(SingleTestRunner.class).info("Test completed successfully.");
                 } else {
                     Logger.getLogger(SingleTestRunner.class).error("Check did not succeed!");
-                    Logger.getLogger(SingleTestRunner.class).error(result.getLastMessage());
+//                    Logger.getLogger(SingleTestRunner.class).error(result.getLastMessage());
+                    ErrorTraceParser parser = new ErrorTraceParser();
+                    try {
+                        List<AssertionException> exceptionList = parser.parse(result.getLastMessage());
+                        AssertionExceptionPrinter printer = new AssertionExceptionPrinter();
+                        for(AssertionException ex : exceptionList){
+                            printer.print(ex, true);
+                        }
+                    } catch (TraceParseException e) {
+                        e.printStackTrace();
+                    }
                 }
             } else {
                 CheckRunner.generate(test, new File(test.getLibDir(), "bpl"));

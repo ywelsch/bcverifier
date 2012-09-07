@@ -303,7 +303,7 @@ public class TranslationController implements ITranslationConstants {
         } else {
             // we have a loop or some other place inside the method, no method call
             for(int i = 0; i<Integer.MAX_VALUE; i++){
-                placeName = prefix(methodName+i);
+                placeName = prefix(methodName+"_"+i);
                 if(!places.contains(placeName)){
                     places.add(placeName);
                     lastPlace = placeName;
@@ -317,11 +317,11 @@ public class TranslationController implements ITranslationConstants {
     public String buildPlace(String methodName, String invocedMethod) {
         String placeName;
         for(int i=0; i<Integer.MAX_VALUE; i++){
-            placeName = prefix(methodName + "_" + invocedMethod+i);
+            placeName = prefix(methodName + "_" + invocedMethod+"_"+i);
             if(!places.contains(placeName)){
                 lastPlace = placeName;
                 places.add(placeName);
-                nextLabel = invocedMethod+i;
+                nextLabel = invocedMethod+"_"+i;
                 returnLabels.add(prefix(methodName + "_" + nextLabel));
                 return placeName;
             }

@@ -1378,7 +1378,7 @@ public class MethodTranslator implements ITranslationConstants {
 
         String currentLabel = blockLabel;
         
-        String boundaryReturnLabel = currentLabel + "_boudary_return";
+        String boundaryReturnLabel = currentLabel + "_boundary_return";
         String internReturnLabel = currentLabel + "_intern_return";
         endBlock(boundaryReturnLabel, internReturnLabel);
         
