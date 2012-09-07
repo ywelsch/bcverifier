@@ -39,6 +39,8 @@ public class ErrorTraceParser {
         FIND_ASSERTION,
         FIND_LIBRARY_ACTION,
         FIND_CALLED_METHOD,
+        FIND_CALLED_METHOD_INTERN,
+        FIND_INTERN_RETURN,
         FIND_ACTION_FOR_METHOD,
         FIND_CHECK
     }
@@ -71,6 +73,8 @@ public class ErrorTraceParser {
     private List<SimulationStep> stepsInImpl1 = new ArrayList<SimulationStep>();
     private List<SimulationStep> stepsInImpl2 = new ArrayList<SimulationStep>();
     private List<String> thisExceptionLines = new ArrayList<String>();
+    
+    private String methodCalledFrom;
     
     public List<AssertionException> parse(String input) throws TraceParseException {
         exceptions.clear();
@@ -162,6 +166,33 @@ public class ErrorTraceParser {
                 }
                 thisExceptionLines.add(line);
                 break;
+            case FIND_CALLED_METHOD_INTERN:
+                if(!lookForAssertionBegin(line)){
+                    matcher = labelLine.matcher(line);
+                    if(!matcher.matches())
+                        return; //the current line is not a label line (but what could it be?)
+                    String label = matcher.group(4);
+                    matcher = calledMethodLabel.matcher(label);
+                    if(!matcher.matches()){
+                        throw new TraceParseException("Method called on the library could not be determined.");
+                    }
+                    String libImpl = matcher.group(1);
+                    String methodSig = matcher.group(2);
+                    
+                    List<SimulationStep> list;
+                    if(libImpl.equals("1")){
+                        list = stepsInImpl1;
+                    } else if(libImpl.equals("2")){
+                        list = stepsInImpl2;
+                    } else {
+                        throw new TraceParseException("Wrong library implementation: "+libImpl);
+                    }
+                    
+                    list.add(new SimulationStep(Action.METHOD_CALL, Direction.INTERN, methodCalledFrom, methodSig, null));
+                    state = State.FIND_ACTION_FOR_METHOD;
+                }
+                thisExceptionLines.add(line);
+                break;
             case FIND_ACTION_FOR_METHOD:
                 if(!lookForAssertionBegin(line)){
                     matcher = labelLine.matcher(line);
@@ -185,18 +216,14 @@ public class ErrorTraceParser {
                         }
                         success = true;
                     }
-                    matcher = internReturnOutLabel.matcher(label);
-                    if(!success && matcher.matches()){
-                        String impl = matcher.group(1);
-                        String methodName = matcher.group(2);
-                        SimulationStep step = new SimulationStep(Action.METHOD_RETURN, Direction.INTERN, methodName);
-                        if(impl.equals("1")){
-                            stepsInImpl1.add(step);
-                        } else if(impl.equals("2")) {
-                            stepsInImpl2.add(step);
-                        }
-                        success = true;
-                    }
+//                    matcher = internReturnOutLabel.matcher(label);
+//                    if(!success && matcher.matches()){
+//                        String impl = matcher.group(1);
+//                        String methodName = matcher.group(2);
+//                        SimulationStep step = new SimulationStep(Action.METHOD_RETURN, Direction.INTERN, methodName);
+//                        state = State.FIND_INTERN_RETURN;
+//                        success = true;
+//                    }
                     matcher = boundaryCallLabel.matcher(label);
                     if(!success && matcher.matches()){
                         String impl = matcher.group(1);
@@ -220,13 +247,8 @@ public class ErrorTraceParser {
                         String methodName = matcher.group(2);
                         String calledMethodName = matcher.group(3);
                         String invocationCount = matcher.group(4);
-                        SimulationStep step = new SimulationStep(Action.METHOD_CALL, Direction.INTERN, methodName, calledMethodName, null);//TODO add invocation count
-                        if(impl.equals("1")){
-                            stepsInImpl1.add(step);
-                        } else if(impl.equals("2")) {
-                            stepsInImpl2.add(step);
-                        }
-                        state = State.FIND_CALLED_METHOD; //FIXME this reports the method call twice and the next will be the method including the class as boundary call --> wrong
+                        methodCalledFrom = methodName;
+                        state = State.FIND_CALLED_METHOD_INTERN;
                         success = true;
                     }
                     matcher = boundaryReturnInLabel.matcher(label);
@@ -289,6 +311,16 @@ public class ErrorTraceParser {
                 }
                 thisExceptionLines.add(line);
                 break;
+//            case FIND_INTERN_RETURN:
+//                if(!lookForAssertionBegin(line)){
+//                    matcher = labelLine.matcher(line);
+//                    if(!matcher.matches())
+//                        return; //the current line is not a label line (but what could it be?)
+//                    String label = matcher.group(4);
+//                    //TODO
+//                }
+//                thisExceptionLines.add(line);
+//                break;
             case FIND_CHECK:
                 if(!lookForAssertionBegin(line)){
                     matcher = labelLine.matcher(line);
