@@ -656,6 +656,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(new BPLAssignmentCommand(heap1(stack1(receiver()), var(EXPOSED_FIELD)), BPLBoolLiteral.TRUE));
         procAssumes.add(new BPLAssignmentCommand(heap2(stack2(receiver()), var(EXPOSED_FIELD)), BPLBoolLiteral.TRUE));
         procAssumes.add(new BPLAssignmentCommand(related(stack1(receiver()), stack2(receiver())), BPLBoolLiteral.TRUE));
+        BPLAssumeCommand wellformedCouplingAssume = new BPLAssumeCommand(wellformedCoupling(var(HEAP1), var(HEAP2), var(RELATED_RELATION)));
+        wellformedCouplingAssume.addComment("workaround for problems with ternary subtype relation");
+        procAssumes.add(wellformedCouplingAssume); //FIXME workaround for wellformedCoupling program introduced by ternary subtype relation
         if(config.isAssumeWellformedHeap()){
             procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(HEAP1))));
             procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(HEAP2))));
