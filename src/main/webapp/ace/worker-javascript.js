@@ -1337,7 +1337,9 @@ EventEmitter._dispatchEvent = function(eventName, e) {
     if (!listeners.length && !defaultHandler)
         return;
 
-    e = e || {};
+    if (typeof e != "object" || !e)
+        e = {};
+
     if (!e.type)
         e.type = eventName;
     
@@ -1540,6 +1542,7 @@ var Anchor = require("./anchor").Anchor;
  * Creates a new `Document`. If `text` is included, the `Document` contains those strings; otherwise, it's empty.
  *
  **/
+
 var Document = function(text) {
     this.$lines = [];
 
@@ -1667,6 +1670,29 @@ var Document = function(text) {
         }
         return position;
     };
+    /**
+     * Document@change(e)
+     * - e (Object): Contains at least one property called `"action"`. `"action"` indicates the action that triggered the change. Each action also has a set of additional properties.
+     *
+     * Fires whenever the document changes.
+     *
+     * Several methods trigger different `"change"` events. Below is a list of each action type, followed by each property that's also available:
+     *
+     *  * `"insertLines"` (emitted by [[Document.insertLines]])
+     *    * `range`: the [[Range]] of the change within the document
+     *    * `lines`: the lines in the document that are changing
+     *  * `"insertText"` (emitted by [[Document.insertNewLine]])
+     *    * `range`: the [[Range]] of the change within the document
+     *    * `text`: the text that's being added
+     *  * `"removeLines"` (emitted by [[Document.insertLines]])
+     *    * `range`: the [[Range]] of the change within the document
+     *    * `lines`: the lines in the document that were removed
+     *    * `nl`: the new line character (as defined by [[Document.getNewLineCharacter]])
+     *  * `"removeText"` (emitted by [[Document.removeInLine]] and [[Document.removeNewLine]])
+     *    * `range`: the [[Range]] of the change within the document
+     *    * `text`: the text that's being removed
+     *
+     **/
     this.insertLines = function(row, lines) {
         if (lines.length == 0)
             return {row: row, column: 0};
@@ -2534,6 +2560,14 @@ exports.arrayToMap = function(arr) {
     }
     return map;
 
+};
+
+exports.createMap = function(props) {
+    var map = Object.create(null);
+    for (var i in props) {
+        map[i] = props[i];
+    }
+    return map;
 };
 exports.arrayRemove = function(array, value) {
   for (var i = 0; i <= array.length; i++) {
@@ -9052,48 +9086,6 @@ exports.Module = Module;
 exports.Export = Export;
 
 });
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is the Narcissus JavaScript engine.
- *
- * The Initial Developer of the Original Code is
- * Brendan Eich <brendan@mozilla.org>.
- * Portions created by the Initial Developer are Copyright (C) 2004
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Tom Austin <taustin@ucsc.edu>
- *   Brendan Eich <brendan@mozilla.org>
- *   Shu-Yu Guo <shu@rfrn.org>
- *   Stephan Herhut <stephan.a.herhut@intel.com>
- *   Dave Herman <dherman@mozilla.com>
- *   Dimitris Vardoulakis <dimvar@ccs.neu.edu>
- *   Patrick Walton <pcwalton@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
 /*
  * Narcissus - JS implemented in JS.
@@ -9649,47 +9641,6 @@ exports.isIdentifier = isIdentifier;
 exports.Tokenizer = Tokenizer;
 
 });
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is the Narcissus JavaScript engine.
- *
- * The Initial Developer of the Original Code is
- * Brendan Eich <brendan@mozilla.org>.
- * Portions created by the Initial Developer are Copyright (C) 2004
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Tom Austin <taustin@ucsc.edu>
- *   Brendan Eich <brendan@mozilla.org>
- *   Shu-Yu Guo <shu@rfrn.org>
- *   Dave Herman <dherman@mozilla.com>
- *   Dimitris Vardoulakis <dimvar@ccs.neu.edu>
- *   Patrick Walton <pcwalton@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
 /*
  * Narcissus - JS implemented in JS.
@@ -10344,47 +10295,6 @@ exports.WeakMap = _WeakMap;
 exports.Stack = Stack;
 
 });
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is the Narcissus JavaScript engine.
- *
- * The Initial Developer of the Original Code is
- * Brendan Eich <brendan@mozilla.org>.
- * Portions created by the Initial Developer are Copyright (C) 2004
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Tom Austin <taustin@ucsc.edu>
- *   Brendan Eich <brendan@mozilla.org>
- *   Shu-Yu Guo <shu@rfrn.org>
- *   Dave Herman <dherman@mozilla.com>
- *   Dimitris Vardoulakis <dimvar@ccs.neu.edu>
- *   Patrick Walton <pcwalton@mozilla.com>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
 
 define('ace/narcissus/options', ['require', 'exports', 'module' ], function(require, exports, module) {
 

@@ -1,5 +1,5 @@
 place inLoop1: old C, line 5 where stack(inLoop1, sp1(), i > 0);
-place inLoop2: new C, line 6 where stack(inLoop2, sp2(), i > 0);
+place inLoop2: new C, line 6 where stack(inLoop2, sp2(), true);
 
 //both libraries are in the loop at the same time.	 
 local invariant at(inLoop1, sp1()) <==> at(inLoop2, sp2());

@@ -33,15 +33,15 @@ public class Configuration implements Serializable {
     private boolean debug = false;
 	@Parameter(names = {"-c", "--compile"}, description = "Compile .java files in library directory before generating Boogie specification")
     private boolean compileFirst = false;
-	@Parameter(names = {"-H", "--heapassumes"}, description = "Add assume WellformedHeap after every heap assignment") @WebGUI
+	@Parameter(names = {"-H", "--heapassumes"}, description = "Add assume WellformedHeap after every heap assignment")
 	private boolean assumeWellformedHeap = false;
-	@Parameter(names = {"-X", "--extensionality"}, description = "Add extensionality axioms") @WebGUI
+	@Parameter(names = {"-X", "--extensionality"}, description = "Add extensionality axioms")
 	private boolean extensionality = false;
 	@Parameter(names = {"-W", "--wellformedness"}, description = "Add checks of wellformedness of the stacks and heaps")
 	private boolean wellformednessChecks;
 	@Parameter(names = {"-S", "--smoketest"}, description = "Perform smoke test during verification")
     private boolean smoke = false;
-	@Parameter(names = {"-L", "--loopUnroll"}, description = "The cap for loop unrolling") @WebGUI
+	@Parameter(names = {"-L", "--loopUnroll"}, description = "Cap for sound loop unrolling") @WebGUI
 	private int loopUnrollCap = 5;
 	@Parameter(names = {"-N", "--nullchecks"}, description = "Disable null checks to field accesses and method calls as well as !=0 checks to division/modulo") @WebGUI
 	private boolean disableNullChecks = false;
@@ -49,7 +49,7 @@ public class Configuration implements Serializable {
     private VerifyAction action = VerifyAction.VERIFY;
 	@Parameter(names = {"-k", "--sourcecompatibility"}, description = "Check source compatibility") @WebGUI
     private boolean checkSourceCompatibility = false;
-    @Parameter(names = {"--iframes"}, description = "The number of iframes to consider during the check. Standard is 2. Use 0 for unbounded check.") @WebGUI
+    @Parameter(names = {"--iframes"}, description = "Number of interaction frames to consider. Standard is 2. Use 0 for unbounded check.") @WebGUI
 	private int iframes = 2;
 	
 	

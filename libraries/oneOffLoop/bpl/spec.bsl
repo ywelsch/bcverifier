@@ -7,5 +7,5 @@ stack1[ip1][spmap1[ip1]][place] == inLoop1 <==> stack2[ip2][spmap2[ip2]][place] 
 <<<
 >>>places
 inLoop1 = old 5 (stack1[ip1][spmap1[ip1]][reg3_i] > 0)
-inLoop2 = new 6 (stack2[ip2][spmap2[ip2]][reg3_i] > 0)
+inLoop2 = new 6 (true)
 <<<

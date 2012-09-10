@@ -26,7 +26,7 @@ function connectLib(libname,talibname,container) {
 	editor.setTheme("ace/theme/cobalt");
 	 var JavaMode = require("ace/mode/java").Mode;
 	    editor.getSession().setMode(new JavaMode());
-	    editor.renderer.setShowGutter(false);
+	    //editor.renderer.setShowGutter(false);
 	    editor.setShowPrintMargin(false);
 	    editor.setHighlightActiveLine(false);
 	    var textarea = document.getElementById(talibname);
@@ -44,7 +44,7 @@ function connectInv(libname,talibname,container) {
 	editor.setTheme("ace/theme/cobalt");
 	 var ISLMode = require("ace/mode/isl").Mode; // https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode
 	    editor.getSession().setMode(new ISLMode());
-	    editor.renderer.setShowGutter(false);
+	    //editor.renderer.setShowGutter(false);
 	    editor.setShowPrintMargin(false);
 	    editor.setHighlightActiveLine(false);
 	    var textarea = document.getElementById(talibname);
@@ -135,7 +135,9 @@ function acegoto(editor,line,column) {
 			<h2>Coupling invariant:</h2>
 			<input type="submit" value="Check" id="formsubmit" />
 			</div>
-			<span wicket:id="inv"></span>
+			<div wicket:id="invpanel">
+				<span wicket:id="inv"></span>
+			</div>
 			<div id="optionstitle">
 			<a href="#" class="show" wicket:id="showOptions">Toggle options</a>
 			<br/>
