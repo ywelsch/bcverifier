@@ -8,7 +8,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.EnumUtils;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -22,7 +21,6 @@ import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
-import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
@@ -53,20 +51,29 @@ public class HomePage extends WebPage {
 	
 	final AcePanel bipanel = new AcePanel("boogieinput", "connectBoogieInput", new PropertyModel<String>(HomePage.this, "boogieinput"));
 	final LibForm form = new LibForm("libForm");
+	final MarkupContainer outputpanel = new WebMarkupContainer("outputpanel");
 	final MultiLineLabel olabel = new MultiLineLabel("output", new PropertyModel(this, "output"));
 	
     public HomePage(final PageParameters parameters) {
 		add(new Label("version", ConfigSession.get().getConfig().getVersionString()));
 		add(form);
-		olabel.setEscapeModelStrings(false);
-		olabel.setOutputMarkupId(true);
-		add(olabel);
-		add(bipanel);
-		createDropDownSelector(form.pan1, form.pan2, form.pan3, form.opanel);
-		bipanel.setVisible(false);
+		createDropDownSelector(form.pan1, form.pan2, form.pan3);
+		createOutputPanel();
     }
     
-    private void createDropDownSelector(final MarkupContainer pan1, final MarkupContainer pan2, final MarkupContainer pan3, final MarkupContainer opanel) {
+    private void createOutputPanel() {
+		outputpanel.setOutputMarkupId(true);
+		outputpanel.setOutputMarkupPlaceholderTag(true);
+		outputpanel.add(olabel);
+		olabel.setEscapeModelStrings(false);
+		olabel.setOutputMarkupId(true);
+		outputpanel.add(bipanel);
+		outputpanel.setVisible(false);
+		bipanel.setVisible(false);
+		add(outputpanel);
+	}
+
+	private void createDropDownSelector(final MarkupContainer pan1, final MarkupContainer pan2, final MarkupContainer pan3) {
     	final Model<Example> selectedExample = new Model<Example>();
     	List<Example> examples = new ExampleLoader().loadExamples();
 		DropDownChoice<Example> choice = new DropDownChoice<Example>("examples", selectedExample, examples);
@@ -78,7 +85,7 @@ public class HomePage extends WebPage {
                 if (ex != null) {
                 	selectExample(ex);
                 	if (target != null) {
-                		target.add(pan1, pan2, pan3, opanel, bipanel, olabel);
+                		target.add(pan1, pan2, pan3, outputpanel);
                 	}
                 }
             }
@@ -124,6 +131,7 @@ public class HomePage extends WebPage {
 		setInv(ex.getInvariant());
 		setOutput("");
 		setBoogieinput("");
+		outputpanel.setVisible(false);
 	}
 
 	public class LibForm extends Form {
@@ -169,32 +177,6 @@ public class HomePage extends WebPage {
 			};
 			//liblv.setReuseItems(true);
 			pan.add(liblv);
-			
-			AjaxSubmitLink showLink = new AjaxSubmitLink("showOptions", LibForm.this) {
-				@Override
-				protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
-					if (target != null) {
-						target.add(pan, pan3, form);
-					}
-					if (pan.isVisible()) {
-						pan.setVisible(false);
-					} else {
-						pan.setVisible(true);
-					}
-				}
-
-				@Override
-				protected void onError(AjaxRequestTarget target, Form<?> form) {
-					if (target != null) {
-						target.add(pan, pan3, form);
-					}
-				}
-			};
-			showLink.setDefaultFormProcessing(false);
-			showLink.setOutputMarkupId(true);
-			pan.setOutputMarkupPlaceholderTag(true);
-			add(showLink);
-			pan.setVisible(false);
 			return pan;
 		}
 
@@ -280,6 +262,7 @@ public class HomePage extends WebPage {
 				VerificationResult verificationResult = library.runLifecycle();
 				HomePage.this.setBoogieinput(FileUtils.readFileToString(output));
 				HomePage.this.setOutput(linkify(verificationResult.getLastMessage()));
+				outputpanel.setVisible(true);
 			} catch (IOException e) {
 				HomePage.this.setOutput(e.getMessage());
 				e.printStackTrace();
