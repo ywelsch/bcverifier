@@ -45,7 +45,7 @@ public class Configuration implements Serializable {
 	private int loopUnrollCap = 5;
 	@Parameter(names = {"-N", "--nullchecks"}, description = "Disable null checks to field accesses and method calls as well as !=0 checks to division/modulo") @WebGUI
 	private boolean disableNullChecks = false;
-	@Parameter(names = {"-a", "--action"}, description = "Specifies action after generation (one of [NONE, TYPECHECK, VERIFY])") @WebGUI
+	@Parameter(names = {"-a", "--action"}, description = "Specifies Boogie action after generation (one of [NONE, TYPECHECK, VERIFY])") @WebGUI
     private VerifyAction action = VerifyAction.VERIFY;
 	@Parameter(names = {"-k", "--sourcecompatibility"}, description = "Check source compatibility") @WebGUI
     private boolean checkSourceCompatibility = false;
