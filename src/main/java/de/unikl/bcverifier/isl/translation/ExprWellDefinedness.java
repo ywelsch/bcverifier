@@ -23,6 +23,7 @@ import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NullConst;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 
 public class ExprWellDefinedness {
 

@@ -37,6 +37,8 @@ import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.JavaVariableDef;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class ExprTranslation {

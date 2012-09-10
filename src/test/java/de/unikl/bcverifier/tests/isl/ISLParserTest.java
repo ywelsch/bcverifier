@@ -24,7 +24,7 @@ import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Invariant;
 import de.unikl.bcverifier.isl.ast.Statement;
-import de.unikl.bcverifier.isl.translation.BuiltinFunctions;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
 import de.unikl.bcverifier.isl.checking.LibEnvironment;
 import de.unikl.bcverifier.isl.checking.TypeError;
 import de.unikl.bcverifier.isl.parser.ISLCompiler;

@@ -17,7 +17,7 @@ import b2bpl.bpl.ast.BPLVariableExpression;
 import beaver.Parser.Exception;
 import de.unikl.bcverifier.Configuration;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
-import de.unikl.bcverifier.isl.translation.BuiltinFunctions;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
 import de.unikl.bcverifier.isl.checking.LibEnvironment;
 import de.unikl.bcverifier.isl.checking.TypeError;
 import de.unikl.bcverifier.isl.parser.ISLCompiler;
