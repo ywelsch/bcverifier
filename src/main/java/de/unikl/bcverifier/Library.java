@@ -230,7 +230,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             methodBlocks.addAll(libraryDefinition1.getMethodBlocks());
             
             addDefinesMethodAxioms(programDecls);
-
+            
             tc.enterRound2();
             LibraryDefinition libraryDefinition2 = compileSpecification(newFileNames);
             programDecls.addAll(libraryDefinition2.getNeededDeclarations());

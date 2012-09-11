@@ -3641,11 +3641,6 @@ public class Translator implements ITranslationConstants {
                 // Declare the constant representing the given field.
                 addConstants(new BPLVariable(fieldName, new BPLTypeName(FIELD_TYPE, CodeGenerator.type(field.getType()))));
 
-                // Define the field's declared type.
-                addAxiom(isEqual(
-                        fieldType(var(tc.getImpl()), var(fieldName)),
-                        translateTypeReference(field.getType())));
-
                 String o = quantVarName("o");
                 String h = quantVarName("h");
                 BPLVariable oVar = new BPLVariable(o, new BPLTypeName(REF_TYPE));
@@ -3662,10 +3657,14 @@ public class Translator implements ITranslationConstants {
 //                                    )
 //                            ));
 //                }
-
-                // For every field referenced, we also translate its owner type.
-                translateTypeReference(field.getOwner());
             }
+            // Define the field's declared type.
+            addAxiom(isEqual(
+                    fieldType(var(tc.getImpl()), var(fieldName)),
+                    translateTypeReference(field.getType())));
+            
+            // For every field referenced, we also translate its owner type.
+            translateTypeReference(field.getOwner());
             return var(fieldName);
         }
 

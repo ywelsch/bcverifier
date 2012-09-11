@@ -40,7 +40,6 @@ public class ErrorTraceParser {
         FIND_LIBRARY_ACTION,
         FIND_CALLED_METHOD,
         FIND_CALLED_METHOD_INTERN,
-        FIND_INTERN_RETURN,
         FIND_ACTION_FOR_METHOD,
         FIND_CHECK
     }
@@ -60,6 +59,8 @@ public class ErrorTraceParser {
     private Pattern localCheckLabel = Pattern.compile("lib(1|2)_([^_]+)_([^_]+)_check");
     private Pattern localContinueLabel = Pattern.compile("lib(1|2)_([^_]+)_([^_]+)_cont");
     
+    private Pattern countPattern = Pattern.compile("Boogie program verifier finished with (\\d+) verified, (\\d+) error(s)?");
+    
     
     private State state = State.FIND_ASSERTION;
     
@@ -76,14 +77,15 @@ public class ErrorTraceParser {
     
     private String methodCalledFrom;
     
-    public List<AssertionException> parse(String input) throws TraceParseException {
+    public ErrorTrace parse(String input) throws TraceParseException {
         exceptions.clear();
         stepsInImpl1.clear();
         stepsInImpl2.clear();
         thisExceptionLines.clear();
         Scanner scanner = new Scanner(input);
+        String line = null;
         while (scanner.hasNextLine()) {
-          String line = scanner.nextLine();
+          line = scanner.nextLine();
           step(line);
         }
         
@@ -91,7 +93,18 @@ public class ErrorTraceParser {
         AssertionException ex = new AssertionException(thisExceptionLines, stepsInImpl1, stepsInImpl2, failedAssertion, failedAsssertionLine);
         exceptions.add(ex);
         
-        return exceptions;
+        Matcher matcher = countPattern.matcher(line);
+        int verifiedCount;
+        int errorCount;
+        if(!matcher.matches()){
+            verifiedCount = -1;
+            errorCount = -1;
+        } else {
+            verifiedCount = Integer.parseInt(matcher.group(1));
+            errorCount = Integer.parseInt(matcher.group(2));
+        }
+        
+        return new ErrorTrace(errorCount, verifiedCount, exceptions);
     }
     
     private void step(String line) throws TraceParseException{
@@ -321,16 +334,6 @@ public class ErrorTraceParser {
                 }
                 thisExceptionLines.add(line);
                 break;
-//            case FIND_INTERN_RETURN:
-//                if(!lookForAssertionBegin(line)){
-//                    matcher = labelLine.matcher(line);
-//                    if(!matcher.matches())
-//                        return; //the current line is not a label line (but what could it be?)
-//                    String label = matcher.group(4);
-//                    //TODO
-//                }
-//                thisExceptionLines.add(line);
-//                break;
             case FIND_CHECK:
                 if(!lookForAssertionBegin(line)){
                     matcher = labelLine.matcher(line);
