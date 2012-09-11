@@ -35,6 +35,8 @@ public class TranslationController implements ITranslationConstants {
     private Map<String, BPLVariable> stackVariables = new HashMap<String, BPLVariable>();
     private HashSet<JClassType> referencedTypes = new HashSet<JClassType>();
     private HashSet<BCField> referencedFields = new HashSet<BCField>();
+    private HashSet<JClassType> globalReferencedTypes = new HashSet<JClassType>();
+    private HashSet<BCField> globalReferencedFields = new HashSet<BCField>();
     private HashSet<String> places = new HashSet<String>();
     private HashMap<String, Set<String>> methodDefinitions = new HashMap<String, Set<String>>();
     private Set<String> returnLabels = new HashSet<String>();
@@ -58,12 +60,20 @@ public class TranslationController implements ITranslationConstants {
         return stackVariables;
     }
     
-    public HashSet<JClassType> referencedTypes() {
+    public HashSet<JClassType> localReferencedTypes() {
         return referencedTypes;
     }
     
-    public HashSet<BCField> referencedFields() {
+    public HashSet<BCField> localReferencedFields() {
         return referencedFields;
+    }
+    
+    public HashSet<JClassType> globalReferencedTypes() {
+        return globalReferencedTypes;
+    }
+    
+    public HashSet<BCField> globalReferencedFields() {
+        return globalReferencedFields;
     }
     
     public HashMap<String, Set<String>> methodDefinitions() {
@@ -332,10 +342,6 @@ public class TranslationController implements ITranslationConstants {
     public void setLocalPlaces(LocalPlaceDefinitions localPlaces) {
         this.localPlaceDefinitions = localPlaces;
     }
-
-	public void addReferencedField(BCField field) {
-		referencedFields.add(field);
-	}
 
 	public String boogieFieldName(BCField field) {
 		return GLOBAL_VAR_PREFIX+field.getQualifiedName(); //TODO add type information to make field name unambiguous?

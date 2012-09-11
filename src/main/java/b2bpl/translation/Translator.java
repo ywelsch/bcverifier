@@ -3456,10 +3456,10 @@ public class Translator implements ITranslationConstants {
     private final class Context implements ITranslationContext {
 
         /** The types referenced during the translation. */
-        private HashSet<JClassType> typeReferences;
+//        private HashSet<JClassType> typeReferences;
 
         /** The fields referenced during the translation. */
-        private HashSet<BCField> fieldReferences;
+//        private HashSet<BCField> fieldReferences;
 
         /**
          * The integers encountered during the translation which are not represented
@@ -3478,8 +3478,8 @@ public class Translator implements ITranslationConstants {
          * Initializes the internal datastructures.
          */
         public Context() {
-            typeReferences = tc.referencedTypes();
-            fieldReferences = tc.referencedFields();
+//            typeReferences = tc.referencedTypes();
+//            fieldReferences = tc.referencedFields();
             symbolicIntLiterals = new TreeSet<Long>();
             stringLiterals = new HashMap<String, String>();
             classLiterals = new HashSet<JType>();
@@ -3546,50 +3546,57 @@ public class Translator implements ITranslationConstants {
          * <i>name</i>.
          */
         public BPLExpression translateTypeReference(JType type) {
-            if (type.isClassType() && !typeReferences.contains(type)) {
+            if (type.isClassType()) {
                 JClassType classType = (JClassType) type;
-                typeReferences.add(classType);
-
-                // Declare the constant representing the given class type.
-                addConstants(new BPLVariable(
-                        getClassTypeName(classType),
-                        new BPLTypeName(NAME_TYPE)));
                 
-                // State that the type indeed is a class type.
-                if(!classType.isInterface()){
-                    addAxiom(isClassType(var(tc.getImpl()), typeRef(classType)));
-                } else {
-                    addAxiom(logicalNot(isClassType(var(tc.getImpl()), typeRef(classType)))); // interfaces are no classes
-                    addAxiom(isMemberlessType(var(tc.getImpl()), typeRef(classType)));
+                if(!tc.globalReferencedTypes().contains(type)) {
+                    tc.globalReferencedTypes().add(classType);
+    
+                    // Declare the constant representing the given class type.
+                    addConstants(new BPLVariable(
+                            getClassTypeName(classType),
+                            new BPLTypeName(NAME_TYPE)));
                 }
-
-                // Eventually axiomatize the fact that the type is final.
-                if (classType.isFinal()) {
-                    String t = quantVarName("t");
-                    BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-                    // Every eventual subtype must be the type itself.
-                    addAxiom(forall(
-                            tVar,
-                            implies(
-                                    subtype(var(tc.getImpl()), var(t), typeRef(classType)),
-                                    isEqual(var(t), typeRef(classType))
-                                    ),
-                                    trigger(subtype(var(tc.getImpl()), var(t), typeRef(classType)))
-                            ));
+                
+                if(!tc.localReferencedTypes().contains(type)) {
+                    tc.localReferencedTypes().add(classType);
+                    
+                    // State that the type indeed is a class type.
+                    if(!classType.isInterface()){
+                        addAxiom(isClassType(var(tc.getImpl()), typeRef(classType)));
+                    } else {
+                        addAxiom(logicalNot(isClassType(var(tc.getImpl()), typeRef(classType)))); // interfaces are no classes
+                        addAxiom(isMemberlessType(var(tc.getImpl()), typeRef(classType)));
+                    }
+    
+                    // Eventually axiomatize the fact that the type is final.
+                    if (classType.isFinal()) {
+                        String t = quantVarName("t");
+                        BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+                        // Every eventual subtype must be the type itself.
+                        addAxiom(forall(
+                                tVar,
+                                implies(
+                                        subtype(var(tc.getImpl()), var(t), typeRef(classType)),
+                                        isEqual(var(t), typeRef(classType))
+                                        ),
+                                        trigger(subtype(var(tc.getImpl()), var(t), typeRef(classType)))
+                                ));
+                    }
+    
+                    if(classType.isPublic()){
+                        addAxiom(CodeGenerator.isPublic(var(tc.getImpl()), typeRef(classType)));
+                    } else {
+                        addAxiom(logicalNot(CodeGenerator.isPublic(var(tc.getImpl()), typeRef(classType))));
+                    }
+    
+                    // Generate axioms for ruling out "wrong supertypes".
+                    translateSubtyping(classType);
+    
+                    // For every referenced class type, we generate an axiom representing
+                    // its object invariant.
+                    addInvariantDeclaration(classType);
                 }
-
-                if(classType.isPublic()){
-                    addAxiom(CodeGenerator.isPublic(var(tc.getImpl()), typeRef(classType)));
-                } else {
-                    addAxiom(logicalNot(CodeGenerator.isPublic(var(tc.getImpl()), typeRef(classType))));
-                }
-
-                // Generate axioms for ruling out "wrong supertypes".
-                translateSubtyping(classType);
-
-                // For every referenced class type, we generate an axiom representing
-                // its object invariant.
-                addInvariantDeclaration(classType);
             }
 
             // Now, do the actual translation of the type reference to be used in the
@@ -3634,9 +3641,8 @@ public class Translator implements ITranslationConstants {
          */
         public BPLExpression translateFieldReference(BCField field) {
             String fieldName = tc.boogieFieldName(field);
-            if (!fieldReferences.contains(field)) {
-            	tc.addReferencedField(field);
-                fieldReferences.add(field);
+            if (!tc.globalReferencedFields().contains(field)) {
+                tc.globalReferencedFields().add(field);
 
                 // Declare the constant representing the given field.
                 addConstants(new BPLVariable(fieldName, new BPLTypeName(FIELD_TYPE, CodeGenerator.type(field.getType()))));
@@ -3658,13 +3664,17 @@ public class Translator implements ITranslationConstants {
 //                            ));
 //                }
             }
-            // Define the field's declared type.
-            addAxiom(isEqual(
-                    fieldType(var(tc.getImpl()), var(fieldName)),
-                    translateTypeReference(field.getType())));
-            
-            // For every field referenced, we also translate its owner type.
-            translateTypeReference(field.getOwner());
+            if (!tc.localReferencedFields().contains(field)) {
+                tc.localReferencedFields().add(field);
+                
+                // Define the field's declared type.
+                addAxiom(isEqual(
+                        fieldType(var(tc.getImpl()), var(fieldName)),
+                        translateTypeReference(field.getType())));
+                
+                // For every field referenced, we also translate its owner type.
+                translateTypeReference(field.getOwner());
+            }
             return var(fieldName);
         }
 

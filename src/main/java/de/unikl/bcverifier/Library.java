@@ -231,6 +231,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             
             addDefinesMethodAxioms(programDecls);
             
+            //clear local sets for next round
+            tc.localReferencedFields().clear();
+            tc.localReferencedTypes().clear();
+            
+            
             tc.enterRound2();
             LibraryDefinition libraryDefinition2 = compileSpecification(newFileNames);
             programDecls.addAll(libraryDefinition2.getNeededDeclarations());
@@ -1417,7 +1422,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     	final String f = "f";
         BPLVariable fieldAlphaVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")));
         // generate library fields
-        if (tc.referencedFields() == null || tc.referencedFields().isEmpty()) {
+        if (tc.globalReferencedFields() == null || tc.globalReferencedFields().isEmpty()) {
         	programDecls.add(new BPLAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
                     new BPLVariable[]{fieldAlphaVar},
                     isEquiv(
@@ -1425,8 +1430,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     		BPLBoolLiteral.FALSE)
                     )));
         } else {
-        	BPLExpression[] comparisons = new BPLExpression[tc.referencedFields().size()];
-        	Iterator<BCField> iter = tc.referencedFields().iterator();
+        	BPLExpression[] comparisons = new BPLExpression[tc.globalReferencedFields().size()];
+        	Iterator<BCField> iter = tc.globalReferencedFields().iterator();
         	for (int j = 0; j < comparisons.length; j++) {
         		comparisons[j] = isEqual(var(fieldAlphaVar.getName()), var(tc.boogieFieldName(iter.next())));
         	}
