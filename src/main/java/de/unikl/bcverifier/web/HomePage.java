@@ -8,11 +8,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.IAjaxIndicatorAware;
+import org.apache.wicket.ajax.attributes.AjaxCallListener;
+import org.apache.wicket.ajax.attributes.AjaxRequestAttributes;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
+import org.apache.wicket.ajax.markup.html.form.AjaxButton;
+import org.apache.wicket.ajax.markup.html.form.AjaxFallbackButton;
 import org.apache.wicket.ajax.markup.html.form.AjaxSubmitLink;
 import org.apache.wicket.behavior.AttributeAppender;
+import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxButton;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
@@ -134,7 +141,41 @@ public class HomePage extends WebPage {
 		outputpanel.setVisible(false);
 	}
 
-	public class LibForm extends Form {
+	public class LibForm extends Form<Object> {
+		private final class IndicatingAjaxButtonExtension extends
+				AjaxButton implements IAjaxIndicatorAware {
+			private IndicatingAjaxButtonExtension(String id, Form<?> form) {
+				super(id, form);
+			}
+
+			@Override
+			public void onSubmit(AjaxRequestTarget target, Form<?> form) {
+				checkLibrary();
+				if (target != null) {
+					target.add(LibForm.this, outputpanel);
+				}
+			}
+
+			@Override
+			public String getAjaxIndicatorMarkupId() {
+				return "ajax_indicator";
+			}
+			
+			@Override
+		    protected void updateAjaxAttributes(AjaxRequestAttributes attributes) {
+		        super.updateAjaxAttributes(attributes);
+		 
+		        AjaxCallListener myAjaxCallListener = new AjaxCallListener() {
+		 
+		            @Override
+		            public CharSequence getPrecondition(Component component) {
+		                return "document.getElementById(\"" + outputpanel.getMarkupId() + "\").style.display = \"none\"; " + super.getPrecondition(component);
+		            }
+		        };
+		        attributes.getAjaxCallListeners().add(myAjaxCallListener);
+		    }
+		}
+
 		final MarkupContainer pan1;
 		final MarkupContainer pan2;
 		final MarkupContainer pan3;
@@ -143,11 +184,12 @@ public class HomePage extends WebPage {
 		public LibForm(String id) {
 			super(id);
 			this.setOutputMarkupId(true);
-			add(new AttributeAppender("action", new Model("#outputlink"), "")); 
+			add(new AttributeAppender("action", new Model<String>("#outputlink"), "")); 
 			pan1 = createLibPanel("lib1panel", "lib1contents", "add1Row", "remove1Row", lib1contents);
 			pan2 = createLibPanel("lib2panel", "lib2contents", "add2Row", "remove2Row", lib2contents);
 			pan3 = createInvPanel();
 			opanel = createOptionPanel();
+			add(new IndicatingAjaxButtonExtension("checkButton", this));
 		}
 
 		private WebMarkupContainer createOptionPanel() {
@@ -238,12 +280,11 @@ public class HomePage extends WebPage {
 			return libpanel;
 		}
 		
-		@Override
-		protected void onSubmit() {
+		private void checkLibrary() {
+			HomePage.this.setOutput("");
+			HomePage.this.setBoogieinput("");
+			File dir = Files.createTempDir();
 			try {
-				HomePage.this.setOutput("");
-				HomePage.this.setBoogieinput("");
-				File dir = Files.createTempDir();
 				//System.out.println("Creating test in " + dir);
 				File oldDir = new File(dir, "old");
 				File newDir = new File(dir, "new");
@@ -262,31 +303,33 @@ public class HomePage extends WebPage {
 				VerificationResult verificationResult = library.runLifecycle();
 				HomePage.this.setBoogieinput(FileUtils.readFileToString(output));
 				HomePage.this.setOutput(linkify(verificationResult.getLastMessage()));
-				outputpanel.setVisible(true);
 			} catch (IOException e) {
-				HomePage.this.setOutput(e.getMessage());
+				HomePage.this.setOutput(filterPath(dir, e.getMessage()));
 				e.printStackTrace();
 			} catch (TranslationException e) {
-				HomePage.this.setOutput(e.getMessage());
+				HomePage.this.setOutput(filterPath(dir, e.getMessage()));
 				e.printStackTrace();
 			} catch (CompileException e) {
-				HomePage.this.setOutput(e.getMessage());
+				HomePage.this.setOutput(filterPath(dir, e.getMessage()));
 				e.printStackTrace();
 			} catch (GenerationException e) {
-			    HomePage.this.setOutput(e.getMessage());
+				HomePage.this.setOutput(filterPath(dir, e.getMessage()));
                 e.printStackTrace();
             } catch (SourceInCompatibilityException e) {
-            	HomePage.this.setOutput(e.getMessage());
+            	HomePage.this.setOutput(filterPath(dir, e.getMessage()));
                 e.printStackTrace();
 			}
+			outputpanel.setVisible(true);
 		}
 		
+		private String filterPath(File dir, String message) {
+			return message.replaceAll(Pattern.quote(dir.getAbsolutePath()), "");
+		}
+
 		private String linkify(String lastMessage) {
 			StringBuilder result = new StringBuilder(Strings.escapeMarkup(lastMessage));
 			Matcher m = BPL_FILE_DEBUG_PATTERN.matcher(result.toString());
     		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$1,$2);\">($1,$2):</a>");
 		}
-
-		
     }
 }

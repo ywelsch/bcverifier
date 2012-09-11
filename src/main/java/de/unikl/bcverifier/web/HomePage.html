@@ -59,7 +59,6 @@
 		</table>
 			<div id="invtitle">
 			<h2>Coupling invariant:</h2>
-			<input type="submit" value="Check" id="formsubmit" />
 			</div>
 			<div wicket:id="invpanel">
 				<span wicket:id="inv"></span>
@@ -74,6 +73,12 @@
 					<br />
 				</span>
 			</div>
+			</div>
+			<div id="submitButton">
+				<input wicket:id="checkButton" type="submit" value="Check" id="formsubmit" />
+				<div id="ajax_indicator" style="display:none">
+        		<h1>Verification in progress <img src="images/ajax-loader.gif" alt="Ajax loader"></h1>
+    			</div>
 			</div>
 		</form>
 		<br/>
