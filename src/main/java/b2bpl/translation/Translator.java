@@ -673,8 +673,8 @@ public class Translator implements ITranslationConstants {
                                     forall(refVar, fieldRefVar, implies(new BPLArrayExpression(var(heap), var(r), var(alloc)), new BPLArrayExpression(var(heap), new BPLArrayExpression(var(heap), var(r), var(f)), var(alloc)))),
                                     forall(refVar, fieldRefVar, implies(logicalNot(map(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), nullLiteral()))),
                                     forall(refVar, fieldIntVar, implies(logicalNot(map(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
-                                    forall(refVar, fieldRefVar, isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(heap), fieldType(var(f)))),
-                                    forall(refVar, fieldIntVar, isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), fieldType(var(f))))
+                                    forall(refVar, fieldRefVar, isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(heap), fieldType(libImpl(var(heap)), var(f)))),
+                                    forall(refVar, fieldIntVar, isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), fieldType(libImpl(var(heap)), var(f))))
                                     ))
                     ));
 
@@ -1526,7 +1526,7 @@ public class Translator implements ITranslationConstants {
             			));
             }
 
-            addFunction(FIELD_TYPE_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), new BPLTypeName(NAME_TYPE));
+            addFunction(FIELD_TYPE_FUNC+"<alpha>", new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), new BPLTypeName(NAME_TYPE));
             
             addFunction(IS_PUBLIC_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             addFunction(DEFINES_METHOD_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
@@ -3643,7 +3643,7 @@ public class Translator implements ITranslationConstants {
 
                 // Define the field's declared type.
                 addAxiom(isEqual(
-                        fieldType(var(fieldName)),
+                        fieldType(var(tc.getImpl()), var(fieldName)),
                         translateTypeReference(field.getType())));
 
                 String o = quantVarName("o");

@@ -147,10 +147,13 @@ public class ErrorTraceParser {
                     String label = matcher.group(4);
                     matcher = calledMethodLabel.matcher(label);
                     if(!matcher.matches()){
-                        throw new TraceParseException("Method called on the library could not be determined.");
+                        return; //could not find the right method, yet.
                     }
                     String libImpl = matcher.group(1);
                     String methodSig = matcher.group(2);
+                    if(methodSig.equals("calltable") || methodSig.equals("calltable_init")){
+                        return; // the calltable is not the method signature
+                    }
                     
                     List<SimulationStep> list;
                     if(libImpl.equals("1")){
@@ -174,10 +177,13 @@ public class ErrorTraceParser {
                     String label = matcher.group(4);
                     matcher = calledMethodLabel.matcher(label);
                     if(!matcher.matches()){
-                        throw new TraceParseException("Method called on the library could not be determined.");
+                        return; //could not find the right method, yet.
                     }
                     String libImpl = matcher.group(1);
                     String methodSig = matcher.group(2);
+                    if(methodSig.equals("calltable") || methodSig.equals("calltable_init")){
+                        return; // the calltable is not the method signature
+                    }
                     
                     List<SimulationStep> list;
                     if(libImpl.equals("1")){
@@ -216,14 +222,18 @@ public class ErrorTraceParser {
                         }
                         success = true;
                     }
-//                    matcher = internReturnOutLabel.matcher(label);
-//                    if(!success && matcher.matches()){
-//                        String impl = matcher.group(1);
-//                        String methodName = matcher.group(2);
-//                        SimulationStep step = new SimulationStep(Action.METHOD_RETURN, Direction.INTERN, methodName);
-//                        state = State.FIND_INTERN_RETURN;
-//                        success = true;
-//                    }
+                    matcher = internReturnOutLabel.matcher(label);
+                    if(!success && matcher.matches()){
+                        String impl = matcher.group(1);
+                        String methodName = matcher.group(2);
+                        SimulationStep step = new SimulationStep(Action.METHOD_RETURN, Direction.INTERN, methodName);
+                        if(impl.equals("1")){
+                            stepsInImpl1.add(step);
+                        } else if(impl.equals("2")) {
+                            stepsInImpl2.add(step);
+                        }
+                        success = true;
+                    }
                     matcher = boundaryCallLabel.matcher(label);
                     if(!success && matcher.matches()){
                         String impl = matcher.group(1);

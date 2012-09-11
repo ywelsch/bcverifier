@@ -183,8 +183,8 @@ public final class CodeGenerator implements ITranslationConstants {
 
     // @ requires field != null;
     // @ ensures \result != null;
-    public static BPLExpression fieldType(BPLExpression field) {
-        return new BPLFunctionApplication(FIELD_TYPE_FUNC, field);
+    public static BPLExpression fieldType(BPLExpression impl, BPLExpression field) {
+        return new BPLFunctionApplication(FIELD_TYPE_FUNC, impl, field);
     }
 
     // @ requires type != null;
