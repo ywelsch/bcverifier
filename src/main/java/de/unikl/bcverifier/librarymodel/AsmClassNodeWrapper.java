@@ -33,7 +33,10 @@ public class AsmClassNodeWrapper {
 	 * returns a list of all program counter values belonging to the given line 
 	 */
 	public List<Integer> getProgramCounterForLine(int line) {
-		return lineToPc.get(line);
+		List<Integer> result = lineToPc.get(line);
+		if (result == null)
+			return Collections.emptyList();
+		return result;
 	}
 	
 	public LocalVarInfo getLocalVar(int line, String name) {

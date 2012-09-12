@@ -28,7 +28,7 @@ public class LibraryCompiler {
         }
     }
 
-    private static final String DEFAULT_PREFIX = "-source 5 -target 5 -g -nowarn -noExit ";
+    private static final String DEFAULT_PREFIX = "-source 5 -target 5 -g -preserveAllLocals -nowarn -noExit ";
     
     public static void compile(File libraryPath) throws CompileException {
     	StringWriter outWriter = new StringWriter();
