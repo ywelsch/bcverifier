@@ -13,6 +13,8 @@ import static b2bpl.translation.CodeGenerator.classRepr;
 import static b2bpl.translation.CodeGenerator.classReprInv;
 import static b2bpl.translation.CodeGenerator.definesMethod;
 import static b2bpl.translation.CodeGenerator.divide;
+import static b2bpl.translation.CodeGenerator.emptyInteractionFrame;
+import static b2bpl.translation.CodeGenerator.emptyStrackFrame;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldType;
 import static b2bpl.translation.CodeGenerator.forall;
@@ -1283,6 +1285,10 @@ public class Translator implements ITranslationConstants {
             
             final String spmap = "spmap";
             BPLVariable spmapVar = new BPLVariable(spmap, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)));
+            final String sframe = "sframe";
+            BPLVariable sframeVar = new BPLVariable(sframe, new BPLTypeName(STACK_FRAME_TYPE));
+            final String iframe = "iframe";
+            BPLVariable iframeVar = new BPLVariable(iframe, new BPLTypeName(INTERACTION_FRAME_TYPE));
             
             
             
@@ -1517,6 +1523,26 @@ public class Translator implements ITranslationConstants {
                             )
                     )
                     )));
+            
+            addFunction(EMPTY_INTERACTION_FRAME_FUNC, new BPLTypeName(INTERACTION_FRAME_TYPE), BPLBuiltInType.BOOL);
+            addAxiom(forall(iframeVar, isEquiv(
+                    emptyInteractionFrame(var(iframe)),
+                    logicalAnd(
+                      forall(pVar, vVar,
+                        isEqual(map1(var(iframe), var(p), var(v)), nullLiteral())),
+                      forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)),
+                        isEqual(map1(var(iframe), var(p), var(v)), intLiteral(0))
+                      )))));
+            
+            addFunction(EMPTY_STACK_FRAME_FUNC, new BPLTypeName(STACK_FRAME_TYPE), BPLBuiltInType.BOOL);
+            addAxiom(forall(sframeVar, isEquiv(
+                    emptyStrackFrame(var(sframe)),
+                    logicalAnd(
+                      forall(pVar, vVar,
+                        isEqual(map(var(sframe), var(v)), nullLiteral())),
+                      forall(pVar, new BPLVariable(v, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)),
+                        isEqual(map(var(sframe), var(v)), intLiteral(0))
+                    )))));
 
             if (tc.getConfig().extensionalityEnabled()) {
             	addComment("Extensionality for stacks");

@@ -1075,6 +1075,14 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(LIBRARY_FIELD_FUNC, field);
     }
     
+    public static BPLExpression emptyInteractionFrame(BPLExpression iframe) {
+        return new BPLFunctionApplication(EMPTY_INTERACTION_FRAME_FUNC, iframe);
+    }
+    
+    public static BPLExpression emptyStrackFrame(BPLExpression sframe) {
+        return new BPLFunctionApplication(EMPTY_STACK_FRAME_FUNC, sframe);
+    }
+    
     public static BPLExpression subtype(BPLExpression impl, BPLExpression t1, BPLExpression t2) {
         return new BPLFunctionApplication("subtype", impl, t1, t2);
     }

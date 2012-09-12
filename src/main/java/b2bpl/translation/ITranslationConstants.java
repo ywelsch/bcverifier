@@ -97,6 +97,10 @@ public interface ITranslationConstants {
   
   String WELLFORMED_STACK_FUNC = "WellformedStack";
   
+  String EMPTY_INTERACTION_FRAME_FUNC = "EmptyInteractionFrame";
+  
+  String EMPTY_STACK_FRAME_FUNC = "EmptyStackFrame";
+  
   String IS_PUBLIC_FUNC = "isPublic";
   
   String DEFINES_METHOD_FUNC = "definesMethod";

@@ -11,6 +11,7 @@ import static b2bpl.translation.CodeGenerator.bool2int;
 import static b2bpl.translation.CodeGenerator.cast;
 import static b2bpl.translation.CodeGenerator.classRepr;
 import static b2bpl.translation.CodeGenerator.divide;
+import static b2bpl.translation.CodeGenerator.emptyInteractionFrame;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldAccess;
 import static b2bpl.translation.CodeGenerator.greater;
@@ -3233,8 +3234,9 @@ public class MethodTranslator implements ITranslationConstants {
                     startBlock(boundaryLabel);
                     
                     addCommentedCommand(new BPLHavocCommand(var(INTERACTION_FRAME_TEMP)), "this empties the frame we will use for the boundary call");
+                    addAssume(emptyInteractionFrame(var(INTERACTION_FRAME_TEMP)));
                     addAssignment(map(var(tc.getStack()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1))), var(INTERACTION_FRAME_TEMP));
-                    addAssume(wellformedStack(var(tc.getStack()), var(tc.getInteractionFramePointer()), var(tc.getStackPointerMap()), var(tc.getHeap())));
+//                    addAssert(wellformedStack(var(tc.getStack()), var(tc.getInteractionFramePointer()), var(tc.getStackPointerMap()), var(tc.getHeap())));
                     
                     addAssignment(var(tc.getInteractionFramePointer()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1)), "create new interaction frame");
                     addAssignment(spmap(), new BPLIntLiteral(0), "create the initial stack frame of the new interaction frame");
