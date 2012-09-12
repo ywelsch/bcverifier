@@ -11,6 +11,7 @@ import static b2bpl.translation.CodeGenerator.bool2int;
 import static b2bpl.translation.CodeGenerator.cast;
 import static b2bpl.translation.CodeGenerator.classRepr;
 import static b2bpl.translation.CodeGenerator.divide;
+import static b2bpl.translation.CodeGenerator.emptyInteractionFrame;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldAccess;
 import static b2bpl.translation.CodeGenerator.greater;
@@ -1378,7 +1379,7 @@ public class MethodTranslator implements ITranslationConstants {
 
         String currentLabel = blockLabel;
         
-        String boundaryReturnLabel = currentLabel + "_boudary_return";
+        String boundaryReturnLabel = currentLabel + "_boundary_return";
         String internReturnLabel = currentLabel + "_intern_return";
         endBlock(boundaryReturnLabel, internReturnLabel);
         
@@ -3219,8 +3220,8 @@ public class MethodTranslator implements ITranslationConstants {
                     BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
                     addAssume(exists(tVar, 
                             logicalAnd(
-                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
-                                    libType(var(t))
+                                    memberOf(var(tc.getImpl()), var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
+                                    libType(var(tc.getImpl()), var(t))
                                     )
                             ));
                     rawEndBlock(tc.prefix(CALLTABLE_LABEL));
@@ -3233,8 +3234,9 @@ public class MethodTranslator implements ITranslationConstants {
                     startBlock(boundaryLabel);
                     
                     addCommentedCommand(new BPLHavocCommand(var(INTERACTION_FRAME_TEMP)), "this empties the frame we will use for the boundary call");
+                    addAssume(emptyInteractionFrame(var(INTERACTION_FRAME_TEMP)));
                     addAssignment(map(var(tc.getStack()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1))), var(INTERACTION_FRAME_TEMP));
-                    addAssume(wellformedStack(var(tc.getStack()), var(tc.getInteractionFramePointer()), var(tc.getStackPointerMap()), var(tc.getHeap())));
+//                    addAssert(wellformedStack(var(tc.getStack()), var(tc.getInteractionFramePointer()), var(tc.getStackPointerMap()), var(tc.getHeap())));
                     
                     addAssignment(var(tc.getInteractionFramePointer()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1)), "create new interaction frame");
                     addAssignment(spmap(), new BPLIntLiteral(0), "create the initial stack frame of the new interaction frame");
@@ -3259,11 +3261,11 @@ public class MethodTranslator implements ITranslationConstants {
                     
                     addAssume(exists(tVar, 
                             logicalAnd(
-                                    memberOf(var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
-                                    logicalNot(libType(var(t)))
+                                    memberOf(var(tc.getImpl()), var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
+                                    logicalNot(libType(var(tc.getImpl()), var(t)))
                                     )
                             ));
-                    addAssume(isCallable(typeRef(method.getOwner()), var(GLOBAL_VAR_PREFIX+invokedMethodName)), "rule out private methods");
+                    addAssume(isCallable(var(tc.getImpl()), typeRef(method.getOwner()), var(GLOBAL_VAR_PREFIX+invokedMethodName)), "rule out private methods");
                     addAssume(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)));
                     rawEndBlock(tc.getCheckLabel());
                 } else if(invokedMethod.isConstructor()) {

@@ -97,6 +97,10 @@ public interface ITranslationConstants {
   
   String WELLFORMED_STACK_FUNC = "WellformedStack";
   
+  String EMPTY_INTERACTION_FRAME_FUNC = "EmptyInteractionFrame";
+  
+  String EMPTY_STACK_FRAME_FUNC = "EmptyStackFrame";
+  
   String IS_PUBLIC_FUNC = "isPublic";
   
   String DEFINES_METHOD_FUNC = "definesMethod";
@@ -468,5 +472,9 @@ public static final String SOME_VAL_R_TEMP = "someVal" + REF_TYPE_ABBREV;
 public static final String SOME_VAL_I_TEMP = "someVal" + INT_TYPE_ABBREV;
 public static final String SOME_FIELD_R_TEMP = "someField" + REF_TYPE_ABBREV;
 public static final String SOME_FIELD_I_TEMP = "someField"+ INT_TYPE_ABBREV;
+
+public static final String LIBRARY_IMPL_TYPE = "Library";
+public static final String IMPL1 = "lib1";
+public static final String IMPL2 = "lib2";
 
 }

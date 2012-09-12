@@ -35,6 +35,8 @@ public class TranslationController implements ITranslationConstants {
     private Map<String, BPLVariable> stackVariables = new HashMap<String, BPLVariable>();
     private HashSet<JClassType> referencedTypes = new HashSet<JClassType>();
     private HashSet<BCField> referencedFields = new HashSet<BCField>();
+    private HashSet<JClassType> globalReferencedTypes = new HashSet<JClassType>();
+    private HashSet<BCField> globalReferencedFields = new HashSet<BCField>();
     private HashSet<String> places = new HashSet<String>();
     private HashMap<String, Set<String>> methodDefinitions = new HashMap<String, Set<String>>();
     private Set<String> returnLabels = new HashSet<String>();
@@ -58,12 +60,20 @@ public class TranslationController implements ITranslationConstants {
         return stackVariables;
     }
     
-    public HashSet<JClassType> referencedTypes() {
+    public HashSet<JClassType> localReferencedTypes() {
         return referencedTypes;
     }
     
-    public HashSet<BCField> referencedFields() {
+    public HashSet<BCField> localReferencedFields() {
         return referencedFields;
+    }
+    
+    public HashSet<JClassType> globalReferencedTypes() {
+        return globalReferencedTypes;
+    }
+    
+    public HashSet<BCField> globalReferencedFields() {
+        return globalReferencedFields;
     }
     
     public HashMap<String, Set<String>> methodDefinitions() {
@@ -147,6 +157,17 @@ public class TranslationController implements ITranslationConstants {
             return HEAP2;
         default:
             return "heap";
+        }
+    }
+    
+    public String getImpl() {
+        switch(round) {
+        case 1:
+            return IMPL1;
+        case 2:
+            return IMPL2;
+        default:
+            return "lib1";
         }
     }
     
@@ -292,7 +313,7 @@ public class TranslationController implements ITranslationConstants {
         } else {
             // we have a loop or some other place inside the method, no method call
             for(int i = 0; i<Integer.MAX_VALUE; i++){
-                placeName = prefix(methodName+i);
+                placeName = prefix(methodName+"_"+i);
                 if(!places.contains(placeName)){
                     places.add(placeName);
                     lastPlace = placeName;
@@ -306,11 +327,11 @@ public class TranslationController implements ITranslationConstants {
     public String buildPlace(String methodName, String invocedMethod) {
         String placeName;
         for(int i=0; i<Integer.MAX_VALUE; i++){
-            placeName = prefix(methodName + "_" + invocedMethod+i);
+            placeName = prefix(methodName + "_" + invocedMethod+"_"+i);
             if(!places.contains(placeName)){
                 lastPlace = placeName;
                 places.add(placeName);
-                nextLabel = invocedMethod+i;
+                nextLabel = invocedMethod+"_"+i;
                 returnLabels.add(prefix(methodName + "_" + nextLabel));
                 return placeName;
             }
@@ -321,10 +342,6 @@ public class TranslationController implements ITranslationConstants {
     public void setLocalPlaces(LocalPlaceDefinitions localPlaces) {
         this.localPlaceDefinitions = localPlaces;
     }
-
-	public void addReferencedField(BCField field) {
-		referencedFields.add(field);
-	}
 
 	public String boogieFieldName(BCField field) {
 		return GLOBAL_VAR_PREFIX+field.getQualifiedName(); //TODO add type information to make field name unambiguous?
