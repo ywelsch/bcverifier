@@ -20,8 +20,8 @@ import de.unikl.bcverifier.isl.translation.ExprWellDefinedness;
  * returns true if the current place at the given stackpointer is p
  * in the current interaction frame
  */
-final class BuiltinFuncAt extends BuiltinFunction {
-	BuiltinFuncAt() {
+final class BuiltinFuncAt_place_sp extends BuiltinFunction {
+	BuiltinFuncAt_place_sp() {
 		super("at", 
 				ExprTypeBool.instance(),
 				new ExprType[] { PlaceType.instance(), ExprTypeInt.instance() });
@@ -52,7 +52,7 @@ final class BuiltinFuncAt extends BuiltinFunction {
 		Expr p = arguments.getChild(0);
 		Expr stackPointer = arguments.getChild(1);
 		PlaceType placeType = (PlaceType) p.attrType();
-		// stack1[libip(ip1)][stackPointer][place] == p
+		// stack1[ip1][stackPointer][place] == p
 		return new BPLEqualityExpression(BPLEqualityExpression.Operator.EQUALS, 
 				BuiltinFunctions.stackProperty(placeType.getVersion(), stackPointer.translateExpr(), new BPLVariableExpression("place"))
 				, p.translateExpr()

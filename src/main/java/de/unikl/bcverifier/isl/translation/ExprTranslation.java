@@ -197,7 +197,7 @@ public class ExprTranslation {
 			BuiltinFunction f = (BuiltinFunction) def;
 			return f.translateCall(e.getArguments());
 		}
-		throw new Error("not implemented");
+		throw new Error("not implemented " + def);
 	}
 
 	public static BPLExpression translate(IfThenElse e) {

@@ -1,32 +1,37 @@
 package de.unikl.bcverifier.isl.translation.builtinfuncs;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collection;
 
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLVariableExpression;
+
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Version;
-import de.unikl.bcverifier.isl.checking.types.ExprType;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeAny;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
-import de.unikl.bcverifier.isl.checking.types.PlaceType;
 import de.unikl.bcverifier.isl.translation.ExprTranslation;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class BuiltinFunctions {
 	
-	Map<String, BuiltinFunction> funcs = null;
+	public static final BuiltinFunction FUNC_SP1 = new BuiltinFuncSp1();
+	public static final BuiltinFunction FUNC_SP2 = new BuiltinFuncSp2();
+
+	public final BuiltinFunction FUNC_AT_place_sp = new BuiltinFuncAt_place_sp();
+	public final BuiltinFunction FUNC_AT_place = new BuiltinFuncAt_place();;
+	
+	Multimap<String, BuiltinFunction> funcs = null;
 	private TwoLibraryModel twoLibraryModel;
+	
 	
 	public BuiltinFunctions(TwoLibraryModel twoLibraryModel) {
 		this.twoLibraryModel = twoLibraryModel;
 	}
 	
-	public BuiltinFunction get(String name) {
+	public Collection<BuiltinFunction> get(String name) {
 		if (funcs == null) {
 			initFuncs();
 		}
@@ -34,19 +39,23 @@ public class BuiltinFunctions {
 	}
 
 	private void initFuncs() {
-		funcs = new HashMap<String, BuiltinFunction>();
+		funcs = ArrayListMultimap.create();
 		// bool exposed(Object o)
 		addFunc(new BuiltinFuncExposed(twoLibraryModel));
 		// bool createdByCtxt(Object o)
 		addFunc(new BuiltinFuncCreatedByCtxt(twoLibraryModel));
 		// bool at(Place p, int stackPointer)
-		addFunc(new BuiltinFuncAt());
+		addFunc(FUNC_AT_place_sp);
+		// bool at(Place p)
+		addFunc(FUNC_AT_place);
 		// T stack(Place p, int stackPointer, T expr)
-		addFunc(new BuiltinFuncStack(this));
+		addFunc(new BuiltinFuncStack_place_sp(this));
+		// T stack(Place p, T expr)
+		addFunc(new BuiltinFuncStack_place(this));
 		// int sp1()
-		addFunc(new BuiltinFuncSp1());
+		addFunc(FUNC_SP1);
 		// int sp2()
-		addFunc(new BuiltinFuncSp2());
+		addFunc(FUNC_SP2);
 	}
 
 	private void addFunc(BuiltinFunction f) {
