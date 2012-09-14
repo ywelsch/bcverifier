@@ -17,11 +17,11 @@ import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
  * evaluates the expression expr in the context of the given place and stackpointer
  * (i.e. local variables visible at p can be used in expr)
  */
-final class BuiltinFuncStack extends BuiltinFunction {
+final class BuiltinFuncStack_place_sp extends BuiltinFunction {
 	private final BuiltinFunctions builtinFunctions;
 
 
-	public BuiltinFuncStack(BuiltinFunctions builtinFunctions) {
+	public BuiltinFuncStack_place_sp(BuiltinFunctions builtinFunctions) {
 		super("stack", ExprTypeAny.instance(), new ExprType[] { PlaceType.instance(),
 			ExprTypeInt.instance(), ExprTypeAny.instance() });
 		this.builtinFunctions = builtinFunctions;
@@ -30,8 +30,8 @@ final class BuiltinFuncStack extends BuiltinFunction {
 	@Override
 	public BPLExpression translateWelldefinedness(List<Expr> arguments) {
 		return ExprWellDefinedness.conjunction(
-				this.builtinFunctions.funcs.get("at").translateWelldefinedness(arguments),
-				this.builtinFunctions.funcs.get("at").translateCall(arguments));
+				this.builtinFunctions.FUNC_AT_place_sp.translateWelldefinedness(arguments),
+				this.builtinFunctions.FUNC_AT_place_sp.translateCall(arguments));
 	}
 
 	@Override

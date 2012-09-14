@@ -1,12 +1,12 @@
 aspect translate {
 	
-	syn int PlacePosition.attrLine();
+	syn int ProgramPointExpr.attrLine();
 	
-	eq LineNrPlacePosition.attrLine() = getPlaceLineNr();
+	eq LineNrProgramPoint.attrLine() = getProgramLineNr();
 	
-	syn Version PlacePosition.attrVersion();
+	syn Version ProgramPointExpr.attrVersion();
 	
-	eq LineNrPlacePosition.attrVersion() {
+	eq LineNrProgramPoint.attrVersion() {
 		ExprType t = getTypeDef().attrType();
     	if (t instanceof JavaType) {
 			JavaType javaType = (JavaType) t;

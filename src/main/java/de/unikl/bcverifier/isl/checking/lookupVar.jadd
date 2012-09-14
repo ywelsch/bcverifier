@@ -1,42 +1,26 @@
 import java.util.*;
+import com.google.common.collect.Lists;
 
 aspect lookup {
 	
-	syn Def ASTNode.lookup(String name) = getParent().lookup(name); 
+	syn Collection<Def> ASTNode.lookup(String name) = getParent().lookup(name); 
 	
 	
 	eq Expr.lookup(String name) = TypeHelper.lookup(this, name);
 	
+	eq PlaceDef.lookup(String name) = TypeHelper.lookup(this, name);
 	
 	eq CompilationUnit.lookup(String name) {
-		if (getBuiltinFunctions().get(name) != null) {
-			return getBuiltinFunctions().get(name);
-		}
+		ArrayList<Def> result = Lists.<Def>newArrayList(getBuiltinFunctions().get(name));
 		for (Def d : attrDefinedVars()) {
 			if (d.attrName().equals(name)) {
-				return d;
+				result.add(d);
 			}
 		}
-		return new UnknownDef();
+		return result;
 	}
 
 	
-	
-	syn lazy Def VarAccess.attrDef() {
-		String varname = getName().getName();
-		Def d = lookup(varname);
-		if (d instanceof UnknownDef) {
-			addError(this, "Could not find variable with name " + varname);
-		}
-		return d;
-	}
-	
-	syn lazy Def FuncCall.attrDef() {
-		String funcname = getFuncName().getName();
-		Def d = lookup(funcname);
-		if (d instanceof UnknownDef) {
-			addError(this, "Could not find function with name " + funcname);
-		}
-		return d;
-	}
+	syn lazy Def VarAccess.attrDef() = TypeHelper.getVarDef(this);
+	syn lazy Def FuncCall.attrDef() = TypeHelper.getFuncDef(this);
 }

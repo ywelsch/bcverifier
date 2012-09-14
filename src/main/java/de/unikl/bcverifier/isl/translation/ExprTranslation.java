@@ -28,6 +28,7 @@ import de.unikl.bcverifier.isl.ast.ForallExpr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.IntConst;
+import de.unikl.bcverifier.isl.ast.LineNrProgramPoint;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NullConst;
@@ -36,6 +37,7 @@ import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.JavaVariableDef;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
@@ -196,7 +198,7 @@ public class ExprTranslation {
 			BuiltinFunction f = (BuiltinFunction) def;
 			return f.translateCall(e.getArguments());
 		}
-		throw new Error("not implemented");
+		throw new Error("not implemented " + def);
 	}
 
 	public static BPLExpression translate(IfThenElse e) {
@@ -233,10 +235,15 @@ public class ExprTranslation {
 		Def def = e.attrDef();
 		if (def instanceof JavaVariableDef) {
 			JavaVariableDef jv = (JavaVariableDef) def;
-			return BuiltinFunctions.stackProperty(
+			BPLExpression expr = BuiltinFunctions.stackProperty(
 					jv.getVersion(), 
 					jv.getStackPointerExpr().translateExpr(), 
 					new BPLVariableExpression(jv.getRegisterName()));
+			if (e.attrType().isSubtypeOf(ExprTypeBool.instance())) {
+				// boolean vars must be converted explicitly
+				expr = new BPLFunctionApplication("int2bool", expr);
+			}
+			return expr;
 		}
 		return new BPLVariableExpression(e.getName().getName());
 	}
@@ -257,6 +264,10 @@ public class ExprTranslation {
 			return new BPLLogicalNotExpression(e.getExpr().translateExpr());
 		}
 		throw new Error("not implemented: " + e.getOperator());
+	}
+
+	public static BPLExpression translate(LineNrProgramPoint lineNrProgramPoint) {
+		throw new Error("Cannot translate program point expressions.");
 	}
 
 

@@ -1,5 +1,9 @@
 package de.unikl.bcverifier.isl.checking;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -7,10 +11,9 @@ import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.eclipse.jdt.internal.compiler.lookup.Scope;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 
-import com.sun.org.apache.bcel.internal.generic.StackProducer;
+import com.google.common.collect.Lists;
 
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.Def;
@@ -18,23 +21,26 @@ import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.Ident;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
-import de.unikl.bcverifier.isl.ast.LineNrPlacePosition;
+import de.unikl.bcverifier.isl.ast.LineNrProgramPoint;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NamedTypeDef;
 import de.unikl.bcverifier.isl.ast.NullConst;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
-import de.unikl.bcverifier.isl.ast.PlacePosition;
+import de.unikl.bcverifier.isl.ast.ProgramPoint;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
+import de.unikl.bcverifier.isl.ast.UnknownDef;
 import de.unikl.bcverifier.isl.ast.VarAccess;
+import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
-import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.checking.types.PlaceType;
 import de.unikl.bcverifier.isl.checking.types.UnknownType;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.librarymodel.AsmClassNodeWrapper;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
@@ -44,7 +50,7 @@ public class TypeHelper {
 		Version version = t.getVersion();
 		String qualifiedName = getQualifiedName(t.getNames());
 
-		return JavaType.create(t,version, qualifiedName);
+		return JavaType.create(t, version, qualifiedName);
 	}
 
 	private static String getQualifiedName(List<Ident> names) {
@@ -80,10 +86,11 @@ public class TypeHelper {
 		case UNEQUALS:
 		case EQUALS:
 			if (!left.attrType().getClass().equals(right.attrType().getClass())) {
-				bo.addError("Cannot compare types " + left.attrType() + " and " + right.attrType());
+				bo.addError("Cannot compare types " + left.attrType() + " and "
+						+ right.attrType());
 			}
 			return ExprTypeBool.instance();
-			
+
 		case DIV:
 		case MINUS:
 		case MULT:
@@ -106,7 +113,8 @@ public class TypeHelper {
 
 	private static void checkIfSubtype(Expr e, ExprType expected) {
 		if (!(e.attrType().isSubtypeOf(expected))) {
-			e.addError(e, "Expected expression of type "+expected+" but found " + e.attrType());
+			e.addError(e, "Expected expression of type " + expected
+					+ " but found " + e.attrType());
 		}
 	}
 
@@ -116,12 +124,15 @@ public class TypeHelper {
 			JavaType javaType = (JavaType) leftType;
 			IVariableBinding field = e.attrField();
 			if (field != null) {
-				return JavaType.create(e.getRight(), javaType.getVersion(), field.getType());
+				return JavaType.create(e.getRight(), javaType.getVersion(),
+						field.getType());
 			} else {
-				e.addError("Could not find field " + e.getRight().getName() + " in class " + leftType);
+				e.addError("Could not find field " + e.getRight().getName()
+						+ " in class " + leftType);
 			}
 		}
-		e.addError("Left hand side of member acces is of type " + leftType + " (expected Java type).");
+		e.addError("Left hand side of member acces is of type " + leftType
+				+ " (expected Java type).");
 		return UnknownType.instance();
 	}
 
@@ -130,7 +141,8 @@ public class TypeHelper {
 		ExprType thenType = e.getThenExpr().attrType();
 		ExprType elseType = e.getElseExpr().attrType();
 		if (!thenType.equals(elseType)) {
-			e.addError("Types " + thenType + " and " + elseType + " are not equal");
+			e.addError("Types " + thenType + " and " + elseType
+					+ " are not equal");
 		}
 		// could try to find common supertype if types are different
 		return thenType;
@@ -142,7 +154,8 @@ public class TypeHelper {
 			JavaType javaType = (JavaType) leftType;
 			String fieldName = e.getRight().getName();
 			ITypeBinding typeBinding = javaType.getTypeBinding();
-			IVariableBinding field = Bindings.findFieldInType(typeBinding, fieldName);
+			IVariableBinding field = Bindings.findFieldInType(typeBinding,
+					fieldName);
 			// TODO search fields in super classes?
 			return field;
 		}
@@ -172,11 +185,13 @@ public class TypeHelper {
 			} else if (e.getNumArgument() < f.getParameterTypes().size()) {
 				e.addError("Missing arguments.");
 			} else {
-				for (int i=0; i<e.getNumArgument(); i++) {
+				for (int i = 0; i < e.getNumArgument(); i++) {
 					ExprType argType = e.getArgument(i).attrType();
 					ExprType expectedType = f.getParameterTypes().get(i);
 					if (!argType.isSubtypeOf(expectedType)) {
-						e.getArgument(i).addError("found " + argType + " but expected " + expectedType);
+						e.getArgument(i).addError(
+								"found " + argType + " but expected "
+										+ expectedType);
 					}
 				}
 			}
@@ -185,7 +200,7 @@ public class TypeHelper {
 		return def.attrType();
 	}
 
-	public static ExprType attrType(VarAccess e)  {
+	public static ExprType attrType(VarAccess e) {
 		Def def = e.attrDef();
 		return def.attrType();
 	}
@@ -195,27 +210,41 @@ public class TypeHelper {
 	}
 
 	public static ExprType placeDefType(PlaceDef placeDef) {
-		PlacePosition pos = placeDef.getPlacePosition();
-		if (pos instanceof LineNrPlacePosition) {
-			final LineNrPlacePosition pos2 = (LineNrPlacePosition) pos;
-			ExprType type = pos2.getTypeDef().attrType();
-			if (!(type instanceof JavaType)) {
-				pos.addError("Place must refer to a Java type.");
-				return UnknownType.instance();
-			}
-			JavaType jt = (JavaType) type; 
-			final TwoLibraryModel model = placeDef.attrCompilationUnit().getTwoLibraryModel();
-			ASTNode node = model.findDeclaringNode(jt.getVersion(), jt.getTypeBinding());
-			
-			Statement s = getStatementInLine(model, node, pos2.getPlaceLineNr());
-			return new PlaceType(jt.getVersion(), s);
-			
+		ExprType pptype = placeDef.getProgramPoint().attrType();
+		if (pptype instanceof ExprTypeProgramPoint) {
+			ExprTypeProgramPoint programPoint = (ExprTypeProgramPoint) pptype;
+			return new PlaceType(programPoint);
+		} else {
+			placeDef.getProgramPoint().addError(
+					"Expected program point but found " + pptype);
 		}
+
+		// old:
+		// Expr pos = placeDef.getProgramPoint();
+		// if (pos instanceof LineNrProgramPoint) {
+		// final LineNrProgramPoint pos2 = (LineNrProgramPoint) pos;
+		// ExprType type = pos2.getTypeDef().attrType();
+		// if (!(type instanceof JavaType)) {
+		// pos.addError("Place must refer to a Java type.");
+		// return UnknownType.instance();
+		// }
+		// JavaType jt = (JavaType) type;
+		// final TwoLibraryModel model =
+		// placeDef.attrCompilationUnit().getTwoLibraryModel();
+		// ASTNode node = model.findDeclaringNode(jt.getVersion(),
+		// jt.getTypeBinding());
+		//
+		// Statement s = getStatementInLine(model, node,
+		// pos2.getProgramLineNr());
+		// return new PlaceType(jt.getVersion(), s);
+		//
+		// }
 		// TODO
 		throw new Error("not implemented");
 	}
 
-	private static Statement getStatementInLine(final TwoLibraryModel model, ASTNode parent, final int lineNr) {
+	private static Statement getStatementInLine(final TwoLibraryModel model,
+			ASTNode parent, final int lineNr) {
 		final Statement[] result = new Statement[1];
 		parent.accept(new StatementVisitor() {
 
@@ -231,36 +260,67 @@ public class TypeHelper {
 		return result[0];
 	}
 
-	public static Def lookup(Expr expr, String name) {
-		// special lookup rule for at(_,_,expr) 
+	public static Collection<Def> lookup(PlaceDef placeDef, String name) {
+		ExprType progPoint = placeDef.getProgramPoint().attrType();
+		if (progPoint instanceof ExprTypeProgramPoint) {
+			PlaceType placeType = new PlaceType((ExprTypeProgramPoint) progPoint);
+			TwoLibraryModel model = placeDef.attrCompilationUnit().getTwoLibraryModel();
+	
+			Def r = lookupJava(model, placeType, name, new StackpointerExpr(placeType.getVersion()));
+			if (r != null) {
+				return Collections.singletonList(r);
+			}
+		}
+		return placeDef.getParent().lookup(name);
+	}
+	
+	public static Collection<Def> lookup(Expr expr, String name) {
+		for (Def d : expr.attrDefinedVars()) {
+			if (d.attrName().equals(name)) {
+				return Collections.singletonList(d);
+			}
+		}
+
+		// special lookup rule for stack function
 		if (expr.getParent().getParent() instanceof FuncCall) {
 			FuncCall funcCall = (FuncCall) expr.getParent().getParent();
-			if (funcCall.getFuncName().getName().equals("stack") 
-					&& funcCall.getNumArgument() == 3 
-					&& funcCall.getArgument(0).attrType() instanceof PlaceType
-					&& funcCall.getArgument(2) == expr) {
-				PlaceType placeType = (PlaceType) funcCall.getArgument(0).attrType();
-				Expr stackPointerExpr = funcCall.getArgument(1);
-				TwoLibraryModel model = expr.attrCompilationUnit().getTwoLibraryModel();
-				
-				Def r = lookupJava(model, placeType, name, stackPointerExpr);
-				if (r != null) {
-					return r;
+			if (funcCall.getFuncName().getName().equals("stack")) { 
+				if (funcCall.getNumArgument() == 3
+						&& funcCall.getArgument(0).attrType() instanceof PlaceType
+						&& funcCall.getArgument(2) == expr) { 
+					// stack(place, sp, expr)
+					PlaceType placeType = (PlaceType) funcCall.getArgument(0).attrType();
+					Expr stackPointerExpr = funcCall.getArgument(1);
+					TwoLibraryModel model = expr.attrCompilationUnit().getTwoLibraryModel();
+
+					Def r = lookupJava(model, placeType, name, stackPointerExpr);
+					if (r != null) {
+						return Collections.singletonList(r);
+					}
+				} else if (funcCall.getNumArgument() == 2
+						&& funcCall.getArgument(0).attrType() instanceof PlaceType
+						&& funcCall.getArgument(1) == expr) {
+					// stack(place, expr)
+					PlaceType placeType = (PlaceType) funcCall.getArgument(0).attrType();
+					Expr stackPointerExpr = new StackpointerExpr(placeType.getVersion());
+					
+					TwoLibraryModel model = expr.attrCompilationUnit().getTwoLibraryModel();
+
+					Def r = lookupJava(model, placeType, name, stackPointerExpr);
+					if (r != null) {
+						return Collections.singletonList(r);
+					}
 				}
 			}
 		}
-	
-		for (Def d : expr.attrDefinedVars()) {
-			if (d.attrName().equals(name)) {
-				return d;
-			}
-		}
+
 		return expr.getParent().lookup(name);
 	}
 
-	private static Def lookupJava(TwoLibraryModel model, PlaceType placeType, String name, Expr StackPointerExpr) {
+	private static Def lookupJava(TwoLibraryModel model, PlaceType placeType,
+			String name, Expr StackPointerExpr) {
 		Statement s = placeType.getStatement();
-		
+
 		IVariableBinding binding = lookupJavaVar(s, name);
 		if (binding == null) {
 			return null;
@@ -270,10 +330,12 @@ public class TypeHelper {
 
 	private static IVariableBinding lookupJavaVar(Statement s, final String name) {
 		final IVariableBinding[] result = new IVariableBinding[1];
-		
-		// TODO more precise scoping ForStatement, EnhancedForStatement und Block
-		
-		for (ASTNode node = s;node != null && result[0] == null; node=node.getParent()) {
+
+		// TODO more precise scoping ForStatement, EnhancedForStatement und
+		// Block
+
+		for (ASTNode node = s; node != null && result[0] == null; node = node
+				.getParent()) {
 			node.accept(new ASTVisitor() {
 				@Override
 				public boolean visit(VariableDeclarationFragment node) {
@@ -284,7 +346,7 @@ public class TypeHelper {
 					}
 					return true;
 				}
-				
+
 				@Override
 				public boolean visit(SingleVariableDeclaration node) {
 					IVariableBinding b = node.resolveBinding();
@@ -299,33 +361,132 @@ public class TypeHelper {
 		return result[0];
 	}
 
-
 	public static void checkPlaceDef(PlaceDef placeDef) {
-		TwoLibraryModel tlm = placeDef.attrCompilationUnit().getTwoLibraryModel();
+		TwoLibraryModel tlm = placeDef.attrCompilationUnit()
+				.getTwoLibraryModel();
 		ExprType type = placeDef.attrType();
 		if (type instanceof PlaceType) {
 			PlaceType placeType = (PlaceType) type;
 			Version version = placeType.getVersion();
 			int line = placeType.getLineNr();
 			if (placeType.getStatement() == null) {
-				placeDef.addError("Place " + placeDef.attrName() + " has no statement.");
+				placeDef.addError("Place " + placeDef.attrName()
+						+ " has no statement.");
 				return;
 			}
-			
+
 			ITypeBinding enclosingClassType = placeType.getEnclosingClassType();
 			if (enclosingClassType == null) {
-				placeDef.addError("Place " + placeDef.attrName() + " is not in a class.");
+				placeDef.addError("Place " + placeDef.attrName()
+						+ " is not in a class.");
 				return;
 			}
-			AsmClassNodeWrapper cn = tlm.getClassNodeWrapper(version, enclosingClassType);
+			AsmClassNodeWrapper cn = tlm.getClassNodeWrapper(version,
+					enclosingClassType);
 			java.util.List<Integer> pcs = cn.getProgramCounterForLine(line);
 			if (pcs.size() == 0) {
-				placeDef.addError("No bytecode statement found in line " + line + ".");
+				placeDef.addError("No bytecode statement found in line " + line
+						+ ".");
 			} else if (pcs.size() > 1) {
 				// TODO should this be allowed or not?
-				placeDef.addError("More than one bytecode statement found in line " + line + ".");
+				placeDef.addError("More than one bytecode statement found in line "
+						+ line + ".");
 			}
 		}
 	}
+
+	public static ExprType attrType(LineNrProgramPoint p) {
+		ExprType type = p.getTypeDef().attrType();
+		if (!(type instanceof JavaType)) {
+			p.getTypeDef().addError("Program point must refer to a Java type.");
+			return UnknownType.instance();
+		}
+		JavaType jt = (JavaType) type;
+		final TwoLibraryModel model = p.attrCompilationUnit()
+				.getTwoLibraryModel();
+		ASTNode node = model.findDeclaringNode(jt.getVersion(),
+				jt.getTypeBinding());
+
+		Statement s = getStatementInLine(model, node, p.getProgramLineNr());
+		if (s == null) {
+			p.addError("No statement found in this line.");
+			return UnknownType.instance();
+		}
+		// TODO check if there is exactly one statement in the line ...
+		return new ExprTypeProgramPoint(jt.getVersion(), p.getProgramLineNr(),
+				s);
+	}
+
+	public static ExprType attrType(ProgramPoint p) {
+		return p.getProgramPointExpr().attrType();
+	}
+
+	public static Def getFuncDef(FuncCall funcCall) {
+		String funcName = funcCall.getFuncName().getName();
+		Collection<Def> defs = funcCall.lookup(funcName);
+		BuiltinFunction result = null;
+		ArrayList<ExprType> argumentTypes = Lists.newArrayList();
+		for (Expr arg : funcCall.getArguments()) {
+			argumentTypes.add(arg.attrType());
+		}
+		for (Def def : defs) {
+			if (def instanceof BuiltinFunction) {
+				BuiltinFunction f = (BuiltinFunction) def;
+				if (isBetterOverload(argumentTypes, f, result)) { 
+					result = f;
+				}
+			}
+		}
+		if (result == null) {
+			funcCall.addError("Could not find function with name " + funcName + ".");
+			return new UnknownDef();
+		}
+		return result;
+	}
+
+	/**
+	 * checks whether f is better suited for the given argument types than g  
+	 */
+	private static boolean isBetterOverload(ArrayList<ExprType> argTypes, BuiltinFunction f, BuiltinFunction g) {
+		if (g == null) {
+			return true;
+		}
+		if (Math.abs(argTypes.size() - f.getParameterTypes().size()) < Math.abs(argTypes.size() - g.getParameterTypes().size())) {
+			// number of parameters matches better
+			return true;
+		}
+		if (countArgParamMatches(argTypes, f.getParameterTypes()) > countArgParamMatches(argTypes, g.getParameterTypes())) {
+			// parameter types match better
+			return true;
+		}
+		// ... could also check which function is more specific in terms of subtypes
+		return false;
+	}
+
+	private static int countArgParamMatches(ArrayList<ExprType> argTypes, java.util.List<ExprType> parameterTypes) {
+		int count = 0;
+		for (int i=0; i<Math.min(argTypes.size(), parameterTypes.size()); i++) {
+			if (argTypes.get(i).isSubtypeOf(parameterTypes.get(i))) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+	public static Def getVarDef(VarAccess varAccess) {
+		String varName = varAccess.getName().getName();
+		Collection<Def> defs = varAccess.lookup(varName);
+		if (defs.isEmpty()) {
+			varAccess.addError("Could not find variable " + varName + ".");
+		} else if (defs.size() > 1) {
+			varAccess.addError("Access to variable " + varName + " is ambiguous.");
+		}
+		for (Def def : defs) {
+			return def;
+		}
+		return new UnknownDef();
+	}
+
+	
 
 }

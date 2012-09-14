@@ -5,4 +5,5 @@ aspect name {
 	eq UnknownDef.attrName() = "<unknown>";
 	eq Invariant.attrName() = "<inv>";
 	eq LocalInvariant.attrName() = "<localinv>";
+	eq ProgramPoint.attrName() = getName().getName();
 }

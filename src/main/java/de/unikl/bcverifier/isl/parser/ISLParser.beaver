@@ -59,14 +59,15 @@ import de.unikl.bcverifier.isl.ast.*;
 :};
 
 
-%terminals FORALL, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER, INVARIANT, LOCAL_INVARIANT, 
+%terminals FORALL, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER, INVARIANT, LOCAL,
+	PROGRAMPOINT, IN,
 	PLACE, LINE, WHERE, 
 	// TERMINATION_MEASURE,
 	IF, THEN, ELSE,
 	DOT,
 	MOD, MULT, DIV, PLUS, MINUS, LT, LTEQ, GT, GTEQ, NOT,
 	EQUALS, UNEQUALS,
-	COLON, COLONCOLON, COMMA, LPAREN, RPAREN, SEMI,
+	COLON, COLONCOLON, COMMA, LPAREN, RPAREN, SEMI, EQ,
 	IMPLIES, IFF, AND, OR, RELATED,
 	INTLITERAL, NULL
 ;
@@ -95,7 +96,7 @@ import de.unikl.bcverifier.isl.ast.*;
 %typeof parameterlist = "List<Expr>";
 %typeof nonEmptyParameterlist = "List<Expr>";
 %typeof statement = "Statement";
-%typeof placeposition = "PlacePosition";
+%typeof placeposition = "ProgramPointExpr";
 
 %goal cu;
 
@@ -109,16 +110,15 @@ cu =
 statement = 
 	  INVARIANT expr.e SEMI
 		{: return new Invariant(e); :}
-	| LOCAL_INVARIANT expr.e SEMI
+	| LOCAL INVARIANT expr.e SEMI
 		{: return new LocalInvariant(e); :}
-	| PLACE id.i COLON placeposition.pos WHERE expr.cond SEMI
+	| PROGRAMPOINT id.i EQ placeposition.pos SEMI
+		{: return new ProgramPoint(i, pos); :}
+	| PLACE id.i EQ expr.pos WHERE expr.cond SEMI
 		{: return new PlaceDef(i, pos, new Opt<Expr>(cond) , new Opt<Expr>()); :}
 ;
 
-placeposition = 
-	  typedef.t COMMA LINE INTLITERAL.lineNr
-	  	{: return new LineNrPlacePosition(t, Integer.parseInt((String)lineNr.value)); :}
-;
+
 
 expr =
       FORALL vardefs.v COLONCOLON expr.e
@@ -176,7 +176,14 @@ expr =
     | IF expr.cond THEN expr.e1 ELSE expr.e2
     	{: return new IfThenElse(cond, e1, e2); :}
     | LPAREN expr.e RPAREN
+    | placeposition.e
 ;
+
+placeposition = 
+	  LINE INTLITERAL.lineNr IN typedef.t 
+	  	{: return new LineNrProgramPoint(t, Integer.parseInt((String)lineNr.value)); :}
+;
+
 
 parameterlist =
 	  nonEmptyParameterlist

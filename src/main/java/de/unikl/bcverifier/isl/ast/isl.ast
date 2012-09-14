@@ -36,12 +36,12 @@ abstract Statement : Def;
 
 Invariant : Statement ::= Expr;
 LocalInvariant: Statement ::= Expr; 
-PlaceDef: Statement ::= Name:Ident PlacePosition [Condition:Expr] [TerminationMeasure:Expr];
+PlaceDef: Statement ::= Name:Ident ProgramPoint:Expr [Condition:Expr] [TerminationMeasure:Expr];
+ProgramPoint: Statement ::= Name:Ident ProgramPointExpr;
 
+abstract ProgramPointExpr : Expr;
 
-abstract PlacePosition;
-
-LineNrPlacePosition: PlacePosition ::= TypeDef <PlaceLineNr:int>;
+LineNrProgramPoint: ProgramPointExpr ::= TypeDef <ProgramLineNr:int>;
 
 
 // Types

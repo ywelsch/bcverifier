@@ -9,7 +9,11 @@ Syntax
 	
 	compilationunit ::= statement* 
 
-	statement ::= invariant expr;
+	statement ::= 
+		  invariant expr;
+		| local invariant expr;
+		| place identifier = expr where expr;	
+		| programpoint identifier = programpointExpr;
 	
 	expr ::= 
 		  forall vardefs :: expr
@@ -21,10 +25,13 @@ Syntax
     	| unaryoperator expr
     	| if expr then expr else expr
     	| (expr)
+    	| programpointExpr
+
+	programpointExpr ::= line int in typedef
 
 	parameterlist ::= (expr (, expr)*)?
 	
-	vardefs ::= (vardef (, vardef)*)?
+	vardefs ::= vardef (, vardef)*
  
 	vardef ::= typedef identifier
 
@@ -54,7 +61,8 @@ Currently the following types are supported:
 	- int
 - Java class types with library version. The library version is either "old" or "new".
 	The Java type can be referenced by the fully qualified name or just by the name of the class.
-	
+- Program points (e.g. line 10 in old Cell)
+- Places (defined by place definitions)	
 
 ### Correspondence Relation Operator
 
@@ -75,6 +83,30 @@ and false when it is internal to the library.
 
 Returns true when the object o is created by the context and false
 when it was created by the library.
+
+	boolean at(Place p, int sp)
+	
+Returns true if the stackframe with number sp is currently at place p. 
+
+	boolean at(Place p)
+	
+Returns true if the program is currently at place p. 
+This function is equivalent to calling at(p, sp1()) or at(p, sp2()).
+
+	T stack(Place p, int sp, Expression<T> e)
+	
+This function evaluates the expression in the context of the place p. 
+This means that local Java variables, that are visible at the given place, can be used.
+The values of the variables will be taken from the stackframe given by sp.
+
+	T stack(Place p, Expression<T> e)
+	
+Short form for `stack(p, sp1(), e)` or `stack(p, sp2(), e)`
+
+	int sp1()
+	int sp2()
+	
+Returns the current value of the stackpointer for the old (sp1) and the new (sp2) library.
 
 ### Well formed invariants
 

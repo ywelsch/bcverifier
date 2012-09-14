@@ -27,6 +27,11 @@ public class PlaceType extends ExprType {
 		this.statement = s;
 	}
 
+	public PlaceType(ExprTypeProgramPoint programPoint) {
+		this.version = programPoint.getVersion();
+		this.statement = programPoint.getStatement();
+	}
+
 	@Override
 	public boolean isSubtypeOf(ExprType t) {
 		if (t instanceof ExprTypeAny) {
