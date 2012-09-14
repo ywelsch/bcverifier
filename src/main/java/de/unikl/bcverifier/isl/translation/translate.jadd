@@ -18,7 +18,7 @@ aspect translate {
 	eq IfThenElse.translateExpr() = ExprTranslation.translate(this);
 	eq MemberAccess.translateExpr() = ExprTranslation.translate(this);
 	eq VarAccess.translateExpr() = ExprTranslation.translate(this);
-	
+	eq LineNrProgramPoint.translateExpr() = ExprTranslation.translate(this);
 	
 	public java.util.List<SpecInvariant> CompilationUnit.generateInvariants() {
 		return Translation.generateInvariants(this);
@@ -45,7 +45,7 @@ aspect translate {
 	eq IfThenElse.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
 	eq MemberAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
 	eq VarAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	
+	eq LineNrProgramPoint.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
 	
 	
 }

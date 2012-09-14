@@ -7,10 +7,7 @@ import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.eclipse.jdt.internal.compiler.lookup.Scope;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
-
-import com.sun.org.apache.bcel.internal.generic.StackProducer;
 
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.Def;
@@ -18,23 +15,24 @@ import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.Ident;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
-import de.unikl.bcverifier.isl.ast.LineNrPlacePosition;
+import de.unikl.bcverifier.isl.ast.LineNrProgramPoint;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NamedTypeDef;
 import de.unikl.bcverifier.isl.ast.NullConst;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
-import de.unikl.bcverifier.isl.ast.PlacePosition;
+import de.unikl.bcverifier.isl.ast.ProgramPoint;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.Version;
-import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.checking.types.PlaceType;
 import de.unikl.bcverifier.isl.checking.types.UnknownType;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.librarymodel.AsmClassNodeWrapper;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
@@ -195,22 +193,31 @@ public class TypeHelper {
 	}
 
 	public static ExprType placeDefType(PlaceDef placeDef) {
-		PlacePosition pos = placeDef.getPlacePosition();
-		if (pos instanceof LineNrPlacePosition) {
-			final LineNrPlacePosition pos2 = (LineNrPlacePosition) pos;
-			ExprType type = pos2.getTypeDef().attrType();
-			if (!(type instanceof JavaType)) {
-				pos.addError("Place must refer to a Java type.");
-				return UnknownType.instance();
-			}
-			JavaType jt = (JavaType) type; 
-			final TwoLibraryModel model = placeDef.attrCompilationUnit().getTwoLibraryModel();
-			ASTNode node = model.findDeclaringNode(jt.getVersion(), jt.getTypeBinding());
-			
-			Statement s = getStatementInLine(model, node, pos2.getPlaceLineNr());
-			return new PlaceType(jt.getVersion(), s);
-			
+		ExprType pptype = placeDef.getProgramPoint().attrType();
+		if (pptype instanceof ExprTypeProgramPoint) {
+			ExprTypeProgramPoint programPoint = (ExprTypeProgramPoint) pptype;
+			return new PlaceType(programPoint);
+		} else {
+			placeDef.getProgramPoint().addError("Expected program point but found " + pptype);
 		}
+		
+		// old:
+//		Expr pos = placeDef.getProgramPoint();
+//		if (pos instanceof LineNrProgramPoint) {
+//			final LineNrProgramPoint pos2 = (LineNrProgramPoint) pos;
+//			ExprType type = pos2.getTypeDef().attrType();
+//			if (!(type instanceof JavaType)) {
+//				pos.addError("Place must refer to a Java type.");
+//				return UnknownType.instance();
+//			}
+//			JavaType jt = (JavaType) type; 
+//			final TwoLibraryModel model = placeDef.attrCompilationUnit().getTwoLibraryModel();
+//			ASTNode node = model.findDeclaringNode(jt.getVersion(), jt.getTypeBinding());
+//
+//			Statement s = getStatementInLine(model, node, pos2.getProgramLineNr());
+//			return new PlaceType(jt.getVersion(), s);
+//			
+//		}
 		// TODO
 		throw new Error("not implemented");
 	}
@@ -326,6 +333,29 @@ public class TypeHelper {
 				placeDef.addError("More than one bytecode statement found in line " + line + ".");
 			}
 		}
+	}
+
+	public static ExprType attrType(LineNrProgramPoint p) {
+		ExprType type = p.getTypeDef().attrType();
+		if (!(type instanceof JavaType)) {
+			p.getTypeDef().addError("Program point must refer to a Java type.");
+			return UnknownType.instance();
+		}
+		JavaType jt = (JavaType) type; 
+		final TwoLibraryModel model = p.attrCompilationUnit().getTwoLibraryModel();
+		ASTNode node = model.findDeclaringNode(jt.getVersion(), jt.getTypeBinding());
+
+		Statement s = getStatementInLine(model, node, p.getProgramLineNr());
+		if (s == null) {
+			p.addError("No statement found in this line.");
+			return UnknownType.instance();
+		}
+		// TODO check if there is exactly one statement in the line ...
+		return new ExprTypeProgramPoint(jt.getVersion(), p.getProgramLineNr(), s);
+	}
+
+	public static ExprType attrType(ProgramPoint p) {
+		return p.getProgramPointExpr().attrType();
 	}
 
 }

@@ -28,6 +28,7 @@ import de.unikl.bcverifier.isl.ast.ForallExpr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.IntConst;
+import de.unikl.bcverifier.isl.ast.LineNrProgramPoint;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NullConst;
@@ -257,6 +258,10 @@ public class ExprTranslation {
 			return new BPLLogicalNotExpression(e.getExpr().translateExpr());
 		}
 		throw new Error("not implemented: " + e.getOperator());
+	}
+
+	public static BPLExpression translate(LineNrProgramPoint lineNrProgramPoint) {
+		throw new Error("Cannot translate program point expressions.");
 	}
 
 

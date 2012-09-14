@@ -28,6 +28,7 @@ aspect exprType {
 	
 	eq NullConst.attrType() = TypeHelper.attrType(this);
 	
+	eq LineNrProgramPoint.attrType() = TypeHelper.attrType(this);
 	
 	
 	syn lazy ExprType Def.attrType();
@@ -47,5 +48,6 @@ aspect exprType {
 	
 	eq NamedTypeDef.attrType() = TypeHelper.attrType(this);
 	
+	eq ProgramPoint.attrType() = TypeHelper.attrType(this);
 	
 }

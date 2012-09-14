@@ -12,11 +12,14 @@ import java.util.Map;
 import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLExpression;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
+import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Invariant;
 import de.unikl.bcverifier.isl.ast.LocalInvariant;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
 import de.unikl.bcverifier.isl.ast.Statement;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.isl.checking.types.ExprType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
 import de.unikl.bcverifier.specification.SpecInvariant;
@@ -61,10 +64,14 @@ public class Translation {
 				PlaceDef def = (PlaceDef) s;
 				BPLExpression condition = def.getCondition().translateExpr();
 				Place p = new Place(def.getName().getName(), exprToString(condition), null);
-				if (def.getPlacePosition().attrVersion() == Version.OLD) {
-					put(oldPlaces, def.getPlacePosition().attrLine(), p);
-				} else {
-					put(newPlaces, def.getPlacePosition().attrLine(), p);
+				ExprType placePositionType = def.getProgramPoint().attrType();
+				if (placePositionType instanceof ExprTypeProgramPoint) {
+					ExprTypeProgramPoint progPoint = (ExprTypeProgramPoint) placePositionType;
+					if (progPoint.getVersion() == Version.OLD) {
+						put(oldPlaces, progPoint.getLine(), p);
+					} else {
+						put(newPlaces, progPoint.getLine(), p);
+					}
 				}
 			}
 		}

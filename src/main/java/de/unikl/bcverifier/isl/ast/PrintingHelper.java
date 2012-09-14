@@ -105,4 +105,12 @@ public class PrintingHelper {
 		}
 	}
 
+
+
+	public static Void print(Appendable r, LineNrProgramPoint p) {
+		print(r, p.getTypeDef().toString()); // TODO print correctly
+		print(r, ", line " + p.attrLine());
+		return null;
+	}
+
 }

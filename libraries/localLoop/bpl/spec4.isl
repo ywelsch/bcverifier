@@ -1,5 +1,6 @@
-place inLoop1: old C, line 7 where true;
-place inLoop2: new C, line 8 where true;
+programpoint inLoop1Point = line 7 in old C;
+place inLoop1 = inLoop1Point where true;
+place inLoop2 = line 8 in new C where true;
 
 // both libraries are in the loop at the same time.	 
 	local invariant at(inLoop1, sp1()) <==> at(inLoop2, sp2());
