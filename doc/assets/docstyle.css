@@ -17,6 +17,11 @@
 	position: relative;	
 }
 
+code {
+	font-size:13px;
+	white-space: pre-wrap;
+}
+
 /*h2, h3, h4, h5 {
 	color: black;
 }*/

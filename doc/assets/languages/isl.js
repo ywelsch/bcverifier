@@ -6,7 +6,8 @@ hljs.LANGUAGES.isl = function(){
   var ISL_KEYWORDS = {
     'keyword': {
     	'invariant' : 1,
-       'new' : 1, 'old' : 1, 'if' : 1, 'then' : 1, 'else' : 1, 'forall' : 1
+       'new' : 1, 'old' : 1, 'if' : 1, 'then' : 1, 'else' : 1, 'forall' : 1,
+       'local' : 1, 'in' : 1, 'place' : 1, 'where' : 1, 'programpoint' : 1, 'line' : 1,
 	},
     'constant': {
        'true': 1, 'false': 1, 'null': 1

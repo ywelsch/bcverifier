@@ -37,6 +37,7 @@ import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.JavaVariableDef;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
@@ -234,10 +235,15 @@ public class ExprTranslation {
 		Def def = e.attrDef();
 		if (def instanceof JavaVariableDef) {
 			JavaVariableDef jv = (JavaVariableDef) def;
-			return BuiltinFunctions.stackProperty(
+			BPLExpression expr = BuiltinFunctions.stackProperty(
 					jv.getVersion(), 
 					jv.getStackPointerExpr().translateExpr(), 
 					new BPLVariableExpression(jv.getRegisterName()));
+			if (e.attrType().isSubtypeOf(ExprTypeBool.instance())) {
+				// boolean vars must be converted explicitly
+				expr = new BPLFunctionApplication("int2bool", expr);
+			}
+			return expr;
 		}
 		return new BPLVariableExpression(e.getName().getName());
 	}
