@@ -62,6 +62,7 @@ public class HomePage extends WebPage {
 	final MultiLineLabel olabel = new MultiLineLabel("output", new PropertyModel(this, "output"));
 	
     public HomePage(final PageParameters parameters) {
+    	super(parameters);
 		add(new Label("version", ConfigSession.get().getConfig().getVersionString()));
 		add(form);
 		createDropDownSelector(form.pan1, form.pan2, form.pan3);

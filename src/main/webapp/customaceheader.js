@@ -16,6 +16,7 @@ function connectLib(libname,talibname,container) {
 	    //editor.renderer.setShowGutter(false);
 	    editor.setShowPrintMargin(false);
 	    editor.setHighlightActiveLine(false);
+	    editor.setDisplayIndentGuides(false);
 	    var textarea = document.getElementById(talibname);
 	    editor.getSession().setValue(textarea.value);
 	    updateEditorSize(editor,editorwrap,textarea);
@@ -34,6 +35,7 @@ function connectInv(libname,talibname,container) {
 	    //editor.renderer.setShowGutter(false);
 	    editor.setShowPrintMargin(false);
 	    editor.setHighlightActiveLine(false);
+	    editor.setDisplayIndentGuides(false);
 	    var textarea = document.getElementById(talibname);
 	    editor.getSession().setValue(textarea.value);
 	    updateEditorSize(editor,editorwrap,textarea);
@@ -53,6 +55,7 @@ function connectBoogieInput(libname,talibname,container) {
 	    //editor.getSession().setUseWrapMode(true);
 	    editor.setShowPrintMargin(false);
 	    editor.setHighlightActiveLine(false);
+	    editor.setDisplayIndentGuides(false);
 	    editor.setReadOnly(true);
 	    var textarea = document.getElementById(talibname);
 	    editor.getSession().setValue(textarea.value);
@@ -64,4 +67,7 @@ function connectBoogieInput(libname,talibname,container) {
 }
 function acegoto(editor,line,column) {
 	window.boogieinput.gotoLine(line,column-1);
+	var Range = require('ace/range').Range;
+	var range = new Range(line-1, column-1, 0, 0);
+	window.boogieinput.getSession().addMarker(range,"ace_selection","line");
 }

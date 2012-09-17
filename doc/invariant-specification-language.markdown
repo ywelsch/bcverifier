@@ -10,9 +10,9 @@ Syntax
 	compilationunit ::= statement* 
 
 	statement ::= 
-		  invariant expr;
+		  invariant expr; // global invariant
 		| local invariant expr;
-		| place identifier = expr where expr;	
+		| place identifier = expr when expr;	
 		| programpoint identifier = programpointExpr;
 	
 	expr ::= 
@@ -47,10 +47,7 @@ Available operators:
 Semantics
 ---------
 
-The defined invariants have to hold at every observable point.
-Invariants are assumed to hold at the beginning of each method call and
-after returning from a method call. The invariant has to be proven at the end of each method
-and before calling a method.
+The global invariants have to hold at every observable point. Local invariants must hold at internal user-defined points and are used to prove global invariants.
 
 ### Types
 
@@ -60,7 +57,7 @@ Currently the following types are supported:
 	- boolean
 	- int
 - Java class types with library version. The library version is either "old" or "new".
-	The Java type can be referenced by the fully qualified name or just by the name of the class.
+	The Java type can be referenced by the fully qualified name or just by the name of the class if it is unambiguous.
 - Program points (e.g. line 10 in old Cell)
 - Places (defined by place definitions)	
 
