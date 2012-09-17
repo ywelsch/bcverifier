@@ -28,15 +28,10 @@ final class BuiltinFuncAt_place_sp extends BuiltinFunction {
 	}
 
 	@Override
-	public BPLExpression translateWelldefinedness(List<Expr> arguments) {
+	public BPLExpression translateWelldefinedness(boolean isGlobalInvariant, List<Expr> arguments) {
 		Expr p = arguments.getChild(0);
 		Expr stackPointer = arguments.getChild(1);
-		BPLArrayExpression currentStackpointer;
-		if (((PlaceType)p.attrType()).getVersion() == Version.OLD) {
-			currentStackpointer= new BPLArrayExpression(new BPLVariableExpression("spmap1"), new BPLVariableExpression("ip1"));
-		} else {
-			currentStackpointer= new BPLArrayExpression(new BPLVariableExpression("spmap2"), new BPLVariableExpression("ip2"));
-		}
+		BPLArrayExpression currentStackpointer = BuiltinFunctions.getCurrentSp(isGlobalInvariant, ((PlaceType)p.attrType()).getVersion());
 		return ExprWellDefinedness.conjunction(
 					new BPLRelationalExpression(BPLRelationalExpression.Operator.LESS_EQUAL, 
 							new BPLIntLiteral(0), stackPointer.translateExpr()),
@@ -48,13 +43,13 @@ final class BuiltinFuncAt_place_sp extends BuiltinFunction {
 	}
 
 	@Override
-	public BPLExpression translateCall(List<Expr> arguments) {
+	public BPLExpression translateCall(boolean isGlobalInvariant, List<Expr> arguments) {
 		Expr p = arguments.getChild(0);
 		Expr stackPointer = arguments.getChild(1);
 		PlaceType placeType = (PlaceType) p.attrType();
 		// stack1[ip1][stackPointer][place] == p
 		return new BPLEqualityExpression(BPLEqualityExpression.Operator.EQUALS, 
-				BuiltinFunctions.stackProperty(placeType.getVersion(), stackPointer.translateExpr(), new BPLVariableExpression("place"))
+				BuiltinFunctions.stackProperty(isGlobalInvariant, placeType.getVersion(), stackPointer.translateExpr(), new BPLVariableExpression("place"))
 				, p.translateExpr()
 				);
 	}

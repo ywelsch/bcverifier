@@ -86,7 +86,10 @@ IntLiteral = 0 | [1-9][0-9]*
  "in" { return sym(Terminals.IN); }
  "place" { return sym(Terminals.PLACE); }
  "line" { return sym(Terminals.LINE); }
- "where" { return sym(Terminals.WHERE); }
+ "when" { return sym(Terminals.WHEN); }
+ "of" { return sym(Terminals.OF); }
+ "call" { return sym(Terminals.CALL); }
+ "predefined" { return sym(Terminals.PREDEFINED); }
 // "termination measure" { return sym(Terminals.TERMINATION_MEASURE); }
 }
 

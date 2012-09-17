@@ -12,6 +12,7 @@ import com.google.common.collect.Multimap;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
+import de.unikl.bcverifier.isl.checking.types.PlaceType;
 import de.unikl.bcverifier.isl.translation.ExprTranslation;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
@@ -70,7 +71,7 @@ public class BuiltinFunctions {
 				new BPLVariableExpression(property));
 	}
 	
-	public static BPLExpression stackProperty(Version version,
+	public static BPLExpression stackProperty(boolean isGlobalInv, Version version,
 			BPLExpression stackPointer,
 			BPLExpression property) {
 		// stack1[ip][stackPointer][property]
@@ -83,11 +84,32 @@ public class BuiltinFunctions {
 			stack = new BPLVariableExpression("stack2");
 			ip = new BPLVariableExpression("ip2");
 		}
+		if (isGlobalInv) {
+			ip = new BPLVariableExpression("iframe");
+		}
 		// ((stack[ip])[sp])[property]
 		return new BPLArrayExpression(
 				new BPLArrayExpression(
 					new BPLArrayExpression(stack, ip)
 						, stackPointer)
 							, property);
+	}
+
+	public static BPLArrayExpression getCurrentSp(boolean isGlobalInv, Version version) {
+		String spmap;
+		String ip;
+		if (version == Version.OLD) {
+			spmap = "spmap1";
+			ip = "ip1";
+			return new BPLArrayExpression(new BPLVariableExpression("spmap1"), new BPLVariableExpression("ip1"));
+		} else {
+			spmap = "spmap2";
+			ip = "ip2";
+		}
+		if (isGlobalInv) {
+			// use "iframe" in global invariant
+			ip = "iframe";
+		}		
+		return new BPLArrayExpression(new BPLVariableExpression(spmap), new BPLVariableExpression(ip));
 	}
 }

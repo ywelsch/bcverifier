@@ -14,9 +14,11 @@ import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
 public class StackpointerExpr extends Expr {
 
 	private Version version;
+	private boolean isInGlobalInv;
 
-	public StackpointerExpr(Version version) {
+	public StackpointerExpr(Version version, boolean isInGlobalInv) {
 		this.version = version;
+		this.isInGlobalInv = isInGlobalInv;
 	}
 
 	@Override
@@ -36,19 +38,25 @@ public class StackpointerExpr extends Expr {
 	@Override
 	public BPLExpression translateExpr() {
 		if (version == Version.OLD) {
-			return BuiltinFunctions.FUNC_SP1.translateCall(new List<Expr>());
+			return BuiltinFunctions.FUNC_SP1.translateCall(attrIsInGlobalInvariant(), new List<Expr>());
 		} else {
-			return BuiltinFunctions.FUNC_SP2.translateCall(new List<Expr>());
+			return BuiltinFunctions.FUNC_SP2.translateCall(attrIsInGlobalInvariant(), new List<Expr>());
 		}
 	}
 
 	@Override
 	public BPLExpression translateExprWellDefinedness() {
 		if (version == Version.OLD) {
-			return BuiltinFunctions.FUNC_SP1.translateWelldefinedness(new List<Expr>());
+			return BuiltinFunctions.FUNC_SP1.translateWelldefinedness(attrIsInGlobalInvariant(), new List<Expr>());
 		} else {
-			return BuiltinFunctions.FUNC_SP2.translateWelldefinedness(new List<Expr>());
+			return BuiltinFunctions.FUNC_SP2.translateWelldefinedness(attrIsInGlobalInvariant(), new List<Expr>());
 		}
 	}
 
+	
+	@Override
+	public boolean attrIsInGlobalInvariant() {
+		return isInGlobalInv;
+	}
+	
 }

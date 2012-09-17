@@ -29,23 +29,23 @@ final class BuiltinFuncAt_place extends BuiltinFunction {
 	}
 
 	@Override
-	public BPLExpression translateWelldefinedness(List<Expr> arguments) {
+	public BPLExpression translateWelldefinedness(boolean isGlobalInvariant, List<Expr> arguments) {
 		return BPLBoolLiteral.TRUE; 
 	}
 
 	@Override
-	public BPLExpression translateCall(List<Expr> arguments) {
+	public BPLExpression translateCall(boolean isGlobalInvariant, List<Expr> arguments) {
 		Expr p = arguments.getChild(0);
 		PlaceType placeType = (PlaceType) p.attrType();
 		BPLExpression stackPointer;
 		if (placeType.getVersion() == Version.OLD) {
-			stackPointer = BuiltinFunctions.FUNC_SP1.translateCall(new List<Expr>());
+			stackPointer = BuiltinFunctions.FUNC_SP1.translateCall(isGlobalInvariant, new List<Expr>());
 		} else {
-			stackPointer = BuiltinFunctions.FUNC_SP2.translateCall(new List<Expr>());
+			stackPointer = BuiltinFunctions.FUNC_SP2.translateCall(isGlobalInvariant, new List<Expr>());
 		}
 		// stack1[ip1][stackPointer][place] == p
 		return new BPLEqualityExpression(BPLEqualityExpression.Operator.EQUALS, 
-				BuiltinFunctions.stackProperty(placeType.getVersion(), stackPointer, new BPLVariableExpression("place"))
+				BuiltinFunctions.stackProperty(isGlobalInvariant, placeType.getVersion(), stackPointer, new BPLVariableExpression("place"))
 				, p.translateExpr()
 				);
 	}

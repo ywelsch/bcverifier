@@ -20,9 +20,13 @@ final class BuiltinFuncSp1 extends BuiltinFunction {
 	}
 
 	@Override
-	public BPLExpression translateCall(List<Expr> arguments) {
+	public BPLExpression translateCall(boolean isInGlobalInv, List<Expr> arguments) {
+		String ip = "ip1";
+		if (isInGlobalInv) {
+			ip = "iframe";
+		}
 		return new BPLArrayExpression(
 				new BPLVariableExpression("spmap1"), 
-				new BPLVariableExpression("ip1")) ;
+				new BPLVariableExpression(ip)) ;
 	}
 }

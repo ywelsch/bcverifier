@@ -57,7 +57,7 @@ public class ExprWellDefinedness {
 		Def funcDef = funcCall.attrDef();
 		if (funcDef instanceof BuiltinFunction) {
 			BuiltinFunction builtinFunction = (BuiltinFunction) funcDef;
-			parameterchecks.add(builtinFunction.translateWelldefinedness(funcCall.getArgumentList()));
+			parameterchecks.add(builtinFunction.translateWelldefinedness(funcCall.attrIsInGlobalInvariant(), funcCall.getArgumentList()));
 		}
 		return conjunction(parameterchecks);
 	}

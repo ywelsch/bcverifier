@@ -28,10 +28,10 @@ final class BuiltinFuncStack_place extends BuiltinFunction {
 	}
 
 	@Override
-	public BPLExpression translateWelldefinedness(List<Expr> arguments) {
+	public BPLExpression translateWelldefinedness(boolean isGlobalInvariant, List<Expr> arguments) {
 		return ExprWellDefinedness.conjunction(
-				this.builtinFunctions.FUNC_AT_place.translateWelldefinedness(arguments),
-				this.builtinFunctions.FUNC_AT_place.translateCall(arguments));
+				this.builtinFunctions.FUNC_AT_place.translateWelldefinedness(isGlobalInvariant, arguments),
+				this.builtinFunctions.FUNC_AT_place.translateCall(isGlobalInvariant, arguments));
 	}
 
 	@Override
@@ -40,7 +40,7 @@ final class BuiltinFuncStack_place extends BuiltinFunction {
 	}
 
 	@Override
-	public BPLExpression translateCall(List<Expr> arguments) {
+	public BPLExpression translateCall(boolean isGlobalInvariant, List<Expr> arguments) {
 		Expr exp = arguments.getChild(1);
 		return exp.translateExpr();
 	}

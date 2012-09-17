@@ -54,9 +54,9 @@ public abstract class BuiltinFunction extends Def {
 		return parameterTypes;
 	}
 
-	public abstract BPLExpression translateCall(de.unikl.bcverifier.isl.ast.List<Expr> arguments);
+	public abstract BPLExpression translateCall(boolean isGlobalInvariant, de.unikl.bcverifier.isl.ast.List<Expr> arguments);
 	
-	public BPLExpression translateWelldefinedness(de.unikl.bcverifier.isl.ast.List<Expr> arguments) {
+	public BPLExpression translateWelldefinedness(boolean isGlobalInvariant, de.unikl.bcverifier.isl.ast.List<Expr> arguments) {
 		return BPLBoolLiteral.TRUE;
 	}
 

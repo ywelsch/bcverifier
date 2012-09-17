@@ -196,7 +196,7 @@ public class ExprTranslation {
 		Def def = e.attrDef();
 		if (def instanceof BuiltinFunction) {
 			BuiltinFunction f = (BuiltinFunction) def;
-			return f.translateCall(e.getArguments());
+			return f.translateCall(e.attrIsInGlobalInvariant(), e.getArguments());
 		}
 		throw new Error("not implemented " + def);
 	}
@@ -236,7 +236,7 @@ public class ExprTranslation {
 		if (def instanceof JavaVariableDef) {
 			JavaVariableDef jv = (JavaVariableDef) def;
 			BPLExpression expr = BuiltinFunctions.stackProperty(
-					jv.getVersion(), 
+					e.attrIsInGlobalInvariant(), jv.getVersion(), 
 					jv.getStackPointerExpr().translateExpr(), 
 					new BPLVariableExpression(jv.getRegisterName()));
 			if (e.attrType().isSubtypeOf(ExprTypeBool.instance())) {

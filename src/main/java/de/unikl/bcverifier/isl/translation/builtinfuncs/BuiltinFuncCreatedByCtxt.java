@@ -22,7 +22,7 @@ final class BuiltinFuncCreatedByCtxt extends BuiltinFunction {
 	}
 
 	@Override
-	public BPLExpression translateCall(List<Expr> arguments) {
+	public BPLExpression translateCall(boolean isInGlobalInv, List<Expr> arguments) {
 		return BuiltinFunctions.heapProperty(arguments.getChild(0),
 				"createdByCtxt");
 	}
