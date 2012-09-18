@@ -8,6 +8,7 @@ public class Example implements Serializable {
 	private List<String> lib1files;
 	private List<String> lib2files;
 	private String invariant;
+	private int unrollCount;
 	
 	@Override
 	public String toString() {
@@ -37,5 +38,11 @@ public class Example implements Serializable {
 	}
 	public void setInvariant(String invariant) {
 		this.invariant = invariant;
+	}
+	public int getUnrollCount() {
+		return unrollCount;
+	}
+	public void setUnrollCount(int unrollCount) {
+		this.unrollCount = unrollCount;
 	}
 }

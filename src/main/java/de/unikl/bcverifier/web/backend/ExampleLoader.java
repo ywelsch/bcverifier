@@ -15,7 +15,7 @@ import org.apache.commons.vfs2.VFS;
 import de.unikl.bcverifier.web.HomePage;
 
 public class ExampleLoader {
-	private Example loadExample(String dir, String description) {
+	private Example loadExample(String dir, String description, String unrollCount) {
 		ClassLoader loader = HomePage.class.getClassLoader();
 		try {
 		    //System.out.println(loader.getResource(dir));
@@ -55,6 +55,7 @@ public class ExampleLoader {
 				lib2files.add(IOUtils.toString(f.getContent().getInputStream()));
 			}
 			ex.setLib2files(lib2files);
+			ex.setUnrollCount(Integer.parseInt(unrollCount));
 			return ex;
 		} catch (URISyntaxException e) {
 			// TODO Auto-generated catch block
@@ -69,13 +70,13 @@ public class ExampleLoader {
 	public List<Example> loadExamples() {
 		List<Example> examples = new ArrayList<Example>();
 		String[][] TO_LOAD = new String[][] { 
-				new String[]{ "cell", "Cell example" },
-				new String[]{ "cb", "Callback example" },
-				new String[]{ "obool", "OBool example" },
-				new String[]{ "oneOffLoop", "OneOffLoop example" }
+				new String[]{ "cell", "Cell example", "2" },
+				new String[]{ "cb", "Callback example", "3" },
+				new String[]{ "obool", "OBool example", "5" },
+				new String[]{ "oneOffLoop", "OneOffLoop example", "4" }
 		};
 		for (String[] entry : TO_LOAD) {
-			Example ex = loadExample(entry[0], entry[1]);
+			Example ex = loadExample(entry[0], entry[1], entry[2]);
 			if (ex != null) {
 				examples.add(ex);
 			}
