@@ -2826,11 +2826,21 @@ public class MethodTranslator implements ITranslationConstants {
                 StackFrame stackFrame = handle.getFrame();
                 JType elemType;
                 for(int i=0; i<handle.getFrame().getStackSize(); i++){
-                    elemType = stackFrame.getLocal(i);
+                    elemType = stackFrame.peek(i);
                     if(elemType.isBaseType()){
                         addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
                     } else {
                         addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
+                    }
+                }
+                
+                //type information of the local variables
+                for(int i=0; i<stackFrame.getLocalCount(); i++){
+                    elemType = stackFrame.getLocal(i);
+                    if(elemType.isBaseType()){
+                        addAssume(isInRange(stack(var(localVar(i, elemType))), typeRef(elemType)));
+                    } else {
+                        addAssume(isOfType(stack(var(localVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
                     }
                 }
                 
@@ -3582,12 +3592,22 @@ public class MethodTranslator implements ITranslationConstants {
               // type informations of the stack
               StackFrame stackFrame = handle.getFrame();
               JType elemType;
-              for(int i=0; i<first; i++){
-                  elemType = stackFrame.getLocal(i);
+              for(int i=0; i<handle.getFrame().getStackSize(); i++){
+                  elemType = stackFrame.peek(i);
                   if(elemType.isBaseType()){
                       addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
                   } else {
                       addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
+                  }
+              }
+              
+              //type information of the local variables
+              for(int i=0; i<stackFrame.getLocalCount(); i++){
+                  elemType = stackFrame.getLocal(i);
+                  if(elemType.isBaseType()){
+                      addAssume(isInRange(stack(var(localVar(i, elemType))), typeRef(elemType)));
+                  } else {
+                      addAssume(isOfType(stack(var(localVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
                   }
               }
               
@@ -3751,11 +3771,15 @@ public class MethodTranslator implements ITranslationConstants {
         //@ requires insn != null;
         public void visitIBinArithInstruction(IBinArithInstruction insn) {
             translateBinArithInstruction(insn.getOpcode());
+            //overflow is not hanled by our implementation (assume result is of type int)
+            addAssume(isInRange(stack(var(intStackVar(handle.getFrame().getStackSize() - 2))), typeRef(JBaseType.INT)));
         }
 
         //@ requires insn != null;
         public void visitLBinArithInstruction(LBinArithInstruction insn) {
             translateBinArithInstruction(insn.getOpcode());
+            //overflow is not hanled by our implementation (assume result is of type long)
+            addAssume(isInRange(stack(var(intStackVar(handle.getFrame().getStackSize() - 2))), typeRef(JBaseType.LONG)));
         }
 
         private void translateBitwiseInstruction(int opcode) {
@@ -3797,11 +3821,15 @@ public class MethodTranslator implements ITranslationConstants {
         //@ requires insn != null;
         public void visitIBitwiseInstruction(IBitwiseInstruction insn) {
             translateBitwiseInstruction(insn.getOpcode());
+            //overflow is not hanled by our implementation (assume result is of type int)
+            addAssume(isInRange(stack(var(intStackVar(handle.getFrame().getStackSize() - 2))), typeRef(JBaseType.INT)));
         }
 
         //@ requires insn != null;
         public void visitLBitwiseInstruction(LBitwiseInstruction insn) {
             translateBitwiseInstruction(insn.getOpcode());
+            //overflow is not hanled by our implementation (assume result is of type long)
+            addAssume(isInRange(stack(var(intStackVar(handle.getFrame().getStackSize() - 2))), typeRef(JBaseType.LONG)));
         }
 
         //@ requires insn != null;
@@ -3822,6 +3850,8 @@ public class MethodTranslator implements ITranslationConstants {
             int constant = insn.getConstant();
             BPLExpression iinc = add(stack(var(intLocalVar(local))), intLiteral(constant));
             addAssignment(stack(var(intLocalVar(local))), iinc);
+            //overflow not handled by our implementation (assume type of result is int)
+            addAssume(isInRange(stack(var(intLocalVar(local))), typeRef(JBaseType.INT)));
         }
 
         /**
