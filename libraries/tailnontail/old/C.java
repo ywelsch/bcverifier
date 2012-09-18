@@ -3,8 +3,8 @@ public class C {
 		if (n == 0) {
     	    return 1;
 		} else {
-    	    int result = n * f(n - 1);
-    	    return result;
+    	    int result = f(n - 1);
+    	    return n * result;
 		}
 	}
 }
