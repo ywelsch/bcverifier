@@ -65,7 +65,7 @@ public class HomePage extends WebPage {
     	super(parameters);
 		add(new Label("version", ConfigSession.get().getConfig().getVersionString()));
 		add(form);
-		createDropDownSelector(form.pan1, form.pan2, form.pan3);
+		createDropDownSelector(form.pan1, form.pan2, form.pan3, form.opanel);
 		createOutputPanel();
     }
     
@@ -81,7 +81,7 @@ public class HomePage extends WebPage {
 		add(outputpanel);
 	}
 
-	private void createDropDownSelector(final MarkupContainer pan1, final MarkupContainer pan2, final MarkupContainer pan3) {
+	private void createDropDownSelector(final MarkupContainer pan1, final MarkupContainer pan2, final MarkupContainer pan3, final MarkupContainer opanel) {
     	final Model<Example> selectedExample = new Model<Example>();
     	List<Example> examples = new ExampleLoader().loadExamples();
 		DropDownChoice<Example> choice = new DropDownChoice<Example>("examples", selectedExample, examples);
@@ -93,7 +93,7 @@ public class HomePage extends WebPage {
                 if (ex != null) {
                 	selectExample(ex);
                 	if (target != null) {
-                		target.add(pan1, pan2, pan3, outputpanel);
+                		target.add(pan1, pan2, pan3, opanel, outputpanel);
                 	}
                 }
             }
@@ -137,6 +137,7 @@ public class HomePage extends WebPage {
 		lib2contents.clear();
 		lib2contents.addAll(ex.getLib2files());
 		setInv(ex.getInvariant());
+		ConfigSession.get().getConfig().setLoopUnrollCap(ex.getUnrollCount());
 		setOutput("");
 		setBoogieinput("");
 		outputpanel.setVisible(false);
