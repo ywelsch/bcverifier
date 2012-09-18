@@ -2822,28 +2822,30 @@ public class MethodTranslator implements ITranslationConstants {
                 addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(localPlace.getName())));
                 addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
                 
-                // type informations of the stack
-                StackFrame stackFrame = handle.getFrame();
-                JType elemType;
-                for(int i=0; i<handle.getFrame().getStackSize(); i++){
-                    elemType = stackFrame.peek(i);
-                    if(elemType.isBaseType()){
-                        addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
-                    } else {
-                        addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
+                if(handle != null){
+                    // type informations of the stack
+                    StackFrame stackFrame = handle.getFrame();
+                    JType elemType;
+                    for(int i=0; i<handle.getFrame().getStackSize(); i++){
+                        elemType = stackFrame.peek(i);
+                        if(elemType.isBaseType()){
+                            addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
+                        } else {
+                            addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
+                        }
                     }
-                }
-                
-                //type information of the local variables
-                for(int i=0; i<stackFrame.getLocalCount(); i++){
-                	elemType = stackFrame.getLocal(i);
-                	if (elemType != null) {
-                		if(elemType.isBaseType()){
-                			addAssume(isInRange(stack(var(localVar(i, elemType))), typeRef(elemType)));
-                		} else {
-                			addAssume(isOfType(stack(var(localVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
-                		}
-                	}
+
+                    //type information of the local variables
+                    for(int i=0; i<stackFrame.getLocalCount(); i++){
+                        elemType = stackFrame.getLocal(i);
+                        if (elemType != null) {
+                            if(elemType.isBaseType()){
+                                addAssume(isInRange(stack(var(localVar(i, elemType))), typeRef(elemType)));
+                            } else {
+                                addAssume(isOfType(stack(var(localVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
+                            }
+                        }
+                    }
                 }
                 
                 // type information of the method parameters
