@@ -357,11 +357,12 @@ public class ErrorTraceParser {
         AssertionException ex = new AssertionException(thisExceptionLines, stepsInImpl1, stepsInImpl2, failedAssertion, failedAsssertionLine);
         exceptions.add(ex);
         
-        stepsInImpl1.clear();
-        stepsInImpl2.clear();
-        thisExceptionLines.clear();
+        stepsInImpl1 = new ArrayList<SimulationStep>();
+        stepsInImpl2 = new ArrayList<SimulationStep>();
+        thisExceptionLines = new ArrayList<String>();
         boogieFile = matcher.group(1);
         failedAsssertionLine = Integer.parseInt(matcher.group(2));
+        failedAssertion = boogieFileLines.get(failedAsssertionLine-1);
         state = State.FIND_LIBRARY_ACTION;
         return true;
     }
