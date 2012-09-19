@@ -113,6 +113,8 @@ public interface ITranslationConstants {
   
   String LIB_TYPE_FUNC = "libType";
   
+  String CTXT_TYPE_FUNC = "ctxtType";
+  
   String BEING_CONSTRUCTED_CONST = GLOBAL_VAR_PREFIX+"BeingConstructed";
 
   String STACK_PTR_TYPE = "StackPtr";

@@ -14,6 +14,7 @@ import static b2bpl.translation.CodeGenerator.heap2;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
 import static b2bpl.translation.CodeGenerator.implies;
 import static b2bpl.translation.CodeGenerator.libType;
+import static b2bpl.translation.CodeGenerator.ctxtType;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isLocalPlace;
@@ -25,6 +26,7 @@ import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.libraryField;
 import static b2bpl.translation.CodeGenerator.isClassType;
+import static b2bpl.translation.CodeGenerator.libImpl;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
@@ -234,6 +236,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             methodBlocks.addAll(libraryDefinition1.getMethodBlocks());
             
             addDefinesMethodAxioms(programDecls);
+            addLibraryFields(programDecls);
             
             //clear local sets for next round
             tc.localReferencedFields().clear();
@@ -246,8 +249,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             methodBlocks.addAll(libraryDefinition2.getMethodBlocks());
 
             addDefinesMethodAxioms(programDecls);
-            
             addLibraryFields(programDecls);
+            
             
             /////////////////////////////////////
             // add method definition for java.lang.Object default constructor
@@ -624,25 +627,16 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         procAssumes.add(
                 new BPLAssumeCommand(logicalAnd(
                         forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT)),
-                                implies(
-                                    libraryField(var("f")),
-                                    logicalAnd(
-                                            isEqual(heap1(stack1(receiver()), var("f")), new BPLIntLiteral(0)),
-                                            isEqual(heap2(stack2(receiver()), var("f")), new BPLIntLiteral(0))
-                                            )
-                                    )
-                                ),
+                        		logicalAnd(
+                                implies(libraryField(var(IMPL1), var("f")), isEqual(heap1(stack1(receiver()), var("f")), new BPLIntLiteral(0))),
+                                implies(libraryField(var(IMPL2), var("f")), isEqual(heap2(stack2(receiver()), var("f")), new BPLIntLiteral(0)))
+                                )),
                         forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE))),
-                                implies(
-                                    libraryField(var("f")),
-                                    logicalAnd(
-                                            isNull(heap1(stack1(receiver()), var("f"))),
-                                            isNull(heap2(stack2(receiver()), var("f")))
-                                            )
-                                    )
-                                )
-                        )
-                ));
+                        		logicalAnd(
+                                implies(libraryField(var(IMPL1), var("f")), isNull(heap1(stack1(receiver()), var("f")))),
+                                implies(libraryField(var(IMPL2), var("f")), isNull(heap2(stack2(receiver()), var("f"))))
+                                ))
+                )));
         
         // "this" is created by context and not yet exposed
         // the two "this" objects are related
@@ -707,22 +701,19 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         //assume typ(stack1[ip1][spmap1[ip1]][param0_r], heap1) == typ(stack2[ip2][spmap2[ip2]][param0_r], heap2);
         procAssumes.add(new BPLAssumeCommand(isEqual(typ(stack1(receiver()), var(HEAP1)), typ(stack2(receiver()), var(HEAP2)))));
         
-        // there exists a smallest common public library (class) type of the values
-        String someType = "someType";
-        BPLVariable someTypeVar = new BPLVariable(someType, new BPLTypeName(NAME_TYPE));
+        // constructor that is called is defined in t implies that the type of the receiver is not a library subtype of t
         String t = "t";
         BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-        procAssumes.add(new BPLAssumeCommand(exists(someTypeVar, 
-        		logicalAnd(isOfType(stack1(receiver()), var(HEAP1), var(someType)),
-                isClassType(var(IMPL1), var(someType)),
-        		libType(var(IMPL1), var(someType)),
-        		isPublic(var(IMPL1), var(someType)),
-        		isClassType(var(IMPL2), var(someType)),
-        		libType(var(IMPL2), var(someType)),
-        		isPublic(var(IMPL2), var(someType)),
-        		forall(tVar, implies(logicalAnd(subtype(var(IMPL1), var(t), var(someType)), libType(var(IMPL1), var(t))), isEqual(var(t), var(someType)))),
-        		forall(tVar, implies(logicalAnd(subtype(var(IMPL2), var(t), var(someType)), libType(var(IMPL2), var(t))), isEqual(var(t), var(someType))))
-        		))));
+        String t2 = "t2";
+        BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
+        procAssumes.add(new BPLAssumeCommand(forall(tVar, implies(definesMethod(var(IMPL1), var(t), stack1(var(METH_FIELD))), 
+        		forall(t2Var, implies(logicalAnd(libType(var(IMPL1), var(t2)), 
+        				logicalNot(isEqual(var(t), var(t2))), isOfType(stack1(receiver()), var(HEAP1), var(t2))), 
+        				logicalNot(subtype(var(IMPL1), var(t2), var(t)))))))));
+        procAssumes.add(new BPLAssumeCommand(forall(tVar, implies(definesMethod(var(IMPL2), var(t), stack2(var(METH_FIELD))), 
+        		forall(t2Var, implies(logicalAnd(libType(var(IMPL2), var(t2)), 
+        				logicalNot(isEqual(var(t), var(t2))), isOfType(stack2(receiver()), var(HEAP2), var(t2))), 
+        				logicalNot(subtype(var(IMPL2), var(t2), var(t)))))))));
         
         methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_CONSTRUCTOR_LABEL,
                 procAssumes.toArray(new BPLCommand[procAssumes.size()]),
@@ -1399,7 +1390,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                 checkingCommand.add(new BPLAssumeCommand(logicalAnd(
                 		notEqual(var(SOME_OBJ_TEMP), BPLNullLiteral.NULL),
                 		new BPLArrayExpression(var(heap), var(SOME_OBJ_TEMP), var(ALLOC_FIELD)),
-                		logicalNot(libraryField(var(field))),
+                		logicalNot(libraryField(libImpl(var(heap)), var(field))),
                 		logicalNot(new BPLFunctionApplication(SYNTHETIC_FIELD_FUNC, var(field)))
                 		)));
                 checkingCommand.add(new BPLAssignmentCommand(
@@ -1443,23 +1434,23 @@ public class Library implements ITroubleReporter, ITranslationConstants {
     	final String f = "f";
         BPLVariable fieldAlphaVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")));
         // generate library fields
-        if (tc.globalReferencedFields() == null || tc.globalReferencedFields().isEmpty()) {
+        if (tc.localReferencedFields() == null || tc.localReferencedFields().isEmpty()) {
         	programDecls.add(new BPLAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
                     new BPLVariable[]{fieldAlphaVar},
                     isEquiv(
-                    		new BPLFunctionApplication(LIBRARY_FIELD_FUNC, var(fieldAlphaVar.getName())), 
+                    		new BPLFunctionApplication(LIBRARY_FIELD_FUNC, var(tc.getImpl()), var(fieldAlphaVar.getName())), 
                     		BPLBoolLiteral.FALSE)
                     )));
         } else {
-        	BPLExpression[] comparisons = new BPLExpression[tc.globalReferencedFields().size()];
-        	Iterator<BCField> iter = tc.globalReferencedFields().iterator();
+        	BPLExpression[] comparisons = new BPLExpression[tc.localReferencedFields().size()];
+        	Iterator<BCField> iter = tc.localReferencedFields().iterator();
         	for (int j = 0; j < comparisons.length; j++) {
         		comparisons[j] = isEqual(var(fieldAlphaVar.getName()), var(tc.boogieFieldName(iter.next())));
         	}
         	programDecls.add(new BPLAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
         			new BPLVariable[]{fieldAlphaVar},
         			isEquiv(
-        					new BPLFunctionApplication(LIBRARY_FIELD_FUNC, var(fieldAlphaVar.getName())), 
+        					new BPLFunctionApplication(LIBRARY_FIELD_FUNC, var(tc.getImpl()), var(fieldAlphaVar.getName())), 
         					logicalOr(comparisons))
         			)));
         }

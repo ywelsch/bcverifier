@@ -11,12 +11,15 @@ import static b2bpl.translation.CodeGenerator.bitShr;
 import static b2bpl.translation.CodeGenerator.classExtends;
 import static b2bpl.translation.CodeGenerator.classRepr;
 import static b2bpl.translation.CodeGenerator.classReprInv;
+import static b2bpl.translation.CodeGenerator.ctxtType;
 import static b2bpl.translation.CodeGenerator.definesMethod;
 import static b2bpl.translation.CodeGenerator.divide;
 import static b2bpl.translation.CodeGenerator.emptyInteractionFrame;
 import static b2bpl.translation.CodeGenerator.emptyStrackFrame;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldType;
+import static b2bpl.translation.CodeGenerator.isCallable;
+import static b2bpl.translation.CodeGenerator.libraryField;
 import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.ftype;
 import static b2bpl.translation.CodeGenerator.greater;
@@ -655,6 +658,7 @@ public class Translator implements ITranslationConstants {
             
             addConstants(new BPLVariable(IMPL1, new BPLTypeName(LIBRARY_IMPL_TYPE)));
             addConstants(new BPLVariable(IMPL2, new BPLTypeName(LIBRARY_IMPL_TYPE)));
+            addAxiom(forall(lVar, logicalOr(isEqual(var(l), var(IMPL1)), isEqual(var(l), var(IMPL2)))));
 
             addType(FIELD_TYPE, "_");
 
@@ -676,7 +680,8 @@ public class Translator implements ITranslationConstants {
                                     forall(refVar, fieldRefVar, implies(logicalNot(map(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), nullLiteral()))),
                                     forall(refVar, fieldIntVar, implies(logicalNot(map(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
                                     forall(refVar, fieldRefVar, isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(heap), fieldType(libImpl(var(heap)), var(f)))),
-                                    forall(refVar, fieldIntVar, isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), fieldType(libImpl(var(heap)), var(f))))
+                                    forall(refVar, fieldIntVar, isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), fieldType(libImpl(var(heap)), var(f)))),
+                                    forall(refVar, logicalOr(libType(libImpl(var(heap)), new BPLArrayExpression(var(heap), var(r), var(dynType))), ctxtType(new BPLArrayExpression(var(heap), var(r), var(dynType)))))
                                     ))
                     ));
 
@@ -733,7 +738,9 @@ public class Translator implements ITranslationConstants {
                     		logicalOr(comparisons))
                     ));
             
-            addFunction(LIBRARY_FIELD_FUNC+"<alpha>", new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), BPLBuiltInType.BOOL);
+            addFunction(LIBRARY_FIELD_FUNC+"<alpha>", new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), BPLBuiltInType.BOOL);
+            addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
+                    new BPLVariable[]{lVar, fieldAlphaVar}, implies(libraryField(var(l), var(f)), libType(var(l), fieldType(var(l), var(f))))));
                         
             addComment("end custom part (below: original SscBoogie)");
             
@@ -776,9 +783,27 @@ public class Translator implements ITranslationConstants {
             addComment("Subtype relation between public types in lib1 is preserved in lib2");
             addAxiom(forall(t1Var, t2Var, implies(logicalAnd(subtype(var(IMPL1), var(t1), var(t2)), isPublic(var(IMPL1), var(t1)), libType(var(IMPL1), var(t1)), isPublic(var(IMPL1), var(t2)), libType(var(IMPL1), var(t2))), subtype(var(IMPL2), var(t1), var(t2))))); 
             addComment("subtype relation is the same between context types and public types that are both in lib1 and lib2");
-            addAxiom(forall(t1Var, t2Var, implies(logicalAnd(logicalNot(libType(var(IMPL1), var(t1))), logicalNot(libType(var(IMPL2), var(t1))), isPublic(var(IMPL1), var(t2)), libType(var(IMPL1), var(t2))), isEquiv(subtype(var(IMPL1), var(t1), var(t2)), subtype(var(IMPL2), var(t1), var(t2))))));
-            addComment("subtype relation is preserved between context types");
-            addAxiom(forall(t1Var, t2Var, implies(logicalAnd(logicalNot(libType(var(IMPL1), var(t1))), logicalNot(libType(var(IMPL2), var(t1))), logicalNot(libType(var(IMPL1), var(t2))), logicalNot(libType(var(IMPL2), var(t2)))), isEquiv(subtype(var(IMPL1), var(t1), var(t2)), subtype(var(IMPL2), var(t1), var(t2))))));
+            addAxiom(forall(t1Var, t2Var, implies(logicalAnd(ctxtType(var(t1)), isPublic(var(IMPL1), var(t2)), libType(var(IMPL1), var(t2))), isEquiv(subtype(var(IMPL1), var(t1), var(t2)), subtype(var(IMPL2), var(t1), var(t2))))));
+            addComment("many relations are preserved between context types");
+            final String m = "m";
+            BPLVariable mVar = new BPLVariable(m, new BPLTypeName(METHOD_TYPE));
+            addAxiom(forall(t1Var, t2Var, implies(logicalAnd(ctxtType(var(t1)), ctxtType(var(t2))), logicalAnd( 
+            		isEquiv(subtype(var(IMPL1), var(t1), var(t2)), subtype(var(IMPL2), var(t1), var(t2))),
+            		isEquiv(isPublic(var(IMPL1), var(t1)), isPublic(var(IMPL2), var(t1))),
+            		isEquiv(isClassType(var(IMPL1), var(t1)), isClassType(var(IMPL2), var(t1))),
+            		isEquiv(isMemberlessType(var(IMPL1), var(t1)), isMemberlessType(var(IMPL2), var(t1))),
+            		isEquiv(classExtends(var(IMPL1), var(t1), var(t2)), classExtends(var(IMPL2), var(t1), var(t2))),
+            		//isEquiv(fieldType(var(IMPL1), var(t1)), fieldType(var(IMPL2), var(t1)))
+            		forall(mVar, isEquiv(isCallable(var(IMPL1), var(t1), var(m)), isCallable(var(IMPL2), var(t1), var(m)))),
+            		forall(mVar, isEquiv(definesMethod(var(IMPL1), var(t1), var(m)), definesMethod(var(IMPL2), var(t1), var(m)))),
+            		forall(mVar, isEquiv(memberOf(var(IMPL1), var(m), var(t1), var(t2)), memberOf(var(IMPL2), var(m), var(t1), var(t2)))),
+            		forall(mVar, isEquiv(isStaticMethod(var(IMPL1), var(t1), var(m)), isStaticMethod(var(IMPL2), var(t1), var(m))))
+            		))));
+            addAxiom(forall(t1Var, t2Var, implies(logicalAnd(ctxtType(var(t1)), libType(var(IMPL1), var(t2))), 
+            		isEquiv(classExtends(var(IMPL1), var(t1), var(t2)), classExtends(var(IMPL2), var(t1), var(t2))))));
+            
+            addAxiom(forall(lVar, t1Var, t2Var, implies(logicalAnd(ctxtType(var(t1)), libType(var(l), var(t2)), classExtends(var(l), var(t1), var(t2))), 
+            		isPublic(var(l), var(t2)))));
             
             addFunction(TYP_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE));
             addAxiom(forall(heapVar, refVar, isEqual(typ(var(r), var(heap)), new BPLArrayExpression(var(heap), var(r), var(dynType)))));
@@ -1571,6 +1596,8 @@ public class Translator implements ITranslationConstants {
             addComment("memberOf(m, t1, t2) <==> m is member of t2 (implementation is in t1)");
             addFunction(MEMBER_OF_FUNC, new BPLType[]{new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(METHOD_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE)}, BPLBuiltInType.BOOL);
             addFunction(LIB_TYPE_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addFunction(CTXT_TYPE_FUNC, new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
+            addAxiom(forall(tVar, implies(ctxtType(var(t)), logicalAnd(logicalNot(libType(var(IMPL1), var(t))), logicalNot(libType(var(IMPL2), var(t)))))));
             addFunction(CLASS_EXTENDS_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             
             addComment("classExtends is a partial function");

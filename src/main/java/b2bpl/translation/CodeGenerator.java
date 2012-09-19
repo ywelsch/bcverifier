@@ -1051,6 +1051,10 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(LIB_TYPE_FUNC, impl, c);
     }
     
+    public static BPLExpression ctxtType(BPLExpression c){
+        return new BPLFunctionApplication(CTXT_TYPE_FUNC, c);
+    }
+    
     public static BPLExpression classExtends(BPLExpression impl, BPLExpression c1, BPLExpression c2){
         return new BPLFunctionApplication(CLASS_EXTENDS_FUNC, impl, c1, c2);
     }
@@ -1071,8 +1075,8 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(IS_LOCAL_PLACE_FUNC, place);
     }
     
-    public static BPLExpression libraryField(BPLExpression field) {
-        return new BPLFunctionApplication(LIBRARY_FIELD_FUNC, field);
+    public static BPLExpression libraryField(BPLExpression impl, BPLExpression field) {
+        return new BPLFunctionApplication(LIBRARY_FIELD_FUNC, impl, field);
     }
     
     public static BPLExpression emptyInteractionFrame(BPLExpression iframe) {
