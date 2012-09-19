@@ -13,18 +13,22 @@ import static b2bpl.translation.CodeGenerator.heap1;
 import static b2bpl.translation.CodeGenerator.heap2;
 import static b2bpl.translation.CodeGenerator.ifThenElse;
 import static b2bpl.translation.CodeGenerator.implies;
+import static b2bpl.translation.CodeGenerator.libType;
 import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isLocalPlace;
+import static b2bpl.translation.CodeGenerator.isOfType;
 import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isPublic;
 import static b2bpl.translation.CodeGenerator.isStaticMethod;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
 import static b2bpl.translation.CodeGenerator.libraryField;
+import static b2bpl.translation.CodeGenerator.isClassType;
 import static b2bpl.translation.CodeGenerator.logicalAnd;
 import static b2bpl.translation.CodeGenerator.logicalNot;
 import static b2bpl.translation.CodeGenerator.logicalOr;
+import static b2bpl.translation.CodeGenerator.subtype;
 import static b2bpl.translation.CodeGenerator.map;
 import static b2bpl.translation.CodeGenerator.map1;
 import static b2bpl.translation.CodeGenerator.memberOf;
@@ -702,6 +706,23 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         
         //assume typ(stack1[ip1][spmap1[ip1]][param0_r], heap1) == typ(stack2[ip2][spmap2[ip2]][param0_r], heap2);
         procAssumes.add(new BPLAssumeCommand(isEqual(typ(stack1(receiver()), var(HEAP1)), typ(stack2(receiver()), var(HEAP2)))));
+        
+        // there exists a smallest common public library (class) type of the values
+        String someType = "someType";
+        BPLVariable someTypeVar = new BPLVariable(someType, new BPLTypeName(NAME_TYPE));
+        String t = "t";
+        BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+        procAssumes.add(new BPLAssumeCommand(exists(someTypeVar, 
+        		logicalAnd(isOfType(stack1(receiver()), var(HEAP1), var(someType)),
+                isClassType(var(IMPL1), var(someType)),
+        		libType(var(IMPL1), var(someType)),
+        		isPublic(var(IMPL1), var(someType)),
+        		isClassType(var(IMPL2), var(someType)),
+        		libType(var(IMPL2), var(someType)),
+        		isPublic(var(IMPL2), var(someType)),
+        		forall(tVar, implies(logicalAnd(subtype(var(IMPL1), var(t), var(someType)), libType(var(IMPL1), var(t))), isEqual(var(t), var(someType)))),
+        		forall(tVar, implies(logicalAnd(subtype(var(IMPL2), var(t), var(someType)), libType(var(IMPL2), var(t))), isEqual(var(t), var(someType))))
+        		))));
         
         methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_CONSTRUCTOR_LABEL,
                 procAssumes.toArray(new BPLCommand[procAssumes.size()]),

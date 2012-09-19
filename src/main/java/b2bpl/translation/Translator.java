@@ -690,7 +690,7 @@ public class Translator implements ITranslationConstants {
                                     forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(HEAP1),  var(r1), var(exposed)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))))),
                                     forall(r1Var, implies(logicalAnd(obj(var(HEAP1), var(r1)), new BPLArrayExpression(var(HEAP1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
                                     forall(r2Var, implies(logicalAnd(obj(var(HEAP2), var(r2)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
-                                    forall(r1Var, r2Var, implies(related(var(r1), var(r2)), forall(tVar, implies(isPublic(libImpl(var(HEAP1)), var(t)), implies(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t)))))))
+                                    forall(r1Var, r2Var, implies(related(var(r1), var(r2)), forall(tVar, implies(logicalAnd(isPublic(libImpl(var(HEAP1)), var(t)), libType(libImpl(var(HEAP1)), var(t))), implies(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t)))))))
                                     ))
                     ));
 
@@ -768,7 +768,17 @@ public class Translator implements ITranslationConstants {
             addComment("antisymetic");
             addAxiom(forall(lVar, t1Var, t2Var, implies(logicalAnd(subtype(var(l), var(t1), var(t2)), notEqual(var(t1), var(t2))), logicalNot(subtype(var(l), var(t2), var(t1))))));
             
-            
+            addComment("Source compatibility conditions");
+            addComment("Every public type in lib1 is also public type in lib2");
+            addAxiom(forall(tVar, implies(logicalAnd(isPublic(var(IMPL1), var(t)), libType(var(IMPL1), var(t))), logicalAnd(isPublic(var(IMPL2), var(t)), libType(var(IMPL2), var(t))))));
+            addComment("Every public class/interface in lib1 is also public class/interface in lib2");
+            addAxiom(forall(tVar, implies(logicalAnd(isPublic(var(IMPL1), var(t)), libType(var(IMPL1), var(t))), isEquiv(isClassType(var(IMPL1), var(t)), isClassType(var(IMPL2), var(t))))));
+            addComment("Subtype relation between public types in lib1 is preserved in lib2");
+            addAxiom(forall(t1Var, t2Var, implies(logicalAnd(subtype(var(IMPL1), var(t1), var(t2)), isPublic(var(IMPL1), var(t1)), libType(var(IMPL1), var(t1)), isPublic(var(IMPL1), var(t2)), libType(var(IMPL1), var(t2))), subtype(var(IMPL2), var(t1), var(t2))))); 
+            addComment("subtype relation is the same between context types and public types that are both in lib1 and lib2");
+            addAxiom(forall(t1Var, t2Var, implies(logicalAnd(logicalNot(libType(var(IMPL1), var(t1))), logicalNot(libType(var(IMPL2), var(t1))), isPublic(var(IMPL1), var(t2)), libType(var(IMPL1), var(t2))), isEquiv(subtype(var(IMPL1), var(t1), var(t2)), subtype(var(IMPL2), var(t1), var(t2))))));
+            addComment("subtype relation is preserved between context types");
+            addAxiom(forall(t1Var, t2Var, implies(logicalAnd(logicalNot(libType(var(IMPL1), var(t1))), logicalNot(libType(var(IMPL2), var(t1))), logicalNot(libType(var(IMPL1), var(t2))), logicalNot(libType(var(IMPL2), var(t2)))), isEquiv(subtype(var(IMPL1), var(t1), var(t2)), subtype(var(IMPL2), var(t1), var(t2))))));
             
             addFunction(TYP_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(NAME_TYPE));
             addAxiom(forall(heapVar, refVar, isEqual(typ(var(r), var(heap)), new BPLArrayExpression(var(heap), var(r), var(dynType)))));
