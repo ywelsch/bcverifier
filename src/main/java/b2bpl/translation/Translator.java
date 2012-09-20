@@ -20,6 +20,7 @@ import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldType;
 import static b2bpl.translation.CodeGenerator.isCallable;
 import static b2bpl.translation.CodeGenerator.libraryField;
+import static b2bpl.translation.CodeGenerator.numParams;
 import static b2bpl.translation.CodeGenerator.forall;
 import static b2bpl.translation.CodeGenerator.ftype;
 import static b2bpl.translation.CodeGenerator.greater;
@@ -313,6 +314,8 @@ public class Translator implements ITranslationConstants {
                         Logger.getLogger(Translator.class).debug("Adding method "+methodName);
                         addConstants(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE)));
                         tc.declaredMethods().add(methodName);
+                     // numparams
+                        addAxiom(isEqual(numParams(var(methodName)), var(""+method.getParameterCount())));
                     }
 //                    declarations.add(new BPLAxiom(new BPLFunctionApplication(DEFINES_METHOD, typeRef(type), var(methodName))));
                     tc.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
@@ -739,8 +742,8 @@ public class Translator implements ITranslationConstants {
                     ));
             
             addFunction(LIBRARY_FIELD_FUNC+"<alpha>", new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), BPLBuiltInType.BOOL);
-            addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
-                    new BPLVariable[]{lVar, fieldAlphaVar}, implies(libraryField(var(l), var(f)), libType(var(l), fieldType(var(l), var(f))))));
+//            addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
+//                    new BPLVariable[]{lVar, fieldAlphaVar}, implies(libraryField(var(l), var(f)), libType(var(l), fieldType(var(l), var(f))))));
                         
             addComment("end custom part (below: original SscBoogie)");
             
@@ -1676,6 +1679,8 @@ public class Translator implements ITranslationConstants {
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(ITranslationConstants.USE_HAVOC, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
             
             addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            
+            addFunction(NUM_PARAMS_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.INT);
             
             addFunction(VALID_HEAP_SUCC_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(STACK_TYPE), BPLBuiltInType.BOOL);
 

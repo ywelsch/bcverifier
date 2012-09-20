@@ -56,7 +56,7 @@ import de.unikl.bcverifier.TranslationController;
  * @author Ovidio Mallo
  */
 public final class CodeGenerator implements ITranslationConstants {
-    private static Project project;
+	private static Project project;
     private static TranslationController tc;
 
     public static void setProject(Project project) {
@@ -1067,6 +1067,10 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(IS_STATIC_METHOD_FUNC, impl, clazz, meth);
     }
     
+    public static BPLExpression numParams(BPLExpression meth){
+        return new BPLFunctionApplication(NUM_PARAMS_FUNC, meth);
+    }
+    
     public static BPLExpression validHeapSucc(BPLExpression oldHeap, BPLExpression newHeap, BPLExpression stack){
         return new BPLFunctionApplication(VALID_HEAP_SUCC_FUNC, oldHeap, newHeap, stack);
     }
@@ -1075,7 +1079,7 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(IS_LOCAL_PLACE_FUNC, place);
     }
     
-    public static BPLExpression libraryField(BPLExpression impl, BPLExpression field) {
+	public static BPLExpression libraryField(BPLExpression impl, BPLExpression field) {
         return new BPLFunctionApplication(LIBRARY_FIELD_FUNC, impl, field);
     }
     
@@ -1161,7 +1165,7 @@ public final class CodeGenerator implements ITranslationConstants {
     }
     
     public static BPLExpression receiver(){
-        return var("param0_r");
+        return var("reg0_r");
     }
     
     public static BPLExpression map(BPLExpression prefix, BPLExpression ... accessors){
