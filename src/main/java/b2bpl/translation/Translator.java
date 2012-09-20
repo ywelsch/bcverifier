@@ -693,9 +693,9 @@ public class Translator implements ITranslationConstants {
                                     bijective(var(related)),
                                     objectCoupling(var(HEAP1), var(HEAP2), var(related)),
                                     forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(HEAP1),  var(r1), var(exposed)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))))),
-                                    forall(r1Var, implies(logicalAnd(obj(var(HEAP1), var(r1)), new BPLArrayExpression(var(HEAP1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
-                                    forall(r2Var, implies(logicalAnd(obj(var(HEAP2), var(r2)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
-                                    forall(r1Var, r2Var, implies(related(var(r1), var(r2)), forall(tVar, implies(logicalAnd(isPublic(libImpl(var(HEAP1)), var(t)), libType(libImpl(var(HEAP1)), var(t))), implies(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t)))))))
+                                    forall(r1Var, implies(logicalAnd(notEqual(var(r1), var("null")), new BPLArrayExpression(var(HEAP1), var(r1), var(alloc)), new BPLArrayExpression(var(HEAP1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
+                                    forall(r2Var, implies(logicalAnd(notEqual(var(r2), var("null")), new BPLArrayExpression(var(HEAP2), var(r2), var(alloc)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
+                                    forall(r1Var, r2Var, implies(related(var(r1), var(r2)), forall(tVar, implies(logicalAnd(isPublic(libImpl(var(HEAP1)), var(t)), libType(libImpl(var(HEAP1)), var(t))), isEquiv(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t)))))))
                                     ))
                     ));
 
