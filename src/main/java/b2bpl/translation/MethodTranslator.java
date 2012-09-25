@@ -1186,24 +1186,22 @@ public class MethodTranslator implements ITranslationConstants {
         //@deprecated addAssume(notEqual(var(thisVar()), BPLNullLiteral.NULL));
         //@deprecated addAssume(alive(rval(var(thisVar())), var(tc.getHeap())));
 
-        JType[] params = new JType[method.getParameterCount() + 1];
-        params[0] = method.getOwner(); //for static methods the class object, for non-static the receiver
-        System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
+        JType[] params = method.getParameterTypes();
         if(tc.isActive()){
-            addAssume(nonNull(stack(var(thisVar()))));
+        	if (!method.isStatic()) {
+        		addAssume(nonNull(stack(var(thisVar()))));
+        		addAssume(isOfType(stack(var(localVar(0, method.getOwner()))), var(tc.getHeap()), context.translateTypeReference(method.getOwner())));
+        	}
         }
 
         for (int i = 0; i < params.length; i++) {
             if(tc.isActive()){
-                if(i == 0 && method.isStatic() && params[i].isClassType()){
-                    continue; // skip check for param0_r if the method is static
-                }
                 if(params[i].isBaseType()){
                     JBaseType baseType = (JBaseType)params[i];
-                    addAssume(isInRange(stack(var(localVar(i, baseType))), typeRef(baseType)));
+                    addAssume(isInRange(stack(var(localVar(method.isStatic() ? i : i+1, baseType))), typeRef(baseType)));
                 } else if(params[i].isClassType()){
                     JClassType classType = (JClassType)params[i];
-                    addAssume(isOfType(stack(var(localVar(i, classType))), var(tc.getHeap()), context.translateTypeReference(classType)));
+                    addAssume(isOfType(stack(var(localVar(method.isStatic() ? i : i+1, classType))), var(tc.getHeap()), context.translateTypeReference(classType)));
 //                    addAssume(obj(var(tc.getHeap()), stack(var(paramVar(i, classType))))); //TODO this would mean all parameters are non-null
                 } else {
                     //TODO arrays
@@ -3532,7 +3530,7 @@ public class MethodTranslator implements ITranslationConstants {
                   if(!invokedMethod.isStatic()){
                       addAssume(isOfType(stack(receiver()), var(tc.getHeap()), typeRef(insn.getMethodOwner())));
                   } else {
-                      addAssume(isEqual(stack(receiver()), classRepr(typeRef(invokedMethod.getOwner()))), "Class representative for static call");
+                      //addAssume(isEqual(stack(receiver()), classRepr(typeRef(invokedMethod.getOwner()))), "Class representative for static call");
                   }
               } else {
                   addAssume(nonNull(stack(var(RESULT_PARAM+typeAbbrev(type(retType)))))); //we have constructed the object

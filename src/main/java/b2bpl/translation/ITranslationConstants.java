@@ -453,6 +453,8 @@ public static final String IS_STATIC_METHOD_FUNC = "IsStaticMethod";
 
 public static final String NUM_PARAMS_FUNC = "numParams";
 
+public static final String PLACE_DEFINED_IN_TYPE = "placeDefinedInType";
+
 static final String USE_HAVOC = "useHavoc";
 
 public static final String DYN_TYPE_FIELD = "dynType";

@@ -1079,6 +1079,10 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(IS_LOCAL_PLACE_FUNC, place);
     }
     
+    public static BPLExpression placeDefinedInType(BPLExpression place){
+        return new BPLFunctionApplication(PLACE_DEFINED_IN_TYPE, place);
+    }
+    
 	public static BPLExpression libraryField(BPLExpression impl, BPLExpression field) {
         return new BPLFunctionApplication(LIBRARY_FIELD_FUNC, impl, field);
     }

@@ -4,10 +4,10 @@ public class Static{
 	}
 
 	public int get() {
-		return Static.getTheAnswer();
+		return Static.getTheAnswer(3);
 	}
 
-	public static int getTheAnswer(){
-		return 42;
+	public static int getTheAnswer(int i){
+		return i;
 	}
 }

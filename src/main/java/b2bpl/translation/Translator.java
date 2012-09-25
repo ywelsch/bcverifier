@@ -742,8 +742,8 @@ public class Translator implements ITranslationConstants {
                     ));
             
             addFunction(LIBRARY_FIELD_FUNC+"<alpha>", new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")), BPLBuiltInType.BOOL);
-//            addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
-//                    new BPLVariable[]{lVar, fieldAlphaVar}, implies(libraryField(var(l), var(f)), libType(var(l), fieldType(var(l), var(f))))));
+            addAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
+                    new BPLVariable[]{lVar, fieldAlphaVar}, implies(libraryField(var(l), var(f)), logicalOr(libType(var(l), fieldType(var(l), var(f))), isValueType(fieldType(var(l), var(f))), isEqual(fieldType(var(l), var(f)), var(GLOBAL_VAR_PREFIX+"java.lang.Object"))))));
                         
             addComment("end custom part (below: original SscBoogie)");
             
@@ -1681,6 +1681,8 @@ public class Translator implements ITranslationConstants {
             addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             
             addFunction(NUM_PARAMS_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.INT);
+            
+            addFunction(PLACE_DEFINED_IN_TYPE, new BPLTypeName(ADDRESS_TYPE), new BPLTypeName(NAME_TYPE));
             
             addFunction(VALID_HEAP_SUCC_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(STACK_TYPE), BPLBuiltInType.BOOL);
 
