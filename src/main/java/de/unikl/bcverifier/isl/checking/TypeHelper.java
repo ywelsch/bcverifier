@@ -11,6 +11,7 @@ import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 
@@ -39,9 +40,11 @@ import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeCallProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
-import de.unikl.bcverifier.isl.checking.types.PlaceType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.UnknownType;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.librarymodel.AsmClassNodeWrapper;
@@ -216,34 +219,16 @@ public class TypeHelper {
 		ExprType pptype = placeDef.getProgramPoint().attrType();
 		if (pptype instanceof ExprTypeProgramPoint) {
 			ExprTypeProgramPoint programPoint = (ExprTypeProgramPoint) pptype;
-			return new PlaceType(programPoint);
+			return new ExprTypeLocalPlace(programPoint);
+		} else if (pptype instanceof ExprTypeCallProgramPoint) {
+			ExprTypeCallProgramPoint programPoint = (ExprTypeCallProgramPoint) pptype;
+			return new ExprTypePredefinedPlace(programPoint); // TODO
 		} else {
 			placeDef.getProgramPoint().addError(
 					"Expected program point but found " + pptype);
+			return UnknownType.instance();
 		}
 
-		// old:
-		// Expr pos = placeDef.getProgramPoint();
-		// if (pos instanceof LineNrProgramPoint) {
-		// final LineNrProgramPoint pos2 = (LineNrProgramPoint) pos;
-		// ExprType type = pos2.getTypeDef().attrType();
-		// if (!(type instanceof JavaType)) {
-		// pos.addError("Place must refer to a Java type.");
-		// return UnknownType.instance();
-		// }
-		// JavaType jt = (JavaType) type;
-		// final TwoLibraryModel model =
-		// placeDef.attrCompilationUnit().getTwoLibraryModel();
-		// ASTNode node = model.findDeclaringNode(jt.getVersion(),
-		// jt.getTypeBinding());
-		//
-		// Statement s = getStatementInLine(model, node,
-		// pos2.getProgramLineNr());
-		// return new PlaceType(jt.getVersion(), s);
-		//
-		// }
-		// TODO
-		throw new Error("not implemented");
 	}
 
 	private static Statement getStatementInLine(final TwoLibraryModel model,
@@ -266,10 +251,10 @@ public class TypeHelper {
 	public static Collection<Def> lookup(PlaceDef placeDef, String name) {
 		ExprType progPoint = placeDef.getProgramPoint().attrType();
 		if (progPoint instanceof ExprTypeProgramPoint) {
-			PlaceType placeType = new PlaceType((ExprTypeProgramPoint) progPoint);
+			ExprTypeLocalPlace placeType = new ExprTypeLocalPlace((ExprTypeProgramPoint) progPoint);
 			TwoLibraryModel model = placeDef.attrCompilationUnit().getTwoLibraryModel();
 	
-			Def r = lookupJava(model, placeType, name, new StackpointerExpr(placeType.getVersion(), false));
+			Def r = lookupJava(model, placeType, name, new StackpointerExpr(placeType.getVersion(), false), placeDef);
 			if (r != null) {
 				return Collections.singletonList(r);
 			}
@@ -289,27 +274,27 @@ public class TypeHelper {
 			FuncCall funcCall = (FuncCall) expr.getParent().getParent();
 			if (funcCall.getFuncName().getName().equals("stack")) { 
 				if (funcCall.getNumArgument() == 3
-						&& funcCall.getArgument(0).attrType() instanceof PlaceType
+						&& funcCall.getArgument(0).attrType() instanceof ExprTypePlace
 						&& funcCall.getArgument(2) == expr) { 
 					// stack(place, sp, expr)
-					PlaceType placeType = (PlaceType) funcCall.getArgument(0).attrType();
+					ExprTypePlace placeType = (ExprTypePlace) funcCall.getArgument(0).attrType();
 					Expr stackPointerExpr = funcCall.getArgument(1);
 					TwoLibraryModel model = expr.attrCompilationUnit().getTwoLibraryModel();
 
-					Def r = lookupJava(model, placeType, name, stackPointerExpr);
+					Def r = lookupJava(model, placeType, name, stackPointerExpr, expr);
 					if (r != null) {
 						return Collections.singletonList(r);
 					}
 				} else if (funcCall.getNumArgument() == 2
-						&& funcCall.getArgument(0).attrType() instanceof PlaceType
+						&& funcCall.getArgument(0).attrType() instanceof ExprTypePlace
 						&& funcCall.getArgument(1) == expr) {
 					// stack(place, expr)
-					PlaceType placeType = (PlaceType) funcCall.getArgument(0).attrType();
+					ExprTypePlace placeType = (ExprTypePlace) funcCall.getArgument(0).attrType();
 					Expr stackPointerExpr = new StackpointerExpr(placeType.getVersion(), funcCall.attrIsInGlobalInvariant());
 					
 					TwoLibraryModel model = expr.attrCompilationUnit().getTwoLibraryModel();
 
-					Def r = lookupJava(model, placeType, name, stackPointerExpr);
+					Def r = lookupJava(model, placeType, name, stackPointerExpr, expr);
 					if (r != null) {
 						return Collections.singletonList(r);
 					}
@@ -320,25 +305,40 @@ public class TypeHelper {
 		return expr.getParent().lookup(name);
 	}
 
-	private static Def lookupJava(TwoLibraryModel model, PlaceType placeType,
-			String name, Expr StackPointerExpr) {
-		Statement s = placeType.getStatement();
+	private static Def lookupJava(TwoLibraryModel model, ExprTypePlace placeType,
+			String name, Expr stackPointerExpr, de.unikl.bcverifier.isl.ast.ASTNode<?> loc) {
+		ASTNode s = placeType.getASTNode();
 
+		if (name.equals("this")) {
+			ITypeBinding nearestClass = findNearestClass(s);
+			return new JavaThis(model, placeType, stackPointerExpr, nearestClass, loc);
+		}
+		
 		IVariableBinding binding = lookupJavaVar(s, name);
 		if (binding == null) {
 			return null;
 		}
-		return new JavaVariableDef(model, placeType, StackPointerExpr, binding);
+		return new JavaVariableDef(model, placeType, stackPointerExpr, binding);
 	}
 
-	private static IVariableBinding lookupJavaVar(Statement s, final String name) {
+	private static ITypeBinding findNearestClass(ASTNode s) {
+		while (s != null) {
+			if (s instanceof TypeDeclaration) {
+				TypeDeclaration td = (TypeDeclaration) s;
+				return td.resolveBinding(); 
+			}
+			s = s.getParent();
+		}
+		return null;
+	}
+
+	private static IVariableBinding lookupJavaVar(ASTNode s, final String name) {
 		final IVariableBinding[] result = new IVariableBinding[1];
 
 		// TODO more precise scoping ForStatement, EnhancedForStatement und
 		// Block
 
-		for (ASTNode node = s; node != null && result[0] == null; node = node
-				.getParent()) {
+		for (ASTNode node = s; node != null && result[0] == null; node = node.getParent()) {
 			node.accept(new ASTVisitor() {
 				@Override
 				public boolean visit(VariableDeclarationFragment node) {
@@ -368,8 +368,8 @@ public class TypeHelper {
 		TwoLibraryModel tlm = placeDef.attrCompilationUnit()
 				.getTwoLibraryModel();
 		ExprType type = placeDef.attrType();
-		if (type instanceof PlaceType) {
-			PlaceType placeType = (PlaceType) type;
+		if (type instanceof ExprTypeLocalPlace) {
+			ExprTypeLocalPlace placeType = (ExprTypeLocalPlace) type;
 			Version version = placeType.getVersion();
 			int line = placeType.getLineNr();
 			if (placeType.getStatement() == null) {
@@ -384,8 +384,7 @@ public class TypeHelper {
 						+ " is not in a class.");
 				return;
 			}
-			AsmClassNodeWrapper cn = tlm.getClassNodeWrapper(version,
-					enclosingClassType);
+			AsmClassNodeWrapper cn = tlm.getSrc(version).getClassNodeWrapper(enclosingClassType);
 			java.util.List<Integer> pcs = cn.getProgramCounterForLine(line);
 			if (pcs.size() == 0) {
 				placeDef.addError("No bytecode statement found in line " + line
@@ -407,8 +406,7 @@ public class TypeHelper {
 		JavaType jt = (JavaType) type;
 		final TwoLibraryModel model = p.attrCompilationUnit()
 				.getTwoLibraryModel();
-		ASTNode node = model.findDeclaringNode(jt.getVersion(),
-				jt.getTypeBinding());
+		ASTNode node = model.getSrc(jt.getVersion()).findDeclaringNode(jt.getTypeBinding());
 
 		Statement s = getStatementInLine(model, node, p.getProgramLineNr());
 		if (s == null) {
@@ -429,8 +427,7 @@ public class TypeHelper {
 		JavaType jt = (JavaType) type;
 		final TwoLibraryModel model = p.attrCompilationUnit()
 				.getTwoLibraryModel();
-		ASTNode node = model.findDeclaringNode(jt.getVersion(),
-				jt.getTypeBinding());
+		ASTNode node = model.getSrc(jt.getVersion()).findDeclaringNode(jt.getTypeBinding());
 
 		MethodInvocation inv = getMethodInvocationInLine(p.getFunctionName().getName(), model, node, p.getProgramLineNr());
 		if (inv == null) {
@@ -438,8 +435,7 @@ public class TypeHelper {
 			return UnknownType.instance();
 		}
 		
-		return new ExprTypeCallProgramPoint(jt.getVersion(), p.getProgramLineNr(),
-				inv);
+		return new ExprTypeCallProgramPoint(model, jt.getVersion(), p.getProgramLineNr(), inv);
 	}
 	
 

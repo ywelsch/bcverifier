@@ -6,9 +6,8 @@ import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeAny;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
-import de.unikl.bcverifier.isl.checking.types.PlaceType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.isl.translation.ExprWellDefinedness;
-import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 
 /**
@@ -22,7 +21,7 @@ final class BuiltinFuncStack_place_sp extends BuiltinFunction {
 
 
 	public BuiltinFuncStack_place_sp(BuiltinFunctions builtinFunctions) {
-		super("stack", ExprTypeAny.instance(), new ExprType[] { PlaceType.instance(),
+		super("stack", ExprTypeAny.instance(), new ExprType[] { ExprTypePlace.instance(),
 			ExprTypeInt.instance(), ExprTypeAny.instance() });
 		this.builtinFunctions = builtinFunctions;
 	}

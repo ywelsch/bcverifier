@@ -1,20 +1,15 @@
 package de.unikl.bcverifier.isl.translation.builtinfuncs;
 
-import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLEqualityExpression;
 import b2bpl.bpl.ast.BPLExpression;
-import b2bpl.bpl.ast.BPLIntLiteral;
-import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
-import de.unikl.bcverifier.isl.checking.types.PlaceType;
-import de.unikl.bcverifier.isl.translation.ExprWellDefinedness;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 /**
  * bool at(Place p) 
  *
@@ -25,7 +20,7 @@ final class BuiltinFuncAt_place extends BuiltinFunction {
 	BuiltinFuncAt_place() {
 		super("at", 
 				ExprTypeBool.instance(),
-				new ExprType[] { PlaceType.instance() });
+				new ExprType[] { ExprTypePlace.instance() });
 	}
 
 	@Override
@@ -36,7 +31,7 @@ final class BuiltinFuncAt_place extends BuiltinFunction {
 	@Override
 	public BPLExpression translateCall(boolean isGlobalInvariant, List<Expr> arguments) {
 		Expr p = arguments.getChild(0);
-		PlaceType placeType = (PlaceType) p.attrType();
+		ExprTypePlace placeType = (ExprTypePlace) p.attrType();
 		BPLExpression stackPointer;
 		if (placeType.getVersion() == Version.OLD) {
 			stackPointer = BuiltinFunctions.FUNC_SP1.translateCall(isGlobalInvariant, new List<Expr>());

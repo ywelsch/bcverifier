@@ -37,6 +37,16 @@ public class ISLParserTest {
 
 	
 	@Test
+	public void iframeDestroy() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(Files.toString(new File("./libraries/iframeDestroy/bpl/spec2.isl"), Charsets.UTF_8));
+		testTypeCheckOk(
+				new File("./libraries/iframeDestroy/old"), 
+				new File("./libraries/iframeDestroy/new"), cu);
+		System.out.println("cb output:");
+		translateAndPrint(cu);
+	}
+	
+	@Test
 	public void cell() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 				"invariant forall old Cell o1, new Cell o2 ::",

@@ -12,7 +12,6 @@ import com.google.common.collect.Multimap;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
-import de.unikl.bcverifier.isl.checking.types.PlaceType;
 import de.unikl.bcverifier.isl.translation.ExprTranslation;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 

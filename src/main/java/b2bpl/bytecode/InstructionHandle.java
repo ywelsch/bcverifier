@@ -30,7 +30,10 @@ public final class InstructionHandle {
 
     private List<BMLLoopSpecification> loopSpecifications =
             new ArrayList<BMLLoopSpecification>();
-
+    
+    // a list of all local variables which are active at this instruction
+    private List<LocalVariableInfo> activeLocalVars = new ArrayList<LocalVariableInfo>(); 
+    
     private StackFrame frame;
 
     private boolean isThisInitialized;
@@ -130,4 +133,18 @@ public final class InstructionHandle {
 
         return sb.toString();
     }
+
+    /**
+     * returns a list of all local variables which are active
+     * at this instruction
+     * 
+     * (a variable is active if it is stored in a register)
+     */
+	public List<LocalVariableInfo> getActiveLocalVars() {
+		return activeLocalVars;
+	}
+
+	public void addActiveLocalVar(LocalVariableInfo localVar) {
+		this.activeLocalVars.add(localVar);
+	}
 }

@@ -317,7 +317,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         tc.setConfig(config);
     }
 
-    private String[] listLibraryClassFiles(File libraryDir) {
+    public static String[] listLibraryClassFiles(File libraryDir) {
         Collection<File> oldClassFiles = FileUtils.listFiles(libraryDir,
                 new String[] { "class" }, true);
         String[] oldFileNames = new String[oldClassFiles.size() + 2];
@@ -1487,17 +1487,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         CodeGenerator.setProject(project);
         CodeGenerator.setTranslationController(tc);
 
-        TypeLoader.setProject(project);
-        TypeLoader.setProjectTypes(project.getProjectTypes());
-        TypeLoader.setSpecificationProvider(project.getSpecificationProvider());
-        TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, this));
-        TypeLoader.setTroubleReporter(this);
-
-        String[] projectTypeNames = project.getProjectTypes();
-        JClassType[] projectTypes = new JClassType[projectTypeNames.length];
-        for (int j = 0; j < projectTypes.length; j++) {
-            projectTypes[j] = TypeLoader.getClassType(projectTypeNames[j]);
-        }
+        
+        JClassType[] projectTypes = setProjectAndLoadTypes(project, this);
 
         Translator translator = new Translator(project);
         translator.setTranslationController(tc);
@@ -1830,4 +1821,19 @@ public class Library implements ITroubleReporter, ITranslationConstants {
             throw new CompilationAbortedException();
         }
     }
+
+	public static JClassType[] setProjectAndLoadTypes(Project project, ITroubleReporter troubleReporter) {
+		TypeLoader.setProject(project);
+		TypeLoader.setProjectTypes(project.getProjectTypes());
+		TypeLoader.setSpecificationProvider(project.getSpecificationProvider());
+		TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, troubleReporter));
+		TypeLoader.setTroubleReporter(troubleReporter);
+
+		String[] projectTypeNames = project.getProjectTypes();
+		JClassType[] projectTypes = new JClassType[projectTypeNames.length];
+		for (int i = 0; i < projectTypes.length; i++) { 
+		  projectTypes[i] = TypeLoader.getClassType(projectTypeNames[i]);
+		}
+		return projectTypes;
+	}
 }
