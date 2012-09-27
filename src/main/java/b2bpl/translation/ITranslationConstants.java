@@ -113,6 +113,8 @@ public interface ITranslationConstants {
   
   String LIB_TYPE_FUNC = "libType";
   
+  String CTXT_TYPE_FUNC = "ctxtType";
+  
   String BEING_CONSTRUCTED_CONST = GLOBAL_VAR_PREFIX+"BeingConstructed";
 
   String STACK_PTR_TYPE = "StackPtr";
@@ -159,7 +161,7 @@ public interface ITranslationConstants {
 
   String REF_TYPE_ABBREV = UNDERSCORE + "r";
 
-  String PARAM_VAR_PREFIX = "param";
+  //String PARAM_VAR_PREFIX = "param";
 
   String LOCAL_VAR_PREFIX = "reg";
 
@@ -447,7 +449,11 @@ public static final String UNROLL_COUNT = "unrollCount";
 
 public static final String MAX_LOOP_UNROLL = "maxLoopUnroll";
 
-static final String IS_STATIC_METHOD_FUNC = "IsStaticMethod";
+public static final String IS_STATIC_METHOD_FUNC = "IsStaticMethod";
+
+public static final String NUM_PARAMS_FUNC = "numParams";
+
+public static final String PLACE_DEFINED_IN_TYPE = "placeDefinedInType";
 
 static final String USE_HAVOC = "useHavoc";
 
