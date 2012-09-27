@@ -34,20 +34,18 @@ import de.unikl.bcverifier.isl.ast.ProgramPoint;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.UnknownDef;
 import de.unikl.bcverifier.isl.ast.VarAccess;
-import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeCallProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.UnknownType;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
-import de.unikl.bcverifier.librarymodel.AsmClassNodeWrapper;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class TypeHelper {
@@ -384,16 +382,7 @@ public class TypeHelper {
 						+ " is not in a class.");
 				return;
 			}
-			AsmClassNodeWrapper cn = tlm.getSrc(version).getClassNodeWrapper(enclosingClassType);
-			java.util.List<Integer> pcs = cn.getProgramCounterForLine(line);
-			if (pcs.size() == 0) {
-				placeDef.addError("No bytecode statement found in line " + line
-						+ ".");
-			} else if (pcs.size() > 1) {
-				// TODO should this be allowed or not?
-				placeDef.addError("More than one bytecode statement found in line "
-						+ line + ".");
-			}
+			// TODO check if line is valid
 		}
 	}
 

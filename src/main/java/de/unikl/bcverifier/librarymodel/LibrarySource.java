@@ -1,7 +1,6 @@
 package de.unikl.bcverifier.librarymodel;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +11,6 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.objectweb.asm.tree.ClassNode;
 
 import b2bpl.bytecode.BCMethod;
 import b2bpl.bytecode.InstructionHandle;
@@ -29,8 +27,6 @@ import de.unikl.bcverifier.isl.ast.Version;
 public class LibrarySource {
 	private Version version;
 	private List<CompilationUnit> units;
-	private Map<String, ClassNode> asmClasses;
-	private Map<String, AsmClassNodeWrapper> asmClassWrappers;
 	private Map<String, JClassType> classTypes;
 	// map: class -> calledFuncName -> lineNr -> boogie place-name 
 	private Map<JClassType, Map<String, Map<Integer, String>>> predefinedPlaceNames = Maps.newHashMap();
@@ -104,21 +100,6 @@ public class LibrarySource {
 			}
 		}
 		return null;
-	}
-
-	public void setAsmClasses(Map<String, ClassNode> asmClasses) {
-		this.asmClasses = asmClasses;
-		this.asmClassWrappers = new HashMap<String, AsmClassNodeWrapper>();
-	}
-
-	public AsmClassNodeWrapper getClassNodeWrapper(ITypeBinding tb) {
-		String qualifiedName = tb.getQualifiedName();
-		AsmClassNodeWrapper wr = asmClassWrappers.get(qualifiedName);
-		if (wr == null) {
-			wr = new AsmClassNodeWrapper(asmClasses.get(qualifiedName));
-			asmClassWrappers.put(qualifiedName, wr);
-		}
-		return wr;
 	}
 
 	public void setClassTypes(JClassType[] classTypes) {
