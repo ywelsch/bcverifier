@@ -27,13 +27,11 @@ public class LibraryCompiler {
             super(msg);
         }
     }
-
-    private static final String DEFAULT_PREFIX = "-source 5 -target 5 -g -preserveAllLocals -nowarn -noExit ";
     
     public static void compile(File libraryPath) throws CompileException {
     	StringWriter outWriter = new StringWriter();
     	StringWriter errWriter = new StringWriter();
-    	boolean res = BatchCompiler.compile(DEFAULT_PREFIX + libraryPath.getAbsolutePath(), new PrintWriter(outWriter), new PrintWriter(errWriter), null);
+    	boolean res = BatchCompiler.compile(new String[] {"-source", "5", "-target", "5", "-g", "-preserveAllLocals", "-nowarn", "-noExit", libraryPath.getAbsolutePath()}, new PrintWriter(outWriter), new PrintWriter(errWriter), null);
     	if (!res) {
     		String errorString = errWriter.toString();
     		throw new CompileException("Files could not be compiled\n" + errorString);
