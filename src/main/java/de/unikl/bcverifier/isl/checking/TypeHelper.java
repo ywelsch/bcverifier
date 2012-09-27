@@ -30,6 +30,8 @@ import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NamedTypeDef;
 import de.unikl.bcverifier.isl.ast.NullConst;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
+import de.unikl.bcverifier.isl.ast.PlaceModifierLocal;
+import de.unikl.bcverifier.isl.ast.PlaceModifierPredefined;
 import de.unikl.bcverifier.isl.ast.ProgramPoint;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.UnknownDef;
@@ -199,7 +201,7 @@ public class TypeHelper {
 					}
 				}
 			}
-			return f.exactType(e.getArguments());
+			return f.exactType(e);
 		}
 		return def.attrType();
 	}
@@ -214,13 +216,29 @@ public class TypeHelper {
 	}
 
 	public static ExprType placeDefType(PlaceDef placeDef) {
+		if (placeDef.isPredefinedPlace()) {
+			if (placeDef.hasCondition()) {
+				placeDef.addError("Predefined places must not have a condition.");
+			}
+		}
+		if (placeDef.hasCondition()) {
+			checkIfSubtype(placeDef.getCondition(), ExprTypeBool.instance());
+		}
+		
+		
 		ExprType pptype = placeDef.getProgramPoint().attrType();
 		if (pptype instanceof ExprTypeProgramPoint) {
 			ExprTypeProgramPoint programPoint = (ExprTypeProgramPoint) pptype;
+			if (!(placeDef.getPlaceModifier() instanceof PlaceModifierLocal)) {
+				placeDef.addError("Invalid place definition. This should be a 'local place'.");
+			}
 			return new ExprTypeLocalPlace(programPoint);
 		} else if (pptype instanceof ExprTypeCallProgramPoint) {
 			ExprTypeCallProgramPoint programPoint = (ExprTypeCallProgramPoint) pptype;
-			return new ExprTypePredefinedPlace(programPoint); // TODO
+			if (!(placeDef.getPlaceModifier() instanceof PlaceModifierPredefined)) {
+				placeDef.addError("Invalid place definition. This should be a 'predefined place'.");
+			}
+			return new ExprTypePredefinedPlace(programPoint); 
 		} else {
 			placeDef.getProgramPoint().addError(
 					"Expected program point but found " + pptype);
@@ -399,7 +417,7 @@ public class TypeHelper {
 
 		Statement s = getStatementInLine(model, node, p.getProgramLineNr());
 		if (s == null) {
-			p.addError("No statement found in this line.");
+			p.addError("No statement found in line " + p.getProgramLineNr() +".");
 			return UnknownType.instance();
 		}
 		// TODO check if there is exactly one statement in the line ...
@@ -518,7 +536,15 @@ public class TypeHelper {
 	}
 
 	
-
+	public static <T extends de.unikl.bcverifier.isl.ast.ASTNode<?>> T getParentOfType(de.unikl.bcverifier.isl.ast.ASTNode<?> n, Class<T> type) {
+		while (n != null) {
+			if (type.isAssignableFrom(n.getClass())) {
+				return (T) n;
+			}
+			n = n.getParent();
+		}
+		return null;
+	}
 	
 
 }

@@ -5,6 +5,7 @@ import b2bpl.bpl.ast.BPLEqualityExpression;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import de.unikl.bcverifier.isl.ast.Expr;
+import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
@@ -43,5 +44,13 @@ final class BuiltinFuncAt_place extends BuiltinFunction {
 				BuiltinFunctions.stackProperty(isGlobalInvariant, placeType.getVersion(), stackPointer, new BPLVariableExpression("place"))
 				, p.translateExpr()
 				);
+	}
+	
+	@Override
+	public ExprType exactType(FuncCall call) {
+		if (call.attrIsInLocalPlaceDef()) {
+			call.addError("Function 'at' must not be used in local place definitions.");
+		}
+		return super.exactType(call);
 	}
 }

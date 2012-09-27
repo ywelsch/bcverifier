@@ -2,6 +2,7 @@ package de.unikl.bcverifier.isl.translation.builtinfuncs;
 
 import b2bpl.bpl.ast.BPLExpression;
 import de.unikl.bcverifier.isl.ast.Expr;
+import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeAny;
@@ -33,8 +34,11 @@ final class BuiltinFuncStack_place extends BuiltinFunction {
 	}
 
 	@Override
-	public ExprType exactType(List<Expr> arguments) {
-		return arguments.getChild(1).attrType();
+	public ExprType exactType(FuncCall call) {
+		if (call.attrIsInLocalPlaceDef()) {
+			call.addError("Function 'stack' must not be used in local place definitions.");
+		}
+		return call.getArgument(1).attrType();
 	}
 
 	@Override

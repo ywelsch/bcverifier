@@ -8,6 +8,7 @@ import b2bpl.bpl.ast.BPLExpression;
 
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
+import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 
 
@@ -46,7 +47,7 @@ public abstract class BuiltinFunction extends Def {
 		return returnType;
 	}
 	
-	public ExprType exactType(de.unikl.bcverifier.isl.ast.List<Expr> arguments) {
+	public ExprType exactType(FuncCall call) {
 		return attrType();
 	}
 

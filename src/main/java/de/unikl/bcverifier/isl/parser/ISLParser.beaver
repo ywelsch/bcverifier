@@ -122,7 +122,7 @@ statement =
 
 placedef =	
 	placemodifier.m PLACE id.i EQ placeposition.pos placecondition.cond SEMI
-		{: return new PlaceDef(i, pos, cond , new Opt<Expr>()); :}
+		{: return new PlaceDef(m, i, pos, cond , new Opt<Expr>()); :}
 ;
 
 placemodifier =

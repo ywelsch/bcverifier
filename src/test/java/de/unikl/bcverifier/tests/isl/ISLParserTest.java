@@ -35,10 +35,30 @@ import de.unikl.bcverifier.specification.SpecInvariant;
 
 public class ISLParserTest {
 
+	@Test
+	public void err_placecheck() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+				"local place callNotifyMe1 = call notifyMe in line 8 of old C;"
+				);
+		testTypeCheckError("Invalid place definition",
+				new File("./libraries/iframeDestroy/old"), 
+				new File("./libraries/iframeDestroy/new"), cu);
+	}
+	
+	@Test
+	public void err_placecheck2() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+				"predefined place callNotifyMe1 = line 8 of old C;"
+				);
+		testTypeCheckError("Invalid place definition",
+				new File("./libraries/iframeDestroy/old"), 
+				new File("./libraries/iframeDestroy/new"), cu);
+	}
+	
 	
 	@Test
 	public void iframeDestroy() throws IOException, Exception, CompileException {
-		CompilationUnit cu = testParseOk(Files.toString(new File("./libraries/iframeDestroy/bpl/spec2.isl"), Charsets.UTF_8));
+		CompilationUnit cu = testParseOk(Files.toString(new File("./libraries/iframeDestroy/bpl/spec.isl"), Charsets.UTF_8));
 		testTypeCheckOk(
 				new File("./libraries/iframeDestroy/old"), 
 				new File("./libraries/iframeDestroy/new"), cu);
@@ -77,6 +97,42 @@ public class ISLParserTest {
 				new File("./libraries/localLoop/new"), cu);
 		System.out.println("cb output:");
 		translateAndPrint(cu);
+	}
+	
+	@Test
+	public void localLoop_err1() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+			"local place inLoop1 = line 14 of old C;",
+			"local place inLoop2 = line 8 of new C;",
+			"// both libraries are in the loop at the same time.	", 
+			"	local invariant at(inLoop1) <==> at(inLoop2);",
+			"//the values of the variables are the same",
+			"	local invariant at(inLoop1) && at(inLoop2) ==> ",
+			"		   stack(inLoop1, n) == stack(inLoop2, n)",
+			"		&& stack(inLoop1, x) == stack(inLoop2, x)",
+			"		&& stack(inLoop1, i) == stack(inLoop2, i);"
+			);
+		testTypeCheckError("No statement found",
+				new File("./libraries/localLoop/old"), 
+				new File("./libraries/localLoop/new"), cu);
+	}
+	
+	@Test
+	public void localLoop_err2() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+			"local place inLoop1 = line 7 of old C when at(inLoop2);",
+			"local place inLoop2 = line 8 of new C;",
+			"// both libraries are in the loop at the same time.	", 
+			"	local invariant at(inLoop1) <==> at(inLoop2);",
+			"//the values of the variables are the same",
+			"	local invariant at(inLoop1) && at(inLoop2) ==> ",
+			"		   stack(inLoop1, n) == stack(inLoop2, n)",
+			"		&& stack(inLoop1, x) == stack(inLoop2, x)",
+			"		&& stack(inLoop1, i) == stack(inLoop2, i);"
+			);
+		testTypeCheckError("Function 'at' must not be used in local place definitions.",
+				new File("./libraries/localLoop/old"), 
+				new File("./libraries/localLoop/new"), cu);
 	}
 
 	@Test
@@ -135,6 +191,21 @@ public class ISLParserTest {
 			System.err.println(err);
 			assertTrue("" + err, false);
 		}
+	}
+	
+	protected void testTypeCheckError(String expected, File oldLib, File newLib, CompilationUnit cu) throws CompileException {
+		TwoLibraryModel twoLibraryModel = new TwoLibraryModel(oldLib, newLib);
+		cu.setTwoLibraryModel(twoLibraryModel);
+		cu.setBuiltinFunctions(new BuiltinFunctions(twoLibraryModel ));
+		cu.typecheck();
+		boolean errFound = false;
+		for (TypeError err : cu.getErrors()) {
+			System.err.println(err);
+			if (err.toString().contains(expected)) {
+				errFound = true;
+			}
+		}
+		assertTrue(errFound);
 	}
 	
 	protected void translateAndPrint(CompilationUnit cu) {

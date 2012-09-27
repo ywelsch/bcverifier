@@ -7,12 +7,14 @@ import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import de.unikl.bcverifier.isl.ast.Expr;
+import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.translation.ExprWellDefinedness;
 /**
  * bool at(Place p, int stackPointer) 
@@ -52,5 +54,14 @@ final class BuiltinFuncAt_place_sp extends BuiltinFunction {
 				BuiltinFunctions.stackProperty(isGlobalInvariant, placeType.getVersion(), stackPointer.translateExpr(), new BPLVariableExpression("place"))
 				, p.translateExpr()
 				);
+	}
+	
+	@Override
+	public ExprType exactType(FuncCall call) {
+		ExprTypePlace place = (ExprTypePlace) call.getArgument(0).attrType();
+		if (!(place instanceof ExprTypePredefinedPlace)) {
+			call.addError("Function 'stack' can only be used with predefined places.");
+		}
+		return super.exactType(call);
 	}
 }
