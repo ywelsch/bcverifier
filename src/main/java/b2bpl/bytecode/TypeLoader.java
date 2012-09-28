@@ -631,6 +631,7 @@ public class TypeLoader {
         Label start,
         Label end,
         int index) {
+    	LocalVariableInfo localVar = new LocalVariableInfo(index, name);
         // set the name of the local variable for all LocalVariableInstructions in the segment between start and end label
         InstructionHandle startHandle = getHandleFor(start);
         InstructionHandle endHandle = getHandleFor(end);
@@ -642,6 +643,7 @@ public class TypeLoader {
         }
         Instruction insn;
         while(insnHandle != null && insnHandle != endHandle){
+        	insnHandle.addActiveLocalVar(localVar);
             insn = insnHandle.getInstruction();
             if(insn instanceof LocalVariableInstruction){
                 LocalVariableInstruction lvInsn = (LocalVariableInstruction)insn;

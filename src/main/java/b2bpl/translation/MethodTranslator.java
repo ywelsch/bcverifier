@@ -1018,7 +1018,7 @@ public class MethodTranslator implements ITranslationConstants {
      *          procedure name.
      * @return The BoogiePL procedure name.
      */
-    private String getProcedureName(BCMethod method) {
+    public static String getProcedureName(BCMethod method) {
         String name;
 
         // The names of constructors and class initializers used in the JVM are not

@@ -28,8 +28,11 @@ aspect exprType {
 	
 	eq NullConst.attrType() = TypeHelper.attrType(this);
 	
+	syn ExprType ProgramPointExpr.attrType() circular [UnknownType.instance()];
+	
 	eq LineNrProgramPoint.attrType() = TypeHelper.attrType(this);
 	
+	eq CallProgramPoint.attrType() = TypeHelper.attrType(this);
 	
 	syn lazy ExprType Def.attrType();
 	

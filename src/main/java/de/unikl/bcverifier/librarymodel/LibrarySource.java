@@ -1,7 +1,6 @@
 package de.unikl.bcverifier.librarymodel;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,16 +10,31 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.eclipse.jdt.internal.corext.dom.Bindings;
-import org.objectweb.asm.tree.ClassNode;
+
+import b2bpl.bytecode.BCMethod;
+import b2bpl.bytecode.InstructionHandle;
+import b2bpl.bytecode.JClassType;
+import b2bpl.bytecode.instructions.Instruction;
+import b2bpl.bytecode.instructions.InvokeInstruction;
+import b2bpl.translation.MethodTranslator;
+
+import com.google.common.collect.Maps;
+
+import de.unikl.bcverifier.TranslationController;
+import de.unikl.bcverifier.isl.ast.Version;
 
 public class LibrarySource {
+	private Version version;
 	private List<CompilationUnit> units;
-	private Map<String, ClassNode> asmClasses;
-	private Map<String, AsmClassNodeWrapper> asmClassWrappers;
+	private Map<String, JClassType> classTypes;
+	// map: class -> calledFuncName -> lineNr -> boogie place-name 
+	private Map<JClassType, Map<String, Map<Integer, String>>> predefinedPlaceNames = Maps.newHashMap();
 
+	public LibrarySource(Version version) {
+		this.version = version;
+	}
+	
 	public List<CompilationUnit> getUnits() {
 		return units;
 	}
@@ -88,19 +102,65 @@ public class LibrarySource {
 		return null;
 	}
 
-	public void setAsmClasses(Map<String, ClassNode> asmClasses) {
-		this.asmClasses = asmClasses;
-		this.asmClassWrappers = new HashMap<String, AsmClassNodeWrapper>();
+	public void setClassTypes(JClassType[] classTypes) {
+		this.classTypes = Maps.newHashMap();
+		for (JClassType ct : classTypes) {
+			this.classTypes.put(ct.getName(), ct);
+		}
+	}
+	
+	public JClassType getClassType(String qualifiedName) {
+		return classTypes.get(qualifiedName);
 	}
 
-	public AsmClassNodeWrapper getClassNodeWrapper(ITypeBinding tb) {
-		String qualifiedName = tb.getQualifiedName();
-		AsmClassNodeWrapper wr = asmClassWrappers.get(qualifiedName);
-		if (wr == null) {
-			wr = new AsmClassNodeWrapper(asmClasses.get(qualifiedName));
-			asmClassWrappers.put(qualifiedName, wr);
+	public JClassType getClassType(ITypeBinding tb) {
+		return getClassType(tb.getQualifiedName());
+	}
+
+	public String getBoogiePlaceName(ITypeBinding enclosingClassType, int line, String methodName) {
+		JClassType ct = getClassType(enclosingClassType);
+		Map<String, Map<Integer, String>> pp = predefinedPlaceNames.get(ct);
+		if (pp == null) {
+			pp = buildBoogiePlaceTable(ct);
+			predefinedPlaceNames.put(ct, pp);
 		}
-		return wr;
+		Map<Integer, String> occurences = pp.get(methodName);
+		if (occurences == null) {
+			throw new Error("Could not find any call to " + methodName);
+		}
+		String result = occurences.get(line);
+		if (result == null) {
+			throw new Error("No call to " + methodName + " found in line " + line);
+		}
+		return result;
+	}
+
+	private Map<String, Map<Integer, String>> buildBoogiePlaceTable(JClassType ct) {
+		Map<String, Map<Integer, String>> result = Maps.newHashMap();
+		TranslationController tc = new TranslationController();
+		if (version == Version.OLD) {
+			tc.enterRound1();
+		} else {
+			tc.enterRound2();
+		}
+		for (BCMethod meth : ct.getMethods()) {
+			for (InstructionHandle insHandle : meth.getInstructions()) {
+				Instruction ins = insHandle.getInstruction();
+				if (ins instanceof InvokeInstruction) {
+					InvokeInstruction invokeInstruction = (InvokeInstruction) ins;
+					String methodName = invokeInstruction.getMethodName();
+					String invokedMethodName = MethodTranslator.getMethodName(invokeInstruction.getMethod());
+	                String boogiePlaceName = tc.buildPlace(MethodTranslator.getProcedureName(meth), invokedMethodName);
+	                Map<Integer, String> r = result.get(methodName);
+	                if (r == null) {
+	                	r = Maps.newHashMap();
+	                	result.put(methodName, r);
+	                }
+	                r.put(insHandle.getSourceLine(), boogiePlaceName);
+				}
+			}
+		}
+		return result ;
 	}
 
 }

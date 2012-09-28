@@ -38,10 +38,11 @@ import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.JavaVariableDef;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
-import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class ExprTranslation {
 
@@ -196,7 +197,7 @@ public class ExprTranslation {
 		Def def = e.attrDef();
 		if (def instanceof BuiltinFunction) {
 			BuiltinFunction f = (BuiltinFunction) def;
-			return f.translateCall(e.getArguments());
+			return f.translateCall(e.attrIsInGlobalInvariant(), e.getArguments());
 		}
 		throw new Error("not implemented " + def);
 	}
@@ -233,19 +234,41 @@ public class ExprTranslation {
 
 	public static BPLExpression translate(VarAccess e) {
 		Def def = e.attrDef();
-		if (def instanceof JavaVariableDef) {
-			JavaVariableDef jv = (JavaVariableDef) def;
-			BPLExpression expr = BuiltinFunctions.stackProperty(
-					jv.getVersion(), 
-					jv.getStackPointerExpr().translateExpr(), 
-					new BPLVariableExpression(jv.getRegisterName()));
-			if (e.attrType().isSubtypeOf(ExprTypeBool.instance())) {
-				// boolean vars must be converted explicitly
-				expr = new BPLFunctionApplication("int2bool", expr);
-			}
-			return expr;
+		if (def instanceof VarDef) {
+			return new BPLVariableExpression(e.getName().getName());
+		} else if (def instanceof JavaVariableDef) {
+			return translateJavaVariableAccess(e, (JavaVariableDef) def);
+		} else if (def.attrType() instanceof ExprTypeLocalPlace) {
+			ExprTypeLocalPlace localPlace = (ExprTypeLocalPlace) def.attrType();
+			return translateLocalPlaceUse(e, localPlace);				
+		} else if (def.attrType() instanceof ExprTypePredefinedPlace) {
+			ExprTypePredefinedPlace predefinedPlace = (ExprTypePredefinedPlace) def.attrType();
+			return translatePredefinedPlaceUse(e, predefinedPlace);
 		}
+		throw new Error("Cannot translate variable acces to " + def.getClass().getSimpleName() + 
+				" with type " + def.attrType());
+	}
+
+	private static BPLExpression translatePredefinedPlaceUse(VarAccess e, ExprTypePredefinedPlace predefinedPlace) {
+		String placeName = predefinedPlace.getBoogiePlaceName();
+		return new BPLVariableExpression(placeName);
+	}
+
+	private static BPLExpression translateLocalPlaceUse(VarAccess e, ExprTypeLocalPlace localPlace) {
 		return new BPLVariableExpression(e.getName().getName());
+	}
+
+	private static BPLExpression translateJavaVariableAccess(VarAccess e,
+			JavaVariableDef jv) {
+		BPLExpression expr = BuiltinFunctions.stackProperty(
+				e.attrIsInGlobalInvariant(), jv.getVersion(), 
+				jv.getStackPointerExpr().translateExpr(), 
+				new BPLVariableExpression(jv.getRegisterName()));
+		if (e.attrType().isSubtypeOf(ExprTypeBool.instance())) {
+			// boolean vars must be converted explicitly
+			expr = new BPLFunctionApplication("int2bool", expr);
+		}
+		return expr;
 	}
 
 	public static BPLExpression translate(IntConst e) {

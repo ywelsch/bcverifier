@@ -2,13 +2,15 @@ package de.unikl.bcverifier.isl.translation.builtinfuncs;
 
 import b2bpl.bpl.ast.BPLExpression;
 import de.unikl.bcverifier.isl.ast.Expr;
+import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeAny;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
-import de.unikl.bcverifier.isl.checking.types.PlaceType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.translation.ExprWellDefinedness;
-import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 
 /**
@@ -22,25 +24,29 @@ final class BuiltinFuncStack_place_sp extends BuiltinFunction {
 
 
 	public BuiltinFuncStack_place_sp(BuiltinFunctions builtinFunctions) {
-		super("stack", ExprTypeAny.instance(), new ExprType[] { PlaceType.instance(),
+		super("stack", ExprTypeAny.instance(), new ExprType[] { ExprTypePlace.instance(),
 			ExprTypeInt.instance(), ExprTypeAny.instance() });
 		this.builtinFunctions = builtinFunctions;
 	}
 
 	@Override
-	public BPLExpression translateWelldefinedness(List<Expr> arguments) {
+	public BPLExpression translateWelldefinedness(boolean isGlobalInvariant, List<Expr> arguments) {
 		return ExprWellDefinedness.conjunction(
-				this.builtinFunctions.FUNC_AT_place_sp.translateWelldefinedness(arguments),
-				this.builtinFunctions.FUNC_AT_place_sp.translateCall(arguments));
+				this.builtinFunctions.FUNC_AT_place_sp.translateWelldefinedness(isGlobalInvariant, arguments),
+				this.builtinFunctions.FUNC_AT_place_sp.translateCall(isGlobalInvariant, arguments));
 	}
 
 	@Override
-	public ExprType exactType(List<Expr> arguments) {
-		return arguments.getChild(2).attrType();
+	public ExprType exactType(FuncCall call) {
+		ExprTypePlace place = (ExprTypePlace) call.getArgument(0).attrType();
+		if (!(place instanceof ExprTypePredefinedPlace)) {
+			call.addError("Function 'stack' can only be used with predefined places.");
+		}
+		return call.getArgument(2).attrType();
 	}
 
 	@Override
-	public BPLExpression translateCall(List<Expr> arguments) {
+	public BPLExpression translateCall(boolean isGlobalInvariant, List<Expr> arguments) {
 		Expr exp = arguments.getChild(2);
 		return exp.translateExpr();
 	}

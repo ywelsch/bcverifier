@@ -3,6 +3,7 @@ aspect translate {
 	syn int ProgramPointExpr.attrLine();
 	
 	eq LineNrProgramPoint.attrLine() = getProgramLineNr();
+	eq CallProgramPoint.attrLine() = getProgramLineNr();
 	
 	syn Version ProgramPointExpr.attrVersion();
 	
@@ -15,5 +16,21 @@ aspect translate {
     	throw new Error("could not get version");
 	}
 	
+	eq CallProgramPoint.attrVersion() {
+		ExprType t = getTypeDef().attrType();
+    	if (t instanceof JavaType) {
+			JavaType javaType = (JavaType) t;
+    		return javaType.getVersion();
+    	}
+    	throw new Error("could not get version");
+	}
 	
+	public boolean PlaceDef.isLocalPlace() {
+		return getPlaceModifier() instanceof PlaceModifierLocal;
+	}
+	
+	
+	public boolean PlaceDef.isPredefinedPlace() {
+		return getPlaceModifier() instanceof PlaceModifierPredefined;
+	}
 }

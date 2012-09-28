@@ -17,6 +17,7 @@ import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.analysis.SemanticAnalyzer;
 import b2bpl.translation.CodeGenerator;
 import b2bpl.translation.Translator;
+import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.TranslationController;
 
 
@@ -47,17 +48,7 @@ public class Main implements ITroubleReporter {
 
     try {
       try {
-        TypeLoader.setProject(project);
-        TypeLoader.setProjectTypes(project.getProjectTypes());
-        TypeLoader.setSpecificationProvider(project.getSpecificationProvider());
-        TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, this));
-        TypeLoader.setTroubleReporter(this);
-
-        String[] projectTypeNames = project.getProjectTypes();
-        JClassType[] projectTypes = new JClassType[projectTypeNames.length];
-        for (int i = 0; i < projectTypes.length; i++) { 
-          projectTypes[i] = TypeLoader.getClassType(projectTypeNames[i]);
-        }
+        JClassType[] projectTypes = Library.setProjectAndLoadTypes(project, this);
 
         if (project.isTranslateSeparately()) {
           for (int i = 0; i < projectTypes.length; i++) {

@@ -61,7 +61,7 @@ import de.unikl.bcverifier.isl.ast.*;
 
 %terminals FORALL, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER, INVARIANT, LOCAL,
 	PROGRAMPOINT, IN,
-	PLACE, LINE, WHERE, 
+	PLACE, LINE, WHEN, CALL, OF, PREDEFINED, 
 	// TERMINATION_MEASURE,
 	IF, THEN, ELSE,
 	DOT,
@@ -97,6 +97,8 @@ import de.unikl.bcverifier.isl.ast.*;
 %typeof nonEmptyParameterlist = "List<Expr>";
 %typeof statement = "Statement";
 %typeof placeposition = "ProgramPointExpr";
+%typeof placecondition = "Opt<Expr>";
+%typeof placemodifier = "PlaceModifier";
 
 %goal cu;
 
@@ -114,11 +116,33 @@ statement =
 		{: return new LocalInvariant(e); :}
 	| PROGRAMPOINT id.i EQ placeposition.pos SEMI
 		{: return new ProgramPoint(i, pos); :}
-	| PLACE id.i EQ expr.pos WHERE expr.cond SEMI
-		{: return new PlaceDef(i, pos, new Opt<Expr>(cond) , new Opt<Expr>()); :}
+	| placedef.p
+	
 ;
 
+placedef =	
+	placemodifier.m PLACE id.i EQ placeposition.pos placecondition.cond SEMI
+		{: return new PlaceDef(m, i, pos, cond , new Opt<Expr>()); :}
+;
 
+placemodifier =
+	  LOCAL {: return new PlaceModifierLocal(); :}
+	| PREDEFINED {: return new PlaceModifierPredefined(); :}
+;
+
+placeposition = 
+	  LINE INTLITERAL.lineNr OF typedef.t 
+	  	{: return new LineNrProgramPoint(t, Integer.parseInt((String)lineNr.value)); :}
+	| CALL id.f IN LINE INTLITERAL.lineNr OF typedef.t 
+	  	{: return new CallProgramPoint(f, t, Integer.parseInt((String)lineNr.value)); :}
+;
+
+placecondition = 
+	WHEN expr.cond
+		{: return new Opt<Expr>(cond); :}
+	| 
+		{: return new Opt<Expr>(); :}
+;
 
 expr =
       FORALL vardefs.v COLONCOLON expr.e
@@ -176,13 +200,9 @@ expr =
     | IF expr.cond THEN expr.e1 ELSE expr.e2
     	{: return new IfThenElse(cond, e1, e2); :}
     | LPAREN expr.e RPAREN
-    | placeposition.e
 ;
 
-placeposition = 
-	  LINE INTLITERAL.lineNr IN typedef.t 
-	  	{: return new LineNrProgramPoint(t, Integer.parseInt((String)lineNr.value)); :}
-;
+
 
 
 parameterlist =

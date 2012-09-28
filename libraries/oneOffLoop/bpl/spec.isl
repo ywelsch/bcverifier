@@ -1,5 +1,5 @@
-place inLoop1 = line 5 in old C where i > 0;
-place inLoop2 = line 6 in new C where true;
+local place inLoop1 = line 5 of old C when i > 0;
+local place inLoop2 = line 6 of new C;
 
 //both libraries are in the loop at the same time.	 
 local invariant at(inLoop1) <==> at(inLoop2);

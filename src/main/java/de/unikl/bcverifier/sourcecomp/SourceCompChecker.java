@@ -37,7 +37,7 @@ public class SourceCompChecker {
 		for (TypeDeclaration td : tds) {
 			ITypeBinding tb1 = td.resolveBinding();
 			if (Modifier.isPublic(tb1.getModifiers()) && !tb1.isAnonymous() && !tb1.isLocal() && !tb1.isMember()) {
-				ITypeBinding tb2 = libmodel.loadType(NEW, tb1.getQualifiedName());
+				ITypeBinding tb2 = libmodel.getSrc(NEW).resolveType(tb1.getQualifiedName());
 				checkR1(tb1,tb2);
 				checkR2R9(tb1,tb2);
 				checkR3(tb1,tb2);
@@ -50,8 +50,8 @@ public class SourceCompChecker {
 		for (ITypeBinding tb1 : pubTypes) {
 			for (ITypeBinding tb2 : pubTypes) {
 				if (tb1.isAssignmentCompatible(tb2)) {
-					ITypeBinding tb1p = libmodel.loadType(NEW, tb1.getQualifiedName());
-					ITypeBinding tb2p = libmodel.loadType(NEW, tb2.getQualifiedName());
+					ITypeBinding tb1p = libmodel.getSrc(NEW).resolveType(tb1.getQualifiedName());
+					ITypeBinding tb2p = libmodel.getSrc(NEW).resolveType(tb2.getQualifiedName());
 					if (!tb1p.isAssignmentCompatible(tb2p)) {
 						throw new SourceInCompatibilityException("Subtype relation between " + tb1.getQualifiedName() + " and " + tb2.getQualifiedName() + " not preserved");
 					}

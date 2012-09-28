@@ -1,5 +1,5 @@
-place inLoop1 = line 4 in old C where true;
-place inLoop2a = line 6 in new C where true;
-place inLoop2b = line 8 in new C where true;
+local place inLoop1 = line 4 of old C;
+local place inLoop2a = line 6 of new C;
+local place inLoop2b = line 8 of new C;
  
 local invariant at(inLoop1) <==> at(inLoop2a) || at(inLoop2b);

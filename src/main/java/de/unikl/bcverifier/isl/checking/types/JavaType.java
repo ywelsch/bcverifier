@@ -27,7 +27,7 @@ public class JavaType extends ExprType {
 	
 	public static ExprType create(ASTNode<?> loc, Version version, String qualifiedName) {
 		TwoLibraryModel env = loc.attrCompilationUnit().getTwoLibraryModel();
-		ITypeBinding c = env.loadType(version, qualifiedName);
+		ITypeBinding c = env.getSrc(version).resolveType(qualifiedName);
 		if (c == null) {
 			loc.addError(loc, "Could not find class " + qualifiedName + " in " + version);
 			return UnknownType.instance();
@@ -93,7 +93,7 @@ public class JavaType extends ExprType {
 	}
 
 	public static ExprType getJavaLangObject(TwoLibraryModel env, Version version) {
-		ITypeBinding t = env.loadType(version, Object.class.getName());
+		ITypeBinding t = env.getSrc(version).resolveType(Object.class.getName());
 		return new JavaType(env, version, t);
 	}
 

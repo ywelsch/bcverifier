@@ -1,0 +1,25 @@
+aspect Parents {
+	
+	public boolean ASTNode.hasParentOfType(Class<? extends ASTNode> type) {
+		ASTNode n = this;
+		while (n != null) {
+			if (type.isAssignableFrom(n.getClass())) {
+				return true;
+			}
+			n = n.getParent();
+		}
+		return false;
+	}
+	
+	
+	
+	public boolean Expr.attrIsInGlobalInvariant() {
+		return hasParentOfType(Invariant.class);
+	}
+	
+	public boolean Expr.attrIsInLocalPlaceDef() {
+		PlaceDef p = TypeHelper.getParentOfType(this, PlaceDef.class);
+		return p != null && p.isLocalPlace();
+	}
+
+}

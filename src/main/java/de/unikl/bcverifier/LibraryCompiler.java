@@ -15,7 +15,8 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FileASTRequestor;
 
-import de.unikl.bcverifier.librarymodel.AsmBytecodeHelper;
+import b2bpl.Project;
+import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.librarymodel.LibrarySource;
 
 
@@ -27,20 +28,18 @@ public class LibraryCompiler {
             super(msg);
         }
     }
-
-    private static final String DEFAULT_PREFIX = "-source 5 -target 5 -g -preserveAllLocals -nowarn -noExit ";
     
     public static void compile(File libraryPath) throws CompileException {
     	StringWriter outWriter = new StringWriter();
     	StringWriter errWriter = new StringWriter();
-    	boolean res = BatchCompiler.compile(DEFAULT_PREFIX + libraryPath.getAbsolutePath(), new PrintWriter(outWriter), new PrintWriter(errWriter), null);
+    	boolean res = BatchCompiler.compile(new String[] {"-source", "5", "-target", "5", "-g", "-preserveAllLocals", "-nowarn", "-noExit", libraryPath.getAbsolutePath()}, new PrintWriter(outWriter), new PrintWriter(errWriter), null);
     	if (!res) {
     		String errorString = errWriter.toString();
     		throw new CompileException("Files could not be compiled\n" + errorString);
     	}
     }
 
-	public static LibrarySource computeAST(File libraryPath) {
+	public static LibrarySource computeAST(File libraryPath, Version version) {
 		ASTParser parser = ASTParser.newParser(AST.JLS4);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setResolveBindings(true);
@@ -55,9 +54,10 @@ public class LibraryCompiler {
 		parser.setEnvironment(new String[0], new String[]{libraryPath.getAbsolutePath()}, null, true);
 		Requestor req = new Requestor();
 		parser.createASTs(sources, null, new String[0], req, null);
-		LibrarySource source = new LibrarySource();
+		LibrarySource source = new LibrarySource(version);
 		source.setUnits(req.getScannedUnits());
-		source.setAsmClasses(AsmBytecodeHelper.loadClasses(libraryPath));
+		Project project = Project.fromCommandLine(Library.listLibraryClassFiles(libraryPath), new PrintWriter(System.out));
+		source.setClassTypes(Library.setProjectAndLoadTypes(project, null));
 		return source;
 	}
 	

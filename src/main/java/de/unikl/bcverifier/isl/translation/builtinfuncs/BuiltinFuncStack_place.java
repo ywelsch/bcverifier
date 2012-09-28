@@ -2,13 +2,12 @@ package de.unikl.bcverifier.isl.translation.builtinfuncs;
 
 import b2bpl.bpl.ast.BPLExpression;
 import de.unikl.bcverifier.isl.ast.Expr;
+import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeAny;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
-import de.unikl.bcverifier.isl.checking.types.PlaceType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.isl.translation.ExprWellDefinedness;
-import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 
 /**
@@ -22,25 +21,28 @@ final class BuiltinFuncStack_place extends BuiltinFunction {
 
 
 	public BuiltinFuncStack_place(BuiltinFunctions builtinFunctions) {
-		super("stack", ExprTypeAny.instance(), new ExprType[] { PlaceType.instance(),
+		super("stack", ExprTypeAny.instance(), new ExprType[] { ExprTypePlace.instance(),
 			ExprTypeAny.instance() });
 		this.builtinFunctions = builtinFunctions;
 	}
 
 	@Override
-	public BPLExpression translateWelldefinedness(List<Expr> arguments) {
+	public BPLExpression translateWelldefinedness(boolean isGlobalInvariant, List<Expr> arguments) {
 		return ExprWellDefinedness.conjunction(
-				this.builtinFunctions.FUNC_AT_place.translateWelldefinedness(arguments),
-				this.builtinFunctions.FUNC_AT_place.translateCall(arguments));
+				this.builtinFunctions.FUNC_AT_place.translateWelldefinedness(isGlobalInvariant, arguments),
+				this.builtinFunctions.FUNC_AT_place.translateCall(isGlobalInvariant, arguments));
 	}
 
 	@Override
-	public ExprType exactType(List<Expr> arguments) {
-		return arguments.getChild(1).attrType();
+	public ExprType exactType(FuncCall call) {
+		if (call.attrIsInLocalPlaceDef()) {
+			call.addError("Function 'stack' must not be used in local place definitions.");
+		}
+		return call.getArgument(1).attrType();
 	}
 
 	@Override
-	public BPLExpression translateCall(List<Expr> arguments) {
+	public BPLExpression translateCall(boolean isGlobalInvariant, List<Expr> arguments) {
 		Expr exp = arguments.getChild(1);
 		return exp.translateExpr();
 	}

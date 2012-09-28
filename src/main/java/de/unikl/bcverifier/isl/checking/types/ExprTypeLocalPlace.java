@@ -8,26 +8,19 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
-public class PlaceType extends ExprType {
+public class ExprTypeLocalPlace extends ExprTypePlace {
 
-	private static final PlaceType instance = new PlaceType(Version.BOTH, null);
 	private final Version version;
 	private final Statement statement;
 
-	public Version getVersion() {
-		return version;
-	}
+	
 
 	public Statement getStatement() {
 		return statement;
 	}
 
-	public PlaceType(Version version, Statement s) {
-		this.version = version;
-		this.statement = s;
-	}
 
-	public PlaceType(ExprTypeProgramPoint programPoint) {
+	public ExprTypeLocalPlace(ExprTypeProgramPoint programPoint) {
 		this.version = programPoint.getVersion();
 		this.statement = programPoint.getStatement();
 	}
@@ -37,32 +30,31 @@ public class PlaceType extends ExprType {
 		if (t instanceof ExprTypeAny) {
 			return true;
 		}
-		if (t instanceof PlaceType) {
-			PlaceType o = (PlaceType) t;
+		if (t.getClass().equals(ExprTypePlace.class)) {
+			return true;
+		}
+		if (t instanceof ExprTypeLocalPlace) {
+			ExprTypeLocalPlace o = (ExprTypeLocalPlace) t;
 			return (o.version == Version.BOTH || o.version == version) 
-					&& (o.statement == null || o.statement == statement); 
+					&& (o.statement == statement); 
 		}
 		return false;
 	}
 
-	public static PlaceType instance() {
-		return instance;
-	}
-
+	@Override
 	public int getLineNr() {
 		return TwoLibraryModel.getLineNr(getStatement());
 	}
 
-	public ITypeBinding getEnclosingClassType() {
-		ASTNode node = statement;
-		while (node != null) {
-			if (node instanceof TypeDeclaration) {
-				TypeDeclaration typeDeclaration = (TypeDeclaration) node;
-				return typeDeclaration.resolveBinding();
-			}
-			node = node.getParent();
-		}
-		return null;
+	@Override
+	public Version getVersion() {
+		return version;
 	}
+	
+	@Override
+	public ASTNode getASTNode() {
+		return statement;
+	}
+	
 
 }

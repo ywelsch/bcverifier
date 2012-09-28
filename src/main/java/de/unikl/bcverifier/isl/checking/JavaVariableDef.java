@@ -2,31 +2,32 @@ package de.unikl.bcverifier.isl.checking;
 
 import org.eclipse.jdt.core.dom.IVariableBinding;
 
-import b2bpl.bpl.ast.BPLExpression;
-
-import de.unikl.bcverifier.isl.ast.ASTNode;
-import de.unikl.bcverifier.isl.ast.BinaryOperation;
+import b2bpl.bytecode.BCMethod;
+import b2bpl.bytecode.InstructionHandle;
+import b2bpl.bytecode.JClassType;
+import b2bpl.bytecode.LocalVariableInfo;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
-import de.unikl.bcverifier.isl.checking.types.PlaceType;
-import de.unikl.bcverifier.librarymodel.AsmClassNodeWrapper;
-import de.unikl.bcverifier.librarymodel.LocalVarInfo;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
+/**
+ * represents a local variable in the java source code 
+ */
 public class JavaVariableDef extends Def {
 
 	private IVariableBinding binding;
 	private Version version;
 	private TwoLibraryModel model;
 	private Expr stackPointerExpr;
-	private PlaceType placeType;
+	private ExprTypePlace placeType;
 
-	public JavaVariableDef(TwoLibraryModel model, PlaceType placeType, Expr stackPointerExpr, IVariableBinding binding) {
+	public JavaVariableDef(TwoLibraryModel model, ExprTypePlace placeType, Expr stackPointerExpr, IVariableBinding binding) {
 		this.model = model;
 		this.version = placeType.getVersion();
 		this.placeType = placeType;
@@ -52,16 +53,32 @@ public class JavaVariableDef extends Def {
 		return version;
 	}
 
-	
+	/**
+	 * get the register name for this local variable 
+	 */
 	public String getRegisterName() {
-		// TODO case for parameters
-		AsmClassNodeWrapper cn = model.getClassNodeWrapper(version, placeType.getEnclosingClassType());
-		LocalVarInfo loc = cn.getLocalVar(placeType.getLineNr(), attrName());
+		JClassType ct = model.getSrc(version).getClassType(placeType.getEnclosingClassType());
+		LocalVariableInfo loc = getLocalVarInfo(ct, placeType.getLineNr(), attrName());
 		if (attrType() instanceof ExprTypeBool || attrType() instanceof ExprTypeInt) {
-			return "reg" + loc.getIndex() + "_i";
+			return "reg" + loc.getRegisterIndex() + "_i";
 		} else {
-			return "reg" + loc.getIndex() + "_r";
+			return "reg" + loc.getRegisterIndex() + "_r";
 		}
+	}
+
+	private LocalVariableInfo getLocalVarInfo(JClassType ct, int lineNr, String varName) {
+		for (BCMethod m : ct.getMethods()) {
+			for (InstructionHandle ins : m.getInstructions()) {
+				if (ins.getSourceLine() == lineNr) {
+					for (LocalVariableInfo l : ins.getActiveLocalVars()) {
+						if (l.getVariableName().equals(varName)) {
+							return l;
+						}
+					}
+				}
+			}
+		}
+		throw new Error("Var " + attrName() + " not found in line " + placeType.getLineNr());
 	}
 
 	public Expr getStackPointerExpr() {

@@ -36,13 +36,18 @@ abstract Statement : Def;
 
 Invariant : Statement ::= Expr;
 LocalInvariant: Statement ::= Expr; 
-PlaceDef: Statement ::= Name:Ident ProgramPoint:Expr [Condition:Expr] [TerminationMeasure:Expr];
+PlaceDef: Statement ::= PlaceModifier Name:Ident ProgramPoint:ProgramPointExpr [Condition:Expr] [TerminationMeasure:Expr];
 ProgramPoint: Statement ::= Name:Ident ProgramPointExpr;
 
-abstract ProgramPointExpr : Expr;
+abstract ProgramPointExpr;
 
 LineNrProgramPoint: ProgramPointExpr ::= TypeDef <ProgramLineNr:int>;
+CallProgramPoint: LineNrProgramPoint ::= FunctionName:Ident TypeDef <ProgramLineNr:int>;
 
+
+abstract PlaceModifier;
+PlaceModifierLocal: PlaceModifier ::= ;
+PlaceModifierPredefined: PlaceModifier ::= ;
 
 // Types
 

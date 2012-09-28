@@ -9,8 +9,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.Maps;
+
 import b2bpl.bpl.BPLPrinter;
+import b2bpl.bpl.EmptyBPLVisitor;
+import b2bpl.bpl.IBPLVisitor;
+import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
+import b2bpl.bpl.ast.BPLBinaryLogicalExpression;
+import b2bpl.bpl.ast.BPLBoolLiteral;
+import b2bpl.bpl.ast.BPLBuiltInType;
+import b2bpl.bpl.ast.BPLEqualityExpression;
 import b2bpl.bpl.ast.BPLExpression;
+import b2bpl.bpl.ast.BPLIntLiteral;
+import b2bpl.bpl.ast.BPLQuantifierExpression;
+import b2bpl.bpl.ast.BPLRelationalExpression;
+import b2bpl.bpl.ast.BPLType;
+import b2bpl.bpl.ast.BPLVariable;
+import b2bpl.bpl.ast.BPLVariableExpression;
+import de.unikl.bcverifier.bpl.UsedVariableFinder;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Invariant;
@@ -35,10 +51,62 @@ public class Translation {
 				BPLExpression welldefinedness = inv.getExpr().translateExprWellDefinedness();
 				BPLExpression invExpr = inv.getExpr().translateExpr();
 				String comment = inv.getExpr().print();
+				
+				// forall interaction frames
+				// TODO only do this when ifram var is used.
+				welldefinedness = forallInteractionFrames(welldefinedness);
+				invExpr = forallInteractionFrames(invExpr);
+				
 				result.add(new SpecInvariant(invExpr, welldefinedness, comment));
 			}
 		}
 		return result;
+	}
+
+	private static BPLExpression forallInteractionFrames(BPLExpression expr) {
+		
+		Map<String, BPLVariable> tofind = Maps.newHashMap();
+		tofind.put("iframe", null);
+		UsedVariableFinder variableFinder = new UsedVariableFinder(tofind);
+		expr.accept(variableFinder);
+		if (variableFinder.getUsedVariables().size() == 0) {
+			// variable iframe not used in expression
+			return expr;
+		}
+		
+		expr = new BPLBinaryLogicalExpression(
+				BPLBinaryLogicalExpression.Operator.IMPLIES, 
+				ExprWellDefinedness.conjunction(
+					// 0 <= iframe 
+					new BPLRelationalExpression(
+							BPLRelationalExpression.Operator.LESS_EQUAL,
+							new BPLIntLiteral(0),
+							new BPLVariableExpression("iframe")
+							),
+					// iframe <= ip1
+					new BPLRelationalExpression(
+							BPLRelationalExpression.Operator.LESS_EQUAL,
+							new BPLVariableExpression("iframe"),
+							new BPLVariableExpression("ip1")
+							),
+					// iframe % 2 == 1				
+					new BPLEqualityExpression(
+							BPLEqualityExpression.Operator.EQUALS,
+							new BPLBinaryArithmeticExpression(
+									BPLBinaryArithmeticExpression.Operator.REMAINDER,
+									new BPLVariableExpression("iframe"),
+									new BPLIntLiteral(2)
+									),
+							new BPLIntLiteral(1)
+							)
+				), 
+				expr); 
+		
+		return new BPLQuantifierExpression(
+				BPLQuantifierExpression.Operator.FORALL,
+				new BPLVariable[] { new BPLVariable("iframe", BPLBuiltInType.INT) },
+				expr
+				);
 	}
 
 	public static java.util.List<SpecInvariant> generateLocalInvariants(CompilationUnit cu) {
@@ -62,7 +130,12 @@ public class Translation {
 		for (Statement s : cu.getStatements()) {
 			if (s instanceof PlaceDef) {
 				PlaceDef def = (PlaceDef) s;
-				BPLExpression condition = def.getCondition().translateExpr();
+				BPLExpression condition;
+				if (def.hasCondition()) {
+					condition = def.getCondition().translateExpr();
+				} else {
+					condition = BPLBoolLiteral.TRUE;
+				}
 				Place p = new Place(def.getName().getName(), exprToString(condition), null);
 				ExprType placePositionType = def.getProgramPoint().attrType();
 				if (placePositionType instanceof ExprTypeProgramPoint) {
