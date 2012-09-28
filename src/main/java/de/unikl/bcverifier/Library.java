@@ -861,7 +861,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 	private void relateParams(List<BPLCommand> procAssumes, boolean exceptConstructor) {
 		BPLCommand assumeCmd;
 		BPLExpression isStatic = isStaticMethod(var(IMPL1), placeDefinedInType(stack1(var(PLACE_VARIABLE))), stack1(var(METH_FIELD)));
-		for (int vari = 0; vari < tc.maxRefParams; vari++) {
+		for (int vari = 0; vari < tc.maxParams; vari++) {
 			if (exceptConstructor && vari == 0) continue;
 			for (boolean st = false; true; st = true) {
 				BPLExpression cond = logicalAnd(st ? isStatic : logicalNot(isStatic), st ? greater(numParams(stack1(var(METH_FIELD))), var(""+vari)) : greaterEqual(numParams(stack1(var(METH_FIELD))), var(""+vari)));
@@ -887,7 +887,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				if (st == true) break;
 			}
         }
-        for (int vari = 0; vari < tc.maxIntParams; vari++) {
+        for (int vari = 0; vari < tc.maxParams; vari++) {
         	for (boolean st = false; true; st = true) {
         		BPLExpression cond = logicalAnd(st ? isStatic : logicalNot(isStatic), st ? greater(numParams(stack1(var(METH_FIELD))), var(""+vari)) : greaterEqual(numParams(stack1(var(METH_FIELD))), var(""+vari)));
         		BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari + INT_TYPE_ABBREV);
@@ -903,7 +903,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 	}
 	
 	private void checkRelateParams(List<BPLCommand> checkingCommand) {
-		for (int vari = 0; vari < tc.maxRefParams; vari++) {
+		for (int vari = 0; vari < tc.maxParams; vari++) {
 			BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari + REF_TYPE_ABBREV);
 			checkingCommand.add(new BPLAssertCommand(implies(
 					greaterEqual(numParams(stack1(var(METH_FIELD))), var(""+vari)),
@@ -934,7 +934,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 
 		}
-		for (int vari = 0; vari < tc.maxIntParams; vari++) {
+		for (int vari = 0; vari < tc.maxParams; vari++) {
 			BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari + INT_TYPE_ABBREV);
 			checkingCommand.add(new BPLAssertCommand(implies(
 					greaterEqual(numParams(stack1(var(METH_FIELD))), var(""+vari)),
@@ -1429,7 +1429,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();
         programDecls.addAll(translator.getNeededDeclarations());
 
-        int maxLocals = 0, maxStack = 0, maxRefParams = 0, maxIntParams = 0;
+        int maxLocals = 0, maxStack = 0, maxParams = 0;
         List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
         BPLProcedure proc;
         List<String> methodLabels = new ArrayList<String>();
@@ -1443,17 +1443,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
                     proc = procedures.get(method.getQualifiedBoogiePLName());
                     maxLocals = Math.max(maxLocals, method.getMaxLocals());
                     maxStack = Math.max(maxStack, method.getMaxStack());
-                    int countIntParams = 0;
-                    int countRefParams = 0;
-                    for (JType t : method.getRealParameterTypes()) {
-                    	if (t.isBaseType()) {
-                    		countIntParams++;
-                    	} else {
-                    		countRefParams++;
-                    	}
-                    }
-                    maxRefParams = Math.max(maxRefParams, countRefParams);
-                    maxIntParams = Math.max(maxIntParams, countIntParams);
+                    maxParams = Math.max(maxParams, method.getRealParameterTypes().length);
 
                     for (BPLVariableDeclaration varDecl : proc
                             .getImplementation().getBody()
@@ -1528,8 +1518,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
         }
         tc.maxLocals = Math.max(tc.maxLocals, maxLocals);
         tc.maxStack = Math.max(tc.maxStack, maxStack);
-        tc.maxRefParams = Math.max(tc.maxRefParams, maxRefParams);
-        tc.maxIntParams = Math.max(tc.maxIntParams, maxRefParams);
+        tc.maxParams = Math.max(tc.maxParams, maxParams);
         
         ///////////////////////////////////////////////
         // add default constructor for java.lang.Object in case it is called inside the methods/constructors of the library

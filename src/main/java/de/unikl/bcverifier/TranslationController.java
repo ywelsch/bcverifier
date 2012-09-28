@@ -42,7 +42,7 @@ public class TranslationController implements ITranslationConstants {
     private Set<String> returnLabels = new HashSet<String>();
     public int maxLocals;
     public int maxStack;
-    public int maxRefParams, maxIntParams;
+    public int maxParams;
     
     private String lastPlace = null;
     private String nextLabel = null;
