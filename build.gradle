@@ -71,11 +71,10 @@ dependencies {
 	sshAntTask group: 'org.apache.ant', name: 'ant-jsch', version: '1.8.4'
 }
 
-task testNG(type: Test) {
+test {
     useTestNG()
+	options.suites("build/resources/test/testng.xml")
 }
-
-check.dependsOn testNG
 
 task doc {
 	inputs.files{fileTree(dir: srcDocDir, includes: ['**/*.markdown','**/*.mdown'])}
@@ -185,6 +184,14 @@ processResources {
 	inputs.property('hgrevision', hgrevision)
 	from('src/main/resources/project.properties') {
 		filter(ReplaceTokens, tokens: [version: hgrevision])
+	}
+}
+
+processTestResources {
+	def numProcessors = Math.max(Runtime.getRuntime().availableProcessors() - 2, 1)
+	inputs.property('numProcessors', numProcessors)
+	from('src/test/resources/testng.xml') {
+		filter(ReplaceTokens, tokens: [threadcount: numProcessors.toString()])
 	}
 }
 

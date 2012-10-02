@@ -27,7 +27,7 @@ Limitations
 
 - *Field protection*: The tool assumes that code outside the library does not directly access fields that are defined in the library. This is usually considered bad practice anyhow.
 
-- *Language subset*: Currently, the tool only supports a limited subset of Java. In particular, arrays, floats, doubles, and exceptions are not supported.
+- *Language subset*: Currently, the tool only supports a limited subset of Java. In particular, arrays, floats, doubles, static fields and exceptions are not supported.
 
 Developers
 ----------
