@@ -141,1635 +141,1909 @@ import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
 
 public class Library implements ITroubleReporter, ITranslationConstants {
-    public static class TranslationException extends Exception {
-        private static final long serialVersionUID = 1501139187899875010L;
+	public static class TranslationException extends Exception {
+		private static final long serialVersionUID = 1501139187899875010L;
 
-        public TranslationException(String msg) {
-            super(msg);
-        }
+		public TranslationException(String msg) {
+			super(msg);
+		}
 
-        public TranslationException(String msg, Throwable t) {
-            super(msg, t);
-        }
-    }
+		public TranslationException(String msg, Throwable t) {
+			super(msg, t);
+		}
+	}
 
-    private static final Logger log = Logger.getLogger(Library.class);
-    
-    private final Configuration config;
-    private Generator specGen;
-    
-    private TwoLibraryModel libmodel;
+	private static final Logger log = Logger.getLogger(Library.class);
 
-    private TranslationController tc;
-    
-    public Library(Configuration config) {
-        this.config = config;
-    }
-    
-    public VerificationResult runLifecycle() throws SourceInCompatibilityException, TranslationException, GenerationException, CompileException {
-    	if (config.isCompileFirst()) {
-    		LibraryCompiler.compile(config.library1());
-    		LibraryCompiler.compile(config.library2());
-    	}
-    	
-    	libmodel = new TwoLibraryModel(config.library1(), config.library2());
-    	if (config.checkSourceCompatibility()) {
-    		SourceCompChecker scc = new SourceCompChecker(config, libmodel);
-    		scc.check();
-    	}
-        translate();
-        if(config.isCheck()){
-            return VerificationResult.fromBoogie(check());
-        } else {
-            return new VerificationResult();
-        }
-    }
+	private final Configuration config;
+	private Generator specGen;
 
-     /**
-     * @throws TranslationException
-     * @throws GenerationException 
-     */
-    private void translate() throws TranslationException, GenerationException {
-        
-        ArrayList<BPLCommand> invAssertions = new ArrayList<BPLCommand>();
-        ArrayList<BPLCommand> invAssumes = new ArrayList<BPLCommand>();
-        ArrayList<BPLCommand> localInvAssertions = new ArrayList<BPLCommand>();
-        ArrayList<BPLCommand> localInvAssumes = new ArrayList<BPLCommand>();
-        
-        this.specGen = GeneratorFactory.getGenerator(config, libmodel);
-        this.tc = new TranslationController();
-        this.tc.setLocalPlaces(specGen.generateLocalPlaces());
-        readInvariants(invAssertions, invAssumes, localInvAssertions,
-                localInvAssumes);
+	private TwoLibraryModel libmodel;
 
-        String[] oldFileNames = listLibraryClassFiles(config.library1());
-        String[] newFileNames = listLibraryClassFiles(config.library2());
+	private TranslationController tc;
 
-        try {
-            List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();
-            List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
+	public Library(Configuration config) {
+		this.config = config;
+	}
 
-            Project project = Project.fromCommandLine(oldFileNames,
-                    new PrintWriter(System.out));
-            
-            configureCodeGenerator(project);
-            
-            Translator trans = new Translator(project);
-            trans.setTranslationController(tc);
-            programDecls.addAll(trans.getPrelude()); // TODO
-                                                                       // workaround
-                                                                       // to
-                                                                       // generate
-                                                                       // Prelude
-            List<BPLDeclaration> preludeAdditions = new ArrayList<BPLDeclaration>();
-            try {
-                for(String decl : specGen.generatePreludeAddition()){
-                    preludeAdditions.add(new BPLRawDeclaration(decl));
-                }
-                programDecls.addAll(preludeAdditions);
-            } catch(GenerationException e){
-                Logger.getLogger(Library.class).warn("Error generating prelude addition.", e);
-            }
+	public VerificationResult runLifecycle()
+			throws SourceInCompatibilityException, TranslationException,
+			GenerationException, CompileException {
+		if (config.isCompileFirst()) {
+			LibraryCompiler.compile(config.library1());
+			LibraryCompiler.compile(config.library2());
+		}
 
-            tc.activate();
+		libmodel = new TwoLibraryModel(config.library1(), config.library2());
+		if (config.checkSourceCompatibility()) {
+			SourceCompChecker scc = new SourceCompChecker(config, libmodel);
+			scc.check();
+		}
+		translate();
+		if (config.isCheck()) {
+			return VerificationResult.fromBoogie(check());
+		} else {
+			return new VerificationResult();
+		}
+	}
 
-            tc.enterRound1();
-            LibraryDefinition libraryDefinition1 = compileSpecification(oldFileNames);
-            programDecls.addAll(libraryDefinition1.getNeededDeclarations());
-            methodBlocks.addAll(libraryDefinition1.getMethodBlocks());
-            
-            addDefinesMethodAxioms(programDecls);
-            addLibraryFields(programDecls);
-            
-            //clear local sets for next round
-            tc.localReferencedFields().clear();
-            tc.localReferencedTypes().clear();
-            
-            
-            tc.enterRound2();
-            LibraryDefinition libraryDefinition2 = compileSpecification(newFileNames);
-            programDecls.addAll(libraryDefinition2.getNeededDeclarations());
-            methodBlocks.addAll(libraryDefinition2.getMethodBlocks());
+	/**
+	 * @throws TranslationException
+	 * @throws GenerationException
+	 */
+	private void translate() throws TranslationException, GenerationException {
 
-            addDefinesMethodAxioms(programDecls);
-            addLibraryFields(programDecls);
-            
-            
-            /////////////////////////////////////
-            // add method definition for java.lang.Object default constructor
-            /////////////////////////////////////
-            String objectConstructorName = GLOBAL_VAR_PREFIX+"."+CONSTRUCTOR_NAME+"#"+Object.class.getName();
-            programDecls.add(new BPLConstantDeclaration(new BPLVariable(objectConstructorName, new BPLTypeName(METHOD_TYPE))));
+		ArrayList<BPLCommand> invAssertions = new ArrayList<BPLCommand>();
+		ArrayList<BPLCommand> invAssumes = new ArrayList<BPLCommand>();
+		ArrayList<BPLCommand> localInvAssertions = new ArrayList<BPLCommand>();
+		ArrayList<BPLCommand> localInvAssumes = new ArrayList<BPLCommand>();
 
-            
-            /////////////////////////////////////
-            // add maxLoopUnroll constant to the prelude
-            /////////////////////////////////////
-            BPLVariable maxLoopUnrollVar = new BPLVariable(ITranslationConstants.MAX_LOOP_UNROLL, BPLBuiltInType.INT);
-            programDecls.add(new BPLConstantDeclaration(maxLoopUnrollVar));
-            programDecls.add(new BPLAxiom(isEqual(var(ITranslationConstants.MAX_LOOP_UNROLL), new BPLIntLiteral(config.getLoopUnrollCap()))));
+		this.specGen = GeneratorFactory.getGenerator(config, libmodel);
+		this.tc = new TranslationController();
+		this.tc.setLocalPlaces(specGen.generateLocalPlaces());
+		readInvariants(invAssertions, invAssumes, localInvAssertions,
+				localInvAssumes);
 
-            
-            addCheckingBlocks(invAssertions, invAssumes, localInvAssertions, localInvAssumes, methodBlocks);
-            
-            addNoopBlock(methodBlocks);
-            
-            
-            for (String place : tc.places()) {
-                programDecls.add(new BPLConstantDeclaration(new BPLVariable(
-                        place, new BPLTypeName(ADDRESS_TYPE))));
-                programDecls.add(new BPLAxiom(logicalNot(isLocalPlace(var(place)))));
-            }
+		String[] oldFileNames = listLibraryClassFiles(config.library1());
+		String[] newFileNames = listLibraryClassFiles(config.library2());
 
-            List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
-            BPLVariable[] inParams = new BPLVariable[0];
-            BPLVariable[] outParams = new BPLVariable[0];
+		try {
+			List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();
+			List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
 
-            addPreconditionBlocks(invAssumes, localInvAssumes, methodBlocks);
-            
-            addLocalVariables(localVariables);
-            
-            addVariableConstants(programDecls, methodBlocks);
-            
-            buildBoogieProcedure(programDecls, methodBlocks, localVariables,
-                    inParams, outParams);
-            
-            BPLProgram program = new BPLProgram(
-                    programDecls.toArray(new BPLDeclaration[programDecls.size()]));
+			Project project = Project.fromCommandLine(oldFileNames,
+					new PrintWriter(System.out));
 
-            log.debug("Writing specification to file " + config.output());
-            // create output dir
-            config.output().getParentFile().mkdirs();
-            PrintWriter writer = new PrintWriter(config.output());
-            program.accept(new BPLPrinter(writer));
-            writer.close();
-        } catch (FileNotFoundException e) {
-            throw new TranslationException(
-                    "Could not write boogie specification to file.", e);
-        }
-    }
+			configureCodeGenerator(project);
 
-    private void addNoopBlock(List<BPLBasicBlock> methodBlocks) {
-        methodBlocks.add(new BPLBasicBlock("noop", new BPLCommand[0], new BPLReturnCommand()));
-    }
+			Translator trans = new Translator(project);
+			trans.setTranslationController(tc);
+			programDecls.addAll(trans.getPrelude()); // TODO
+														// workaround
+														// to
+														// generate
+														// Prelude
+			List<BPLDeclaration> preludeAdditions = new ArrayList<BPLDeclaration>();
+			try {
+				for (String decl : specGen.generatePreludeAddition()) {
+					preludeAdditions.add(new BPLRawDeclaration(decl));
+				}
+				programDecls.addAll(preludeAdditions);
+			} catch (GenerationException e) {
+				Logger.getLogger(Library.class).warn(
+						"Error generating prelude addition.", e);
+			}
 
-    private void configureCodeGenerator(Project project) {
-        CodeGenerator.setProject(project);
-        CodeGenerator.setTranslationController(tc);
+			tc.activate();
 
-        TypeLoader.setProject(project);
-        TypeLoader.setProjectTypes(project.getProjectTypes());
-        TypeLoader.setSpecificationProvider(project
-                .getSpecificationProvider());
-        TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, this));
-        TypeLoader.setTroubleReporter(this);
+			tc.enterRound1();
+			LibraryDefinition libraryDefinition1 = compileSpecification(oldFileNames);
+			programDecls.addAll(libraryDefinition1.getNeededDeclarations());
+			methodBlocks.addAll(libraryDefinition1.getMethodBlocks());
 
-        tc.setConfig(config);
-    }
+			addDefinesMethodAxioms(programDecls);
+			addLibraryFields(programDecls);
 
-    public static String[] listLibraryClassFiles(File libraryDir) {
-        Collection<File> oldClassFiles = FileUtils.listFiles(libraryDir,
-                new String[] { "class" }, true);
-        String[] oldFileNames = new String[oldClassFiles.size() + 2];
-        oldFileNames[0] = "-basedir";
-        oldFileNames[1] = libraryDir.getAbsolutePath();
-        int i = 2;
-        for (File file : oldClassFiles) {
-            oldFileNames[i] = libraryDir.toURI().relativize(file.toURI())
-                    .getPath();
-            i++;
-        }
-        return oldFileNames;
-    }
+			// clear local sets for next round
+			tc.localReferencedFields().clear();
+			tc.localReferencedTypes().clear();
 
-    private void buildBoogieProcedure(List<BPLDeclaration> programDecls,
-            List<BPLBasicBlock> methodBlocks,
-            List<BPLVariableDeclaration> localVariables,
-            BPLVariable[] inParams, BPLVariable[] outParams) {
-        String methodName = CHECK_LIBRARIES_PROCEDURE_NAME;
-        BPLImplementationBody methodBody = new BPLImplementationBody(
-                localVariables.toArray(new BPLVariableDeclaration[localVariables
-                        .size()]),
-                methodBlocks.toArray(new BPLBasicBlock[methodBlocks.size()]));
-        BPLImplementation methodImpl = new BPLImplementation(methodName,
-                inParams, outParams, methodBody);
-        programDecls
-                .add(new BPLProcedure(methodName, inParams, outParams,
-                        new BPLSpecification(new BPLModifiesClause(
-                                new BPLVariableExpression(HEAP1),
-                                new BPLVariableExpression(HEAP2),
-                                new BPLVariableExpression(STACK1),
-                                new BPLVariableExpression(STACK2),
-                                new BPLVariableExpression(SP_MAP1_VAR),
-                                new BPLVariableExpression(SP_MAP2_VAR),
-                                new BPLVariableExpression(IP1_VAR),
-                                new BPLVariableExpression(IP2_VAR),
-                                new BPLVariableExpression(RELATED_RELATION),
-                                new BPLVariableExpression(USE_HAVOC),
-                                new BPLVariableExpression(STALL1),
-                                new BPLVariableExpression(STALL2)
-                                )),
-                        methodImpl));
-    }
+			tc.enterRound2();
+			LibraryDefinition libraryDefinition2 = compileSpecification(newFileNames);
+			programDecls.addAll(libraryDefinition2.getNeededDeclarations());
+			methodBlocks.addAll(libraryDefinition2.getMethodBlocks());
 
-    private void addVariableConstants(List<BPLDeclaration> programDecls,
-            List<BPLBasicBlock> methodBlocks) {
-        // add constant declarations for stack variables
-        ////////////////////////////////////////////////
-//            for (BPLVariable var : TranslationController.stackVariables()
-//                    .values()) {
-//                programDecls.add(new BPLConstantDeclaration(var));
-//            }
-        
-        Map<String, BPLVariable> possibleStackVariables = new HashMap<String, BPLVariable>();
-        String refVarName;
-        String intVarName;
-//        refVarName = PARAM_VAR_PREFIX+0+REF_TYPE_ABBREV;
-//        possibleStackVariables.put(refVarName, new BPLVariable(refVarName, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
-        refVarName = RESULT_PARAM+REF_TYPE_ABBREV;
-        possibleStackVariables.put(refVarName, new BPLVariable(refVarName, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
-        intVarName = RESULT_PARAM+INT_TYPE_ABBREV;
-        possibleStackVariables.put(intVarName, new BPLVariable(intVarName, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)));
-        // reg0_r, reg0_i, ...
-        for(int j=0; j<tc.maxLocals; j++){
-            refVarName = LOCAL_VAR_PREFIX+j+REF_TYPE_ABBREV;
-            intVarName = LOCAL_VAR_PREFIX+j+INT_TYPE_ABBREV;
-            possibleStackVariables.put(refVarName, new BPLVariable(refVarName, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
-            possibleStackVariables.put(intVarName, new BPLVariable(intVarName, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)));
-        }
-        /*// param0_r, param0_i, ...
-        for(int j=0; j<tc.maxLocals+1; j++){
-            refVarName = PARAM_VAR_PREFIX+j+REF_TYPE_ABBREV;
-            intVarName = PARAM_VAR_PREFIX+j+INT_TYPE_ABBREV;
-            possibleStackVariables.put(refVarName, new BPLVariable(refVarName, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
-            possibleStackVariables.put(intVarName, new BPLVariable(intVarName, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)));
-        }*/
-        // stack0_r, stack0_i, ...
-        for(int j=0; j<tc.maxStack; j++){
-            refVarName = STACK_VAR_PREFIX+j+REF_TYPE_ABBREV;
-            intVarName = STACK_VAR_PREFIX+j+INT_TYPE_ABBREV;
-            possibleStackVariables.put(refVarName, new BPLVariable(refVarName, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
-            possibleStackVariables.put(intVarName, new BPLVariable(intVarName, new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)));
-        }
-        // filter out unused variables
-        UsedVariableFinder finder = new UsedVariableFinder(possibleStackVariables);
-        Map<String, BPLVariable> usedVariables = finder.findUsedVariables(methodBlocks, programDecls);
-        for (BPLVariable var : usedVariables.values()) {
-            programDecls.add(new BPLConstantDeclaration(var));
-        }
-    }
+			addDefinesMethodAxioms(programDecls);
+			addLibraryFields(programDecls);
 
-    private void readInvariants(ArrayList<BPLCommand> invAssertions,
-            ArrayList<BPLCommand> invAssumes,
-            ArrayList<BPLCommand> localInvAssertions,
-            ArrayList<BPLCommand> localInvAssumes) throws GenerationException {
-        BPLCommand cmd;
+			// ///////////////////////////////////
+			// add method definition for java.lang.Object default constructor
+			// ///////////////////////////////////
+			String objectConstructorName = GLOBAL_VAR_PREFIX + "."
+					+ CONSTRUCTOR_NAME + "#" + Object.class.getName();
+			programDecls.add(new BPLConstantDeclaration(new BPLVariable(
+					objectConstructorName, new BPLTypeName(METHOD_TYPE))));
 
-        for (SpecInvariant inv : specGen.generateInvariant()) {
-        	if (inv.getWelldefinednessExpr() != null) {
-        		cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
-        		cmd.addComment(inv.getComment());
-        		cmd.addComment("check welldefinedness:");
-        		invAssumes.add(cmd);
-        		invAssertions.add(cmd);
-        	}
-        	cmd = new BPLAssertCommand(inv.getInvExpr());
-        	cmd.addComment("invariant");
-        	invAssertions.add(cmd);
-        	cmd = new BPLAssumeCommand(inv.getInvExpr());
-        	cmd.addComment("invariant");
-        	invAssumes.add(cmd);
-        }
+			// ///////////////////////////////////
+			// add maxLoopUnroll constant to the prelude
+			// ///////////////////////////////////
+			BPLVariable maxLoopUnrollVar = new BPLVariable(
+					ITranslationConstants.MAX_LOOP_UNROLL, BPLBuiltInType.INT);
+			programDecls.add(new BPLConstantDeclaration(maxLoopUnrollVar));
+			programDecls.add(new BPLAxiom(isEqual(
+					var(ITranslationConstants.MAX_LOOP_UNROLL),
+					new BPLIntLiteral(config.getLoopUnrollCap()))));
 
-        for (SpecInvariant inv : specGen.generateLocalInvariant()) {
-        	if (inv.getWelldefinednessExpr() != null) {
-        		cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
-        		cmd.addComment(inv.getComment());
-        		cmd.addComment("check welldefinedness:");
-        		localInvAssumes.add(cmd);
-        		localInvAssertions.add(cmd);
-        	}
-        	cmd = new BPLAssertCommand(inv.getInvExpr());
-        	cmd.addComment("local invariant");
-        	localInvAssertions.add(cmd);
-        	cmd = new BPLAssumeCommand(inv.getInvExpr());
-        	cmd.addComment("local invariant");
-        	localInvAssumes.add(cmd);
-        }        
-    }
+			addCheckingBlocks(invAssertions, invAssumes, localInvAssertions,
+					localInvAssumes, methodBlocks);
 
-    private void addPreconditionBlocks(ArrayList<BPLCommand> invAssumes,
-            ArrayList<BPLCommand> localInvAssumes,
-            List<BPLBasicBlock> methodBlocks) {
-        String sp = "sp";
-        BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
-        
-        String unrollCount1 = TranslationController.LABEL_PREFIX1+ITranslationConstants.UNROLL_COUNT;
-        String unrollCount2 = TranslationController.LABEL_PREFIX2+ITranslationConstants.UNROLL_COUNT;
-        
-        List<BPLCommand> procAssumes;
+			addNoopBlock(methodBlocks);
 
-        // ///////////////////////////////////
-        // preconditions of before checking
-        // //////////////////////////////////
-        procAssumes = new ArrayList<BPLCommand>();
-        
-        procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1), new BPLIntLiteral(0))));
-        procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2), new BPLIntLiteral(0))));
+			for (String place : tc.places()) {
+				programDecls.add(new BPLConstantDeclaration(new BPLVariable(
+						place, new BPLTypeName(ADDRESS_TYPE))));
+				programDecls.add(new BPLAxiom(
+						logicalNot(isLocalPlace(var(place)))));
+			}
 
-        final String i = "i";
-        BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
-        procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), var(IP2_VAR))));
-        
-        String address = "address";
-        BPLVariable addressVar = new BPLVariable(address, new BPLTypeName(ADDRESS_TYPE));
-        procAssumes.add(new BPLAssumeCommand(forall(
-                addressVar,
-                    isEqual(useHavoc(var(address)), BPLBoolLiteral.TRUE)
-                )));
-        
-        String a1 = "a1";
-        String a2 = "a2";
-        BPLVariable a1Var = new BPLVariable(a1, new BPLTypeName(ADDRESS_TYPE));
-        BPLVariable a2Var = new BPLVariable(a2, new BPLTypeName(ADDRESS_TYPE));
-        procAssumes.add(new BPLAssumeCommand(forall(
-                a1Var, a2Var,
-                logicalNot(stall1(var(a1), var(a2)))
-                )));
-        procAssumes.add(new BPLAssumeCommand(forall(
-                a1Var, a2Var,
-                logicalNot(stall2(var(a1), var(a2)))
-                )));
+			List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
+			BPLVariable[] inParams = new BPLVariable[0];
+			BPLVariable[] outParams = new BPLVariable[0];
 
-        try{
-            for(String line : specGen.generatePreconditions()){
-                procAssumes.add(new BPLRawCommand(line));
-            }
-        } catch(GenerationException e){
-            Logger.getLogger(Library.class).warn("Error generating precondition", e);
-        }
-        
-        // safty check: Do not stall both execution at once
-        procAssumes.add(new BPLAssertCommand(forall(
-                a1Var, a2Var,
-                logicalNot(logicalAnd(stall1(var(a1), var(a2)), stall2(var(a1), var(a2))))
-                )));
-        
-        methodBlocks.add(
-                0,
-                new BPLBasicBlock(PRECONDITIONS_LABEL, procAssumes
-                        .toArray(new BPLCommand[procAssumes.size()]),
-                        new BPLGotoCommand(INITIAL_CONFIGS_INV_LABEL, STEPS_IN_CONTEXT_PRESERVED_LABEL, PRECONDITIONS_CALL_LABEL,
-                                PRECONDITIONS_RETURN_LABEL, PRECONDITIONS_CONSTRUCTOR_LABEL, PRECONDITIONS_LOCAL_LABEL)));
+			addPreconditionBlocks(invAssumes, localInvAssumes, methodBlocks);
 
-        BPLCommand assumeCmd;
-        
-        
-        // //////////////////////////////////
-        // preconditions of a call
-        // /////////////////////////////////
-        procAssumes = new ArrayList<BPLCommand>();
-        
-        if(config.getNumberOfIframes() == 0){
-            procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
-        } else {
-//        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2))));
-        }
-        
+			addLocalVariables(localVariables);
 
-        // invariant
-        procAssumes.addAll(invAssumes);
-        
-        
-        createLibraryFrame(procAssumes);
-        
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
-        
-        // assume the result of the method is not yet set
-        procAssumes.add(new BPLAssumeCommand(isNull(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)))));
-        procAssumes.add(new BPLAssumeCommand(isNull(stack2(var(RESULT_PARAM + REF_TYPE_ABBREV)))));
-        procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
-        procAssumes.add(new BPLAssumeCommand(isEqual(stack2(var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
+			addVariableConstants(programDecls, methodBlocks);
 
-        // relation between lib1 and lib2
-        // ///////////////////////////////////////////
-        procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(METH_FIELD)),
-                stack2(var(METH_FIELD)))));
+			buildBoogieProcedure(programDecls, methodBlocks, localVariables,
+					inParams, outParams);
 
-        // relate all parameters from the outside
-        // ///////////////////////////////////////
-        relateParams(procAssumes, false);
-        
-        //first method call static iff second method call static
-        procAssumes.add(new BPLAssumeCommand(isEqual(isStaticMethod(var(IMPL1), placeDefinedInType(stack1(var(PLACE_VARIABLE))), stack1(var(METH_FIELD))),
-        		isStaticMethod(var(IMPL2), placeDefinedInType(stack2(var(PLACE_VARIABLE))), stack2(var(METH_FIELD))))));
+			BPLProgram program = new BPLProgram(
+					programDecls.toArray(new BPLDeclaration[programDecls.size()]));
 
-        procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
-        procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
-        
-        methodBlocks.add(1, new BPLBasicBlock(PRECONDITIONS_CALL_LABEL,
-                procAssumes.toArray(new BPLCommand[procAssumes.size()]),
-                new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
+			log.debug("Writing specification to file " + config.output());
+			// create output dir
+			config.output().getParentFile().mkdirs();
+			PrintWriter writer = new PrintWriter(config.output());
+			program.accept(new BPLPrinter(writer));
+			writer.close();
+		} catch (FileNotFoundException e) {
+			throw new TranslationException(
+					"Could not write boogie specification to file.", e);
+		}
+	}
 
-        
-        // //////////////////////////////////
-        // preconditions of a constructor call
-        // /////////////////////////////////
-        procAssumes = new ArrayList<BPLCommand>();
-        
-        if(config.getNumberOfIframes() == 0){
-            procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
-        } else {
-//        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2))));
-        }
-        
+	private void addNoopBlock(List<BPLBasicBlock> methodBlocks) {
+		methodBlocks.add(new BPLBasicBlock("noop", new BPLCommand[0],
+				new BPLReturnCommand()));
+	}
 
-        // invariant
-        procAssumes.addAll(invAssumes);
-        
-        
-        createLibraryFrame(procAssumes);
+	private void configureCodeGenerator(Project project) {
+		CodeGenerator.setProject(project);
+		CodeGenerator.setTranslationController(tc);
 
-        
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
-        
-        // initialize int return values to be zero, so the relation check of the check_boundary_return block only checks the ref-result
-        procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
-        procAssumes.add(new BPLAssumeCommand(isEqual(stack2(var(RESULT_PARAM+INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
-        
-        procAssumes.add(new BPLAssumeCommand(nonNull(stack1(receiver()))));
-        procAssumes.add(new BPLAssumeCommand(nonNull(stack2(receiver()))));
-        
-        // relation between lib1 and lib2
-        // ///////////////////////////////////////////
-        procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(METH_FIELD)),
-                stack2(var(METH_FIELD)))));
+		TypeLoader.setProject(project);
+		TypeLoader.setProjectTypes(project.getProjectTypes());
+		TypeLoader.setSpecificationProvider(project.getSpecificationProvider());
+		TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, this));
+		TypeLoader.setTroubleReporter(this);
 
-//            // the object is not yet initialized (so the fields have their default value)
-        procAssumes.add(
-                new BPLAssumeCommand(logicalAnd(
-                        forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT)),
-                        		logicalAnd(
-                                implies(libraryField(var(IMPL1), var("f")), isEqual(heap1(stack1(receiver()), var("f")), new BPLIntLiteral(0))),
-                                implies(libraryField(var(IMPL2), var("f")), isEqual(heap2(stack2(receiver()), var("f")), new BPLIntLiteral(0)))
-                                )),
-                        forall(new BPLVariable("f", new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE))),
-                        		logicalAnd(
-                                implies(libraryField(var(IMPL1), var("f")), isNull(heap1(stack1(receiver()), var("f")))),
-                                implies(libraryField(var(IMPL2), var("f")), isNull(heap2(stack2(receiver()), var("f"))))
-                                ))
-                )));
-        
-        // "this" is created by context and not yet exposed
-        // the two "this" objects are related
-        procAssumes.add(
-                new BPLAssumeCommand(
-                        logicalAnd(heap1(stack1(receiver()), var(CREATED_BY_CTXT_FIELD)),
-                                logicalNot(heap1(stack1(receiver()), var(EXPOSED_FIELD))))
-                        )
-                );
-        procAssumes.add(
-                new BPLAssumeCommand(
-                        logicalAnd(heap2(stack2(receiver()), var(CREATED_BY_CTXT_FIELD)),
-                                logicalNot(heap2(stack2(receiver()), var(EXPOSED_FIELD))))
-                        )
-                );
-        
-        
-        
-        // now pass the receiver over the boundary
-        procAssumes.add(new BPLAssignmentCommand(heap1(stack1(receiver()), var(EXPOSED_FIELD)), BPLBoolLiteral.TRUE));
-        procAssumes.add(new BPLAssignmentCommand(heap2(stack2(receiver()), var(EXPOSED_FIELD)), BPLBoolLiteral.TRUE));
-        procAssumes.add(new BPLAssignmentCommand(related(stack1(receiver()), stack2(receiver())), BPLBoolLiteral.TRUE));
-        BPLAssumeCommand wellformedCouplingAssume = new BPLAssumeCommand(wellformedCoupling(var(HEAP1), var(HEAP2), var(RELATED_RELATION)));
-        wellformedCouplingAssume.addComment("workaround for problems with ternary subtype relation");
-        procAssumes.add(wellformedCouplingAssume); //FIXME workaround for wellformedCoupling program introduced by ternary subtype relation
-        if(config.isAssumeWellformedHeap()){
-            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(HEAP1))));
-            procAssumes.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(HEAP2))));
-        }
-        
-        // relate all parameters from the outside
-        // ///////////////////////////////////////
-        relateParams(procAssumes, true);
+		tc.setConfig(config);
+	}
 
-        procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
-        procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
-        
-        //assume typ(stack1[ip1][spmap1[ip1]][param0_r], heap1) == typ(stack2[ip2][spmap2[ip2]][param0_r], heap2);
-        procAssumes.add(new BPLAssumeCommand(isEqual(typ(stack1(receiver()), var(HEAP1)), typ(stack2(receiver()), var(HEAP2)))));
-        
-        // constructor that is called is defined in t implies that the type of the receiver is not a library subtype of t
-        String t = "t";
-        BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
-        String t2 = "t2";
-        BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
-        procAssumes.add(new BPLAssumeCommand(forall(tVar, implies(definesMethod(var(IMPL1), var(t), stack1(var(METH_FIELD))), 
-        		forall(t2Var, implies(logicalAnd(libType(var(IMPL1), var(t2)), 
-        				logicalNot(isEqual(var(t), var(t2))), isOfType(stack1(receiver()), var(HEAP1), var(t2))), 
-        				logicalNot(subtype(var(IMPL1), var(t2), var(t)))))))));
-        procAssumes.add(new BPLAssumeCommand(forall(tVar, implies(definesMethod(var(IMPL2), var(t), stack2(var(METH_FIELD))), 
-        		forall(t2Var, implies(logicalAnd(libType(var(IMPL2), var(t2)), 
-        				logicalNot(isEqual(var(t), var(t2))), isOfType(stack2(receiver()), var(HEAP2), var(t2))), 
-        				logicalNot(subtype(var(IMPL2), var(t2), var(t)))))))));
-        
-        methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_CONSTRUCTOR_LABEL,
-                procAssumes.toArray(new BPLCommand[procAssumes.size()]),
-                new BPLGotoCommand(TranslationController.LABEL_PREFIX1 + CONSTRUCTOR_TABLE_LABEL)));
-        
-        
-        
-        // //////////////////////////////////
-        // preconditions of a return
-        // /////////////////////////////////
-        procAssumes = new ArrayList<BPLCommand>();
-//        procAssumes.add(new BPLAssumeCommand(
-//                    logicalAnd(
-//                            isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
-//                            isEqual(spmap1(), new BPLIntLiteral(0))
-//                            )
-//                ));
-//        procAssumes.add(new BPLAssumeCommand(
-//                    logicalAnd(
-//                            isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
-//                            isEqual(spmap2(), new BPLIntLiteral(0))
-//                            )
-//                ));
-        if(config.getNumberOfIframes() == 0){
-            procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
-        } else {
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(config.getNumberOfIframes() * 2))));
-//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(4))));
-        }
-        procAssumes.add(new BPLAssumeCommand(isEqual(spmap1(), new BPLIntLiteral(0))));
-        procAssumes.add(new BPLAssumeCommand(isEqual(spmap2(), new BPLIntLiteral(0))));
-        
-        
-        
-        
-        // this return path may not be taken if havoc is used to handle it
-        /////////////////////////////////////////////////////////////////
-        //TODO maybe add consistency check useHavoc[stack1[sp1][place]] <=> useHavoc[stack2[sp2][place]] 
-        procAssumes.add(new BPLAssumeCommand(logicalNot(useHavoc(stack1(sub(var(IP1_VAR), new BPLIntLiteral(1)), var(PLACE_VARIABLE))))));
-        procAssumes.add(new BPLAssumeCommand(logicalNot(useHavoc(stack2(sub(var(IP2_VAR), new BPLIntLiteral(1)), var(PLACE_VARIABLE))))));
-        
-        procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
-        procAssumes.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
-        
-        // can not return to a static method call site
-        //////////////////////////////////////////////
-        procAssumes.add(new BPLAssumeCommand(logicalNot(isStaticMethod(var(IMPL1), placeDefinedInType(stack1(var(PLACE_VARIABLE))), stack1(var(METH_FIELD))))));
-        procAssumes.add(new BPLAssumeCommand(logicalNot(isStaticMethod(var(IMPL2), placeDefinedInType(stack2(var(PLACE_VARIABLE))), stack2(var(METH_FIELD))))));
+	public static String[] listLibraryClassFiles(File libraryDir) {
+		Collection<File> oldClassFiles = FileUtils.listFiles(libraryDir,
+				new String[] { "class" }, true);
+		String[] oldFileNames = new String[oldClassFiles.size() + 2];
+		oldFileNames[0] = "-basedir";
+		oldFileNames[1] = libraryDir.getAbsolutePath();
+		int i = 2;
+		for (File file : oldClassFiles) {
+			oldFileNames[i] = libraryDir.toURI().relativize(file.toURI())
+					.getPath();
+			i++;
+		}
+		return oldFileNames;
+	}
 
-        BPLExpression zero = new BPLIntLiteral(0);
-        BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
-        BPLExpression ip2MinusOne = sub(var(IP2_VAR), new BPLIntLiteral(1));
+	private void buildBoogieProcedure(List<BPLDeclaration> programDecls,
+			List<BPLBasicBlock> methodBlocks,
+			List<BPLVariableDeclaration> localVariables,
+			BPLVariable[] inParams, BPLVariable[] outParams) {
+		String methodName = CHECK_LIBRARIES_PROCEDURE_NAME;
+		BPLImplementationBody methodBody = new BPLImplementationBody(
+				localVariables.toArray(new BPLVariableDeclaration[localVariables
+						.size()]),
+				methodBlocks.toArray(new BPLBasicBlock[methodBlocks.size()]));
+		BPLImplementation methodImpl = new BPLImplementation(methodName,
+				inParams, outParams, methodBody);
+		programDecls.add(new BPLProcedure(methodName, inParams, outParams,
+				new BPLSpecification(new BPLModifiesClause(
+						new BPLVariableExpression(HEAP1),
+						new BPLVariableExpression(HEAP2),
+						new BPLVariableExpression(STACK1),
+						new BPLVariableExpression(STACK2),
+						new BPLVariableExpression(SP_MAP1_VAR),
+						new BPLVariableExpression(SP_MAP2_VAR),
+						new BPLVariableExpression(IP1_VAR),
+						new BPLVariableExpression(IP2_VAR),
+						new BPLVariableExpression(RELATED_RELATION),
+						new BPLVariableExpression(USE_HAVOC),
+						new BPLVariableExpression(STALL1),
+						new BPLVariableExpression(STALL2))), methodImpl));
+	}
 
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(ip1MinusOne, var(PLACE_VARIABLE))));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(ip2MinusOne, var(PLACE_VARIABLE))));
-        
-        // relation of the called methods (context)
-        // ///////////////////////////////////////////
-        assumeCmd = new BPLAssumeCommand(isEqual(stack1(ip1MinusOne, zero, var(METH_FIELD)), stack2(ip2MinusOne, zero, var(METH_FIELD))));
-        assumeCmd.addComment("Relate the methods that where originally called on the library.");
-        procAssumes.add(assumeCmd);
+	private void addVariableConstants(List<BPLDeclaration> programDecls,
+			List<BPLBasicBlock> methodBlocks) {
+		// add constant declarations for stack variables
+		// //////////////////////////////////////////////
+		// for (BPLVariable var : TranslationController.stackVariables()
+		// .values()) {
+		// programDecls.add(new BPLConstantDeclaration(var));
+		// }
 
-        assumeCmd = new BPLAssumeCommand(related(stack1(ip1MinusOne, zero, receiver()), stack2(ip2MinusOne, zero, receiver())));
-        assumeCmd.addComment("The receiver and all parameters where initially related.");
-        
-        // relate all parameters from the outside
-        // ///////////////////////////////////////
-        //relateParams(procAssumes, true, false);
-        
-        // assume the result of the method is not yet set
-//        procAssumes.add(new BPLAssumeCommand( //TODO: put this into wellformedstack
-//                forall(spVar, iVar,
-//                        implies(
-//                                logicalAnd(
-//                                        less(var(i), var(IP1_VAR)),
-//                                        lessEqual(var(sp), spmap1(var(i)))
-//                                        ),
-//                                logicalAnd(isNull(stack1(var(i) ,var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
-//                )));
-//        procAssumes.add(new BPLAssumeCommand( //TODO: put this into wellformedstack
-//                forall(spVar, iVar,
-//                        implies(
-//                                logicalAnd(
-//                                        less(var(i), var(IP2_VAR)),
-//                                        lessEqual(var(sp), spmap2(var(i)))
-//                                        ),
-//                                logicalAnd(isNull(stack2(var(i), var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
-//                )));
+		Map<String, BPLVariable> possibleStackVariables = new HashMap<String, BPLVariable>();
+		String refVarName;
+		String intVarName;
+		// refVarName = PARAM_VAR_PREFIX+0+REF_TYPE_ABBREV;
+		// possibleStackVariables.put(refVarName, new BPLVariable(refVarName,
+		// new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
+		refVarName = RESULT_PARAM + REF_TYPE_ABBREV;
+		possibleStackVariables.put(refVarName, new BPLVariable(refVarName,
+				new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
+		intVarName = RESULT_PARAM + INT_TYPE_ABBREV;
+		possibleStackVariables.put(intVarName, new BPLVariable(intVarName,
+				new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)));
+		// reg0_r, reg0_i, ...
+		for (int j = 0; j < Math.max(tc.maxLocals, tc.maxParams); j++) {
+			refVarName = LOCAL_VAR_PREFIX + j + REF_TYPE_ABBREV;
+			intVarName = LOCAL_VAR_PREFIX + j + INT_TYPE_ABBREV;
+			possibleStackVariables.put(refVarName, new BPLVariable(refVarName,
+					new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
+			possibleStackVariables.put(intVarName, new BPLVariable(intVarName,
+					new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)));
+		}
+		/*
+		 * // param0_r, param0_i, ... for(int j=0; j<tc.maxLocals+1; j++){
+		 * refVarName = PARAM_VAR_PREFIX+j+REF_TYPE_ABBREV; intVarName =
+		 * PARAM_VAR_PREFIX+j+INT_TYPE_ABBREV;
+		 * possibleStackVariables.put(refVarName, new BPLVariable(refVarName,
+		 * new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
+		 * possibleStackVariables.put(intVarName, new BPLVariable(intVarName,
+		 * new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT))); }
+		 */
+		// stack0_r, stack0_i, ...
+		for (int j = 0; j < tc.maxStack; j++) {
+			refVarName = STACK_VAR_PREFIX + j + REF_TYPE_ABBREV;
+			intVarName = STACK_VAR_PREFIX + j + INT_TYPE_ABBREV;
+			possibleStackVariables.put(refVarName, new BPLVariable(refVarName,
+					new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE))));
+			possibleStackVariables.put(intVarName, new BPLVariable(intVarName,
+					new BPLTypeName(VAR_TYPE, BPLBuiltInType.INT)));
+		}
+		// filter out unused variables
+		UsedVariableFinder finder = new UsedVariableFinder(
+				possibleStackVariables);
+		Map<String, BPLVariable> usedVariables = finder.findUsedVariables(
+				methodBlocks, programDecls);
+		for (BPLVariable var : usedVariables.values()) {
+			programDecls.add(new BPLConstantDeclaration(var));
+		}
+	}
 
-        // invariant
-        procAssumes.addAll(invAssumes);
+	private void readInvariants(ArrayList<BPLCommand> invAssertions,
+			ArrayList<BPLCommand> invAssumes,
+			ArrayList<BPLCommand> localInvAssertions,
+			ArrayList<BPLCommand> localInvAssumes) throws GenerationException {
+		BPLCommand cmd;
 
-        assumeCmd = new BPLAssumeCommand(isEqual(stack1(var(METH_FIELD)), stack2(var(METH_FIELD))));
-        assumeCmd.addComment("The methods called on the context have to be the same.");
-        procAssumes.add(assumeCmd);
-        
-        // relate all parameters from the outside
-        // ///////////////////////////////////////
-        //relateParams(procAssumes, false);
+		for (SpecInvariant inv : specGen.generateInvariant()) {
+			if (inv.getWelldefinednessExpr() != null) {
+				cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
+				cmd.addComment(inv.getComment());
+				cmd.addComment("check welldefinedness:");
+				invAssumes.add(cmd);
+				invAssertions.add(cmd);
+			}
+			cmd = new BPLAssertCommand(inv.getInvExpr());
+			cmd.addComment("invariant");
+			invAssertions.add(cmd);
+			cmd = new BPLAssumeCommand(inv.getInvExpr());
+			cmd.addComment("invariant");
+			invAssumes.add(cmd);
+		}
 
-        // the method has to be overridden -> receiver was created by
-        // context
-//        assumeCmd = new BPLAssumeCommand(heap1(stack1(receiver()), // TODO: put this into wellformedstack (holds for ALL stack frames in context!)
-//                var(CREATED_BY_CTXT_FIELD)));
-//        procAssumes.add(assumeCmd);
-//        assumeCmd = new BPLAssumeCommand(heap2(stack2(receiver()), // TODO: put this into wellformedstack (holds for ALL stack frames in context!)
-//                var(CREATED_BY_CTXT_FIELD)));
-//        procAssumes.add(assumeCmd);
+		for (SpecInvariant inv : specGen.generateLocalInvariant()) {
+			if (inv.getWelldefinednessExpr() != null) {
+				cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
+				cmd.addComment(inv.getComment());
+				cmd.addComment("check welldefinedness:");
+				localInvAssumes.add(cmd);
+				localInvAssertions.add(cmd);
+			}
+			cmd = new BPLAssertCommand(inv.getInvExpr());
+			cmd.addComment("local invariant");
+			localInvAssertions.add(cmd);
+			cmd = new BPLAssumeCommand(inv.getInvExpr());
+			cmd.addComment("local invariant");
+			localInvAssumes.add(cmd);
+		}
+	}
 
-        assumeCmd = new BPLAssumeCommand(implies(
-                hasReturnValue(var(IMPL1), stack1(var(METH_FIELD))),
-                logicalAnd(
-                		relNull(
-                                stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)),
-                                stack2(var(RESULT_PARAM + REF_TYPE_ABBREV)), var(RELATED_RELATION)),
-                        isEqual(stack1(var(RESULT_PARAM + INT_TYPE_ABBREV)), stack2(var(RESULT_PARAM + INT_TYPE_ABBREV))))));
-        procAssumes.add(assumeCmd);
+	private void addPreconditionBlocks(ArrayList<BPLCommand> invAssumes,
+			ArrayList<BPLCommand> localInvAssumes,
+			List<BPLBasicBlock> methodBlocks) {
+		String sp = "sp";
+		BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
 
-        methodBlocks.add(3, new BPLBasicBlock(PRECONDITIONS_RETURN_LABEL,
-                procAssumes.toArray(new BPLCommand[procAssumes.size()]),
-                new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
-        
-        
-        // //////////////////////////////////
-        // preconditions of a return to a local place
-        // /////////////////////////////////
-        procAssumes = new ArrayList<BPLCommand>();
-        procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack1(var(PLACE_VARIABLE)))));
-        procAssumes.add(new BPLAssumeCommand(isLocalPlace(stack2(var(PLACE_VARIABLE)))));
-        
-//        procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
-        if(config.getNumberOfIframes() == 0){
-            procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
-        } else {
-            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2 + 1))));
-//            procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(3))));
-        }
-        
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(var(PLACE_VARIABLE))));
-        procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(var(PLACE_VARIABLE))));
-        
-        // relation of the methods initially called on the library
-        // ///////////////////////////////////////////
-        assumeCmd = new BPLAssumeCommand(isEqual(stack1(zero, var(METH_FIELD)),
-                stack2(zero, var(METH_FIELD))));
-        assumeCmd.addComment("Relate the methods that where originally called on the library.");
-        procAssumes.add(assumeCmd);
+		String unrollCount1 = TranslationController.LABEL_PREFIX1
+				+ ITranslationConstants.UNROLL_COUNT;
+		String unrollCount2 = TranslationController.LABEL_PREFIX2
+				+ ITranslationConstants.UNROLL_COUNT;
 
-        assumeCmd = new BPLAssumeCommand(related(stack1(zero, receiver()),
-                stack2(zero, receiver())));
-        assumeCmd.addComment("The receiver was initially related.");
-        
-        
-     // assume the result of the method is not yet set
-        procAssumes.add(new BPLAssumeCommand(
-                forall(spVar, iVar,
-                        implies(
-                                logicalAnd(
-                                        lessEqual(var(i), var(IP1_VAR)),
-                                        lessEqual(var(sp), spmap1(var(i)))
-                                        ),
-                                logicalAnd(isNull(stack1(var(i) ,var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack1(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
-                )));
-        procAssumes.add(new BPLAssumeCommand(
-                forall(spVar, iVar,
-                        implies(
-                                logicalAnd(
-                                        lessEqual(var(i), var(IP2_VAR)),
-                                        lessEqual(var(sp), spmap2(var(i)))
-                                        ),
-                                logicalAnd(isNull(stack2(var(i), var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(stack2(var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
-                )));
+		List<BPLCommand> procAssumes;
 
-        // invariant
-        procAssumes.addAll(localInvAssumes);
+		// ///////////////////////////////////
+		// preconditions of before checking
+		// //////////////////////////////////
+		procAssumes = new ArrayList<BPLCommand>();
 
-        
-        methodBlocks.add(4, new BPLBasicBlock(PRECONDITIONS_LOCAL_LABEL,
-                procAssumes.toArray(new BPLCommand[procAssumes.size()]),
-                new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
-    }
+		procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1),
+				new BPLIntLiteral(0))));
+		procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2),
+				new BPLIntLiteral(0))));
 
-	private void relateParams(List<BPLCommand> procAssumes, boolean exceptConstructor) {
+		final String i = "i";
+		BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+		procAssumes.add(new BPLAssumeCommand(
+				isEqual(var(IP1_VAR), var(IP2_VAR))));
+
+		String address = "address";
+		BPLVariable addressVar = new BPLVariable(address, new BPLTypeName(
+				ADDRESS_TYPE));
+		procAssumes.add(new BPLAssumeCommand(forall(addressVar,
+				isEqual(useHavoc(var(address)), BPLBoolLiteral.TRUE))));
+
+		String a1 = "a1";
+		String a2 = "a2";
+		BPLVariable a1Var = new BPLVariable(a1, new BPLTypeName(ADDRESS_TYPE));
+		BPLVariable a2Var = new BPLVariable(a2, new BPLTypeName(ADDRESS_TYPE));
+		procAssumes.add(new BPLAssumeCommand(forall(a1Var, a2Var,
+				logicalNot(stall1(var(a1), var(a2))))));
+		procAssumes.add(new BPLAssumeCommand(forall(a1Var, a2Var,
+				logicalNot(stall2(var(a1), var(a2))))));
+
+		try {
+			for (String line : specGen.generatePreconditions()) {
+				procAssumes.add(new BPLRawCommand(line));
+			}
+		} catch (GenerationException e) {
+			Logger.getLogger(Library.class).warn(
+					"Error generating precondition", e);
+		}
+
+		// safty check: Do not stall both execution at once
+		procAssumes.add(new BPLAssertCommand(forall(
+				a1Var,
+				a2Var,
+				logicalNot(logicalAnd(stall1(var(a1), var(a2)),
+						stall2(var(a1), var(a2)))))));
+
+		methodBlocks.add(
+				0,
+				new BPLBasicBlock(PRECONDITIONS_LABEL, procAssumes
+						.toArray(new BPLCommand[procAssumes.size()]),
+						new BPLGotoCommand(INITIAL_CONFIGS_INV_LABEL,
+								STEPS_IN_CONTEXT_PRESERVED_LABEL,
+								PRECONDITIONS_CALL_LABEL,
+								PRECONDITIONS_RETURN_LABEL,
+								PRECONDITIONS_CONSTRUCTOR_LABEL,
+								PRECONDITIONS_LOCAL_LABEL)));
+
 		BPLCommand assumeCmd;
-		BPLExpression isStatic = isStaticMethod(var(IMPL1), placeDefinedInType(stack1(var(PLACE_VARIABLE))), stack1(var(METH_FIELD)));
+
+		// //////////////////////////////////
+		// preconditions of a call
+		// /////////////////////////////////
+		procAssumes = new ArrayList<BPLCommand>();
+
+		if (config.getNumberOfIframes() == 0) {
+			procAssumes.add(new BPLAssumeCommand(isEqual(
+					modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+					new BPLIntLiteral(0))));
+		} else {
+			// procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR),
+			// new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+			procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR),
+					new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2))));
+		}
+
+		// invariant
+		procAssumes.addAll(invAssumes);
+
+		createLibraryFrame(procAssumes);
+
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1),
+				stack1(var(PLACE_VARIABLE))));
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2),
+				stack2(var(PLACE_VARIABLE))));
+
+		// assume the result of the method is not yet set
+		procAssumes.add(new BPLAssumeCommand(isNull(stack1(var(RESULT_PARAM
+				+ REF_TYPE_ABBREV)))));
+		procAssumes.add(new BPLAssumeCommand(isNull(stack2(var(RESULT_PARAM
+				+ REF_TYPE_ABBREV)))));
+		procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM
+				+ INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
+		procAssumes.add(new BPLAssumeCommand(isEqual(stack2(var(RESULT_PARAM
+				+ INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
+
+		// relation between lib1 and lib2
+		// ///////////////////////////////////////////
+		procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(METH_FIELD)),
+				stack2(var(METH_FIELD)))));
+
+		// relate all parameters from the outside
+		// ///////////////////////////////////////
+		relateParams(procAssumes, false);
+
+		// first method call static iff second method call static
+		procAssumes.add(new BPLAssumeCommand(isEqual(
+				isStaticMethod(var(IMPL1),
+						placeDefinedInType(stack1(var(PLACE_VARIABLE))),
+						stack1(var(METH_FIELD))),
+				isStaticMethod(var(IMPL2),
+						placeDefinedInType(stack2(var(PLACE_VARIABLE))),
+						stack2(var(METH_FIELD))))));
+
+		procAssumes.add(new BPLAssumeCommand(
+				logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
+		procAssumes.add(new BPLAssumeCommand(
+				logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
+
+		methodBlocks.add(1, new BPLBasicBlock(PRECONDITIONS_CALL_LABEL,
+				procAssumes.toArray(new BPLCommand[procAssumes.size()]),
+				new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
+
+		// //////////////////////////////////
+		// preconditions of a constructor call
+		// /////////////////////////////////
+		procAssumes = new ArrayList<BPLCommand>();
+
+		if (config.getNumberOfIframes() == 0) {
+			procAssumes.add(new BPLAssumeCommand(isEqual(
+					modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+					new BPLIntLiteral(0))));
+		} else {
+			// procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR),
+			// new BPLIntLiteral(2)), new BPLIntLiteral(0))));
+			procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR),
+					new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2))));
+		}
+
+		// invariant
+		procAssumes.addAll(invAssumes);
+
+		createLibraryFrame(procAssumes);
+
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1),
+				stack1(var(PLACE_VARIABLE))));
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2),
+				stack2(var(PLACE_VARIABLE))));
+
+		// initialize int return values to be zero, so the relation check of the
+		// check_boundary_return block only checks the ref-result
+		procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(RESULT_PARAM
+				+ INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
+		procAssumes.add(new BPLAssumeCommand(isEqual(stack2(var(RESULT_PARAM
+				+ INT_TYPE_ABBREV)), new BPLIntLiteral(0))));
+
+		procAssumes.add(new BPLAssumeCommand(nonNull(stack1(receiver()))));
+		procAssumes.add(new BPLAssumeCommand(nonNull(stack2(receiver()))));
+
+		// relation between lib1 and lib2
+		// ///////////////////////////////////////////
+		procAssumes.add(new BPLAssumeCommand(isEqual(stack1(var(METH_FIELD)),
+				stack2(var(METH_FIELD)))));
+
+		// // the object is not yet initialized (so the fields have their
+		// default value)
+		procAssumes
+				.add(new BPLAssumeCommand(
+						logicalAnd(
+								forall(new BPLVariable("f", new BPLTypeName(
+										FIELD_TYPE, BPLBuiltInType.INT)),
+										logicalAnd(
+												implies(libraryField(
+														var(IMPL1), var("f")),
+														isEqual(heap1(
+																stack1(receiver()),
+																var("f")),
+																new BPLIntLiteral(
+																		0))),
+												implies(libraryField(
+														var(IMPL2), var("f")),
+														isEqual(heap2(
+																stack2(receiver()),
+																var("f")),
+																new BPLIntLiteral(
+																		0))))),
+								forall(new BPLVariable("f", new BPLTypeName(
+										FIELD_TYPE, new BPLTypeName(REF_TYPE))),
+										logicalAnd(
+												implies(libraryField(
+														var(IMPL1), var("f")),
+														isNull(heap1(
+																stack1(receiver()),
+																var("f")))),
+												implies(libraryField(
+														var(IMPL2), var("f")),
+														isNull(heap2(
+																stack2(receiver()),
+																var("f")))))))));
+
+		// "this" is created by context and not yet exposed
+		// the two "this" objects are related
+		procAssumes.add(new BPLAssumeCommand(logicalAnd(
+				heap1(stack1(receiver()), var(CREATED_BY_CTXT_FIELD)),
+				logicalNot(heap1(stack1(receiver()), var(EXPOSED_FIELD))))));
+		procAssumes.add(new BPLAssumeCommand(logicalAnd(
+				heap2(stack2(receiver()), var(CREATED_BY_CTXT_FIELD)),
+				logicalNot(heap2(stack2(receiver()), var(EXPOSED_FIELD))))));
+
+		// now pass the receiver over the boundary
+		procAssumes.add(new BPLAssignmentCommand(heap1(stack1(receiver()),
+				var(EXPOSED_FIELD)), BPLBoolLiteral.TRUE));
+		procAssumes.add(new BPLAssignmentCommand(heap2(stack2(receiver()),
+				var(EXPOSED_FIELD)), BPLBoolLiteral.TRUE));
+		procAssumes.add(new BPLAssignmentCommand(related(stack1(receiver()),
+				stack2(receiver())), BPLBoolLiteral.TRUE));
+		BPLAssumeCommand wellformedCouplingAssume = new BPLAssumeCommand(
+				wellformedCoupling(var(HEAP1), var(HEAP2),
+						var(RELATED_RELATION)));
+		wellformedCouplingAssume
+				.addComment("workaround for problems with ternary subtype relation");
+		procAssumes.add(wellformedCouplingAssume); // FIXME workaround for
+													// wellformedCoupling
+													// program introduced by
+													// ternary subtype relation
+		if (config.isAssumeWellformedHeap()) {
+			procAssumes.add(new BPLAssumeCommand(CodeGenerator
+					.wellformedHeap(var(HEAP1))));
+			procAssumes.add(new BPLAssumeCommand(CodeGenerator
+					.wellformedHeap(var(HEAP2))));
+		}
+
+		// relate all parameters from the outside
+		// ///////////////////////////////////////
+		relateParams(procAssumes, true);
+
+		procAssumes.add(new BPLAssumeCommand(
+				logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
+		procAssumes.add(new BPLAssumeCommand(
+				logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
+
+		// assume typ(stack1[ip1][spmap1[ip1]][param0_r], heap1) ==
+		// typ(stack2[ip2][spmap2[ip2]][param0_r], heap2);
+		procAssumes.add(new BPLAssumeCommand(isEqual(
+				typ(stack1(receiver()), var(HEAP1)),
+				typ(stack2(receiver()), var(HEAP2)))));
+
+		// constructor that is called is defined in t implies that the type of
+		// the receiver is not a library subtype of t
+		String t = "t";
+		BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+		String t2 = "t2";
+		BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
+		procAssumes.add(new BPLAssumeCommand(forall(
+				tVar,
+				implies(definesMethod(var(IMPL1), var(t),
+						stack1(var(METH_FIELD))),
+						forall(t2Var,
+								implies(logicalAnd(
+										libType(var(IMPL1), var(t2)),
+										logicalNot(isEqual(var(t), var(t2))),
+										isOfType(stack1(receiver()),
+												var(HEAP1), var(t2))),
+										logicalNot(subtype(var(IMPL1), var(t2),
+												var(t)))))))));
+		procAssumes.add(new BPLAssumeCommand(forall(
+				tVar,
+				implies(definesMethod(var(IMPL2), var(t),
+						stack2(var(METH_FIELD))),
+						forall(t2Var,
+								implies(logicalAnd(
+										libType(var(IMPL2), var(t2)),
+										logicalNot(isEqual(var(t), var(t2))),
+										isOfType(stack2(receiver()),
+												var(HEAP2), var(t2))),
+										logicalNot(subtype(var(IMPL2), var(t2),
+												var(t)))))))));
+
+		methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_CONSTRUCTOR_LABEL,
+				procAssumes.toArray(new BPLCommand[procAssumes.size()]),
+				new BPLGotoCommand(TranslationController.LABEL_PREFIX1
+						+ CONSTRUCTOR_TABLE_LABEL)));
+
+		// //////////////////////////////////
+		// preconditions of a return
+		// /////////////////////////////////
+		procAssumes = new ArrayList<BPLCommand>();
+		// procAssumes.add(new BPLAssumeCommand(
+		// logicalAnd(
+		// isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new
+		// BPLIntLiteral(0)),
+		// isEqual(spmap1(), new BPLIntLiteral(0))
+		// )
+		// ));
+		// procAssumes.add(new BPLAssumeCommand(
+		// logicalAnd(
+		// isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new
+		// BPLIntLiteral(0)),
+		// isEqual(spmap2(), new BPLIntLiteral(0))
+		// )
+		// ));
+		if (config.getNumberOfIframes() == 0) {
+			procAssumes.add(new BPLAssumeCommand(isEqual(
+					modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+					new BPLIntLiteral(0))));
+		} else {
+			procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR),
+					new BPLIntLiteral(config.getNumberOfIframes() * 2))));
+			// procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new
+			// BPLIntLiteral(4))));
+		}
+		procAssumes.add(new BPLAssumeCommand(isEqual(spmap1(),
+				new BPLIntLiteral(0))));
+		procAssumes.add(new BPLAssumeCommand(isEqual(spmap2(),
+				new BPLIntLiteral(0))));
+
+		// this return path may not be taken if havoc is used to handle it
+		// ///////////////////////////////////////////////////////////////
+		// TODO maybe add consistency check useHavoc[stack1[sp1][place]] <=>
+		// useHavoc[stack2[sp2][place]]
+		procAssumes
+				.add(new BPLAssumeCommand(logicalNot(useHavoc(stack1(
+						sub(var(IP1_VAR), new BPLIntLiteral(1)),
+						var(PLACE_VARIABLE))))));
+		procAssumes
+				.add(new BPLAssumeCommand(logicalNot(useHavoc(stack2(
+						sub(var(IP2_VAR), new BPLIntLiteral(1)),
+						var(PLACE_VARIABLE))))));
+
+		procAssumes.add(new BPLAssumeCommand(
+				logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
+		procAssumes.add(new BPLAssumeCommand(
+				logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
+
+		// can not return to a static method call site
+		// ////////////////////////////////////////////
+		procAssumes.add(new BPLAssumeCommand(logicalNot(isStaticMethod(
+				var(IMPL1), placeDefinedInType(stack1(var(PLACE_VARIABLE))),
+				stack1(var(METH_FIELD))))));
+		procAssumes.add(new BPLAssumeCommand(logicalNot(isStaticMethod(
+				var(IMPL2), placeDefinedInType(stack2(var(PLACE_VARIABLE))),
+				stack2(var(METH_FIELD))))));
+
+		BPLExpression zero = new BPLIntLiteral(0);
+		BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
+		BPLExpression ip2MinusOne = sub(var(IP2_VAR), new BPLIntLiteral(1));
+
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1), stack1(
+				ip1MinusOne, var(PLACE_VARIABLE))));
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2), stack2(
+				ip2MinusOne, var(PLACE_VARIABLE))));
+
+		// relation of the called methods (context)
+		// ///////////////////////////////////////////
+		assumeCmd = new BPLAssumeCommand(isEqual(
+				stack1(ip1MinusOne, zero, var(METH_FIELD)),
+				stack2(ip2MinusOne, zero, var(METH_FIELD))));
+		assumeCmd
+				.addComment("Relate the methods that where originally called on the library.");
+		procAssumes.add(assumeCmd);
+
+		assumeCmd = new BPLAssumeCommand(related(
+				stack1(ip1MinusOne, zero, receiver()),
+				stack2(ip2MinusOne, zero, receiver())));
+		assumeCmd
+				.addComment("The receiver and all parameters where initially related.");
+
+		// relate all parameters from the outside
+		// ///////////////////////////////////////
+		// relateParams(procAssumes, true, false);
+
+		// assume the result of the method is not yet set
+		// procAssumes.add(new BPLAssumeCommand( //TODO: put this into
+		// wellformedstack
+		// forall(spVar, iVar,
+		// implies(
+		// logicalAnd(
+		// less(var(i), var(IP1_VAR)),
+		// lessEqual(var(sp), spmap1(var(i)))
+		// ),
+		// logicalAnd(isNull(stack1(var(i) ,var(sp), var(RESULT_PARAM +
+		// REF_TYPE_ABBREV))), isEqual(stack1(var(i), var(sp), var(RESULT_PARAM
+		// + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+		// )));
+		// procAssumes.add(new BPLAssumeCommand( //TODO: put this into
+		// wellformedstack
+		// forall(spVar, iVar,
+		// implies(
+		// logicalAnd(
+		// less(var(i), var(IP2_VAR)),
+		// lessEqual(var(sp), spmap2(var(i)))
+		// ),
+		// logicalAnd(isNull(stack2(var(i), var(sp), var(RESULT_PARAM +
+		// REF_TYPE_ABBREV))), isEqual(stack2(var(i), var(sp), var(RESULT_PARAM
+		// + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
+		// )));
+
+		// invariant
+		procAssumes.addAll(invAssumes);
+
+		assumeCmd = new BPLAssumeCommand(isEqual(stack1(var(METH_FIELD)),
+				stack2(var(METH_FIELD))));
+		assumeCmd
+				.addComment("The methods called on the context have to be the same.");
+		procAssumes.add(assumeCmd);
+
+		// relate all parameters from the outside
+		// ///////////////////////////////////////
+		// relateParams(procAssumes, false);
+
+		// the method has to be overridden -> receiver was created by
+		// context
+		// assumeCmd = new BPLAssumeCommand(heap1(stack1(receiver()), // TODO:
+		// put this into wellformedstack (holds for ALL stack frames in
+		// context!)
+		// var(CREATED_BY_CTXT_FIELD)));
+		// procAssumes.add(assumeCmd);
+		// assumeCmd = new BPLAssumeCommand(heap2(stack2(receiver()), // TODO:
+		// put this into wellformedstack (holds for ALL stack frames in
+		// context!)
+		// var(CREATED_BY_CTXT_FIELD)));
+		// procAssumes.add(assumeCmd);
+
+		assumeCmd = new BPLAssumeCommand(implies(
+				hasReturnValue(var(IMPL1), stack1(var(METH_FIELD))),
+				logicalAnd(
+						relNull(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)),
+								stack2(var(RESULT_PARAM + REF_TYPE_ABBREV)),
+								var(RELATED_RELATION)),
+						isEqual(stack1(var(RESULT_PARAM + INT_TYPE_ABBREV)),
+								stack2(var(RESULT_PARAM + INT_TYPE_ABBREV))))));
+		procAssumes.add(assumeCmd);
+
+		methodBlocks.add(3, new BPLBasicBlock(PRECONDITIONS_RETURN_LABEL,
+				procAssumes.toArray(new BPLCommand[procAssumes.size()]),
+				new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
+
+		// //////////////////////////////////
+		// preconditions of a return to a local place
+		// /////////////////////////////////
+		procAssumes = new ArrayList<BPLCommand>();
+		procAssumes.add(new BPLAssumeCommand(
+				isLocalPlace(stack1(var(PLACE_VARIABLE)))));
+		procAssumes.add(new BPLAssumeCommand(
+				isLocalPlace(stack2(var(PLACE_VARIABLE)))));
+
+		// procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new
+		// BPLIntLiteral(2)), new BPLIntLiteral(1))));
+		if (config.getNumberOfIframes() == 0) {
+			procAssumes.add(new BPLAssumeCommand(isEqual(
+					modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+					new BPLIntLiteral(1))));
+		} else {
+			procAssumes
+					.add(new BPLAssumeCommand(isEqual(var(IP1_VAR),
+							new BPLIntLiteral(
+									(config.getNumberOfIframes() - 1) * 2 + 1))));
+			// procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new
+			// BPLIntLiteral(3))));
+		}
+
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE1),
+				stack1(var(PLACE_VARIABLE))));
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2),
+				stack2(var(PLACE_VARIABLE))));
+
+		// relation of the methods initially called on the library
+		// ///////////////////////////////////////////
+		assumeCmd = new BPLAssumeCommand(isEqual(stack1(zero, var(METH_FIELD)),
+				stack2(zero, var(METH_FIELD))));
+		assumeCmd
+				.addComment("Relate the methods that where originally called on the library.");
+		procAssumes.add(assumeCmd);
+
+		assumeCmd = new BPLAssumeCommand(related(stack1(zero, receiver()),
+				stack2(zero, receiver())));
+		assumeCmd.addComment("The receiver was initially related.");
+
+		// assume the result of the method is not yet set
+		procAssumes.add(new BPLAssumeCommand(forall(
+				spVar,
+				iVar,
+				implies(logicalAnd(lessEqual(var(i), var(IP1_VAR)),
+						lessEqual(var(sp), spmap1(var(i)))),
+						logicalAnd(
+								isNull(stack1(var(i), var(sp), var(RESULT_PARAM
+										+ REF_TYPE_ABBREV))),
+								isEqual(stack1(var(i), var(sp),
+										var(RESULT_PARAM + INT_TYPE_ABBREV)),
+										new BPLIntLiteral(0)))))));
+		procAssumes.add(new BPLAssumeCommand(forall(
+				spVar,
+				iVar,
+				implies(logicalAnd(lessEqual(var(i), var(IP2_VAR)),
+						lessEqual(var(sp), spmap2(var(i)))),
+						logicalAnd(
+								isNull(stack2(var(i), var(sp), var(RESULT_PARAM
+										+ REF_TYPE_ABBREV))),
+								isEqual(stack2(var(i), var(sp),
+										var(RESULT_PARAM + INT_TYPE_ABBREV)),
+										new BPLIntLiteral(0)))))));
+
+		// invariant
+		procAssumes.addAll(localInvAssumes);
+
+		methodBlocks.add(4, new BPLBasicBlock(PRECONDITIONS_LOCAL_LABEL,
+				procAssumes.toArray(new BPLCommand[procAssumes.size()]),
+				new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
+	}
+
+	private void relateParams(List<BPLCommand> procAssumes,
+			boolean exceptConstructor) {
+		BPLCommand assumeCmd;
+		BPLExpression isStatic = isStaticMethod(var(IMPL1),
+				placeDefinedInType(stack1(var(PLACE_VARIABLE))),
+				stack1(var(METH_FIELD)));
 		for (int vari = 0; vari < tc.maxParams; vari++) {
-			if (exceptConstructor && vari == 0) continue;
+			if (exceptConstructor && vari == 0)
+				continue;
 			for (boolean st = false; true; st = true) {
-				BPLExpression cond = logicalAnd(st ? isStatic : logicalNot(isStatic), st ? greater(numParams(stack1(var(METH_FIELD))), var(""+vari)) : greaterEqual(numParams(stack1(var(METH_FIELD))), var(""+vari)));
-				BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari + REF_TYPE_ABBREV);
-				assumeCmd = new BPLAssumeCommand(implies(
-						cond,
-						relNull(
-								stack1(var),
-								stack2(var), var(RELATED_RELATION))));
+				BPLExpression cond = logicalAnd(
+						st ? isStatic : logicalNot(isStatic),
+						st ? greater(numParams(stack1(var(METH_FIELD))), var(""
+								+ vari)) : greaterEqual(
+								numParams(stack1(var(METH_FIELD))), var(""
+										+ vari)));
+				BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari
+						+ REF_TYPE_ABBREV);
+				assumeCmd = new BPLAssumeCommand(
+						implies(cond,
+								relNull(stack1(var), stack2(var),
+										var(RELATED_RELATION))));
 				procAssumes.add(assumeCmd);
 				assumeCmd = new BPLAssertCommand(implies(
 						cond,
-						implies(
-								nonNull(stack1(var)),
+						implies(nonNull(stack1(var)),
 								heap1(stack1(var), var(EXPOSED_FIELD)))));
 				procAssumes.add(assumeCmd);
 				assumeCmd = new BPLAssertCommand(implies(
 						cond,
-						implies(
-								nonNull(stack2(var)),
+						implies(nonNull(stack2(var)),
 								heap2(stack2(var), var(EXPOSED_FIELD)))));
 				procAssumes.add(assumeCmd);
-				if (st == true) break;
+				if (st == true)
+					break;
 			}
-        }
-        for (int vari = 0; vari < tc.maxParams; vari++) {
-        	for (boolean st = false; true; st = true) {
-        		BPLExpression cond = logicalAnd(st ? isStatic : logicalNot(isStatic), st ? greater(numParams(stack1(var(METH_FIELD))), var(""+vari)) : greaterEqual(numParams(stack1(var(METH_FIELD))), var(""+vari)));
-        		BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari + INT_TYPE_ABBREV);
-        		assumeCmd = new BPLAssumeCommand(implies(
-        				cond,
-        				isEqual(
-        						stack1(var),
-        						stack2(var))));
-        		procAssumes.add(assumeCmd);
-        		if (st == true) break;
-        	}
-        }
+		}
+		for (int vari = 0; vari < tc.maxParams; vari++) {
+			for (boolean st = false; true; st = true) {
+				BPLExpression cond = logicalAnd(
+						st ? isStatic : logicalNot(isStatic),
+						st ? greater(numParams(stack1(var(METH_FIELD))), var(""
+								+ vari)) : greaterEqual(
+								numParams(stack1(var(METH_FIELD))), var(""
+										+ vari)));
+				BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari
+						+ INT_TYPE_ABBREV);
+				assumeCmd = new BPLAssumeCommand(implies(cond,
+						isEqual(stack1(var), stack2(var))));
+				procAssumes.add(assumeCmd);
+				if (st == true)
+					break;
+			}
+		}
 	}
-	
+
 	private void checkRelateParams(List<BPLCommand> checkingCommand) {
 		for (int vari = 0; vari < tc.maxParams; vari++) {
-			BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari + REF_TYPE_ABBREV);
-			checkingCommand.add(new BPLAssertCommand(implies(
-					greaterEqual(numParams(stack1(var(METH_FIELD))), var(""+vari)),
-					logicalOr(relNull(stack1(var),
-									stack2(var),
-									var(RELATED_RELATION)),
-							  logicalAnd(logicalNot(exists(new BPLVariable("r", new BPLTypeName(REF_TYPE)), related(stack1(var), var("r")))),
-									  logicalNot(exists(new BPLVariable("r", new BPLTypeName(REF_TYPE)), related(var("r"), stack2(var)))))))));
-			// if var != null ...
-			checkingCommand.add(new BPLAssignmentCommand(heap1(stack1(var), var(EXPOSED_FIELD)), ifThenElse(
-									logicalAnd(greaterEqual(numParams(stack1(var(METH_FIELD))), var(""+vari)),
-											nonNull(stack1(var)),
-											nonNull(stack2(var))),
-													BPLBoolLiteral.TRUE,
-													heap1(stack1(var),var(EXPOSED_FIELD)))));
-			checkingCommand.add(new BPLAssignmentCommand(heap2(stack2(var), var(EXPOSED_FIELD)), ifThenElse(
+			BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari
+					+ REF_TYPE_ABBREV);
+			checkingCommand
+					.add(new BPLAssertCommand(implies(
+							greaterEqual(numParams(stack1(var(METH_FIELD))),
+									var("" + vari)),
+							logicalOr(
+									relNull(stack1(var), stack2(var),
+											var(RELATED_RELATION)),
 									logicalAnd(
-											greaterEqual(numParams(stack1(var(METH_FIELD))), var(""+vari)),nonNull(stack1(var)),
-											nonNull(stack2(var))),
-													BPLBoolLiteral.TRUE,
-													heap2(stack2(var), var(EXPOSED_FIELD)))));
-			checkingCommand.add(new BPLAssignmentCommand(related(stack1(var), stack2(var)), ifThenElse(
-							logicalAnd(greaterEqual(numParams(stack1(var(METH_FIELD))), var(""+vari)),
-									nonNull(stack1(var)),
-									nonNull(stack2(var))),
-									BPLBoolLiteral.TRUE,
-									related(stack1(var), stack2(var)))));
-
+											logicalNot(exists(
+													new BPLVariable("r",
+															new BPLTypeName(
+																	REF_TYPE)),
+													related(stack1(var),
+															var("r")))),
+											logicalNot(exists(
+													new BPLVariable("r",
+															new BPLTypeName(
+																	REF_TYPE)),
+													related(var("r"),
+															stack2(var)))))))));
+			// if var != null ...
+			checkingCommand.add(new BPLAssignmentCommand(heap1(stack1(var),
+					var(EXPOSED_FIELD)), ifThenElse(
+					logicalAnd(
+							greaterEqual(numParams(stack1(var(METH_FIELD))),
+									var("" + vari)), nonNull(stack1(var)),
+							nonNull(stack2(var))), BPLBoolLiteral.TRUE,
+					heap1(stack1(var), var(EXPOSED_FIELD)))));
+			checkingCommand.add(new BPLAssignmentCommand(heap2(stack2(var),
+					var(EXPOSED_FIELD)), ifThenElse(
+					logicalAnd(
+							greaterEqual(numParams(stack1(var(METH_FIELD))),
+									var("" + vari)), nonNull(stack1(var)),
+							nonNull(stack2(var))), BPLBoolLiteral.TRUE,
+					heap2(stack2(var), var(EXPOSED_FIELD)))));
+			checkingCommand.add(new BPLAssignmentCommand(related(stack1(var),
+					stack2(var)), ifThenElse(
+					logicalAnd(
+							greaterEqual(numParams(stack1(var(METH_FIELD))),
+									var("" + vari)), nonNull(stack1(var)),
+							nonNull(stack2(var))), BPLBoolLiteral.TRUE,
+					related(stack1(var), stack2(var)))));
 
 		}
 		for (int vari = 0; vari < tc.maxParams; vari++) {
-			BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari + INT_TYPE_ABBREV);
+			BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari
+					+ INT_TYPE_ABBREV);
 			checkingCommand.add(new BPLAssertCommand(implies(
-					greaterEqual(numParams(stack1(var(METH_FIELD))), var(""+vari)),
-					isEqual(
-					stack1(var),
-					stack2(var)))));
+					greaterEqual(numParams(stack1(var(METH_FIELD))), var(""
+							+ vari)), isEqual(stack1(var), stack2(var)))));
 		}
 	}
 
-    private void createLibraryFrame(List<BPLCommand> procAssumes) {
-        final String iftmp = "iftmp";
-        BPLVariable iftmpVar = new BPLVariable(iftmp, new BPLTypeName(INTERACTION_FRAME_TYPE));
-        tc.usedVariables().put(iftmp, iftmpVar);
-        BPLCommand command;
-        //create interaction frame and stack frame of the library
-        command = new BPLHavocCommand(var(iftmp));
-        command.addComment("this creates the frame we will use for the library call");
-        procAssumes.add(command);
-        procAssumes.add(new BPLAssignmentCommand(map(var(STACK1), add(var(IP1_VAR), new BPLIntLiteral(1))), var(iftmp)));
-        
-        command = new BPLAssignmentCommand(var(IP1_VAR), add(var(IP1_VAR), new BPLIntLiteral(1)));
-        command.addComment("create new interaction frame");
-        procAssumes.add(command);
-        command = new BPLAssignmentCommand(spmap1(), new BPLIntLiteral(0));
-        command.addComment("create the initial stack frame of the new interaction frame");
-        procAssumes.add(command);
-        procAssumes.add(new BPLAssumeCommand(wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
-        
-        //create interaction frame and stack frame of the library
-        command = new BPLHavocCommand(var(iftmp));
-        command.addComment("this creates the frame we will use for the library call");
-        procAssumes.add(command);
-        procAssumes.add(new BPLAssignmentCommand(map(var(STACK2), add(var(IP2_VAR), new BPLIntLiteral(1))), var(iftmp)));
-        
-        command = new BPLAssignmentCommand(var(IP2_VAR), add(var(IP2_VAR), new BPLIntLiteral(1)));
-        command.addComment("create new interaction frame");
-        procAssumes.add(command);
-        command = new BPLAssignmentCommand(spmap2(), new BPLIntLiteral(0));
-        command.addComment("create the initial stack frame of the new interaction frame");
-        procAssumes.add(command);
-        procAssumes.add(new BPLAssumeCommand(wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
-    }
+	private void createLibraryFrame(List<BPLCommand> procAssumes) {
+		final String iftmp = "iftmp";
+		BPLVariable iftmpVar = new BPLVariable(iftmp, new BPLTypeName(
+				INTERACTION_FRAME_TYPE));
+		tc.usedVariables().put(iftmp, iftmpVar);
+		BPLCommand command;
+		// create interaction frame and stack frame of the library
+		command = new BPLHavocCommand(var(iftmp));
+		command.addComment("this creates the frame we will use for the library call");
+		procAssumes.add(command);
+		procAssumes.add(new BPLAssignmentCommand(map(var(STACK1),
+				add(var(IP1_VAR), new BPLIntLiteral(1))), var(iftmp)));
 
-    private void addLocalVariables(List<BPLVariableDeclaration> localVariables) {
-        String unrollCount1 = TranslationController.LABEL_PREFIX1+ITranslationConstants.UNROLL_COUNT;
-        BPLVariable unrollCount1Var = new BPLVariable(unrollCount1, BPLBuiltInType.INT);
-        String unrollCount2 = TranslationController.LABEL_PREFIX2+ITranslationConstants.UNROLL_COUNT;
-        BPLVariable unrollCount2Var = new BPLVariable(unrollCount2, BPLBuiltInType.INT);
-        
-        for (BPLVariable var : tc.usedVariables()
-                .values()) {
-            localVariables.add(new BPLVariableDeclaration(var));
-        }
-        
-        // add variables for loop unroll checking
-        //////////////////////////////////////
-        localVariables.add(new BPLVariableDeclaration(unrollCount1Var));
-        localVariables.add(new BPLVariableDeclaration(unrollCount2Var));
-        
-        // add variables for saving away the old heaps
-        //////////////////////////////////////////////
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_HEAP1, new BPLTypeName(HEAP_TYPE))));
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_HEAP2, new BPLTypeName(HEAP_TYPE))));
-        
-        // add variables for measuring progress of local loops
-        //////////////////////////////////////////////////////
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(MEASURE2, BPLBuiltInType.INT)));
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_MEASURE2, BPLBuiltInType.INT)));
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_PLACE1, new BPLTypeName(ADDRESS_TYPE))));
-        localVariables.add(new BPLVariableDeclaration(new BPLVariable(OLD_PLACE2, new BPLTypeName(ADDRESS_TYPE))));
-    }
+		command = new BPLAssignmentCommand(var(IP1_VAR), add(var(IP1_VAR),
+				new BPLIntLiteral(1)));
+		command.addComment("create new interaction frame");
+		procAssumes.add(command);
+		command = new BPLAssignmentCommand(spmap1(), new BPLIntLiteral(0));
+		command.addComment("create the initial stack frame of the new interaction frame");
+		procAssumes.add(command);
+		procAssumes.add(new BPLAssumeCommand(wellformedStack(var(STACK1),
+				var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
 
-    private void addCheckingBlocks(ArrayList<BPLCommand> invAssertions,
-            ArrayList<BPLCommand> invAssumes,
-            ArrayList<BPLCommand> localInvAssertions,
-            ArrayList<BPLCommand> localInvAssumes,
-            List<BPLBasicBlock> methodBlocks) {
-        // ///////////////////////////////////
-        // checking blocks (boundary return, boundary call and local places)
-        // ///////////////////////////////////
-        List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
-        checkingCommand.add(new BPLAssertCommand(logicalOr(
-                logicalAnd(
-                        isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                        isEqual(spmap1(), new BPLIntLiteral(0)),
-                        isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                        isEqual(spmap2(), new BPLIntLiteral(0))
-                        ),
-                logicalAnd(
-                        isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
-                        isEqual(spmap1(), new BPLIntLiteral(0)),
-                        isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
-                        isEqual(spmap2(), new BPLIntLiteral(0))
-                        ),
-                logicalAnd(
-                        isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                        isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                        isLocalPlace(stack1(var(PLACE_VARIABLE))),
-                        isLocalPlace(stack2(var(PLACE_VARIABLE)))
-                        )
-                )));
-        methodBlocks.add(new BPLBasicBlock(tc
-                .getCheckLabel(), checkingCommand.toArray(new BPLCommand[checkingCommand.size()]), new BPLGotoCommand(
-                CHECK_BOUNDARY_RETURN_LABEL, CHECK_BOUNDARY_CALL_LABEL, CHECK_LOCAL_LABEL)));
+		// create interaction frame and stack frame of the library
+		command = new BPLHavocCommand(var(iftmp));
+		command.addComment("this creates the frame we will use for the library call");
+		procAssumes.add(command);
+		procAssumes.add(new BPLAssignmentCommand(map(var(STACK2),
+				add(var(IP2_VAR), new BPLIntLiteral(1))), var(iftmp)));
 
-        // ////////////////////////////////
-        // assertions of the check return block
-        // ///////////////////////////////
-        checkingCommand = new ArrayList<BPLCommand>();
-        checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-                isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                isEqual(spmap1(), new BPLIntLiteral(0)),
-                isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                isEqual(spmap2(), new BPLIntLiteral(0))
-                )));
-        checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-                logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE)))),
-                logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
+		command = new BPLAssignmentCommand(var(IP2_VAR), add(var(IP2_VAR),
+				new BPLIntLiteral(1)));
+		command.addComment("create new interaction frame");
+		procAssumes.add(command);
+		command = new BPLAssignmentCommand(spmap2(), new BPLIntLiteral(0));
+		command.addComment("create the initial stack frame of the new interaction frame");
+		procAssumes.add(command);
+		procAssumes.add(new BPLAssumeCommand(wellformedStack(var(STACK2),
+				var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
+	}
 
-        checkingCommand.add(new BPLAssertCommand(isEqual(
-                stack1(var(METH_FIELD)), stack2(var(METH_FIELD)))));
-        
-        checkingCommand.add(new BPLAssignmentCommand(
-              heap1(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
-                      var(EXPOSED_FIELD)), ifThenElse(
-                      logicalAnd(hasReturnValue(var(IMPL1), stack1(var(METH_FIELD))),
-                              nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
-                              nonNull(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)))),
-                      BPLBoolLiteral.TRUE,
-                      heap1(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
-                              var(EXPOSED_FIELD)))));
-        checkingCommand.add(new BPLAssignmentCommand(
-              heap2(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)),
-                      var(EXPOSED_FIELD)), ifThenElse(
-                      logicalAnd(hasReturnValue(var(IMPL2), stack2(var(METH_FIELD))),
-                              nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
-                              nonNull(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)))),
-                      BPLBoolLiteral.TRUE,
-                      heap2(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)),
-                              var(EXPOSED_FIELD)))));
-        checkingCommand.add(new BPLAssignmentCommand(related(
-              stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
-              stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))), ifThenElse(
-              logicalAnd(nonNull(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV))),
-                      nonNull(stack2(var(RESULT_PARAM+REF_TYPE_ABBREV)))),
-              BPLBoolLiteral.TRUE,
-              related(stack1(var(RESULT_PARAM+REF_TYPE_ABBREV)),
-                      stack2(var(RESULT_PARAM+REF_TYPE_ABBREV))))));
-        
-        if(config.isAssumeWellformedHeap()){
-          checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(HEAP1))));
-          checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(HEAP2))));
-        }
+	private void addLocalVariables(List<BPLVariableDeclaration> localVariables) {
+		String unrollCount1 = TranslationController.LABEL_PREFIX1
+				+ ITranslationConstants.UNROLL_COUNT;
+		BPLVariable unrollCount1Var = new BPLVariable(unrollCount1,
+				BPLBuiltInType.INT);
+		String unrollCount2 = TranslationController.LABEL_PREFIX2
+				+ ITranslationConstants.UNROLL_COUNT;
+		BPLVariable unrollCount2Var = new BPLVariable(unrollCount2,
+				BPLBuiltInType.INT);
 
-        checkingCommand.add(new BPLAssertCommand(
-                implies(hasReturnValue(var(IMPL1), stack1(var(METH_FIELD))),
-                        logicalAnd(
-                                relNull(stack1(var(RESULT_VAR
-                                        + REF_TYPE_ABBREV)),
-                                        stack2(var(RESULT_VAR
-                                                + REF_TYPE_ABBREV)),
-                                        var(RELATED_RELATION)),
-                                isEqual(stack1(var(RESULT_VAR
-                                        + INT_TYPE_ABBREV)),
-                                        stack2(var(RESULT_VAR
-                                                + INT_TYPE_ABBREV)))))));
+		for (BPLVariable var : tc.usedVariables().values()) {
+			localVariables.add(new BPLVariableDeclaration(var));
+		}
 
-        //reduce the interaction frame pointer so we have the same situation (beeing in the context) as at the begin
-        checkingCommand.add(new BPLAssignmentCommand(var(IP1_VAR), sub(var(IP1_VAR), new BPLIntLiteral(1))));
-        checkingCommand.add(new BPLAssignmentCommand(var(IP2_VAR), sub(var(IP2_VAR), new BPLIntLiteral(1))));
-        
-        
-        String o1 = "o1";
-        BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
-        String o2 = "o2";
-        BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
-        
-//        BPLCommand trigger = new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION)))));
-//        trigger.addComment("Improves trigger behavior");
-//        checkingCommand.add(trigger);
-        
-        assertWellformedness(checkingCommand);
-        
-        //invariant
-        checkingCommand.addAll(invAssertions);
-        
-        methodBlocks.add(new BPLBasicBlock(CHECK_BOUNDARY_RETURN_LABEL, checkingCommand
-                .toArray(new BPLCommand[checkingCommand.size()]),
-                new BPLReturnCommand()));
+		// add variables for loop unroll checking
+		// ////////////////////////////////////
+		localVariables.add(new BPLVariableDeclaration(unrollCount1Var));
+		localVariables.add(new BPLVariableDeclaration(unrollCount2Var));
 
-        // ////////////////////////////////
-        // assertions of the check call block
-        // ////////////////////////////////
-        checkingCommand.clear();
-        checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-                isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
-                isEqual(spmap1(), new BPLIntLiteral(0)),
-                isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
-                isEqual(spmap2(), new BPLIntLiteral(0))
-                )));
-        checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-                logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE)))),
-                logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
-        
-        checkingCommand.add(new BPLAssumeCommand(logicalNot(isStaticMethod(var(IMPL1), placeDefinedInType(stack1(var(PLACE_VARIABLE))), stack1(var(METH_FIELD))))));
-        checkingCommand.add(new BPLAssumeCommand(logicalNot(isStaticMethod(var(IMPL2), placeDefinedInType(stack2(var(PLACE_VARIABLE))), stack2(var(METH_FIELD))))));
+		// add variables for saving away the old heaps
+		// ////////////////////////////////////////////
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
+				OLD_HEAP1, new BPLTypeName(HEAP_TYPE))));
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
+				OLD_HEAP2, new BPLTypeName(HEAP_TYPE))));
 
-        checkingCommand.add(new BPLAssertCommand(isEqual(
-                stack1(var(METH_FIELD)), stack2(var(METH_FIELD)))));
+		// add variables for measuring progress of local loops
+		// ////////////////////////////////////////////////////
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(MEASURE2,
+				BPLBuiltInType.INT)));
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
+				OLD_MEASURE2, BPLBuiltInType.INT)));
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
+				OLD_PLACE1, new BPLTypeName(ADDRESS_TYPE))));
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
+				OLD_PLACE2, new BPLTypeName(ADDRESS_TYPE))));
+	}
 
-        checkRelateParams(checkingCommand);
-        
-        if(config.isAssumeWellformedHeap()){
-            checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(HEAP1))));
-            checkingCommand.add(new BPLAssumeCommand(wellformedHeap(var(HEAP2))));
-        }
-//        trigger = new BPLAssertCommand(forall(o1Var, o2Var, implies(related(var(o1), var(o2)), relNull(var(o1), var(o2), var(RELATED_RELATION)))));
-//        trigger.addComment("Improves trigger behavior");
-//        checkingCommand.add(trigger);
-        assertWellformedness(checkingCommand);
-        
-        //invariant
-        checkingCommand.addAll(invAssertions);
-        
-        // check if we want to use havoc to handle boundary call
-        /////////////////////////////////////////////////////////
-        BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
-        BPLExpression ip2MinusOne = sub(var(IP2_VAR), new BPLIntLiteral(1));
-        checkingCommand.add(new BPLAssertCommand(
-                isEquiv(useHavoc(stack1(ip1MinusOne, var(PLACE_VARIABLE))), useHavoc(stack2(ip2MinusOne, var(PLACE_VARIABLE)))))
-                );
-        checkingCommand.add(new BPLAssumeCommand(
-                logicalAnd(useHavoc(stack1(ip1MinusOne, var(PLACE_VARIABLE))), useHavoc(stack2(ip2MinusOne, var(PLACE_VARIABLE)))))
-                );
-        
-        // save away the old heaps
-        checkingCommand.add(new BPLAssignmentCommand(var(OLD_HEAP1), var(HEAP1)));
-        checkingCommand.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(HEAP2)));
-        
-        checkingCommand.add(new BPLHavocCommand(var(HEAP1), var(HEAP2)));
-        
-        // the exposed and createdByCtxt flags have to be preserved for the invariant to be applicable
-        String sp = "sp";
-        BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
-        String v = "v";
-        BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VAR_TYPE, new BPLTypeName(REF_TYPE)));
-//            checkingCommand.add(new BPLAssumeCommand(
-//                    forall(
-//                            spVar, vVar,
-//                            logicalAnd(
-//                                    implies(oldHeap1(stack1(var(sp), var(v)), var(EXPOSED_FIELD)), heap1(stack1(var(sp), var(v)), var(EXPOSED_FIELD))),
-//                                    isEqual(oldHeap1(stack1(var(sp), var(v)), var(CREATED_BY_CTXT_FIELD)), heap1(stack1(var(sp), var(v)), var(CREATED_BY_CTXT_FIELD)))
-//                            )
-//                            )
-//                    ));
-//            checkingCommand.add(new BPLAssumeCommand(
-//                    forall(
-//                            spVar, vVar,
-//                            logicalAnd(
-//                                    implies(oldHeap2(stack2(var(sp), var(v)), var(EXPOSED_FIELD)), heap2(stack2(var(sp), var(v)), var(EXPOSED_FIELD))),
-//                                    isEqual(oldHeap2(stack2(var(sp), var(v)), var(CREATED_BY_CTXT_FIELD)), heap2(stack2(var(sp), var(v)), var(CREATED_BY_CTXT_FIELD)))
-//                            )
-//                            )
-//                    ));
-        
-        // relate stack and heap again
-        ///////////////////////////////////
-//            checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(var(TranslationController.STACK1), var(TranslationController.SP1), var(TranslationController.HEAP1))));
-//            checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(var(TranslationController.STACK2), var(TranslationController.SP2), var(TranslationController.HEAP2))));
-        
-        // relate the new heap with the old one
-        ///////////////////////////////////////
-        checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP1), var(HEAP1), var(STACK1))));
-        checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP2), var(HEAP2), var(STACK2))));
-        
-        checkingCommand.add(new BPLAssumeCommand(wellformedCoupling(var(HEAP1), var(HEAP2), var(RELATED_RELATION))));
-        
-        //invariant
-        checkingCommand.addAll(invAssumes);
-        checkingCommand.addAll(localInvAssumes);
-        
+	private void addCheckingBlocks(ArrayList<BPLCommand> invAssertions,
+			ArrayList<BPLCommand> invAssumes,
+			ArrayList<BPLCommand> localInvAssertions,
+			ArrayList<BPLCommand> localInvAssumes,
+			List<BPLBasicBlock> methodBlocks) {
+		// ///////////////////////////////////
+		// checking blocks (boundary return, boundary call and local places)
+		// ///////////////////////////////////
+		List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
+		checkingCommand.add(new BPLAssertCommand(logicalOr(
+				logicalAnd(
+						isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+								new BPLIntLiteral(1)),
+						isEqual(spmap1(), new BPLIntLiteral(0)),
+						isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+								new BPLIntLiteral(1)),
+						isEqual(spmap2(), new BPLIntLiteral(0))),
+				logicalAnd(
+						isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+								new BPLIntLiteral(0)),
+						isEqual(spmap1(), new BPLIntLiteral(0)),
+						isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+								new BPLIntLiteral(0)),
+						isEqual(spmap2(), new BPLIntLiteral(0))),
+				logicalAnd(
+						isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+								new BPLIntLiteral(1)),
+						isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+								new BPLIntLiteral(1)),
+						isLocalPlace(stack1(var(PLACE_VARIABLE))),
+						isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
+		methodBlocks.add(new BPLBasicBlock(tc.getCheckLabel(), checkingCommand
+				.toArray(new BPLCommand[checkingCommand.size()]),
+				new BPLGotoCommand(CHECK_BOUNDARY_RETURN_LABEL,
+						CHECK_BOUNDARY_CALL_LABEL, CHECK_LOCAL_LABEL)));
 
-        methodBlocks.add(new BPLBasicBlock(CHECK_BOUNDARY_CALL_LABEL, checkingCommand
-                .toArray(new BPLCommand[checkingCommand.size()]),
-                new BPLGotoCommand(TranslationController.LABEL_PREFIX1 + RETTABLE_LABEL)));
-        
-        
-        // ////////////////////////////////
-        // assertions of the check local block
-        // ////////////////////////////////
-        checkingCommand.clear();
-        checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-                isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                isLocalPlace(stack1(var(PLACE_VARIABLE))),
-                isLocalPlace(stack2(var(PLACE_VARIABLE)))
-                )));
+		// ////////////////////////////////
+		// assertions of the check return block
+		// ///////////////////////////////
+		checkingCommand = new ArrayList<BPLCommand>();
+		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+				isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+						new BPLIntLiteral(1)),
+				isEqual(spmap1(), new BPLIntLiteral(0)),
+				isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+						new BPLIntLiteral(1)),
+				isEqual(spmap2(), new BPLIntLiteral(0)))));
+		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+				logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE)))),
+				logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
 
-        
-        // check for progress while stalled
-        checkingCommand.add(new BPLAssertCommand(
-                ifThenElse(map(var(STALL1), var(OLD_PLACE1), var(OLD_PLACE2)),
-                logicalOr(
-                        logicalNot(isLocalPlace(var(OLD_PLACE2))),
-                        logicalAnd(
-                                less(var(MEASURE2), var(OLD_MEASURE2)),
-                                lessEqual(new BPLIntLiteral(0), var(MEASURE2)),
-                                lessEqual(new BPLIntLiteral(0), var(OLD_MEASURE2))
-                        )
-                        ),
-                BPLBoolLiteral.TRUE
-                )));
+		checkingCommand.add(new BPLAssertCommand(isEqual(
+				stack1(var(METH_FIELD)), stack2(var(METH_FIELD)))));
 
-        
-        checkingCommand.addAll(localInvAssertions);
+		checkingCommand.add(new BPLAssignmentCommand(
+				heap1(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)),
+						var(EXPOSED_FIELD)), ifThenElse(
+						logicalAnd(
+								hasReturnValue(var(IMPL1),
+										stack1(var(METH_FIELD))),
+								nonNull(stack1(var(RESULT_PARAM
+										+ REF_TYPE_ABBREV))),
+								nonNull(stack2(var(RESULT_PARAM
+										+ REF_TYPE_ABBREV)))),
+						BPLBoolLiteral.TRUE,
+						heap1(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)),
+								var(EXPOSED_FIELD)))));
+		checkingCommand.add(new BPLAssignmentCommand(
+				heap2(stack2(var(RESULT_PARAM + REF_TYPE_ABBREV)),
+						var(EXPOSED_FIELD)), ifThenElse(
+						logicalAnd(
+								hasReturnValue(var(IMPL2),
+										stack2(var(METH_FIELD))),
+								nonNull(stack1(var(RESULT_PARAM
+										+ REF_TYPE_ABBREV))),
+								nonNull(stack2(var(RESULT_PARAM
+										+ REF_TYPE_ABBREV)))),
+						BPLBoolLiteral.TRUE,
+						heap2(stack2(var(RESULT_PARAM + REF_TYPE_ABBREV)),
+								var(EXPOSED_FIELD)))));
+		checkingCommand.add(new BPLAssignmentCommand(related(
+				stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)),
+				stack2(var(RESULT_PARAM + REF_TYPE_ABBREV))), ifThenElse(
+				logicalAnd(
+						nonNull(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV))),
+						nonNull(stack2(var(RESULT_PARAM + REF_TYPE_ABBREV)))),
+				BPLBoolLiteral.TRUE,
+				related(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)),
+						stack2(var(RESULT_PARAM + REF_TYPE_ABBREV))))));
 
-        methodBlocks.add(new BPLBasicBlock(CHECK_LOCAL_LABEL, checkingCommand
-                .toArray(new BPLCommand[checkingCommand.size()]),
-                new BPLReturnCommand()));
-        
-        ////////////////////////////////////
-        // check invariant for initial heap
-        // /////////////////////////////////
-        checkingCommand.clear();
-        checkingCommand.add(new BPLAssumeCommand(isEqual(var(IP1_VAR), new BPLIntLiteral(0))));
-        checkingCommand.add(new BPLAssumeCommand(isEqual(var(IP2_VAR), new BPLIntLiteral(0))));
-        String r = "r";
-        BPLVariable rVar = new BPLVariable(r, new BPLTypeName(REF_TYPE));
-        checkingCommand.add(new BPLAssumeCommand(forall(rVar, 
-        		implies(heap1(var(rVar.getName()), var(ALLOC_FIELD)), 
-        				logicalAnd(
-        						heap1(var(rVar.getName()), var(CREATED_BY_CTXT_FIELD)), 
-        						logicalNot(heap1(var(rVar.getName()), var(EXPOSED_FIELD))))))));
-        checkingCommand.add(new BPLAssumeCommand(forall(rVar, 
-        		implies(heap2(var(rVar.getName()), var(ALLOC_FIELD)), 
-        				logicalAnd(
-        						heap2(var(rVar.getName()), var(CREATED_BY_CTXT_FIELD)), 
-        						logicalNot(heap2(var(rVar.getName()), var(EXPOSED_FIELD))))))));
-        
-        // assert inv
-        checkingCommand.addAll(invAssertions);
-        
-        methodBlocks.add(new BPLBasicBlock(INITIAL_CONFIGS_INV_LABEL,
-        		checkingCommand.toArray(new BPLCommand[checkingCommand.size()]),
-                new BPLReturnCommand()));
-        
-        ////////////////////////////////////
-        // steps in context preserve invariant
-        ///////////////////////////////////
-        checkingCommand.clear();
-        checkingCommand.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
-        checkingCommand.add(new BPLAssumeCommand(isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new BPLIntLiteral(0))));
-        checkingCommand.addAll(invAssumes);
-        
-        // modify a field that is not defined in library        
-        BPLVariable someObj = new BPLVariable(SOME_OBJ_TEMP, new BPLTypeName(REF_TYPE));
-        tc.usedVariables().put(SOME_OBJ_TEMP, someObj);
-        BPLVariable someVal_r = new BPLVariable(SOME_VAL_R_TEMP, new BPLTypeName(REF_TYPE));
-        tc.usedVariables().put(SOME_VAL_R_TEMP, someVal_r);
-        BPLVariable someVal_i = new BPLVariable(SOME_VAL_I_TEMP, BPLBuiltInType.INT);
-        tc.usedVariables().put(SOME_VAL_I_TEMP, someVal_i);
-        BPLVariable someField_r = new BPLVariable(SOME_FIELD_R_TEMP, new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)));
-        tc.usedVariables().put(SOME_FIELD_R_TEMP, someField_r);
-        BPLVariable someField_i = new BPLVariable(SOME_FIELD_I_TEMP, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT));
-        tc.usedVariables().put(SOME_FIELD_I_TEMP, someField_i);
-        
-        for (String heap : new String[]{HEAP1, HEAP2}) {
-        	for (String field : new String[]{SOME_FIELD_R_TEMP,SOME_FIELD_I_TEMP}) {
-        		String val = null;
-        		if (field.equals(SOME_FIELD_R_TEMP)) val = SOME_VAL_R_TEMP;
-        		if (field.equals(SOME_FIELD_I_TEMP)) val = SOME_VAL_I_TEMP;
-        		checkingCommand.add(new BPLHavocCommand(var(SOME_OBJ_TEMP), var(field), var(val)));
-                checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-                		notEqual(var(SOME_OBJ_TEMP), BPLNullLiteral.NULL),
-                		new BPLArrayExpression(var(heap), var(SOME_OBJ_TEMP), var(ALLOC_FIELD)),
-                		logicalNot(libraryField(libImpl(var(heap)), var(field))),
-                		logicalNot(new BPLFunctionApplication(SYNTHETIC_FIELD_FUNC, var(field)))
-                		)));
-                checkingCommand.add(new BPLAssignmentCommand(
-                		new BPLArrayExpression(var(heap), var(SOME_OBJ_TEMP), var(field)),
-                		var(val)
-                		));
-        	}
-        	checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedHeap(var(heap))));
-        }
-        
-        // modify current stack frame
-        BPLVariable sftmpVar = new BPLVariable(STACK_FRAME_TEMP, new BPLTypeName(STACK_FRAME_TYPE));
-        tc.usedVariables().put(STACK_FRAME_TEMP, sftmpVar);
-        checkingCommand.add(new BPLHavocCommand(var(STACK_FRAME_TEMP)));
-        checkingCommand.add(new BPLAssignmentCommand(map1(var(STACK1), var(IP1_VAR), spmap1(var(IP1_VAR))), var(STACK_FRAME_TEMP)));
-        checkingCommand.add(new BPLHavocCommand(var(STACK_FRAME_TEMP)));
-        checkingCommand.add(new BPLAssignmentCommand(map1(var(STACK2), var(IP2_VAR), spmap2(var(IP2_VAR))), var(STACK_FRAME_TEMP)));
-        checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
-        checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
-        
-        checkingCommand.addAll(invAssertions);
-        
-        methodBlocks.add(new BPLBasicBlock(STEPS_IN_CONTEXT_PRESERVED_LABEL,
-        		checkingCommand.toArray(new BPLCommand[checkingCommand.size()]),
-                new BPLReturnCommand()));
-        
-    }
+		if (config.isAssumeWellformedHeap()) {
+			checkingCommand
+					.add(new BPLAssumeCommand(wellformedHeap(var(HEAP1))));
+			checkingCommand
+					.add(new BPLAssumeCommand(wellformedHeap(var(HEAP2))));
+		}
 
-    private void assertWellformedness(List<BPLCommand> checkingCommand) {
-        //check that the relation is still wellformed
-        checkingCommand.add(new BPLAssertCommand(wellformedCoupling(var(HEAP1), var(HEAP2), var(RELATED_RELATION))));
-        if(config.isWellformednessChecks()){
-            checkingCommand.add(new BPLAssertCommand(wellformedHeap(var(HEAP1))));
-            checkingCommand.add(new BPLAssertCommand(wellformedHeap(var(HEAP2))));
-            checkingCommand.add(new BPLAssertCommand(CodeGenerator.wellformedStack(var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
-            checkingCommand.add(new BPLAssertCommand(CodeGenerator.wellformedStack(var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
-        }
-    }
-    
-    private void addLibraryFields(List<BPLDeclaration> programDecls) {
-    	final String f = "f";
-        BPLVariable fieldAlphaVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, new BPLTypeName("alpha")));
-        // generate library fields
-        if (tc.localReferencedFields() == null || tc.localReferencedFields().isEmpty()) {
-        	programDecls.add(new BPLAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
-                    new BPLVariable[]{fieldAlphaVar},
-                    isEquiv(
-                    		new BPLFunctionApplication(LIBRARY_FIELD_FUNC, var(tc.getImpl()), var(fieldAlphaVar.getName())), 
-                    		BPLBoolLiteral.FALSE)
-                    )));
-        } else {
-        	BPLExpression[] comparisons = new BPLExpression[tc.localReferencedFields().size()];
-        	Iterator<BCField> iter = tc.localReferencedFields().iterator();
-        	for (int j = 0; j < comparisons.length; j++) {
-        		comparisons[j] = isEqual(var(fieldAlphaVar.getName()), var(tc.boogieFieldName(iter.next())));
-        	}
-        	programDecls.add(new BPLAxiom(forall(new BPLType[]{new BPLTypeName("alpha")},
-        			new BPLVariable[]{fieldAlphaVar},
-        			isEquiv(
-        					new BPLFunctionApplication(LIBRARY_FIELD_FUNC, var(tc.getImpl()), var(fieldAlphaVar.getName())), 
-        					logicalOr(comparisons))
-        			)));
-        }
-    }
+		checkingCommand.add(new BPLAssertCommand(implies(
+				hasReturnValue(var(IMPL1), stack1(var(METH_FIELD))),
+				logicalAnd(
+						relNull(stack1(var(RESULT_VAR + REF_TYPE_ABBREV)),
+								stack2(var(RESULT_VAR + REF_TYPE_ABBREV)),
+								var(RELATED_RELATION)),
+						isEqual(stack1(var(RESULT_VAR + INT_TYPE_ABBREV)),
+								stack2(var(RESULT_VAR + INT_TYPE_ABBREV)))))));
 
-    private void addDefinesMethodAxioms(List<BPLDeclaration> programDecls) {
-        // insert all method definition axioms
-        ///////////////////////////////////////
-        for (String className : tc.methodDefinitions()
-                .keySet()) {
-            Set<String> methodNames = tc
-                    .methodDefinitions().get(className);
-            String m = "m";
-            BPLVariable mVar = new BPLVariable(m, new BPLTypeName(
-                    METHOD_TYPE));
-            if(!methodNames.isEmpty()){
-                List<BPLExpression> methodExprs = new ArrayList<BPLExpression>();
+		// reduce the interaction frame pointer so we have the same situation
+		// (beeing in the context) as at the begin
+		checkingCommand.add(new BPLAssignmentCommand(var(IP1_VAR), sub(
+				var(IP1_VAR), new BPLIntLiteral(1))));
+		checkingCommand.add(new BPLAssignmentCommand(var(IP2_VAR), sub(
+				var(IP2_VAR), new BPLIntLiteral(1))));
 
-                for (String methodName : methodNames) {
-                    methodExprs.add(isEqual(var(m), var(methodName)));
-                }
-                programDecls.add(new BPLAxiom(forall(
-                        mVar,
-                        isEquiv(definesMethod(var(tc.getImpl()), var(className), var(m)),
-                                logicalOr(methodExprs
-                                        .toArray(new BPLExpression[methodExprs
-                                                                   .size()]))))));
-            } else {
-                programDecls.add(new BPLAxiom(forall(
-                        mVar,
-                        logicalNot(definesMethod(var(tc.getImpl()), var(className), var(m)))
-                        )
-                        ));
-            }
-        }
-        tc.methodDefinitions().clear();
-    }
+		String o1 = "o1";
+		BPLVariable o1Var = new BPLVariable(o1, new BPLTypeName(REF_TYPE));
+		String o2 = "o2";
+		BPLVariable o2Var = new BPLVariable(o2, new BPLTypeName(REF_TYPE));
 
-    private LibraryDefinition compileSpecification(String[] fileNames)
-            throws FileNotFoundException {
-        tc.resetReturnLabels();
-        tc.resetLocalPlaces();
+		// BPLCommand trigger = new BPLAssertCommand(forall(o1Var, o2Var,
+		// implies(related(var(o1), var(o2)), relNull(var(o1), var(o2),
+		// var(RELATED_RELATION)))));
+		// trigger.addComment("Improves trigger behavior");
+		// checkingCommand.add(trigger);
 
-        Project project = Project.fromCommandLine(fileNames, new PrintWriter(
-                System.out));
-        CodeGenerator.setProject(project);
-        CodeGenerator.setTranslationController(tc);
+		assertWellformedness(checkingCommand);
 
-        
-        JClassType[] projectTypes = setProjectAndLoadTypes(project, this);
+		// invariant
+		checkingCommand.addAll(invAssertions);
 
-        Translator translator = new Translator(project);
-        translator.setTranslationController(tc);
-        Map<String, BPLProcedure> procedures = translator
-                .translateMethods(projectTypes);
-        List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();
-        programDecls.addAll(translator.getNeededDeclarations());
+		methodBlocks
+				.add(new BPLBasicBlock(CHECK_BOUNDARY_RETURN_LABEL,
+						checkingCommand.toArray(new BPLCommand[checkingCommand
+								.size()]), new BPLReturnCommand()));
 
-        int maxLocals = 0, maxStack = 0, maxParams = 0;
-        List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
-        BPLProcedure proc;
-        List<String> methodLabels = new ArrayList<String>();
-        List<String> constructorLabels = new ArrayList<String>();
-        String methodLabel;
-        for (JClassType classType : projectTypes) {
-            for (BCMethod method : classType.getMethods()) {
-                if (!method.isAbstract() && !method.isNative()
-                        && !method.isSynthetic()) {
-                    log.debug("Adding " + method.getQualifiedBoogiePLName());
-                    proc = procedures.get(method.getQualifiedBoogiePLName());
-                    maxLocals = Math.max(maxLocals, method.getMaxLocals());
-                    maxStack = Math.max(maxStack, method.getMaxStack());
-                    maxParams = Math.max(maxParams, method.getRealParameterTypes().length);
+		// ////////////////////////////////
+		// assertions of the check call block
+		// ////////////////////////////////
+		checkingCommand.clear();
+		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+				isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+						new BPLIntLiteral(0)),
+				isEqual(spmap1(), new BPLIntLiteral(0)),
+				isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+						new BPLIntLiteral(0)),
+				isEqual(spmap2(), new BPLIntLiteral(0)))));
+		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+				logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE)))),
+				logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
 
-                    for (BPLVariableDeclaration varDecl : proc
-                            .getImplementation().getBody()
-                            .getVariableDeclarations()) {
-                        for (BPLVariable var : varDecl.getVariables()) {
-                            if (var.getType().isTypeName()
-                                    && ((BPLTypeName) var.getType()).getName()
-                                            .equals(VAR_TYPE)) {
-                                tc.stackVariables().put(
-                                        var.getName(), var);
-                            } else {
-                                tc.usedVariables().put(
-                                        var.getName(), var);
-                            }
-                        }
-                    }
-                    for (BPLVariable outParam : proc.getOutParameters()) {
-                        tc.usedVariables().put(
-                                outParam.getName(), outParam);
-                    }
+		checkingCommand.add(new BPLAssumeCommand(logicalNot(isStaticMethod(
+				var(IMPL1), placeDefinedInType(stack1(var(PLACE_VARIABLE))),
+				stack1(var(METH_FIELD))))));
+		checkingCommand.add(new BPLAssumeCommand(logicalNot(isStaticMethod(
+				var(IMPL2), placeDefinedInType(stack2(var(PLACE_VARIABLE))),
+				stack2(var(METH_FIELD))))));
 
-                    methodLabel = tc.prefix(proc.getName());
-                    
-                    // add label of the method to the method label list
-                    if(!method.isConstructor()){
-                        methodLabels.add(methodLabel);
-                    } else {
-                        constructorLabels.add(methodLabel);
-                    }
+		checkingCommand.add(new BPLAssertCommand(isEqual(
+				stack1(var(METH_FIELD)), stack2(var(METH_FIELD)))));
 
-                    // /////////////////////////////
-                    // commands before method block
-                    // /////////////////////////////
-                    List<BPLCommand> preMethodCommands = new ArrayList<BPLCommand>();
-                    preMethodCommands.add(new BPLAssumeCommand(isEqual(
-                            stack(var(PLACE_VARIABLE)), var(tc
-                                    .buildPlace(proc.getName(), true)))));
-                    
-                    programDecls.add(new BPLAxiom(isEqual(placeDefinedInType(var(tc
-                            .buildPlace(proc.getName(), true))), var(GLOBAL_VAR_PREFIX + classType.getName()))));
-                    
-                    preMethodCommands
-                    .add(new BPLAssumeCommand(isEqual(
-                            stack(var(METH_FIELD)),
-                            var(GLOBAL_VAR_PREFIX
-                                    + MethodTranslator
-                                    .getMethodName(method)))));
-                    if(!method.isStatic()){
-                        preMethodCommands.add(new BPLAssumeCommand(memberOf(var(tc.getImpl()), 
-                                var(GLOBAL_VAR_PREFIX
-                                        + MethodTranslator.getMethodName(method)),
-                                        var(GLOBAL_VAR_PREFIX + classType.getName()),
-                                        typ(stack(receiver()),
-                                                var(tc.getHeap())))));
-                    }
+		checkRelateParams(checkingCommand);
 
-                    // preMethodCommands.add(new
-                    // BPLAssumeCommand(isCallable(typ(stack(var(PARAM_VAR_PREFIX
-                    // + "0" + REF_TYPE_ABBREV))),
-                    // var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method)))));
+		if (config.isAssumeWellformedHeap()) {
+			checkingCommand
+					.add(new BPLAssumeCommand(wellformedHeap(var(HEAP1))));
+			checkingCommand
+					.add(new BPLAssumeCommand(wellformedHeap(var(HEAP2))));
+		}
+		// trigger = new BPLAssertCommand(forall(o1Var, o2Var,
+		// implies(related(var(o1), var(o2)), relNull(var(o1), var(o2),
+		// var(RELATED_RELATION)))));
+		// trigger.addComment("Improves trigger behavior");
+		// checkingCommand.add(trigger);
+		assertWellformedness(checkingCommand);
 
-                    methodBlocks.add(new BPLBasicBlock(methodLabel,
-                            preMethodCommands
-                                    .toArray(new BPLCommand[preMethodCommands
-                                            .size()]), new BPLGotoCommand(proc
-                                    .getImplementation().getBody()
-                                    .getBasicBlocks()[0].getLabel())));
-                    Collections.addAll(methodBlocks, proc.getImplementation()
-                            .getBody().getBasicBlocks());
-                }
-            }
-        }
-        tc.maxLocals = Math.max(tc.maxLocals, maxLocals);
-        tc.maxStack = Math.max(tc.maxStack, maxStack);
-        tc.maxParams = Math.max(tc.maxParams, maxParams);
-        
-        ///////////////////////////////////////////////
-        // add default constructor for java.lang.Object in case it is called inside the methods/constructors of the library
-        ////////////////////////////////////////////////
-        String constructorLabelObject = tc.prefix(Object.class.getName()+"."+CONSTRUCTOR_NAME);
-        List<BPLCommand> objectConstructorCommands = new ArrayList<BPLCommand>();
-        objectConstructorCommands.add(new BPLAssignmentCommand(CodeGenerator.stack(var(RESULT_PARAM+REF_TYPE_ABBREV)), stack(receiver())));
-        methodBlocks.add(
-                0,
-                new BPLBasicBlock(constructorLabelObject, objectConstructorCommands.toArray(new BPLCommand[objectConstructorCommands.size()]),
-                        new BPLGotoCommand(tc.prefix(RETTABLE_LABEL)))
-                );
-        
+		// invariant
+		checkingCommand.addAll(invAssertions);
 
-        // //////////////////////////////////////
-        // callTable and returnTable
-        // //////////////////////////////////////
-        String callTableLabel = tc.prefix(CALLTABLE_LABEL);
-        String callTableInitLabel = callTableLabel + INIT_LABEL_POSTFIX;
-        
-        String retTableLabel = tc.prefix(RETTABLE_LABEL);
-        String retTableInitLabel = retTableLabel + INIT_LABEL_POSTFIX;
-        String[] returnLabels = tc.returnLabels().toArray(
-                new String[tc.returnLabels().size() + 1]);
-        //add noop to force the return point to appear in all exception traces
-        returnLabels[tc.returnLabels().size()] = "noop";
-        
-        String placeTableLabel = tc.prefix(LOCAL_PLACES_TABLE_LABEL);
-        String[] placesLabels = tc.getLocalPlaces().toArray(
-                new String[tc.getLocalPlaces().size() + 1]);
-        //add noop to force the return point to appear in all exception traces
-        placesLabels[tc.getLocalPlaces().size()] = "noop";
-        
-        String constTableLabel = tc.prefix(CONSTRUCTOR_TABLE_LABEL);
+		// check if we want to use havoc to handle boundary call
+		// ///////////////////////////////////////////////////////
+		BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
+		BPLExpression ip2MinusOne = sub(var(IP2_VAR), new BPLIntLiteral(1));
+		checkingCommand.add(new BPLAssertCommand(isEquiv(
+				useHavoc(stack1(ip1MinusOne, var(PLACE_VARIABLE))),
+				useHavoc(stack2(ip2MinusOne, var(PLACE_VARIABLE))))));
+		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+				useHavoc(stack1(ip1MinusOne, var(PLACE_VARIABLE))),
+				useHavoc(stack2(ip2MinusOne, var(PLACE_VARIABLE))))));
 
-        BPLTransferCommand dispatchTransferCmd;
-        
-        // //////////////////////////////////////
-        // commands before localPlacesTable
-        // /////////////////////////////////////
-        List<BPLCommand> dispatchCommands;
-        dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(CodeGenerator.isLocalPlace(stack(var(PLACE_VARIABLE)))));
-        BPLExpression unrollLoop = var(tc.prefix(ITranslationConstants.UNROLL_COUNT));
-        dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
-        dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
-        dispatchTransferCmd = new BPLGotoCommand(placesLabels);
+		// save away the old heaps
+		checkingCommand
+				.add(new BPLAssignmentCommand(var(OLD_HEAP1), var(HEAP1)));
+		checkingCommand
+				.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(HEAP2)));
 
-        methodBlocks.add(
-                0,
-                new BPLBasicBlock(placeTableLabel, dispatchCommands
-                        .toArray(new BPLCommand[dispatchCommands.size()]),
-                        dispatchTransferCmd));
-        
-        
-        // //////////////////////////////////////
-        // commands before callTable
-        // /////////////////////////////////////
-        dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack(var(PLACE_VARIABLE))))));
-        dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
-        dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
-        
-        methodLabels.add("noop");
-        dispatchTransferCmd = new BPLGotoCommand(methodLabels.toArray(new String[methodLabels.size()]));
-        methodBlocks.add(
-                0,
-                new BPLBasicBlock(callTableLabel, dispatchCommands
-                        .toArray(new BPLCommand[dispatchCommands.size()]),
-                        dispatchTransferCmd));
+		checkingCommand.add(new BPLHavocCommand(var(HEAP1), var(HEAP2)));
 
+		// the exposed and createdByCtxt flags have to be preserved for the
+		// invariant to be applicable
+		String sp = "sp";
+		BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
+		String v = "v";
+		BPLVariable vVar = new BPLVariable(v, new BPLTypeName(VAR_TYPE,
+				new BPLTypeName(REF_TYPE)));
+		// checkingCommand.add(new BPLAssumeCommand(
+		// forall(
+		// spVar, vVar,
+		// logicalAnd(
+		// implies(oldHeap1(stack1(var(sp), var(v)), var(EXPOSED_FIELD)),
+		// heap1(stack1(var(sp), var(v)), var(EXPOSED_FIELD))),
+		// isEqual(oldHeap1(stack1(var(sp), var(v)),
+		// var(CREATED_BY_CTXT_FIELD)), heap1(stack1(var(sp), var(v)),
+		// var(CREATED_BY_CTXT_FIELD)))
+		// )
+		// )
+		// ));
+		// checkingCommand.add(new BPLAssumeCommand(
+		// forall(
+		// spVar, vVar,
+		// logicalAnd(
+		// implies(oldHeap2(stack2(var(sp), var(v)), var(EXPOSED_FIELD)),
+		// heap2(stack2(var(sp), var(v)), var(EXPOSED_FIELD))),
+		// isEqual(oldHeap2(stack2(var(sp), var(v)),
+		// var(CREATED_BY_CTXT_FIELD)), heap2(stack2(var(sp), var(v)),
+		// var(CREATED_BY_CTXT_FIELD)))
+		// )
+		// )
+		// ));
 
+		// relate stack and heap again
+		// /////////////////////////////////
+		// checkingCommand.add(new
+		// BPLAssumeCommand(CodeGenerator.wellformedStack(var(TranslationController.STACK1),
+		// var(TranslationController.SP1), var(TranslationController.HEAP1))));
+		// checkingCommand.add(new
+		// BPLAssumeCommand(CodeGenerator.wellformedStack(var(TranslationController.STACK2),
+		// var(TranslationController.SP2), var(TranslationController.HEAP2))));
 
-        // /////////////////////////////////////////
-        // commands before callTableInit (preconditions of the calltable)
-        // /////////////////////////////////////////
-        BPLExpression sp = spmap();
-        BPLExpression ip = var(tc.getInteractionFramePointer());
+		// relate the new heap with the old one
+		// /////////////////////////////////////
+		checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP1),
+				var(HEAP1), var(STACK1))));
+		checkingCommand.add(new BPLAssumeCommand(validHeapSucc(var(OLD_HEAP2),
+				var(HEAP2), var(STACK2))));
 
-        dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(
-                logicalAnd(
-                        isEqual(modulo(ip, new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                        isEqual(sp, new BPLIntLiteral(0))
-                )
-                ));
+		checkingCommand.add(new BPLAssumeCommand(wellformedCoupling(var(HEAP1),
+				var(HEAP2), var(RELATED_RELATION))));
 
-        methodBlocks.add(
-                0,
-                new BPLBasicBlock(callTableInitLabel, dispatchCommands
-                        .toArray(new BPLCommand[dispatchCommands.size()]),
-                        new BPLGotoCommand(callTableLabel)));
+		// invariant
+		checkingCommand.addAll(invAssumes);
+		checkingCommand.addAll(localInvAssumes);
 
-        // ///////////////////////////////////////
-        // commands before returnTable
-        // ///////////////////////////////////////
-        dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(logicalNot(isLocalPlace(stack(var(PLACE_VARIABLE))))));
-        dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
-        dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
-        
-        dispatchTransferCmd = new BPLGotoCommand(returnLabels);
+		methodBlocks
+				.add(new BPLBasicBlock(CHECK_BOUNDARY_CALL_LABEL,
+						checkingCommand.toArray(new BPLCommand[checkingCommand
+								.size()]), new BPLGotoCommand(
+								TranslationController.LABEL_PREFIX1
+										+ RETTABLE_LABEL)));
 
-        methodBlocks.add(
-                0,
-                new BPLBasicBlock(retTableLabel, dispatchCommands
-                        .toArray(new BPLCommand[dispatchCommands.size()]),
-                        dispatchTransferCmd));
+		// ////////////////////////////////
+		// assertions of the check local block
+		// ////////////////////////////////
+		checkingCommand.clear();
+		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
+				isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+						new BPLIntLiteral(1)),
+				isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+						new BPLIntLiteral(1)),
+				isLocalPlace(stack1(var(PLACE_VARIABLE))),
+				isLocalPlace(stack2(var(PLACE_VARIABLE))))));
 
-        // /////////////////////////////////////////
-        // commands before returnTableInit (preconditions of the returntable)
-        // /////////////////////////////////////////
+		// check for progress while stalled
+		checkingCommand.add(new BPLAssertCommand(ifThenElse(
+				map(var(STALL1), var(OLD_PLACE1), var(OLD_PLACE2)),
+				logicalOr(
+						logicalNot(isLocalPlace(var(OLD_PLACE2))),
+						logicalAnd(
+								less(var(MEASURE2), var(OLD_MEASURE2)),
+								lessEqual(new BPLIntLiteral(0), var(MEASURE2)),
+								lessEqual(new BPLIntLiteral(0),
+										var(OLD_MEASURE2)))),
+				BPLBoolLiteral.TRUE)));
 
-        dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(
-                logicalOr(
-                    logicalAnd(
-                            isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1)),
-                            greater(spmap(), new BPLIntLiteral(0))
-                            ),
-                    logicalAnd(
-                            isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(0)),
-                            isEqual(spmap(), new BPLIntLiteral(0))
-                            )
-                )
-                ));
+		checkingCommand.addAll(localInvAssertions);
 
-        methodBlocks.add(
-                0,
-                new BPLBasicBlock(retTableInitLabel, dispatchCommands
-                        .toArray(new BPLCommand[dispatchCommands.size()]),
-                        new BPLGotoCommand(retTableLabel)));
-        
-        // ///////////////////////////////////////////
-        // commands before constructor table
-        // //////////////////////////////////////////
-        
-        dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(
-                logicalOr(
-                    isPublic(var(tc.getImpl()), typ(stack(receiver()),var(tc.getHeap()))),
-                    logicalNot(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)))
-                )
-                ));
-//        dispatchCommands.add(new BPLAssumeCommand(isCallable(
-//                typ(stack(receiver()), var(tc.getHeap())),
-//                stack(var(METH_FIELD)))));
-        dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(unrollLoop, new BPLIntLiteral(1))));
-        dispatchCommands.add(new BPLAssertCommand(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL))));
-        
-        constructorLabels.add("noop");
-        dispatchTransferCmd = new BPLGotoCommand(constructorLabels.toArray(new String[constructorLabels.size()]));
+		methodBlocks.add(new BPLBasicBlock(CHECK_LOCAL_LABEL, checkingCommand
+				.toArray(new BPLCommand[checkingCommand.size()]),
+				new BPLReturnCommand()));
 
-        methodBlocks.add(
-                0,
-                new BPLBasicBlock(constTableLabel, dispatchCommands.toArray(new BPLCommand[dispatchCommands.size()]),
-                        dispatchTransferCmd)
-                );
-        
+		// //////////////////////////////////
+		// check invariant for initial heap
+		// /////////////////////////////////
+		checkingCommand.clear();
+		checkingCommand.add(new BPLAssumeCommand(isEqual(var(IP1_VAR),
+				new BPLIntLiteral(0))));
+		checkingCommand.add(new BPLAssumeCommand(isEqual(var(IP2_VAR),
+				new BPLIntLiteral(0))));
+		String r = "r";
+		BPLVariable rVar = new BPLVariable(r, new BPLTypeName(REF_TYPE));
+		checkingCommand.add(new BPLAssumeCommand(forall(
+				rVar,
+				implies(heap1(var(rVar.getName()), var(ALLOC_FIELD)),
+						logicalAnd(
+								heap1(var(rVar.getName()),
+										var(CREATED_BY_CTXT_FIELD)),
+								logicalNot(heap1(var(rVar.getName()),
+										var(EXPOSED_FIELD))))))));
+		checkingCommand.add(new BPLAssumeCommand(forall(
+				rVar,
+				implies(heap2(var(rVar.getName()), var(ALLOC_FIELD)),
+						logicalAnd(
+								heap2(var(rVar.getName()),
+										var(CREATED_BY_CTXT_FIELD)),
+								logicalNot(heap2(var(rVar.getName()),
+										var(EXPOSED_FIELD))))))));
 
-        // //////////////////////////////////////
-        // commands before dispatch
-        // //////////////////////////////////////
-        dispatchCommands = new ArrayList<BPLCommand>();
-        dispatchCommands.add(new BPLAssumeCommand(
-                logicalOr(
-                    isPublic(var(tc.getImpl()), typ(stack(receiver()),var(tc.getHeap()))),
-                    logicalNot(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)))
-                )
-                ));
-//        dispatchCommands.add(new BPLAssumeCommand(isCallable(
-//                typ(stack(receiver()), var(tc.getHeap())),
-//                stack(var(METH_FIELD)))));
-        methodBlocks
-                .add(0,
-                        new BPLBasicBlock(
-                                tc.getDispatchLabel(),
-                                dispatchCommands
-                                        .toArray(new BPLCommand[dispatchCommands
-                                                .size()]), new BPLGotoCommand(
-                                        callTableInitLabel, retTableInitLabel, placeTableLabel)));
+		// assert inv
+		checkingCommand.addAll(invAssertions);
 
-        return new LibraryDefinition(programDecls, methodBlocks);
-    }
+		methodBlocks
+				.add(new BPLBasicBlock(INITIAL_CONFIGS_INV_LABEL,
+						checkingCommand.toArray(new BPLCommand[checkingCommand
+								.size()]), new BPLReturnCommand()));
 
-    public BoogieRunner check() {
-        BoogieRunner runner = new BoogieRunner();
-        runner.setVerify(config.isVerify());
-        runner.setSmokeTest(config.isSmokeTestOn());
-        runner.setLoopUnroll(config.getLoopUnrollCap()+1);
-        try {
-            log.debug("Checking " + config.output());
-            runner.runBoogie(config.output());
-            log.debug(runner.getLastMessage());
-            if (runner.getLastReturn()) {
-                log.debug("Success");
-            } else {
-                log.debug("Error");
-            }
-        } catch (BoogieRunException e) {
-            e.printStackTrace();
-        }
-        return runner;
-    }
+		// //////////////////////////////////
+		// steps in context preserve invariant
+		// /////////////////////////////////
+		checkingCommand.clear();
+		checkingCommand.add(new BPLAssumeCommand(isEqual(
+				modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+				new BPLIntLiteral(0))));
+		checkingCommand.add(new BPLAssumeCommand(isEqual(
+				modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+				new BPLIntLiteral(0))));
+		checkingCommand.addAll(invAssumes);
 
-    public void reportTrouble(TroubleMessage message) {
-        String msg = "";
+		// modify a field that is not defined in library
+		BPLVariable someObj = new BPLVariable(SOME_OBJ_TEMP, new BPLTypeName(
+				REF_TYPE));
+		tc.usedVariables().put(SOME_OBJ_TEMP, someObj);
+		BPLVariable someVal_r = new BPLVariable(SOME_VAL_R_TEMP,
+				new BPLTypeName(REF_TYPE));
+		tc.usedVariables().put(SOME_VAL_R_TEMP, someVal_r);
+		BPLVariable someVal_i = new BPLVariable(SOME_VAL_I_TEMP,
+				BPLBuiltInType.INT);
+		tc.usedVariables().put(SOME_VAL_I_TEMP, someVal_i);
+		BPLVariable someField_r = new BPLVariable(SOME_FIELD_R_TEMP,
+				new BPLTypeName(FIELD_TYPE, new BPLTypeName(REF_TYPE)));
+		tc.usedVariables().put(SOME_FIELD_R_TEMP, someField_r);
+		BPLVariable someField_i = new BPLVariable(SOME_FIELD_I_TEMP,
+				new BPLTypeName(FIELD_TYPE, BPLBuiltInType.INT));
+		tc.usedVariables().put(SOME_FIELD_I_TEMP, someField_i);
 
-        TroublePosition position = message.getPosition();
-        if (position != null) {
-            if (position.getClassType() != null) {
-                msg += position.getClassType().getName() + ":";
-            }
-            if (position.getMethod() != null) {
-                msg += position.getMethod().getName() + ":";
-            }
-            if (position.getInstruction() != null) {
-                msg += position.getInstruction().getIndex() + ":";
-            }
-            if (msg.length() > 0) {
-                msg += " ";
-            }
-        }
+		for (String heap : new String[] { HEAP1, HEAP2 }) {
+			for (String field : new String[] { SOME_FIELD_R_TEMP,
+					SOME_FIELD_I_TEMP }) {
+				String val = null;
+				if (field.equals(SOME_FIELD_R_TEMP))
+					val = SOME_VAL_R_TEMP;
+				if (field.equals(SOME_FIELD_I_TEMP))
+					val = SOME_VAL_I_TEMP;
+				checkingCommand.add(new BPLHavocCommand(var(SOME_OBJ_TEMP),
+						var(field), var(val)));
+				checkingCommand.add(new BPLAssumeCommand(
+						logicalAnd(
+								notEqual(var(SOME_OBJ_TEMP),
+										BPLNullLiteral.NULL),
+								new BPLArrayExpression(var(heap),
+										var(SOME_OBJ_TEMP), var(ALLOC_FIELD)),
+								logicalNot(libraryField(libImpl(var(heap)),
+										var(field))),
+								logicalNot(new BPLFunctionApplication(
+										SYNTHETIC_FIELD_FUNC, var(field))))));
+				checkingCommand.add(new BPLAssignmentCommand(
+						new BPLArrayExpression(var(heap), var(SOME_OBJ_TEMP),
+								var(field)), var(val)));
+			}
+			checkingCommand.add(new BPLAssumeCommand(CodeGenerator
+					.wellformedHeap(var(heap))));
+		}
 
-        msg += message.getDescriptionString();
+		// modify current stack frame
+		BPLVariable sftmpVar = new BPLVariable(STACK_FRAME_TEMP,
+				new BPLTypeName(STACK_FRAME_TYPE));
+		tc.usedVariables().put(STACK_FRAME_TEMP, sftmpVar);
+		checkingCommand.add(new BPLHavocCommand(var(STACK_FRAME_TEMP)));
+		checkingCommand.add(new BPLAssignmentCommand(map1(var(STACK1),
+				var(IP1_VAR), spmap1(var(IP1_VAR))), var(STACK_FRAME_TEMP)));
+		checkingCommand.add(new BPLHavocCommand(var(STACK_FRAME_TEMP)));
+		checkingCommand.add(new BPLAssignmentCommand(map1(var(STACK2),
+				var(IP2_VAR), spmap2(var(IP2_VAR))), var(STACK_FRAME_TEMP)));
+		checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(
+				var(STACK1), var(IP1_VAR), var(SP_MAP1_VAR), var(HEAP1))));
+		checkingCommand.add(new BPLAssumeCommand(CodeGenerator.wellformedStack(
+				var(STACK2), var(IP2_VAR), var(SP_MAP2_VAR), var(HEAP2))));
 
-        switch (message.getDescription().getKind()) {
-        case ERROR:
-            log.error(msg);
-            break;
-        case WARNING:
-            log.warn(msg);
-            break;
-        }
+		checkingCommand.addAll(invAssertions);
 
-        if (message.getDescription().getKind() == TroubleDescription.Kind.ERROR) {
-            throw new CompilationAbortedException();
-        }
-    }
+		methodBlocks
+				.add(new BPLBasicBlock(STEPS_IN_CONTEXT_PRESERVED_LABEL,
+						checkingCommand.toArray(new BPLCommand[checkingCommand
+								.size()]), new BPLReturnCommand()));
 
-	public static JClassType[] setProjectAndLoadTypes(Project project, ITroubleReporter troubleReporter) {
+	}
+
+	private void assertWellformedness(List<BPLCommand> checkingCommand) {
+		// check that the relation is still wellformed
+		checkingCommand.add(new BPLAssertCommand(wellformedCoupling(var(HEAP1),
+				var(HEAP2), var(RELATED_RELATION))));
+		if (config.isWellformednessChecks()) {
+			checkingCommand
+					.add(new BPLAssertCommand(wellformedHeap(var(HEAP1))));
+			checkingCommand
+					.add(new BPLAssertCommand(wellformedHeap(var(HEAP2))));
+			checkingCommand.add(new BPLAssertCommand(CodeGenerator
+					.wellformedStack(var(STACK1), var(IP1_VAR),
+							var(SP_MAP1_VAR), var(HEAP1))));
+			checkingCommand.add(new BPLAssertCommand(CodeGenerator
+					.wellformedStack(var(STACK2), var(IP2_VAR),
+							var(SP_MAP2_VAR), var(HEAP2))));
+		}
+	}
+
+	private void addLibraryFields(List<BPLDeclaration> programDecls) {
+		final String f = "f";
+		BPLVariable fieldAlphaVar = new BPLVariable(f, new BPLTypeName(
+				FIELD_TYPE, new BPLTypeName("alpha")));
+		// generate library fields
+		if (tc.localReferencedFields() == null
+				|| tc.localReferencedFields().isEmpty()) {
+			programDecls.add(new BPLAxiom(forall(
+					new BPLType[] { new BPLTypeName("alpha") },
+					new BPLVariable[] { fieldAlphaVar },
+					isEquiv(new BPLFunctionApplication(LIBRARY_FIELD_FUNC,
+							var(tc.getImpl()), var(fieldAlphaVar.getName())),
+							BPLBoolLiteral.FALSE))));
+		} else {
+			BPLExpression[] comparisons = new BPLExpression[tc
+					.localReferencedFields().size()];
+			Iterator<BCField> iter = tc.localReferencedFields().iterator();
+			for (int j = 0; j < comparisons.length; j++) {
+				comparisons[j] = isEqual(var(fieldAlphaVar.getName()),
+						var(tc.boogieFieldName(iter.next())));
+			}
+			programDecls.add(new BPLAxiom(forall(
+					new BPLType[] { new BPLTypeName("alpha") },
+					new BPLVariable[] { fieldAlphaVar },
+					isEquiv(new BPLFunctionApplication(LIBRARY_FIELD_FUNC,
+							var(tc.getImpl()), var(fieldAlphaVar.getName())),
+							logicalOr(comparisons)))));
+		}
+	}
+
+	private void addDefinesMethodAxioms(List<BPLDeclaration> programDecls) {
+		// insert all method definition axioms
+		// /////////////////////////////////////
+		for (String className : tc.methodDefinitions().keySet()) {
+			Set<String> methodNames = tc.methodDefinitions().get(className);
+			String m = "m";
+			BPLVariable mVar = new BPLVariable(m, new BPLTypeName(METHOD_TYPE));
+			if (!methodNames.isEmpty()) {
+				List<BPLExpression> methodExprs = new ArrayList<BPLExpression>();
+
+				for (String methodName : methodNames) {
+					methodExprs.add(isEqual(var(m), var(methodName)));
+				}
+				programDecls.add(new BPLAxiom(forall(
+						mVar,
+						isEquiv(definesMethod(var(tc.getImpl()),
+								var(className), var(m)),
+								logicalOr(methodExprs
+										.toArray(new BPLExpression[methodExprs
+												.size()]))))));
+			} else {
+				programDecls.add(new BPLAxiom(forall(
+						mVar,
+						logicalNot(definesMethod(var(tc.getImpl()),
+								var(className), var(m))))));
+			}
+		}
+		tc.methodDefinitions().clear();
+	}
+
+	private LibraryDefinition compileSpecification(String[] fileNames)
+			throws FileNotFoundException {
+		tc.resetReturnLabels();
+		tc.resetLocalPlaces();
+
+		Project project = Project.fromCommandLine(fileNames, new PrintWriter(
+				System.out));
+		CodeGenerator.setProject(project);
+		CodeGenerator.setTranslationController(tc);
+
+		JClassType[] projectTypes = setProjectAndLoadTypes(project, this);
+
+		Translator translator = new Translator(project);
+		translator.setTranslationController(tc);
+		Map<String, BPLProcedure> procedures = translator
+				.translateMethods(projectTypes);
+		List<BPLDeclaration> programDecls = new ArrayList<BPLDeclaration>();
+		programDecls.addAll(translator.getNeededDeclarations());
+
+		int maxLocals = 0, maxStack = 0, maxParams = 0;
+		List<BPLBasicBlock> methodBlocks = new ArrayList<BPLBasicBlock>();
+		BPLProcedure proc;
+		List<String> methodLabels = new ArrayList<String>();
+		List<String> constructorLabels = new ArrayList<String>();
+		String methodLabel;
+		for (JClassType classType : projectTypes) {
+			for (BCMethod method : classType.getMethods()) {
+				if (!method.isAbstract() && !method.isNative()
+						&& !method.isSynthetic()) {
+					log.debug("Adding " + method.getQualifiedBoogiePLName());
+					proc = procedures.get(method.getQualifiedBoogiePLName());
+					maxLocals = Math.max(maxLocals, method.getMaxLocals());
+					maxStack = Math.max(maxStack, method.getMaxStack());
+					maxParams = Math.max(maxParams,
+							method.getRealParameterTypes().length);
+
+					for (BPLVariableDeclaration varDecl : proc
+							.getImplementation().getBody()
+							.getVariableDeclarations()) {
+						for (BPLVariable var : varDecl.getVariables()) {
+							if (var.getType().isTypeName()
+									&& ((BPLTypeName) var.getType()).getName()
+											.equals(VAR_TYPE)) {
+								tc.stackVariables().put(var.getName(), var);
+							} else {
+								tc.usedVariables().put(var.getName(), var);
+							}
+						}
+					}
+					for (BPLVariable outParam : proc.getOutParameters()) {
+						tc.usedVariables().put(outParam.getName(), outParam);
+					}
+
+					methodLabel = tc.prefix(proc.getName());
+
+					// add label of the method to the method label list
+					if (!method.isConstructor()) {
+						methodLabels.add(methodLabel);
+					} else {
+						constructorLabels.add(methodLabel);
+					}
+
+					// /////////////////////////////
+					// commands before method block
+					// /////////////////////////////
+					List<BPLCommand> preMethodCommands = new ArrayList<BPLCommand>();
+					preMethodCommands.add(new BPLAssumeCommand(isEqual(
+							stack(var(PLACE_VARIABLE)),
+							var(tc.buildPlace(proc.getName(), true)))));
+
+					programDecls.add(new BPLAxiom(isEqual(
+							placeDefinedInType(var(tc.buildPlace(
+									proc.getName(), true))),
+							var(GLOBAL_VAR_PREFIX + classType.getName()))));
+
+					preMethodCommands
+							.add(new BPLAssumeCommand(isEqual(
+									stack(var(METH_FIELD)),
+									var(GLOBAL_VAR_PREFIX
+											+ MethodTranslator
+													.getMethodName(method)))));
+					if (!method.isStatic()) {
+						preMethodCommands.add(new BPLAssumeCommand(memberOf(
+								var(tc.getImpl()),
+								var(GLOBAL_VAR_PREFIX
+										+ MethodTranslator
+												.getMethodName(method)),
+								var(GLOBAL_VAR_PREFIX + classType.getName()),
+								typ(stack(receiver()), var(tc.getHeap())))));
+					}
+
+					// preMethodCommands.add(new
+					// BPLAssumeCommand(isCallable(typ(stack(var(PARAM_VAR_PREFIX
+					// + "0" + REF_TYPE_ABBREV))),
+					// var(GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method)))));
+
+					methodBlocks.add(new BPLBasicBlock(methodLabel,
+							preMethodCommands
+									.toArray(new BPLCommand[preMethodCommands
+											.size()]), new BPLGotoCommand(proc
+									.getImplementation().getBody()
+									.getBasicBlocks()[0].getLabel())));
+					Collections.addAll(methodBlocks, proc.getImplementation()
+							.getBody().getBasicBlocks());
+				} else {
+					maxParams = Math.max(maxParams,
+							method.getRealParameterTypes().length);
+				}
+			}
+		}		
+		tc.maxLocals = Math.max(tc.maxLocals, maxLocals);
+		tc.maxStack = Math.max(tc.maxStack, maxStack);
+		tc.maxParams = Math.max(tc.maxParams, maxParams);
+
+		// /////////////////////////////////////////////
+		// add default constructor for java.lang.Object in case it is called
+		// inside the methods/constructors of the library
+		// //////////////////////////////////////////////
+		String constructorLabelObject = tc.prefix(Object.class.getName() + "."
+				+ CONSTRUCTOR_NAME);
+		List<BPLCommand> objectConstructorCommands = new ArrayList<BPLCommand>();
+		objectConstructorCommands
+				.add(new BPLAssignmentCommand(CodeGenerator
+						.stack(var(RESULT_PARAM + REF_TYPE_ABBREV)),
+						stack(receiver())));
+		methodBlocks
+				.add(0,
+						new BPLBasicBlock(
+								constructorLabelObject,
+								objectConstructorCommands
+										.toArray(new BPLCommand[objectConstructorCommands
+												.size()]), new BPLGotoCommand(
+										tc.prefix(RETTABLE_LABEL))));
+
+		// //////////////////////////////////////
+		// callTable and returnTable
+		// //////////////////////////////////////
+		String callTableLabel = tc.prefix(CALLTABLE_LABEL);
+		String callTableInitLabel = callTableLabel + INIT_LABEL_POSTFIX;
+
+		String retTableLabel = tc.prefix(RETTABLE_LABEL);
+		String retTableInitLabel = retTableLabel + INIT_LABEL_POSTFIX;
+		String[] returnLabels = tc.returnLabels().toArray(
+				new String[tc.returnLabels().size() + 1]);
+		// add noop to force the return point to appear in all exception traces
+		returnLabels[tc.returnLabels().size()] = "noop";
+
+		String placeTableLabel = tc.prefix(LOCAL_PLACES_TABLE_LABEL);
+		String[] placesLabels = tc.getLocalPlaces().toArray(
+				new String[tc.getLocalPlaces().size() + 1]);
+		// add noop to force the return point to appear in all exception traces
+		placesLabels[tc.getLocalPlaces().size()] = "noop";
+
+		String constTableLabel = tc.prefix(CONSTRUCTOR_TABLE_LABEL);
+
+		BPLTransferCommand dispatchTransferCmd;
+
+		// //////////////////////////////////////
+		// commands before localPlacesTable
+		// /////////////////////////////////////
+		List<BPLCommand> dispatchCommands;
+		dispatchCommands = new ArrayList<BPLCommand>();
+		dispatchCommands.add(new BPLAssumeCommand(CodeGenerator
+				.isLocalPlace(stack(var(PLACE_VARIABLE)))));
+		BPLExpression unrollLoop = var(tc
+				.prefix(ITranslationConstants.UNROLL_COUNT));
+		dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(
+				unrollLoop, new BPLIntLiteral(1))));
+		dispatchCommands.add(new BPLAssertCommand(less(unrollLoop,
+				var(ITranslationConstants.MAX_LOOP_UNROLL))));
+		dispatchTransferCmd = new BPLGotoCommand(placesLabels);
+
+		methodBlocks.add(
+				0,
+				new BPLBasicBlock(placeTableLabel, dispatchCommands
+						.toArray(new BPLCommand[dispatchCommands.size()]),
+						dispatchTransferCmd));
+
+		// //////////////////////////////////////
+		// commands before callTable
+		// /////////////////////////////////////
+		dispatchCommands = new ArrayList<BPLCommand>();
+		dispatchCommands.add(new BPLAssumeCommand(
+				logicalNot(isLocalPlace(stack(var(PLACE_VARIABLE))))));
+		dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(
+				unrollLoop, new BPLIntLiteral(1))));
+		dispatchCommands.add(new BPLAssertCommand(less(unrollLoop,
+				var(ITranslationConstants.MAX_LOOP_UNROLL))));
+
+		methodLabels.add("noop");
+		dispatchTransferCmd = new BPLGotoCommand(
+				methodLabels.toArray(new String[methodLabels.size()]));
+		methodBlocks.add(
+				0,
+				new BPLBasicBlock(callTableLabel, dispatchCommands
+						.toArray(new BPLCommand[dispatchCommands.size()]),
+						dispatchTransferCmd));
+
+		// /////////////////////////////////////////
+		// commands before callTableInit (preconditions of the calltable)
+		// /////////////////////////////////////////
+		BPLExpression sp = spmap();
+		BPLExpression ip = var(tc.getInteractionFramePointer());
+
+		dispatchCommands = new ArrayList<BPLCommand>();
+		dispatchCommands.add(new BPLAssumeCommand(
+				logicalAnd(
+						isEqual(modulo(ip, new BPLIntLiteral(2)),
+								new BPLIntLiteral(1)),
+						isEqual(sp, new BPLIntLiteral(0)))));
+
+		methodBlocks.add(
+				0,
+				new BPLBasicBlock(callTableInitLabel, dispatchCommands
+						.toArray(new BPLCommand[dispatchCommands.size()]),
+						new BPLGotoCommand(callTableLabel)));
+
+		// ///////////////////////////////////////
+		// commands before returnTable
+		// ///////////////////////////////////////
+		dispatchCommands = new ArrayList<BPLCommand>();
+		dispatchCommands.add(new BPLAssumeCommand(
+				logicalNot(isLocalPlace(stack(var(PLACE_VARIABLE))))));
+		dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(
+				unrollLoop, new BPLIntLiteral(1))));
+		dispatchCommands.add(new BPLAssertCommand(less(unrollLoop,
+				var(ITranslationConstants.MAX_LOOP_UNROLL))));
+
+		dispatchTransferCmd = new BPLGotoCommand(returnLabels);
+
+		methodBlocks.add(
+				0,
+				new BPLBasicBlock(retTableLabel, dispatchCommands
+						.toArray(new BPLCommand[dispatchCommands.size()]),
+						dispatchTransferCmd));
+
+		// /////////////////////////////////////////
+		// commands before returnTableInit (preconditions of the returntable)
+		// /////////////////////////////////////////
+
+		dispatchCommands = new ArrayList<BPLCommand>();
+		dispatchCommands.add(new BPLAssumeCommand(logicalOr(
+				logicalAnd(
+						isEqual(modulo(var(tc.getInteractionFramePointer()),
+								new BPLIntLiteral(2)), new BPLIntLiteral(1)),
+						greater(spmap(), new BPLIntLiteral(0))),
+				logicalAnd(
+						isEqual(modulo(var(tc.getInteractionFramePointer()),
+								new BPLIntLiteral(2)), new BPLIntLiteral(0)),
+						isEqual(spmap(), new BPLIntLiteral(0))))));
+
+		methodBlocks.add(
+				0,
+				new BPLBasicBlock(retTableInitLabel, dispatchCommands
+						.toArray(new BPLCommand[dispatchCommands.size()]),
+						new BPLGotoCommand(retTableLabel)));
+
+		// ///////////////////////////////////////////
+		// commands before constructor table
+		// //////////////////////////////////////////
+
+		dispatchCommands = new ArrayList<BPLCommand>();
+		dispatchCommands.add(new BPLAssumeCommand(
+				logicalOr(
+						isPublic(var(tc.getImpl()),
+								typ(stack(receiver()), var(tc.getHeap()))),
+						logicalNot(heap(stack(receiver()),
+								var(CREATED_BY_CTXT_FIELD))))));
+		// dispatchCommands.add(new BPLAssumeCommand(isCallable(
+		// typ(stack(receiver()), var(tc.getHeap())),
+		// stack(var(METH_FIELD)))));
+		dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(
+				unrollLoop, new BPLIntLiteral(1))));
+		dispatchCommands.add(new BPLAssertCommand(less(unrollLoop,
+				var(ITranslationConstants.MAX_LOOP_UNROLL))));
+
+		constructorLabels.add("noop");
+		dispatchTransferCmd = new BPLGotoCommand(
+				constructorLabels.toArray(new String[constructorLabels.size()]));
+
+		methodBlocks.add(
+				0,
+				new BPLBasicBlock(constTableLabel, dispatchCommands
+						.toArray(new BPLCommand[dispatchCommands.size()]),
+						dispatchTransferCmd));
+
+		// //////////////////////////////////////
+		// commands before dispatch
+		// //////////////////////////////////////
+		dispatchCommands = new ArrayList<BPLCommand>();
+		dispatchCommands.add(new BPLAssumeCommand(
+				logicalOr(
+						isPublic(var(tc.getImpl()),
+								typ(stack(receiver()), var(tc.getHeap()))),
+						logicalNot(heap(stack(receiver()),
+								var(CREATED_BY_CTXT_FIELD))))));
+		// dispatchCommands.add(new BPLAssumeCommand(isCallable(
+		// typ(stack(receiver()), var(tc.getHeap())),
+		// stack(var(METH_FIELD)))));
+		methodBlocks.add(
+				0,
+				new BPLBasicBlock(tc.getDispatchLabel(), dispatchCommands
+						.toArray(new BPLCommand[dispatchCommands.size()]),
+						new BPLGotoCommand(callTableInitLabel,
+								retTableInitLabel, placeTableLabel)));
+
+		return new LibraryDefinition(programDecls, methodBlocks);
+	}
+
+	public BoogieRunner check() {
+		BoogieRunner runner = new BoogieRunner();
+		runner.setVerify(config.isVerify());
+		runner.setSmokeTest(config.isSmokeTestOn());
+		runner.setLoopUnroll(config.getLoopUnrollCap() + 1);
+		try {
+			log.debug("Checking " + config.output());
+			runner.runBoogie(config.output());
+			log.debug(runner.getLastMessage());
+			if (runner.getLastReturn()) {
+				log.debug("Success");
+			} else {
+				log.debug("Error");
+			}
+		} catch (BoogieRunException e) {
+			e.printStackTrace();
+		}
+		return runner;
+	}
+
+	public void reportTrouble(TroubleMessage message) {
+		String msg = "";
+
+		TroublePosition position = message.getPosition();
+		if (position != null) {
+			if (position.getClassType() != null) {
+				msg += position.getClassType().getName() + ":";
+			}
+			if (position.getMethod() != null) {
+				msg += position.getMethod().getName() + ":";
+			}
+			if (position.getInstruction() != null) {
+				msg += position.getInstruction().getIndex() + ":";
+			}
+			if (msg.length() > 0) {
+				msg += " ";
+			}
+		}
+
+		msg += message.getDescriptionString();
+
+		switch (message.getDescription().getKind()) {
+		case ERROR:
+			log.error(msg);
+			break;
+		case WARNING:
+			log.warn(msg);
+			break;
+		}
+
+		if (message.getDescription().getKind() == TroubleDescription.Kind.ERROR) {
+			throw new CompilationAbortedException();
+		}
+	}
+
+	public static JClassType[] setProjectAndLoadTypes(Project project,
+			ITroubleReporter troubleReporter) {
 		TypeLoader.setProject(project);
 		TypeLoader.setProjectTypes(project.getProjectTypes());
 		TypeLoader.setSpecificationProvider(project.getSpecificationProvider());
-		TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, troubleReporter));
+		TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project,
+				troubleReporter));
 		TypeLoader.setTroubleReporter(troubleReporter);
 
 		String[] projectTypeNames = project.getProjectTypes();
 		JClassType[] projectTypes = new JClassType[projectTypeNames.length];
-		for (int i = 0; i < projectTypes.length; i++) { 
-		  projectTypes[i] = TypeLoader.getClassType(projectTypeNames[i]);
+		for (int i = 0; i < projectTypes.length; i++) {
+			projectTypes[i] = TypeLoader.getClassType(projectTypeNames[i]);
 		}
 		return projectTypes;
 	}

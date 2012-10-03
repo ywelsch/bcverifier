@@ -41,7 +41,7 @@ public class TranslationController implements ITranslationConstants {
     private HashMap<String, Set<String>> methodDefinitions = new HashMap<String, Set<String>>();
     private Set<String> returnLabels = new HashSet<String>();
     public int maxLocals;
-    public int maxStack;
+	public int maxStack;
     public int maxParams;
     
     private String lastPlace = null;

@@ -305,18 +305,18 @@ public class Translator implements ITranslationConstants {
             for (BCMethod method : type.getMethods()) {
                 final String methodName;
                 methodName = GLOBAL_VAR_PREFIX+MethodTranslator.getMethodName(method);
+                if(!tc.declaredMethods().contains(methodName)){
+                    Logger.getLogger(Translator.class).debug("Adding method "+methodName);
+                    addConstants(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE)));
+                    tc.declaredMethods().add(methodName);
+                 // numparams
+                    addAxiom(isEqual(numParams(var(methodName)), var(""+method.getParameterCount())));
+                }
                 if (!method.isAbstract()
                         && !method.isNative()
                         && !method.isSynthetic()) {
 
-                    proc = methodTranslator.translate(context, method);
-                    if(!tc.declaredMethods().contains(methodName)){
-                        Logger.getLogger(Translator.class).debug("Adding method "+methodName);
-                        addConstants(new BPLVariable(methodName, new BPLTypeName(METHOD_TYPE)));
-                        tc.declaredMethods().add(methodName);
-                     // numparams
-                        addAxiom(isEqual(numParams(var(methodName)), var(""+method.getParameterCount())));
-                    }
+                    proc = methodTranslator.translate(context, method);                    
 //                    declarations.add(new BPLAxiom(new BPLFunctionApplication(DEFINES_METHOD, typeRef(type), var(methodName))));
                     tc.definesMethod(VALUE_TYPE_PREFIX+type.getName(), methodName);
                     if(method.isStatic()){
