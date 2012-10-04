@@ -12,6 +12,7 @@ import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLIfThenElseExpression;
 import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLLogicalNotExpression;
+import b2bpl.bpl.ast.BPLNullLiteral;
 import b2bpl.bpl.ast.BPLQuantifierExpression;
 import b2bpl.bpl.ast.BPLQuantifierExpression.Operator;
 import b2bpl.bpl.ast.BPLRelationalExpression;
@@ -20,11 +21,12 @@ import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLUnaryMinusExpression;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableExpression;
+import b2bpl.translation.ITranslationConstants;
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.BoolConst;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.ErrorExpr;
-import de.unikl.bcverifier.isl.ast.ForallExpr;
+import de.unikl.bcverifier.isl.ast.QExpr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.IntConst;
@@ -37,10 +39,12 @@ import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.JavaVariableDef;
+import de.unikl.bcverifier.isl.checking.types.BijectionType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
+import de.unikl.bcverifier.isl.parser.Quantifier;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
 
@@ -49,6 +53,7 @@ public class ExprTranslation {
 	private static final b2bpl.bpl.ast.BPLEqualityExpression.Operator NOT_EQUALS = BPLEqualityExpression.Operator.NOT_EQUALS;
 	private static final b2bpl.bpl.ast.BPLEqualityExpression.Operator EQUALS = BPLEqualityExpression.Operator.EQUALS;
 	private static final Operator FORALL = BPLQuantifierExpression.Operator.FORALL;
+	private static final Operator EXISTS = BPLQuantifierExpression.Operator.EXISTS;
 	private static final b2bpl.bpl.ast.BPLBinaryLogicalExpression.Operator AND = BPLBinaryLogicalExpression.Operator.AND;
 	private static final b2bpl.bpl.ast.BPLBinaryLogicalExpression.Operator OR = BPLBinaryLogicalExpression.Operator.OR;
 
@@ -106,25 +111,33 @@ public class ExprTranslation {
 		throw new Error("Translating invalid expression."); //$NON-NLS-1$
 	}
 
-	public static BPLExpression translate(ForallExpr e) {
+	public static BPLExpression translate(QExpr e) {
 		BPLExpression rightExpr = e.getExpr().translateExpr();
 		List<VarDef> boundVars = e.getBoundVars();
-		return createForallExpr(boundVars, rightExpr);
+		return createQExpr(e.getQuantifier(), boundVars, rightExpr);
 	}
 
 	/**
-	 * creates a forall expression including the assumptions about the types
+	 * creates a quantified expression including the assumptions about the types
 	 * of the bound variables
+	 * @param quantifier 
 	 * @param rightExpr
 	 * @param boundVars
 	 * @return
 	 */
-	public static BPLExpression createForallExpr(List<VarDef> boundVars, BPLExpression rightExpr) {
+	public static BPLExpression createQExpr(Quantifier quantifier, List<VarDef> boundVars, BPLExpression rightExpr) {
 		BPLVariable[] variables = new BPLVariable[boundVars.getNumChild()];
 		int i = 0;
 		for (VarDef boundVar : boundVars) {
-			BPLType type = new BPLTypeName("Ref"); //$NON-NLS-1$
-			variables[i] = new BPLVariable(boundVar.attrName(), type);
+			if (boundVar.attrType() instanceof JavaType) {
+				BPLType type = new BPLTypeName(ITranslationConstants.REF_TYPE); //$NON-NLS-1$
+				variables[i] = new BPLVariable(boundVar.attrName(), type);
+			} else if (boundVar.attrType() instanceof BijectionType) {
+				BPLType type = new BPLTypeName(ITranslationConstants.BIJ_TYPE); //$NON-NLS-1$
+				variables[i] = new BPLVariable(boundVar.attrName(), type);
+			} else {
+				throw new Error("Quantification over primitive types not supported yet.");
+			}
 			i++;
 		}
 		BPLExpression leftExpr = null;
@@ -137,8 +150,15 @@ public class ExprTranslation {
 				} else {
 					leftExpr = new BPLBinaryLogicalExpression(AND, leftExpr, typeAssumtion);
 				}
+			} else if (boundVar.attrType() instanceof BijectionType) {
+				BijectionType bijType = (BijectionType) boundVar.attrType();
+				BPLExpression typeAssumtion = makeTypeAssumption(boundVar, bijType);
+				if (leftExpr == null) {
+					leftExpr = typeAssumtion;
+				} else {
+					leftExpr = new BPLBinaryLogicalExpression(AND, leftExpr, typeAssumtion);
+				}
 			}
-			 
 		}
 		
 		b2bpl.bpl.ast.BPLBinaryLogicalExpression.Operator implies = BPLBinaryLogicalExpression.Operator.IMPLIES;
@@ -148,14 +168,20 @@ public class ExprTranslation {
 		} else {
 			expr = rightExpr;
 		}
-		return new BPLQuantifierExpression(FORALL, variables, expr);
+		return new BPLQuantifierExpression(getQuantifier(quantifier), variables, expr);
+	}
+	
+	private static Operator getQuantifier(Quantifier quantifier) {
+		if (quantifier.equals(Quantifier.FORALL)) return FORALL;
+		if (quantifier.equals(Quantifier.EXISTS)) return EXISTS;
+		throw new Error("Unhandled case." + quantifier); //$NON-NLS-1$
 	}
 
 	/**
 	 * creates a type assumption.
 	 * example: Obj(heap1, o1) && RefOfType(o1, heap1, $cell.Cell) 
 	 * @param boundVar
-	 * @param javaType
+	 * @param bijType
 	 * @return
 	 */
 	private static BPLExpression makeTypeAssumption(VarDef boundVar, JavaType javaType) {
@@ -170,19 +196,23 @@ public class ExprTranslation {
 		}
 		throw new Error();
 	}
-
-	private static BPLBinaryLogicalExpression makeTypeAssumption(VarDef boundVar, JavaType javaType,
-			Version version) {
+	
+	private static BPLBinaryLogicalExpression makeTypeAssumption(VarDef boundVar, JavaType javaType, Version version) {
 		return new BPLBinaryLogicalExpression(AND, 
-				new BPLFunctionApplication("Obj",  //$NON-NLS-1$
+				new BPLFunctionApplication(ITranslationConstants.OBJ_FUNC,  //$NON-NLS-1$
 						getHeap(version), 
 						new BPLVariableExpression(boundVar.attrName())), 
-				new BPLFunctionApplication("RefOfType",  //$NON-NLS-1$
+				new BPLFunctionApplication(ITranslationConstants.REF_OF_TYPE_FUNC,  //$NON-NLS-1$
 						new BPLVariableExpression(boundVar.attrName()),
 						getHeap(version), 
 						new BPLVariableExpression("$" + javaType.getTypeBinding().getQualifiedName()) //$NON-NLS-1$
 						));
 	}
+	
+	private static BPLExpression makeTypeAssumption(VarDef boundVar, BijectionType bijType) {
+		return new BPLFunctionApplication(ITranslationConstants.BIJECTIVE_FUNC, new BPLVariableExpression(boundVar.attrName()));
+	}
+
 
 	public static BPLExpression getHeap(Version version) {
 		if (version == Version.OLD) {
@@ -225,7 +255,7 @@ public class ExprTranslation {
 			
 			if (field.getType().getQualifiedName().equals("boolean")) {
 				// boolean fields must be converted explicitly
-				expr = new BPLFunctionApplication("int2bool", expr);
+				expr = new BPLFunctionApplication(ITranslationConstants.INT2BOOL_FUNC, expr);
 			}
 			return expr;
 		}
@@ -266,7 +296,7 @@ public class ExprTranslation {
 				new BPLVariableExpression(jv.getRegisterName()));
 		if (e.attrType().isSubtypeOf(ExprTypeBool.instance())) {
 			// boolean vars must be converted explicitly
-			expr = new BPLFunctionApplication("int2bool", expr);
+			expr = new BPLFunctionApplication(ITranslationConstants.INT2BOOL_FUNC, expr);
 		}
 		return expr;
 	}
@@ -276,7 +306,7 @@ public class ExprTranslation {
 	}
 
 	public static BPLExpression translate(NullConst nullConst) {
-		return new BPLVariableExpression("null");
+		return new BPLVariableExpression(BPLNullLiteral.NULL.toString());
 	}
 
 	public static BPLExpression translate(UnaryOperation e) {

@@ -155,20 +155,28 @@ public class ISLParserTest {
 				new File("./libraries/obool/new"), cu);
 		System.out.println("obool output:");
 		translateAndPrint(cu);
-		
-		System.out.println("well definedness:");
-		for (Statement s : cu.getStatementList()) {
-			Invariant i = (Invariant) s;
-			BPLExpression df = i.getExpr().translateExprWellDefinedness();
-			PrintWriter pw = new PrintWriter(System.out);
-			BPLPrinter printer = new BPLPrinter(pw);
-			df.accept(printer);
-			pw.flush();
-			System.out.println();
-		}
 	}
 	
-	
+	@Test
+	public void obool2() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+				// internal:
+				"invariant forall old OBool o :: !createdByCtxt(o.g) && !exposed(o.g);",
+				"invariant forall new OBool o :: !createdByCtxt(o.g) && !exposed(o.g);",
+				// nonnull:
+				"invariant forall old OBool o :: o.g != null;",
+				"invariant forall new OBool o :: o.g != null;",
+				// unique
+				"invariant exists Bijection relbij :: forall old OBool o1, new OBool o2 :: o1 ~ o2 ==> related(relbij, o1, o2);",
+				"invariant forall old Bool o1, new Bool o2 :: o1 ~ o2 ==> o1.f == o2.f;",
+				"invariant forall old OBool o1, new OBool o2 :: o1 ~ o2 ==> o1.g.f != o2.g.f;"
+				);
+		testTypeCheckOk(
+				new File("./libraries/obool/old"), 
+				new File("./libraries/obool/new"), cu);
+		System.out.println("obool2 output:");
+		translateAndPrint(cu);
+	}
 	
 	
 	protected CompilationUnit testParseOk(String ... lines) throws IOException, Exception {

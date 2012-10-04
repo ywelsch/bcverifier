@@ -37,6 +37,7 @@ import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.UnknownDef;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.isl.checking.types.BijectionType;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeCallProgramPoint;
@@ -55,8 +56,11 @@ public class TypeHelper {
 	public static ExprType attrType(NamedTypeDef t) {
 		Version version = t.getVersion();
 		String qualifiedName = getQualifiedName(t.getNames());
-
-		return JavaType.create(t, version, qualifiedName);
+		if (version.equals(Version.BOTH) && t.getNameList().getNumChild() == 1 && t.getName(0).getName().equals(BijectionType.instance().toString())) {
+			return BijectionType.instance();
+		} else {
+			return JavaType.create(t, version, qualifiedName);
+		}
 	}
 
 	private static String getQualifiedName(List<Ident> names) {

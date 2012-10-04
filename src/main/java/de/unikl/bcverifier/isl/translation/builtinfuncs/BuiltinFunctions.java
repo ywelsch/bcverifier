@@ -21,7 +21,7 @@ public class BuiltinFunctions {
 	public static final BuiltinFunction FUNC_SP2 = new BuiltinFuncSp2();
 
 	public final BuiltinFunction FUNC_AT_place_sp = new BuiltinFuncAt_place_sp();
-	public final BuiltinFunction FUNC_AT_place = new BuiltinFuncAt_place();;
+	public final BuiltinFunction FUNC_AT_place = new BuiltinFuncAt_place();
 	
 	Multimap<String, BuiltinFunction> funcs = null;
 	private TwoLibraryModel twoLibraryModel;
@@ -56,6 +56,8 @@ public class BuiltinFunctions {
 		addFunc(FUNC_SP1);
 		// int sp2()
 		addFunc(FUNC_SP2);
+		// bool related(Bijection b, Object o1, Object o2)
+		addFunc(new BuiltinFuncRelated(twoLibraryModel));
 	}
 
 	private void addFunc(BuiltinFunction f) {

@@ -4,7 +4,7 @@ CompilationUnit ::= Statement*;
 
 abstract Expr;
 
-ForallExpr: Expr ::= BoundVar:VarDef* Expr;
+QExpr: Expr ::= <Quantifier:de.unikl.bcverifier.isl.parser.Quantifier> BoundVar:VarDef* Expr;
 
 VarAccess: Expr ::= Name:Ident;
 
@@ -35,7 +35,7 @@ VarDef : Def ::= TypeDef Name:Ident;
 abstract Statement : Def;
 
 Invariant : Statement ::= Expr;
-LocalInvariant: Statement ::= Expr; 
+LocalInvariant: Statement ::= Expr;
 PlaceDef: Statement ::= PlaceModifier Name:Ident ProgramPoint:ProgramPointExpr [Condition:Expr] [TerminationMeasure:Expr];
 ProgramPoint: Statement ::= Name:Ident ProgramPointExpr;
 
@@ -57,7 +57,7 @@ NamedTypeDef : TypeDef ::= <Version:Version> Name:Ident*;
 
 
 
-  
+
 // other stuff:
 
 Ident ::= <Name>;

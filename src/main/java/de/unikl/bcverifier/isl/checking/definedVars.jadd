@@ -4,7 +4,7 @@ aspect definedVars {
 	
 	syn lazy Collection<Def> Expr.attrDefinedVars() = Collections.emptyList();
 	
-	eq ForallExpr.attrDefinedVars() {
+	eq QExpr.attrDefinedVars() {
 		ArrayList<Def> result = new ArrayList<Def>();
 		for (VarDef d : getBoundVars()) {
 			result.add(d);

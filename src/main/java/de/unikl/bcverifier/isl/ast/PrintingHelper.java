@@ -54,8 +54,8 @@ public class PrintingHelper {
 		return null;
 	}
 
-	public static Void print(Appendable r, ForallExpr e) {
-		print(r, "forall ");
+	public static Void print(Appendable r, QExpr e) {
+		print(r, e.getQuantifier().toString() + " ");
 		boolean first = true;
 		for (VarDef v : e.getBoundVars()) {
 			if (!first) {

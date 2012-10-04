@@ -15,7 +15,7 @@ import de.unikl.bcverifier.isl.ast.BoolConst;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.ErrorExpr;
 import de.unikl.bcverifier.isl.ast.Expr;
-import de.unikl.bcverifier.isl.ast.ForallExpr;
+import de.unikl.bcverifier.isl.ast.QExpr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.IntConst;
@@ -138,10 +138,11 @@ public class ExprWellDefinedness {
 		}
 	}
 
-	public static BPLExpression translate(ForallExpr e) {
+	public static BPLExpression translate(QExpr e) {
 		// forall x. A(x)
 		// >>> forall x. wd(A(x))
-		return ExprTranslation.createForallExpr(
+		return ExprTranslation.createQExpr(
+				e.getQuantifier(),
 				e.getBoundVarList(), 
 				e.getExpr().translateExprWellDefinedness());
 	}

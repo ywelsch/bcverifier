@@ -59,7 +59,7 @@ import de.unikl.bcverifier.isl.ast.*;
 :};
 
 
-%terminals FORALL, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER, INVARIANT, LOCAL,
+%terminals FORALL, EXISTS, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER, INVARIANT, LOCAL,
 	PROGRAMPOINT, IN,
 	PLACE, LINE, WHEN, CALL, OF, PREDEFINED, 
 	// TERMINATION_MEASURE,
@@ -84,7 +84,7 @@ import de.unikl.bcverifier.isl.ast.*;
 %right IMPLIES;
 %left IFF;
 %left THEN;
-%left FORALL;
+%left EXISTS, FORALL;
 
 %typeof id = "Ident";
 %typeof vardefs = "List<VarDef>";
@@ -145,8 +145,10 @@ placecondition =
 ;
 
 expr =
-      FORALL vardefs.v COLONCOLON expr.e
-      	{: return new ForallExpr(v,e); :}
+      EXISTS vardefs.v COLONCOLON expr.e
+      	{: return new QExpr(Quantifier.EXISTS,v,e); :}
+    | FORALL vardefs.v COLONCOLON expr.e
+      	{: return new QExpr(Quantifier.FORALL,v,e); :}
     | TRUE  
     	{: return new BoolConst(true); :}
     | FALSE 

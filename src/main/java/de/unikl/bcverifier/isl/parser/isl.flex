@@ -71,6 +71,7 @@ IntLiteral = 0 | [1-9][0-9]*
 // Important: if a new keyword is added also add it to Keywords.java
 //            to get syntax highlighting in Eclipse
 <YYINITIAL> {
+ "exists"      { return sym(Terminals.EXISTS); }
  "forall"      { return sym(Terminals.FORALL); }
  "true"      { return sym(Terminals.TRUE); }
  "false"      { return sym(Terminals.FALSE); }

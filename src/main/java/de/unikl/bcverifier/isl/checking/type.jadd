@@ -6,7 +6,7 @@ aspect exprType {
 	
 	syn ExprType Expr.attrType() circular [UnknownType.instance()];
 	
-	eq ForallExpr.attrType() = ExprTypeBool.instance();
+	eq QExpr.attrType() = ExprTypeBool.instance();
 
 	eq VarAccess.attrType() = TypeHelper.attrType(this);
 
