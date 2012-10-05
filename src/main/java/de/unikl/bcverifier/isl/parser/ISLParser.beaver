@@ -60,7 +60,7 @@ import de.unikl.bcverifier.isl.ast.*;
 
 
 %terminals FORALL, EXISTS, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER, INVARIANT, LOCAL,
-	PROGRAMPOINT, IN,
+	IN,
 	PLACE, LINE, WHEN, CALL, OF, PREDEFINED, 
 	// TERMINATION_MEASURE,
 	IF, THEN, ELSE,
@@ -69,15 +69,15 @@ import de.unikl.bcverifier.isl.ast.*;
 	EQUALS, UNEQUALS,
 	COLON, COLONCOLON, COMMA, LPAREN, RPAREN, SEMI, EQ,
 	IMPLIES, IFF, AND, OR, RELATED,
-	INTLITERAL, NULL
+	INTLITERAL, NULL, INSTANCEOF
 ;
 
 // operator precedences, highest first
+%left DOT;
 %right NOT;
-%left DOT; 
+%left RELATED, INSTANCEOF; 
 %left MOD, MULT, DIV;
 %left PLUS, MINUS;
-%left RELATED;
 %left EQUALS, UNEQUALS, LT, LTEQ, GT, GTEQ;
 %left AND;
 %left OR;
@@ -114,8 +114,6 @@ statement =
 		{: return new Invariant(e); :}
 	| LOCAL INVARIANT expr.e SEMI
 		{: return new LocalInvariant(e); :}
-	| PROGRAMPOINT id.i EQ placeposition.pos SEMI
-		{: return new ProgramPoint(i, pos); :}
 	| placedef.p
 	
 ;
@@ -165,6 +163,8 @@ expr =
     	{: return new MemberAccess(left, right); :}
     | expr.left RELATED expr.right
     	{: return new BinaryOperation(BinaryOperator.RELATED, left, right); :}
+    | expr.left INSTANCEOF typedef.right
+    	{: return new InstanceofOperation(left, right); :}	
     | expr.left IMPLIES expr.right
     	{: return new BinaryOperation(BinaryOperator.IMPLIES, left, right); :}
     | expr.left IFF expr.right

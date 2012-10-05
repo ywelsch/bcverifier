@@ -24,6 +24,7 @@ import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.Ident;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
+import de.unikl.bcverifier.isl.ast.InstanceofOperation;
 import de.unikl.bcverifier.isl.ast.LineNrProgramPoint;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
@@ -548,6 +549,18 @@ public class TypeHelper {
 			n = n.getParent();
 		}
 		return null;
+	}
+
+	public static ExprType attrType(InstanceofOperation op) {
+		ExprType left = op.getLeft().attrType();
+		if (!(left instanceof JavaType) || !(op.getRight().attrType() instanceof JavaType)) {
+			op.addError("instanceof only works on Java types.");
+		} else {
+			if (!((JavaType)left).getVersion().equals(((JavaType)op.getRight().attrType()).getVersion())) {
+				op.addError("instanceof must compare type of same library implementation");
+			}
+		}
+		return ExprTypeBool.instance();
 	}
 	
 

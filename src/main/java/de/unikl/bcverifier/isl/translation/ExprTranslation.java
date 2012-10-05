@@ -26,6 +26,7 @@ import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.BoolConst;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.ErrorExpr;
+import de.unikl.bcverifier.isl.ast.InstanceofOperation;
 import de.unikl.bcverifier.isl.ast.QExpr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
@@ -305,7 +306,7 @@ public class ExprTranslation {
 	}
 
 	public static BPLExpression translate(NullConst nullConst) {
-		return new BPLVariableExpression(BPLNullLiteral.NULL.toString());
+		return BPLNullLiteral.NULL;
 	}
 
 	public static BPLExpression translate(UnaryOperation e) {
@@ -320,6 +321,14 @@ public class ExprTranslation {
 
 	public static BPLExpression translate(LineNrProgramPoint lineNrProgramPoint) {
 		throw new Error("Cannot translate program point expressions.");
+	}
+
+	public static BPLExpression translate(InstanceofOperation op) {
+		JavaType jt = (JavaType) op.getRight().attrType();
+		return new BPLFunctionApplication(ITranslationConstants.IS_INSTANCE_OF_FUNC, 
+				op.getLeft().translateExpr(), 
+				getHeap(jt.getVersion()), 
+				new BPLVariableExpression("$" + jt.getTypeBinding().getQualifiedName()));
 	}
 
 

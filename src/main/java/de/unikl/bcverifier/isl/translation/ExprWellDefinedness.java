@@ -15,6 +15,7 @@ import de.unikl.bcverifier.isl.ast.BoolConst;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.ErrorExpr;
 import de.unikl.bcverifier.isl.ast.Expr;
+import de.unikl.bcverifier.isl.ast.InstanceofOperation;
 import de.unikl.bcverifier.isl.ast.QExpr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
@@ -177,5 +178,9 @@ public class ExprWellDefinedness {
 
 	public static BPLExpression translate(LineNrProgramPoint lineNrProgramPoint) {
 		throw new Error("Cannot translate program point expressions.");
+	}
+
+	public static BPLExpression translate(InstanceofOperation op) {
+		return op.getLeft().translateExprWellDefinedness();
 	}
 }

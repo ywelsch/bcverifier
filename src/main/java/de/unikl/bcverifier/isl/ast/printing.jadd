@@ -26,6 +26,7 @@ aspect printing {
 
   eq NullConst.printTo(Appendable r) = PrintingHelper.print(r, this);
 
+  eq InstanceofOperation.printTo(Appendable r) = PrintingHelper.print(r, this);
 
   public String Expr.print() {
     StringBuilder sb = new StringBuilder();

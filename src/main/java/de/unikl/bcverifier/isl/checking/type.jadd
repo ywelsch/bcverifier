@@ -3,54 +3,56 @@ import de.unikl.bcverifier.isl.checking.types.*;
 import de.unikl.bcverifier.isl.checking.TypeHelper;
 
 aspect exprType {
-	
-	syn ExprType Expr.attrType() circular [UnknownType.instance()];
-	
-	eq QExpr.attrType() = ExprTypeBool.instance();
 
-	eq VarAccess.attrType() = TypeHelper.attrType(this);
+  syn ExprType Expr.attrType() circular [UnknownType.instance()];
 
-	eq MemberAccess.attrType() = TypeHelper.attrType(this);
+  eq QExpr.attrType() = ExprTypeBool.instance();
 
-	eq FuncCall.attrType() = TypeHelper.attrType(this);
+  eq VarAccess.attrType() = TypeHelper.attrType(this);
 
-	eq BinaryOperation.attrType() = TypeHelper.attrType(this);
-	
-	eq UnaryOperation.attrType() = TypeHelper.attrType(this);
+  eq MemberAccess.attrType() = TypeHelper.attrType(this);
 
-	eq IfThenElse.attrType() = TypeHelper.attrType(this);
+  eq FuncCall.attrType() = TypeHelper.attrType(this);
 
-	eq ErrorExpr.attrType() = ExprTypeBool.instance();
-	
-	eq BoolConst.attrType() = ExprTypeBool.instance();
-	
-	eq IntConst.attrType() = ExprTypeInt.instance();
-	
-	eq NullConst.attrType() = TypeHelper.attrType(this);
-	
-	syn ExprType ProgramPointExpr.attrType() circular [UnknownType.instance()];
-	
-	eq LineNrProgramPoint.attrType() = TypeHelper.attrType(this);
-	
-	eq CallProgramPoint.attrType() = TypeHelper.attrType(this);
-	
-	syn lazy ExprType Def.attrType();
-	
-	eq UnknownDef.attrType() = UnknownType.instance();
-	
-	eq Invariant.attrType() = UnknownType.instance();
-	
-	eq LocalInvariant.attrType() = UnknownType.instance();
-	
-	eq PlaceDef.attrType() = TypeHelper.placeDefType(this);
-	
-	eq VarDef.attrType() = getTypeDef().attrType();
-	
-	
-	syn lazy ExprType TypeDef.attrType();
-	
-	eq NamedTypeDef.attrType() = TypeHelper.attrType(this);
-	
-	eq ProgramPoint.attrType() = TypeHelper.attrType(this);
-	
+  eq BinaryOperation.attrType() = TypeHelper.attrType(this);
+
+  eq InstanceofOperation.attrType() = TypeHelper.attrType(this);
+
+  eq UnaryOperation.attrType() = TypeHelper.attrType(this);
+
+  eq IfThenElse.attrType() = TypeHelper.attrType(this);
+
+  eq ErrorExpr.attrType() = ExprTypeBool.instance();
+
+  eq BoolConst.attrType() = ExprTypeBool.instance();
+
+  eq IntConst.attrType() = ExprTypeInt.instance();
+
+  eq NullConst.attrType() = TypeHelper.attrType(this);
+
+  syn ExprType ProgramPointExpr.attrType() circular [UnknownType.instance()];
+
+  eq LineNrProgramPoint.attrType() = TypeHelper.attrType(this);
+
+  eq CallProgramPoint.attrType() = TypeHelper.attrType(this);
+
+  syn lazy ExprType Def.attrType();
+
+  eq UnknownDef.attrType() = UnknownType.instance();
+
+  eq Invariant.attrType() = UnknownType.instance();
+
+  eq LocalInvariant.attrType() = UnknownType.instance();
+
+  eq PlaceDef.attrType() = TypeHelper.placeDefType(this);
+
+  eq VarDef.attrType() = getTypeDef().attrType();
+
+
+  syn lazy ExprType TypeDef.attrType();
+
+  eq NamedTypeDef.attrType() = TypeHelper.attrType(this);
+
+  eq ProgramPoint.attrType() = TypeHelper.attrType(this);
+
 }

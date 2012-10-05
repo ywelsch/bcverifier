@@ -4,46 +4,48 @@ import de.unikl.bcverifier.specification.SpecInvariant;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 
 aspect translate {
-	
-	syn BPLExpression Expr.translateExpr();
-	
-	eq BinaryOperation.translateExpr() = ExprTranslation.translate(this);
-	eq UnaryOperation.translateExpr() = ExprTranslation.translate(this);
-	eq BoolConst.translateExpr() = ExprTranslation.translate(this);
-	eq IntConst.translateExpr() = ExprTranslation.translate(this);
-	eq NullConst.translateExpr() = ExprTranslation.translate(this);
-	eq ErrorExpr.translateExpr() = ExprTranslation.translate(this);
-	eq QExpr.translateExpr() = ExprTranslation.translate(this);
-	eq FuncCall.translateExpr() = ExprTranslation.translate(this);
-	eq IfThenElse.translateExpr() = ExprTranslation.translate(this);
-	eq MemberAccess.translateExpr() = ExprTranslation.translate(this);
-	eq VarAccess.translateExpr() = ExprTranslation.translate(this);
-	
-	public java.util.List<SpecInvariant> CompilationUnit.generateInvariants() {
-		return Translation.generateInvariants(this);
-	}
-	
-	public java.util.List<SpecInvariant> CompilationUnit.generateLocalInvariants() {
-		return Translation.generateLocalInvariants(this);
-	}
-	
-	public LocalPlaceDefinitions CompilationUnit.generatePlaces() {
-		return Translation.generatePlaces(this);
-	}
-	
-	syn BPLExpression Expr.translateExprWellDefinedness();
-	
-	eq BinaryOperation.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	eq UnaryOperation.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	eq BoolConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	eq IntConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	eq NullConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	eq ErrorExpr.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	eq QExpr.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	eq FuncCall.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	eq IfThenElse.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	eq MemberAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	eq VarAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
-	
-	
+
+  syn BPLExpression Expr.translateExpr();
+
+  eq BinaryOperation.translateExpr() = ExprTranslation.translate(this);
+  eq InstanceofOperation.translateExpr() = ExprTranslation.translate(this);
+  eq UnaryOperation.translateExpr() = ExprTranslation.translate(this);
+  eq BoolConst.translateExpr() = ExprTranslation.translate(this);
+  eq IntConst.translateExpr() = ExprTranslation.translate(this);
+  eq NullConst.translateExpr() = ExprTranslation.translate(this);
+  eq ErrorExpr.translateExpr() = ExprTranslation.translate(this);
+  eq QExpr.translateExpr() = ExprTranslation.translate(this);
+  eq FuncCall.translateExpr() = ExprTranslation.translate(this);
+  eq IfThenElse.translateExpr() = ExprTranslation.translate(this);
+  eq MemberAccess.translateExpr() = ExprTranslation.translate(this);
+  eq VarAccess.translateExpr() = ExprTranslation.translate(this);
+
+  public java.util.List<SpecInvariant> CompilationUnit.generateInvariants() {
+    return Translation.generateInvariants(this);
+  }
+
+  public java.util.List<SpecInvariant> CompilationUnit.generateLocalInvariants() {
+    return Translation.generateLocalInvariants(this);
+  }
+
+  public LocalPlaceDefinitions CompilationUnit.generatePlaces() {
+    return Translation.generatePlaces(this);
+  }
+
+  syn BPLExpression Expr.translateExprWellDefinedness();
+
+  eq BinaryOperation.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq InstanceofOperation.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq UnaryOperation.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq BoolConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq IntConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq NullConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq ErrorExpr.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq QExpr.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq FuncCall.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq IfThenElse.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq MemberAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq VarAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+
+
 }

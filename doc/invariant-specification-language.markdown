@@ -7,42 +7,42 @@ between two libraries.
 Syntax
 ------
 	
-	compilationunit ::= statement* 
+	COMPILATIONUNIT ::= STATEMENT* 
 
-	statement ::= 
-		  invariant expr; // global invariant
-		| local invariant expr;
-		| place identifier = expr when expr;	
-		| programpoint identifier = programpointExpr;
+	STATEMENT ::= 
+		  "invariant" EXPRESSION ";" // coupling invariant
+		| "local" "invariant" EXPRESSION ";"
+		| ("local" | "predefined") "place" IDENTIFIER "=" PLACEPOSITION ";"
 	
-	expr ::= 
-		  forall vardefs :: expr
-    	| constant  
-    	| identifier
-    	| identifier(parameterlist)
-    	| expr.identifier
-    	| expr binaryoperator expr
-    	| unaryoperator expr
-    	| if expr then expr else expr
-    	| (expr)
-    	| programpointExpr
-
-	programpointExpr ::= line int in typedef
-
-	parameterlist ::= (expr (, expr)*)?
+	PLACEPOSITION ::=
+	      "line" INT "of" TYPEDEF ("when" EXPRESSION)?
+	    | "call" IDENTIFIER "in" "line" INT "of" TYPEDEF
 	
-	vardefs ::= vardef (, vardef)*
+	EXPRESSION ::= 
+		  ("forall" | "exists") VARDEF ("," VARDEF)* "::" EXPRESSION
+    	| CONSTANT // true, false, null, and integer constants
+    	| IDENTIFIER
+    	| IDENTIFIER "(" (EXPRESSION ("," EXPRESSION)*)? ")" // function call
+    	| EXPRESSION "." IDENTIFIER // field access
+    	| EXPRESSION BINARYOPERATOR EXPRESSION
+    	| EXPRESSION "instanceof" TYPEDEF // standard Java instanceof operator
+    	| UNARYOPERATOR EXPRESSION
+    	| "if" EXPRESSION "then" EXPRESSION "else" EXPRESSION
+    	| "(" EXPRESSION ")" // parenthesized expression
  
-	vardef ::= typedef identifier
+	VARDEF ::= TYPEDEF IDENTIFIER
 
-	typedef ::= (old|new) qualifiedidentifier
+	TYPEDEF ::= 
+	      ("old" | "new") IDENTIFIER
+	    | "Bijection"
+	      
+	BINARYOPERATOR ::=
+	      "+" | "-" | "*" | "/" |  "%" | "==" | "!=" | "<" | "<=" | ">" | ">=" | "&&" | "||" // standard Java operators
+	    | "==>" | "<==>" // other logical operators
+	    | "~" // correspondence relation
 	
-Available operators: 
-
-- Some standard Java operators: + - * / %  == < <= > >= && ||
-- Implication operator: ==>
-- Correspondence relation operator: ~ 
-
+	UNARYOPERATOR ::= 
+	    "!" | "-" // standard Java operators
 
 Semantics
 ---------
@@ -58,8 +58,8 @@ Currently the following types are supported:
 	- int
 - Java class types with library version. The library version is either "old" or "new".
 	The Java type can be referenced by the fully qualified name or just by the name of the class if it is unambiguous.
-- Program points (e.g. line 10 in old Cell)
-- Places (defined by place definitions)	
+- Places (defined by place definitions).
+- The special "Bijection" type defining bijective relations.
 
 ### Correspondence Relation Operator
 
@@ -70,6 +70,8 @@ An expression `o1 ~ o2` is true if and only if o1 and o2 are two objects in corr
 (see [Correspondence Relation](blablub.html#bum)) or o1 and o2 are both null.
 
 ### Built-in Functions
+
+ISL currently only supports built-in functions.
 
 	boolean exposed(Object o)
 	
@@ -104,6 +106,10 @@ Short form for `stack(p, sp1(), e)` or `stack(p, sp2(), e)`
 	int sp2()
 	
 Returns the current value of the stackpointer for the old (sp1) and the new (sp2) library.
+
+	boolean related(Bijection b, Object o1, Object o2)
+	
+Returns whether the pair o1, o2 is in the relation b.
 
 ### Well formed invariants
 

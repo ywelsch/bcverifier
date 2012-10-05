@@ -83,7 +83,6 @@ IntLiteral = 0 | [1-9][0-9]*
  "null"		{ return sym(Terminals.NULL); }
  "invariant" { return sym(Terminals.INVARIANT); }
  "local" { return sym(Terminals.LOCAL); }
- "programpoint" { return sym(Terminals.PROGRAMPOINT); }
  "in" { return sym(Terminals.IN); }
  "place" { return sym(Terminals.PLACE); }
  "line" { return sym(Terminals.LINE); }
@@ -122,6 +121,7 @@ IntLiteral = 0 | [1-9][0-9]*
 "::"			{ return sym(Terminals.COLONCOLON); }
 "="			{ return sym(Terminals.EQ); }
 ";"			{ return sym(Terminals.SEMI); }
+"instanceof" { return sym(Terminals.INSTANCEOF); }
 }
 
 

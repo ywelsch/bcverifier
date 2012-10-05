@@ -97,6 +97,15 @@ public class PrintingHelper {
 		return null;
 	}
 	
+	public static Void print(Appendable r, InstanceofOperation e) {
+		print(r, "(");
+		e.getLeft().printTo(r);
+		print(r, " instanceof ");
+		print(r, e.getRight().attrType().toString());
+		print(r, ")");
+		return null;
+	}
+	
 	private static void print(Appendable r, String s) {
 		try {
 			r.append(s);
