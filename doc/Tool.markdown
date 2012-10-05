@@ -1,20 +1,21 @@
 Tool
 ====
 
-The tool BCVerifier is a standalone tool for checking backward compatibility of two Java implementations. As described in the [[Formal Model]] section, the tool takes as input two implementations of a library written in the Java language and a coupling invariant. We provide a command line version and a web front-end to the tool.
+BCVerifier is a standalone tool for checking backward compatibility of two Java library implementations. As described in the [[Formal Model]] section, the tool takes as input two implementations of a library written in the Java language and a coupling invariant. We provide a command line version and a web front-end to the tool.
 
+<!--
 Command Line Tool
 -----------------
 
 The implementations that should be checked need to be available as Java source code in two directories. The package structure must be obeyed as usual. These two folders are passed to the verifier using the command line argument `-l <old_implementation> <new_implementation>` where `<old_implementation>` is the path to the source folder of the old library implementation and `<new_implementation>` is the path to the source folder of the new library implementation.
 
 The Java source files are checked for source compatibility first. Source compatibility is a necessary condition for (behavioral) backward compatibility. If two library implementations are source compatible then both implementations can be combined with the same program contexts yielding valid Java programs each. By specifying the command line argument `-c` the library files are compiled using the right compiler flags to support all the functionality of the tool.
-
+-->
 
 Coupling Invariant
 ------------------
 
-The coupling invariant can be specified using one of two possible syntaxes.
+The BCVerifier accepts specifications using one of two possible syntaxes (although the web frontend only supports the first syntax).
 
   - The [[Invariant Specification Language]] is a high level specification language assisting to specify the coupling invariant. Files in this language are validated against the Java code and transformed into a consistent Boogie specification. Specifications of this type must have the file ending `isl`.
 
@@ -22,12 +23,12 @@ The coupling invariant can be specified using one of two possible syntaxes.
 
 Both types of specifications are specified using the command line argument `-s <invariant_file>` where `<invariant_file>` is the path to the specification.
 
-
+<!--
 Parameters Needed
 -----------------
 
 TODO
-
+-->
 
 Layout of the Boogie Program
 ----------------------------
@@ -52,9 +53,9 @@ Response from Boogie
 --------------------
 
 ###Success or Error
-The response from the backward compatibility verifier can be of two kind. If the verification was successful the response is `Boogie program verifier finished with 1 verified, 0 errors`. This means that the tool verified that library implementation two is backward compatible with library implementation one with respect to the given coupling invariant. If the verification was not successful, the tool will answer with a Boogie trace. The maybe most important lines are lines of the form `<filename>(<line>): Error BP5001: This assertion might not hold.`. The line number tells us in which line to look for the condition that could not be established. This can happen either because the condition is false for the case the simulation reached or because the condition could not be established. So the condition might hold, but Boogie is not able to deduce this fact from the facts it already has.
+The response from the backward compatibility verifier can be of two kind. If the verification was successful the response is `Boogie program verifier finished with 1 verified, 0 errors`. This means that the tool verified that the new library implementation is backward compatible with the old library implementation using the given coupling invariant. If the verification was not successful, the tool will answer with a Boogie trace. The maybe most important lines are lines of the form `<filename>(<line>): Error BP5001: This assertion might not hold.`. The line number tells us in which line to look for the condition that could not be established.
 
 ###Execution Trace
-The first thing one has to find when confronted with such an error is the case that went wrong. This can be seen from the execution trace. Listed to the right are the labels the simulation passed during this erroneous execution. The list of labels starts with `preconditions` followed by a # and a number. The number is not so important and indicates the unrolled instance of the Boogie program. The label list normally ends with a checking label. Sometimes the last label is a call, return, or local table or a loop label. This indicates a loop unroll parameter that was too low for the check to succeed. Normally also included are the labels `dispatch1`, `dispatch2`, and `check`. The labels between `dispatch1` and `dispatch2` indicate the execution of the first library implementation, so the old version. The labels between `dispatch2` and `check` indicate the execution of the second library implementation, so the new version. As described earlier, the names of the labels give hints to which method is executed, which method is being called, which action should be performed, like boundary return, boundary call and so on, or at which local place the execution stopped.
+The first thing one has to find when confronted with such an error is the execution trace that went wrong. This can be deduced from the error trace. Listed to the right are the labels the simulation passed during this erroneous execution. The list of labels starts with `preconditions` followed by a # and a number. The number is not so important and indicates the unrolled instance of the Boogie program. The label list normally ends with a checking label. Sometimes the last label is a call, return, or local table or a loop label. This indicates a loop unroll parameter that was too low for the check to succeed. Normally also included are the labels `dispatch1`, `dispatch2`, and `check`. The labels between `dispatch1` and `dispatch2` indicate the execution of the first library implementation, so the old version. The labels between `dispatch2` and `check` indicate the execution of the second library implementation, so the new version. As described earlier, the names of the labels give hints to which method is executed, which method is being called, which action should be performed, like boundary return, boundary call and so on, or at which local place the execution stopped.
 
-Not all labels that are passed by the simulation appear in the execution trace. The labels listed are the labels the simulation chose one branch out of multiple possibilities. This means that if the library consisted of only one class and the class has only one constructor, for example the default constructor, then the labels of the constructor implementation itself might not necessarily show up in the execution trace. The best thing one can do if it seams there are labels missing that could help in tracking down the error is to follow the path from the label `dispatch1` on. When ever the labels are missing from the execution trace there is only one possible path to take.
+Not all labels that are passed by the simulation appear in the execution trace. The labels listed are the labels where the simulation had to choose one branch out of multiple possibilities. This means that if the library consisted of only one class and the class has only one constructor, for example the default constructor, then the labels of the constructor implementation itself might not necessarily show up in the execution trace. The best thing one can do if it seems that there are labels missing that could help in tracking down the error is to follow the path from the label `dispatch1` on. Whenever the labels are missing from the execution trace, there is only one possible path to take.
