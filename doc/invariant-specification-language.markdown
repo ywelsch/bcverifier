@@ -1,17 +1,16 @@
 Invariant Specification Language
 ================================
 
-The invariant specification language is used to describe the coupling invariants
+The invariant specification language (ISL) is used to describe the coupling invariants
 between two libraries.
 
 Syntax
 ------
 	
-	COMPILATIONUNIT ::= STATEMENT* 
+	COMPILATIONUNIT ::= DECLARATION* 
 
-	STATEMENT ::= 
-		  "invariant" EXPRESSION ";" // coupling invariant
-		| "local" "invariant" EXPRESSION ";"
+	DECLARATION ::= 
+		  ("local") "invariant" EXPRESSION ";"
 		| ("local" | "predefined") "place" IDENTIFIER "=" PLACEPOSITION ";"
 	
 	PLACEPOSITION ::=
@@ -53,13 +52,11 @@ The global invariants have to hold at every observable point. Local invariants m
 
 Currently the following types are supported:
 
-- Java primitives: 
-	- boolean
-	- int
-- Java class types with library version. The library version is either "old" or "new".
+- Java primitive types boolean and int. Currently these types can not be declared.
+- Java class types with library version. The library version is either `old` or `new`.
 	The Java type can be referenced by the fully qualified name or just by the name of the class if it is unambiguous.
 - Places (defined by place definitions).
-- The special "Bijection" type defining bijective relations.
+- The special "Bijection" type defining bijective relations on reference values (i.e., object identifiers or `null`).
 
 ### Correspondence Relation Operator
 
@@ -67,11 +64,11 @@ The Correspondence Relation operator (~) expects two reference values: a value f
 old library on the left hand side and a value from the new library on the right hand side.
 
 An expression `o1 ~ o2` is true if and only if o1 and o2 are two objects in correspondence 
-(see [Correspondence Relation](blablub.html#bum)) or o1 and o2 are both null.
+(see [[Formal Model]]) or o1 and o2 are both null.
 
 ### Built-in Functions
 
-ISL currently only supports built-in functions.
+ISL currently only supports built-in functions, presented in the following.
 
 	boolean exposed(Object o)
 	
@@ -111,15 +108,14 @@ Returns the current value of the stackpointer for the old (sp1) and the new (sp2
 	
 Returns whether the pair o1, o2 is in the relation b.
 
-### Well formed invariants
+### Well formed Invariants
 
 Invariants have to be well formed:
 
 - There must not be any division by zero
 - Null must not be dereferenced
 
-To check whether an invariant is well formed, a separate proof obligation is generated
-and it has to be shown before the invariant is assumed or has to be proven.
+To check whether an invariant is well formed, a separate proof obligation is generated.
 
 All boolean operators are short-circuit operators and evaluated from left to right. 
 The right expression is only evaluated if the value of the left expression does not already
@@ -131,11 +127,10 @@ expression b) is not well formed in the following example.
  
 The order in which invariants are defined is important. Invariants defined at the top
 can be used to show that following invariants are well formed. In the following example
-the first invariant states that c.x is never zero and thus the second  invariant is
-well formed. If the invariants were defined in reverse error, the well formedness of
+the first invariant states that c.x is never zero and thus the second invariant is
+well formed. If the invariants were defined in reverse order, the well formedness of
 the division could not be shown.
 	
 	invariant forall C c :: c.x != 0
 	invariant forall C c :: 10 / c.x > 3 
-
 
