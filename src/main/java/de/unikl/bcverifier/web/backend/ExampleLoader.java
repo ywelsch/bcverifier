@@ -73,7 +73,8 @@ public class ExampleLoader {
 				new String[]{ "cell", "Cell example", "2", "spec.isl" },
 				new String[]{ "cb", "Callback example", "3", "spec.isl" },
 				new String[]{ "obool", "OBool example", "5", "spec.isl" },
-				new String[]{ "obool", "OBool example (alt)", "5", "spec2.isl" },
+				new String[]{ "obool", "OBool example (alt.1)", "5", "spec2.isl" },
+				new String[]{ "obool", "OBool example (alt.2)", "5", "spec3.isl" },
 				new String[]{ "oneOffLoop", "OneOffLoop example", "4", "spec.isl" }
 		};
 		for (String[] entry : TO_LOAD) {

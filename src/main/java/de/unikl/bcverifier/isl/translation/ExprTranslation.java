@@ -161,10 +161,9 @@ public class ExprTranslation {
 			}
 		}
 		
-		b2bpl.bpl.ast.BPLBinaryLogicalExpression.Operator implies = BPLBinaryLogicalExpression.Operator.IMPLIES;
 		BPLExpression expr;
 		if (leftExpr != null) {
-			expr = new BPLBinaryLogicalExpression(implies, leftExpr, rightExpr);
+			expr = new BPLBinaryLogicalExpression(quantifier.equals(Quantifier.FORALL) ? BPLBinaryLogicalExpression.Operator.IMPLIES : BPLBinaryLogicalExpression.Operator.AND, leftExpr, rightExpr);
 		} else {
 			expr = rightExpr;
 		}

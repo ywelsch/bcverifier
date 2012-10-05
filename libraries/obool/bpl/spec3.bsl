@@ -5,5 +5,5 @@
 //(forall r: Ref :: Obj(heap2, r) && RefOfType(r, heap2, $obool.OBool) ==> !heap2[heap2[r, $obool.OBool.g], exposed] && !heap2[heap2[r, $obool.OBool.g], createdByCtxt])
 Internal($obool.OBool,$obool.OBool.g,heap1) && Internal($obool.OBool,$obool.OBool.g,heap2)
 NonNull($obool.OBool,$obool.OBool.g,heap1) && NonNull($obool.OBool,$obool.OBool.g,heap2)
-(exists relint: Bij :: Bijective(relint) && ObjectCoupling(heap1, heap2, relint) && (forall o1, o2: Ref :: Obj(heap1, o1) && Obj(heap2, o2) && related[o1,o2] && RefOfType(o1, heap1, $obool.OBool) && RefOfType(o2, heap2, $obool.OBool) ==> relint[heap1[o1,$obool.OBool.g],heap2[o2,$obool.OBool.g]]))
+(exists relint: Bij :: Bijective(relint) && (forall o1, o2: Ref :: Obj(heap1, o1) && Obj(heap2, o2) && related[o1,o2] && RefOfType(o1, heap1, $obool.OBool) && RefOfType(o2, heap2, $obool.OBool) ==> relint[heap1[o1,$obool.OBool.g],heap2[o2,$obool.OBool.g]]))
 <<<
