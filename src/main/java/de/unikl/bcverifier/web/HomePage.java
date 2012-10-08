@@ -244,7 +244,7 @@ public class HomePage extends WebPage {
 					item.add(new AcePanel("libclass", "connectLib", item.getModel()));
 				}
 			};
-			//liblv.setReuseItems(true);
+			liblv.setReuseItems(true);
 			libpanel.add(liblv);
 			AjaxSubmitLink addLink = new AjaxSubmitLink(addRow, LibForm.this) {
 				@Override

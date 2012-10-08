@@ -43,11 +43,6 @@ Syntax
 	UNARYOPERATOR ::= 
 	    "!" | "-" // standard Java operators
 
-Semantics
----------
-
-The global invariants have to hold at every observable point. Local invariants must hold at internal user-defined points and are used to prove global invariants.
-
 ### Types
 
 Currently the following types are supported:
@@ -57,6 +52,11 @@ Currently the following types are supported:
 	The Java type can be referenced by the fully qualified name or just by the name of the class if it is unambiguous.
 - Places (defined by place definitions).
 - The special "Bijection" type defining bijective relations on reference values (i.e., object identifiers or `null`).
+
+Semantics
+---------
+
+The global invariants have to hold at every observable point. Local invariants must hold at internal user-defined points and are used to prove global invariants.
 
 ### Correspondence Relation Operator
 

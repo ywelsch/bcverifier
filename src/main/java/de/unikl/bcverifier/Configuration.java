@@ -51,6 +51,8 @@ public class Configuration implements Serializable {
     private boolean checkSourceCompatibility = false;
     @Parameter(names = {"--iframes"}, description = "Number of interaction frames to consider. Standard is 2. Use 0 for unbounded check.") @WebGUI
 	private int iframes = 2;
+    @Parameter(names = {"-t", "--timelimit"}, description = "Time limit in seconds to run prover (0 is unlimited)") @WebGUI
+	private int proverTimelimit = 0;
 	
 	
     @Parameter(names = {"-s", "-i" , "--specification"}, description = "Path to the file containing the specification", required = true, validateWith = Configuration.FileValidator.class)
@@ -229,5 +231,12 @@ public class Configuration implements Serializable {
 		singleFormulaInvariant = true;
 		checkSourceCompatibility = true;
 		iframes = 1;
+		proverTimelimit = 20;
+	}
+	public int getProverTimelimit() {
+		return proverTimelimit;
+	}
+	public void setProverTimelimit(int proverTimelimit) {
+		this.proverTimelimit = proverTimelimit;
 	}
 }

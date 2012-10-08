@@ -3,6 +3,9 @@ Tool
 
 BCVerifier is a standalone tool for checking backward compatibility of two Java library implementations. As described in the [[Formal Model]] section, the tool takes as input two implementations of a library written in the Java language and a coupling invariant. We provide a command line version and a web front-end to the tool.
 
+![Tool Chain](assets/toolchain.png)
+
+
 <!--
 Command Line Tool
 -----------------

@@ -62,6 +62,7 @@ public class BoogieRunner {
     private boolean verify = true;
     private boolean smokeTest = false;
     private int loopUnroll = 5;
+    private int timelimit = 0;
     private boolean lastRunSuccess;
     private String lastMessage = "";
     private int lastUnreachableCodeCount = 0;
@@ -79,6 +80,10 @@ public class BoogieRunner {
     public void setSmokeTest(boolean b){
         smokeTest = b;
     }
+    
+	public void setTimelimit(int proverTimelimit) {
+		timelimit = proverTimelimit;
+	}
     
     public boolean getLastReturn(){
         return lastRunSuccess;
@@ -113,7 +118,9 @@ public class BoogieRunner {
             if(smokeTest){
                 parameters.add("/smoke");
             }
-//            parameters.add("/timeLimit:30"); //limit time spent to verify each procedure to 30 seconds
+            if (timelimit > 0) {
+            	parameters.add("/timeLimit:" + timelimit);
+            }
 //            parameters.add("/mv:boogie.model");
 //            parameters.add("/errorTrace:2");
             if(!verify){

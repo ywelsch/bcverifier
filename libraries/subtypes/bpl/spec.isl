@@ -1,0 +1,1 @@
+invariant forall old A o1, new A o2 :: o1 ~ o2 ==> !(o2 instanceof new B);

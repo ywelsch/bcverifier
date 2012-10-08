@@ -97,6 +97,7 @@ task copyDocAssets(type:Copy) {
 	from (srcDocDir + "/assets") {
 		include '**/*.js'
 		include '**/*.css'
+		include '**/*.png'
 	}
 	from ('src/main/webapp/') {
 		include '**/*.woff'

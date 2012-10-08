@@ -1981,6 +1981,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		runner.setVerify(config.isVerify());
 		runner.setSmokeTest(config.isSmokeTestOn());
 		runner.setLoopUnroll(config.getLoopUnrollCap() + 1);
+		runner.setTimelimit(config.getProverTimelimit());
 		try {
 			log.debug("Checking " + config.output());
 			runner.runBoogie(config.output());
