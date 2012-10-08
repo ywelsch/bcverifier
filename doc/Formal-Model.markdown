@@ -50,3 +50,13 @@ Proof obligations
 As most important step to prove backward compatibility, we need to show that computational steps between observable states are properly simulated. If control of execution goes inside the library and back out, this can only be due to a method call, method return or a constructor call or return. We thus have to consider calls of all available (public or protected) methods and constructors. Similarly, we have to consider all possible return points in code of the library where a method was called that could potentially lead to code of the program context to be executed.
 We assume for the pre-states that they were related, which means that they are indistinguishable and satisfy the coupling invariant.
 As the observable pre-states were indistinguishable and we had a method call, this means that the receiver/parameters of the call were indistinguishable and a method with same name was called. Similarly, if we had a method return, then the return values were indistinguishable. For the post-states (if they exist), we must prove that they are related again. This means that we need to prove that the coupling invariant still holds for the post-states. In order to satisfy indistinguishability, we need to check again in case of a method call whether the same method name was called and the receiver/parameters are indistinguishable, or for a method return whether the return values are indistinguishable.
+
+Advanced verification features
+------------------------------
+
+Automatic verification in the setting of general recursion and loops is difficult.
+Our solution is to provide various means to split the verification task into simpler subtasks.
+
+### Local simulations
+
+To prove steps that encompass methods with complex loops or recursion, we use **local simulation relations**. These auxiliary relations are used to prove properties that hold between certain non-observable states. The library developer specifies the program states for the old and new library implementation where the verification task is split at. These states are defined similarly to *conditional breakpoints* (debugging terminology) and called **local places**. Using the local places, the library developer can then establish local simulation relations that are specified using a **local invariant**. Local invariants are defined in a similar way as coupling invariants.

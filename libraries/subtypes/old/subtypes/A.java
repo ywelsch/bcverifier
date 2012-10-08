@@ -1,7 +1,7 @@
 package subtypes;
 
 public class A {
-  public A m() {
-	  return new A();
-  }
+    public int m() {
+	    return 0;
+    }
 }
