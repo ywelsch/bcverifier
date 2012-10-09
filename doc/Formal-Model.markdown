@@ -51,6 +51,39 @@ As most important step to prove backward compatibility, we need to show that com
 We assume for the pre-states that they were related, which means that they are indistinguishable and satisfy the coupling invariant.
 As the observable pre-states were indistinguishable and we had a method call, this means that the receiver/parameters of the call were indistinguishable and a method with same name was called. Similarly, if we had a method return, then the return values were indistinguishable. For the post-states (if they exist), we must prove that they are related again. This means that we need to prove that the coupling invariant still holds for the post-states. In order to satisfy indistinguishability, we need to check again in case of a method call whether the same method name was called and the receiver/parameters are indistinguishable, or for a method return whether the return values are indistinguishable.
 
+Example
+-------
+
+Let us consider a very simple library which provides a `Cell` class to store and retrieve references to objects. In a more refined version of the `Cell`, a library developer might now want the possibility to not only retrieve the last value that was stored, but also the previous value. In the new implementation of the class, he therefore introduces two fields to store values and a boolean flag to determine which of the two fields stores the last value that was set.
+
+    public class Cell<T> { // old library implementation
+      private T c;
+      public void set(T o) {c = o;}
+      public T get() {return c;}
+    }
+
+    public class Cell<T> { // new library implementation
+      private T c1, c2;
+      private boolean f;
+      public void set(T o) {
+        f = !f;
+        if(f) c1 = o; else c2 = o;
+      }
+      public T get(){
+        return f ? c1 : c2;
+      }
+    }
+
+This second representation allows to add a method to retrieve the previous value, e.g., `public Object previous() { return f ? c2 : c1; }`.
+
+The developer might now wonder whether the old version of the library can be safely replaced with the new version, i.e., whether the new version of the `Cell` library still retains the behavior of the old version when used in program contexts of the old version. Intuitively, the developer might argue in the following way why he believes that both libraries are equivalent: If the boolean flag in the second library version is true, then the value that is stored in the field `c1` corresponds to the value that is stored in the field `c` in the first library version. Similarly, if the boolean flag is false, then the value that is stored in `c2` corresponds to the value that is stored in `c`.
+Using the [[Invariant Specification Language]], this property can formally be defined as a coupling invariant:
+
+    invariant forall old Cell o1, new Cell o2 ::
+              o1 ~ o2 ==>  if o2.f then o1.c ~ o2.c1 else o1.c ~ o2.c2;
+
+The invariant specifies that if we have simulating observable program states, then for all `Cell` objects `o1` of the old library implementations and `Cell` objects `o2` of the new library implementation which are in correspondence (denoted `o1 ~ o2`), the aforementioned property holds.
+
 Advanced verification features
 ------------------------------
 
