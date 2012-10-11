@@ -416,8 +416,14 @@ public class TypeHelper {
 			}
 			if (placeDef.hasStallCondition() && placeDef.getStallCondition().hasMeasure()) {
 				if (version == Version.NEW) {
-					placeDef.addError("Place " + placeDef.attrName()
+					placeDef.addError("Stalled place " + placeDef.attrName()
 							+ " in new implementation does not need a termination measure.");
+				}
+			}
+			if (placeDef.hasStallCondition() && !placeDef.getStallCondition().hasMeasure()) {
+				if (version == Version.OLD) {
+					placeDef.addError("Stalled place " + placeDef.attrName()
+							+ " in old implementation must have a termination measure.");
 				}
 			}
 			// TODO check if line is valid

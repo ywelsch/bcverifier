@@ -13,7 +13,7 @@ Non-terminals are represented in ALL CAPS. We use the meta-symbol `|` to denote 
 
 	DECLARATION ::= 
 		  [local]? invariant EXPRESSION ;
-		| [local | predefined] place IDENTIFIER = PLACEPOSITION STALLCONDITION;
+		| [local | predefined] place IDENTIFIER = PLACEPOSITION [STALLCONDITION];
 	
 	PLACEPOSITION ::=
 	      line INT of TYPEDEF [when EXPRESSION]?

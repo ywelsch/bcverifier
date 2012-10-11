@@ -5,7 +5,7 @@ Language: ISL
 hljs.LANGUAGES.isl = function(){
   var ISL_KEYWORDS = {
     'keyword': {
-    	'invariant' : 1, 'boolean' : 1, 'int' : 1,
+    	'invariant' : 1, 'boolean' : 1, 'int' : 1, 'stall' : 1, 'with' : 1, 'measure' : 1,
        'new' : 1, 'old' : 1, 'if' : 1, 'then' : 1, 'else' : 1, 'forall' : 1, 'exists' : 1, 'of' : 1,
        'local' : 1, 'in' : 1, 'place' : 1, 'when' : 1, 'predefined' : 1, 'instanceof' : 1, 'Bijection' : 1, 'in' : 1, 'line' : 1, 'call' : 1,
 	},

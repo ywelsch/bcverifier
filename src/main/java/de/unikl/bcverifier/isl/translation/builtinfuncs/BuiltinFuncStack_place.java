@@ -35,9 +35,9 @@ final class BuiltinFuncStack_place extends BuiltinFunction {
 
 	@Override
 	public ExprType exactType(FuncCall call) {
-		if (call.attrIsInLocalPlaceDef()) {
+		/*if (call.attrIsInLocalPlaceDef()) {
 			call.addError("Function 'stack' must not be used in local place definitions.");
-		}
+		}*/
 		return call.getArgument(1).attrType();
 	}
 
