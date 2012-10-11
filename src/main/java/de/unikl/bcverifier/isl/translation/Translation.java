@@ -32,6 +32,7 @@ import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Invariant;
 import de.unikl.bcverifier.isl.ast.LocalInvariant;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
+import de.unikl.bcverifier.isl.ast.StallCondition;
 import de.unikl.bcverifier.isl.ast.Statement;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
@@ -136,10 +137,37 @@ public class Translation {
 				} else {
 					condition = BPLBoolLiteral.TRUE;
 				}
-				Place p = new Place(def.getName().getName(), exprToString(condition), null);
+				Expr stallCond = null;
+				Expr measure = null;
+				if (def.hasStallCondition()) {
+					StallCondition stall = def.getStallCondition();
+					stallCond = stall.getCondition();
+					if (stall.hasMeasure()) {
+						measure = stall.getMeasure();
+					}
+				}
+				BPLExpression oldStallCond = null;
+				BPLExpression newStallCond = null;
+				if (stallCond != null) {
+					def.attrCompilationUnit().setPhase(Phase.PRE);
+					oldStallCond = stallCond.translateExpr();
+					def.attrCompilationUnit().setPhase(Phase.POST);
+					newStallCond = stallCond.translateExpr();
+				}
+				BPLExpression oldMeasure = null;
+				BPLExpression newMeasure = null;
+				if (measure != null) {
+					def.attrCompilationUnit().setPhase(Phase.PRE);
+					oldMeasure = measure.translateExpr();
+					def.attrCompilationUnit().setPhase(Phase.POST);
+					newMeasure = measure.translateExpr();
+				}
+				
 				ExprType placePositionType = def.getProgramPoint().attrType();
 				if (placePositionType instanceof ExprTypeProgramPoint) {
 					ExprTypeProgramPoint progPoint = (ExprTypeProgramPoint) placePositionType;
+					Place p = new Place(progPoint.getVersion() == Version.OLD, def.getName().getName(), 
+							exprToString(condition), exprToString(oldStallCond), exprToString(oldMeasure), exprToString(newStallCond), exprToString(newMeasure));
 					if (progPoint.getVersion() == Version.OLD) {
 						put(oldPlaces, progPoint.getLine(), p);
 					} else {
@@ -162,6 +190,8 @@ public class Translation {
 	}
 
 	private static String exprToString(BPLExpression inv) {
+		if (inv == null)
+			return null;
 		Writer s = new StringWriter();
 		PrintWriter pw = new PrintWriter(s);
 		BPLPrinter printer = new BPLPrinter(pw );

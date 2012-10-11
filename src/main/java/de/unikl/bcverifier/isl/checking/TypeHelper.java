@@ -225,9 +225,18 @@ public class TypeHelper {
 			if (placeDef.hasCondition()) {
 				placeDef.addError("Predefined places must not have a condition.");
 			}
+			if (placeDef.hasStallCondition()) {
+				placeDef.addError("Predefined places must not have a stall condition.");
+			}
 		}
 		if (placeDef.hasCondition()) {
 			checkIfSubtype(placeDef.getCondition(), ExprTypeBool.instance());
+		}
+		if (placeDef.hasStallCondition()) {
+			checkIfSubtype(placeDef.getStallCondition().getCondition(), ExprTypeBool.instance());
+			if (placeDef.getStallCondition().hasMeasure()) {
+				checkIfSubtype(placeDef.getStallCondition().getMeasure(), ExprTypeInt.instance());
+			}
 		}
 		
 		
@@ -404,6 +413,12 @@ public class TypeHelper {
 				placeDef.addError("Place " + placeDef.attrName()
 						+ " is not in a class.");
 				return;
+			}
+			if (placeDef.hasStallCondition() && placeDef.getStallCondition().hasMeasure()) {
+				if (version == Version.NEW) {
+					placeDef.addError("Place " + placeDef.attrName()
+							+ " in new implementation does not need a termination measure.");
+				}
 			}
 			// TODO check if line is valid
 		}

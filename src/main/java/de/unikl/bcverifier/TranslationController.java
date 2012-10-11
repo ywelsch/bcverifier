@@ -44,7 +44,6 @@ public class TranslationController implements ITranslationConstants {
 	public int maxStack;
     public int maxParams;
     
-    private String lastPlace = null;
     private String nextLabel = null;
     private LocalPlaceDefinitions localPlaceDefinitions;
     private Set<String> localPlaces = new HashSet<String>();
@@ -308,7 +307,6 @@ public class TranslationController implements ITranslationConstants {
         String placeName;
         if(atBegin){
             placeName = prefix(methodName+"_begin");
-            lastPlace = placeName;
             places.add(placeName);
             return placeName;
         } else {
@@ -317,7 +315,6 @@ public class TranslationController implements ITranslationConstants {
                 placeName = prefix(methodName+"_"+i);
                 if(!places.contains(placeName)){
                     places.add(placeName);
-                    lastPlace = placeName;
                     return placeName;
                 }
             }
@@ -330,7 +327,6 @@ public class TranslationController implements ITranslationConstants {
         for(int i=0; i<Integer.MAX_VALUE; i++){
             placeName = prefix(methodName + "_" + invocedMethod+"_"+i);
             if(!places.contains(placeName)){
-                lastPlace = placeName;
                 places.add(placeName);
                 nextLabel = invocedMethod+"_"+i;
                 returnLabels.add(prefix(methodName + "_" + nextLabel));
@@ -342,6 +338,10 @@ public class TranslationController implements ITranslationConstants {
 
     public void setLocalPlaces(LocalPlaceDefinitions localPlaces) {
         this.localPlaceDefinitions = localPlaces;
+    }
+    
+    public LocalPlaceDefinitions getLocalPlaceDefinitions() {
+        return localPlaceDefinitions;
     }
 
 	public String boogieFieldName(BCField field) {

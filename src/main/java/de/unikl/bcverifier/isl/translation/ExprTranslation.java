@@ -198,13 +198,14 @@ public class ExprTranslation {
 	}
 	
 	private static BPLBinaryLogicalExpression makeTypeAssumption(VarDef boundVar, JavaType javaType, Version version) {
+		Phase phase = boundVar.attrCompilationUnit().getPhase();
 		return new BPLBinaryLogicalExpression(AND, 
 				new BPLFunctionApplication(ITranslationConstants.OBJ_FUNC,  //$NON-NLS-1$
-						getHeap(version), 
+						getHeap(version, phase), 
 						new BPLVariableExpression(boundVar.attrName())), 
 				new BPLFunctionApplication(ITranslationConstants.REF_OF_TYPE_FUNC,  //$NON-NLS-1$
 						new BPLVariableExpression(boundVar.attrName()),
-						getHeap(version), 
+						getHeap(version, phase), 
 						new BPLVariableExpression("$" + javaType.getTypeBinding().getQualifiedName()) //$NON-NLS-1$
 						));
 	}
@@ -214,12 +215,15 @@ public class ExprTranslation {
 	}
 
 
-	public static BPLExpression getHeap(Version version) {
-		if (version == Version.OLD) {
-			return new BPLVariableExpression("heap1"); //$NON-NLS-1$
-		} else if (version == Version.NEW) {
-			return new BPLVariableExpression("heap2"); //$NON-NLS-1$
-		}
+	public static BPLExpression getHeap(Version version, Phase phase) {
+		if (version == Version.OLD && phase == Phase.POST)
+			return new BPLVariableExpression(ITranslationConstants.HEAP1); //$NON-NLS-1$
+		if (version == Version.OLD && phase == Phase.PRE)
+			return new BPLVariableExpression(ITranslationConstants.OLD_HEAP1); //$NON-NLS-1$	
+		if (version == Version.NEW && phase == Phase.POST)
+			return new BPLVariableExpression(ITranslationConstants.HEAP2); //$NON-NLS-1$
+		if (version == Version.NEW && phase == Phase.PRE)
+			return new BPLVariableExpression(ITranslationConstants.OLD_HEAP2); //$NON-NLS-1$
 		throw new Error("unhandled case: "+ version); //$NON-NLS-1$
 	}
 
@@ -249,7 +253,7 @@ public class ExprTranslation {
 			}
 			
 			BPLExpression expr = new BPLArrayExpression(
-					getHeap(leftType.getVersion()), 
+					getHeap(leftType.getVersion(), e.attrCompilationUnit().getPhase()), 
 					e.getLeft().translateExpr(),
 					new BPLVariableExpression("$" + leftType.getTypeBinding().getQualifiedName() + "." + e.getRight().getName()));
 			
@@ -291,7 +295,7 @@ public class ExprTranslation {
 	private static BPLExpression translateJavaVariableAccess(VarAccess e,
 			JavaVariableDef jv) {
 		BPLExpression expr = BuiltinFunctions.stackProperty(
-				e.attrIsInGlobalInvariant(), jv.getVersion(), 
+				e.attrIsInGlobalInvariant(), jv.getVersion(), e.attrCompilationUnit().getPhase(),
 				jv.getStackPointerExpr().translateExpr(), 
 				new BPLVariableExpression(jv.getRegisterName()));
 		if (e.attrType().isSubtypeOf(ExprTypeBool.instance())) {
@@ -327,7 +331,7 @@ public class ExprTranslation {
 		JavaType jt = (JavaType) op.getRight().attrType();
 		return new BPLFunctionApplication(ITranslationConstants.IS_INSTANCE_OF_FUNC, 
 				op.getLeft().translateExpr(), 
-				getHeap(jt.getVersion()), 
+				getHeap(jt.getVersion(), op.attrCompilationUnit().getPhase()), 
 				new BPLVariableExpression("$" + jt.getTypeBinding().getQualifiedName()));
 	}
 

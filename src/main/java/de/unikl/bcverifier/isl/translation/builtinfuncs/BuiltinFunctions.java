@@ -5,6 +5,7 @@ import java.util.Collection;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLVariableExpression;
+import b2bpl.translation.ITranslationConstants;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -13,6 +14,7 @@ import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.translation.ExprTranslation;
+import de.unikl.bcverifier.isl.translation.Phase;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class BuiltinFunctions {
@@ -67,23 +69,29 @@ public class BuiltinFunctions {
 	static BPLExpression heapProperty(Expr obj, String property) {
 		JavaType t = (JavaType) obj.attrType();
 		return new BPLArrayExpression(
-				ExprTranslation.getHeap(t.getVersion()), 
+				ExprTranslation.getHeap(t.getVersion(), obj.attrCompilationUnit().getPhase()), 
 				obj.translateExpr(), 
 				new BPLVariableExpression(property));
 	}
 	
-	public static BPLExpression stackProperty(boolean isGlobalInv, Version version,
+	public static BPLExpression stackProperty(boolean isGlobalInv, Version version, Phase phase,
 			BPLExpression stackPointer,
 			BPLExpression property) {
 		// stack1[ip][stackPointer][property]
 		BPLExpression stack;
 		BPLExpression ip;
 		if (version == Version.OLD) {
-			stack = new BPLVariableExpression("stack1");
-			ip = new BPLVariableExpression("ip1");
+			if (phase == Phase.POST)
+				stack = new BPLVariableExpression(ITranslationConstants.STACK1);
+			else
+				stack = new BPLVariableExpression(ITranslationConstants.OLD_STACK1);
+			ip = new BPLVariableExpression(ITranslationConstants.IP1_VAR);
 		} else {
-			stack = new BPLVariableExpression("stack2");
-			ip = new BPLVariableExpression("ip2");
+			if (phase == Phase.POST)
+				stack = new BPLVariableExpression(ITranslationConstants.STACK2);
+			else
+				stack = new BPLVariableExpression(ITranslationConstants.OLD_STACK2);
+			ip = new BPLVariableExpression(ITranslationConstants.IP2_VAR);
 		}
 		if (isGlobalInv) {
 			ip = new BPLVariableExpression("iframe");
@@ -96,21 +104,26 @@ public class BuiltinFunctions {
 							, property);
 	}
 
-	public static BPLArrayExpression getCurrentSp(boolean isGlobalInv, Version version) {
+	public static BPLArrayExpression getCurrentSp(boolean isGlobalInv, Version version, Phase phase) {
 		String spmap;
 		String ip;
 		if (version == Version.OLD) {
-			spmap = "spmap1";
-			ip = "ip1";
-			return new BPLArrayExpression(new BPLVariableExpression("spmap1"), new BPLVariableExpression("ip1"));
+			if (phase == Phase.POST) 
+				spmap = ITranslationConstants.SP_MAP1_VAR;
+			else
+				spmap = ITranslationConstants.OLD_SP_MAP1_VAR;
+			ip = ITranslationConstants.IP1_VAR;
 		} else {
-			spmap = "spmap2";
-			ip = "ip2";
+			if (phase == Phase.POST)
+				spmap = ITranslationConstants.SP_MAP2_VAR;
+			else
+				spmap = ITranslationConstants.OLD_SP_MAP2_VAR;
+			ip = ITranslationConstants.IP2_VAR;
 		}
 		if (isGlobalInv) {
 			// use "iframe" in global invariant
 			ip = "iframe";
-		}		
+		}
 		return new BPLArrayExpression(new BPLVariableExpression(spmap), new BPLVariableExpression(ip));
 	}
 }

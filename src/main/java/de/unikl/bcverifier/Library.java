@@ -48,8 +48,6 @@ import static b2bpl.translation.CodeGenerator.spmap2;
 import static b2bpl.translation.CodeGenerator.stack;
 import static b2bpl.translation.CodeGenerator.stack1;
 import static b2bpl.translation.CodeGenerator.stack2;
-import static b2bpl.translation.CodeGenerator.stall1;
-import static b2bpl.translation.CodeGenerator.stall2;
 import static b2bpl.translation.CodeGenerator.sub;
 import static b2bpl.translation.CodeGenerator.typ;
 import static b2bpl.translation.CodeGenerator.useHavoc;
@@ -70,8 +68,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -80,6 +76,7 @@ import b2bpl.CompilationAbortedException;
 import b2bpl.Project;
 import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLArrayExpression;
+import b2bpl.bpl.ast.BPLArrayType;
 import b2bpl.bpl.ast.BPLAssertCommand;
 import b2bpl.bpl.ast.BPLAssignmentCommand;
 import b2bpl.bpl.ast.BPLAssumeCommand;
@@ -369,9 +366,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 						new BPLVariableExpression(IP1_VAR),
 						new BPLVariableExpression(IP2_VAR),
 						new BPLVariableExpression(RELATED_RELATION),
-						new BPLVariableExpression(USE_HAVOC),
-						new BPLVariableExpression(STALL1),
-						new BPLVariableExpression(STALL2))), methodImpl));
+						new BPLVariableExpression(USE_HAVOC)
+						)), methodImpl));
 	}
 
 	private void addVariableConstants(List<BPLDeclaration> programDecls,
@@ -505,15 +501,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		procAssumes.add(new BPLAssumeCommand(forall(addressVar,
 				isEqual(useHavoc(var(address)), BPLBoolLiteral.TRUE))));
 
-		String a1 = "a1";
-		String a2 = "a2";
-		BPLVariable a1Var = new BPLVariable(a1, new BPLTypeName(ADDRESS_TYPE));
-		BPLVariable a2Var = new BPLVariable(a2, new BPLTypeName(ADDRESS_TYPE));
-		procAssumes.add(new BPLAssumeCommand(forall(a1Var, a2Var,
-				logicalNot(stall1(var(a1), var(a2))))));
-		procAssumes.add(new BPLAssumeCommand(forall(a1Var, a2Var,
-				logicalNot(stall2(var(a1), var(a2))))));
-
 		try {
 			for (String line : specGen.generatePreconditions()) {
 				procAssumes.add(new BPLRawCommand(line));
@@ -523,12 +510,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 					"Error generating precondition", e);
 		}
 
-		// safty check: Do not stall both execution at once
-		procAssumes.add(new BPLAssertCommand(forall(
-				a1Var,
-				a2Var,
-				logicalNot(logicalAnd(stall1(var(a1), var(a2)),
-						stall2(var(a1), var(a2)))))));
+		// Do not stall both executions at once
+		procAssumes.add(new BPLAssumeCommand(logicalNot(logicalAnd(var(STALL1), var(STALL2)))));
 
 		methodBlocks.add(
 				0,
@@ -948,6 +931,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				stack1(var(PLACE_VARIABLE))));
 		procAssumes.add(new BPLAssignmentCommand(var(OLD_PLACE2),
 				stack2(var(PLACE_VARIABLE))));
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP1),var(HEAP1)));
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_HEAP2),var(HEAP2)));
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK1),var(STACK1)));
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_STACK2),var(STACK2)));
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_SP_MAP1_VAR),var(SP_MAP1_VAR)));
+		procAssumes.add(new BPLAssignmentCommand(var(OLD_SP_MAP2_VAR),var(SP_MAP2_VAR)));
 
 		// relation of the methods initially called on the library
 		// ///////////////////////////////////////////
@@ -1166,19 +1155,34 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		localVariables.add(new BPLVariableDeclaration(unrollCount1Var));
 		localVariables.add(new BPLVariableDeclaration(unrollCount2Var));
 
-		// add variables for saving away the old heaps
+		// add variables for saving away the old configurations
 		// ////////////////////////////////////////////
 		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
 				OLD_HEAP1, new BPLTypeName(HEAP_TYPE))));
 		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
 				OLD_HEAP2, new BPLTypeName(HEAP_TYPE))));
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
+				OLD_STACK1, new BPLTypeName(STACK_TYPE))));
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
+				OLD_STACK2, new BPLTypeName(STACK_TYPE))));
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
+				OLD_SP_MAP1_VAR, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)))));
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
+				OLD_SP_MAP2_VAR, new BPLArrayType(BPLBuiltInType.INT, new BPLTypeName(STACK_PTR_TYPE)))));
 
+		// add variables for checking stalling
+		// ////////////////////////////////////////////////////
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(STALL1,
+				BPLBuiltInType.BOOL)));
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(STALL2,
+				BPLBuiltInType.BOOL)));
+		
 		// add variables for measuring progress of local loops
 		// ////////////////////////////////////////////////////
-		localVariables.add(new BPLVariableDeclaration(new BPLVariable(MEASURE2,
+		localVariables.add(new BPLVariableDeclaration(new BPLVariable(MEASURE,
 				BPLBuiltInType.INT)));
 		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
-				OLD_MEASURE2, BPLBuiltInType.INT)));
+				OLD_MEASURE, BPLBuiltInType.INT)));
 		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
 				OLD_PLACE1, new BPLTypeName(ADDRESS_TYPE))));
 		localVariables.add(new BPLVariableDeclaration(new BPLVariable(
@@ -1456,18 +1460,48 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				isLocalPlace(stack2(var(PLACE_VARIABLE))))));
 
 		// check for progress while stalled
-		checkingCommand.add(new BPLAssertCommand(ifThenElse(
-				map(var(STALL1), var(OLD_PLACE1), var(OLD_PLACE2)),
-				logicalOr(
-						logicalNot(isLocalPlace(var(OLD_PLACE2))),
+		for (Place place : tc.getLocalPlaceDefinitions().oldPlaces()) {
+			if (place.getNewMeasure() != null) { 
+				checkingCommand.add(new BPLAssumeCommand(ifThenElse(
+						logicalAnd(var(STALL1), isEqual(var(OLD_PLACE1), var(place.getName()))),
+						isEqual(var(MEASURE), var("(" + place.getNewMeasure() + ")")),
+						BPLBoolLiteral.TRUE
+						)));
+				checkingCommand.add(new BPLAssertCommand(ifThenElse(
+						logicalAnd(var(STALL1), isEqual(var(OLD_PLACE1), var(place.getName()))),
 						logicalAnd(
-								less(var(MEASURE2), var(OLD_MEASURE2)),
-								lessEqual(new BPLIntLiteral(0), var(MEASURE2)),
+								less(var(MEASURE), var(OLD_MEASURE)),
+								lessEqual(new BPLIntLiteral(0), var(MEASURE)),
 								lessEqual(new BPLIntLiteral(0),
-										var(OLD_MEASURE2)))),
-				BPLBoolLiteral.TRUE)));
+										var(OLD_MEASURE))),
+										BPLBoolLiteral.TRUE
+						)));
+			}
+		}
 
 		checkingCommand.addAll(localInvAssertions);
+		
+		checkingCommand.add(new BPLHavocCommand(var(STALL1), var(STALL2)));
+		
+		for (Place place : tc.getLocalPlaceDefinitions().oldPlaces()) {
+			checkingCommand.add(new BPLAssumeCommand(implies(
+					logicalAnd(
+							isEqual(stack1(var(PLACE_VARIABLE)), var(place.getName())),
+							var("(" + place.getCondition() + ")")),
+					isEqual(var(STALL1), var("(" + place.getNewStallCondition() + ")"))
+					)));
+		}
+		for (Place place : tc.getLocalPlaceDefinitions().newPlaces()) {
+			checkingCommand.add(new BPLAssumeCommand(implies(
+					logicalAnd(
+							isEqual(stack2(var(PLACE_VARIABLE)), var(place.getName())),
+							var("(" + place.getCondition() + ")")),
+					isEqual(var(STALL2), var("(" + place.getNewStallCondition() + ")"))
+					)));
+		}
+		
+		checkingCommand.add(new BPLAssertCommand(logicalNot(logicalAnd(var(STALL1), var(STALL2)))));
+		
 
 		methodBlocks.add(new BPLBasicBlock(CHECK_LOCAL_LABEL, checkingCommand
 				.toArray(new BPLCommand[checkingCommand.size()]),

@@ -1,10 +1,11 @@
 >>>places
 newBeforeReturn = new 7 (true)
-oldInLoop = old 5 (true) (stack2[ip2][spmap2[ip2]][place] == newBeforeReturn) (stack1[ip1][spmap1[ip1]][reg1_i] - stack1[ip1][spmap1[ip1]][reg3_i])
+oldInLoop = old 5 (true) (stack1[ip1][spmap1[ip1]][reg1_i] - stack1[ip1][spmap1[ip1]][reg3_i])
 oldBeforeReturn = old 7 (true)
 <<<
 
 >>>preconditions
+stall2[oldInLoop, newBeforeReturn] := true;
 <<<
 
 >>>invariant

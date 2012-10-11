@@ -123,6 +123,9 @@ public interface ITranslationConstants {
   
   String INTERACTION_FRAME_TYPE = "InteractionFrame";
   
+  String OLD_SP_MAP1_VAR = "old_spmap1";
+  String OLD_SP_MAP2_VAR = "old_spmap2";
+  
   String SP_MAP1_VAR = "spmap1";
   
   String SP_MAP2_VAR = "spmap2";
@@ -463,9 +466,9 @@ public static final String ALLOC_FIELD = "alloc";
 
 public static final String IS_LOCAL_PLACE_FUNC = "isLocalPlace";
 
-public static final String MEASURE2 = "measure2";
+public static final String MEASURE = "measure";
 
-public static final String OLD_MEASURE2 = "old_measure2";
+public static final String OLD_MEASURE = "old_measure";
 
 
 public static final String OLD_PLACE1 = "old_place1";

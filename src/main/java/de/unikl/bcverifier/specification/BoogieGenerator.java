@@ -19,6 +19,7 @@ import b2bpl.bpl.ast.BPLAssumeCommand;
 import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLLiteral;
 import b2bpl.bpl.ast.BPLVariableExpression;
+import b2bpl.translation.ITranslationConstants;
 
 import de.unikl.bcverifier.Configuration;
 
@@ -76,7 +77,7 @@ public class BoogieGenerator extends AbstractGenerator {
     }
 
     private void parsePlaces(BufferedReader reader) throws GenerationException {
-        Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)\\s+([(].*?[)])(\\s+([(].*?[)]))?");
+        Pattern p = Pattern.compile("([a-zA-Z0-9_]*)\\s*[=]\\s*(old|new)\\s+(\\d*)\\s+([(].*?[)])(\\s+([(].*?[)]))?(\\s+([(].*?[)]))?");
         
         HashMap<Integer,List<Place>> oldMap = new HashMap<Integer, List<Place>>();
         HashMap<Integer,List<Place>> newMap = new HashMap<Integer, List<Place>>();
@@ -105,14 +106,34 @@ public class BoogieGenerator extends AbstractGenerator {
                         newMap.put(lineNumber, currentPlaceList);
                     }
                 }
-                currentPlaceList.add(new Place(m.group(1), m.group(4), m.group(6)));
-                Logger.getLogger(BoogieGenerator.class).debug("Parsed place :" + new Place(m.group(1), m.group(4), m.group(6))); 
+                String newStallCondition = m.group(6);
+                String oldStallCondition = makeOld(m.group(6));
+                String newMeasure = m.group(8);
+                String oldMeasure = makeOld(m.group(8));
+                Place place = new Place(m.group(2).equals("old"), m.group(1), m.group(4), oldStallCondition, oldMeasure, newStallCondition, newMeasure);
+                currentPlaceList.add(place);
+                Logger.getLogger(BoogieGenerator.class).debug("Parsed place :" + place); 
             } else  {
                 Logger.getLogger(BoogieGenerator.class).warn("Unmatched line in preconditions: "+nextLine);
             }
         }
 
         this.localPlaces =  new LocalPlaceDefinitions(oldMap, newMap);
+    }
+    
+    private String makeOld(String s) {
+    	if (s == null) return s;
+    	s = replaceMapCall(s, ITranslationConstants.HEAP1, ITranslationConstants.OLD_HEAP1);
+    	s = replaceMapCall(s, ITranslationConstants.HEAP2, ITranslationConstants.OLD_HEAP2);
+    	s = replaceMapCall(s, ITranslationConstants.STACK1, ITranslationConstants.OLD_STACK1);
+    	s = replaceMapCall(s, ITranslationConstants.STACK2, ITranslationConstants.OLD_STACK2);
+    	s = replaceMapCall(s, ITranslationConstants.SP_MAP1_VAR, ITranslationConstants.OLD_SP_MAP1_VAR);
+    	s = replaceMapCall(s, ITranslationConstants.SP_MAP2_VAR, ITranslationConstants.OLD_SP_MAP2_VAR);
+    	return s;
+    }
+    
+    private String replaceMapCall(String s, String oldM, String newM) {
+    	return s.replaceAll(Pattern.quote(oldM + "["), newM + "[");
     }
 
     private void parsePreconditions(BufferedReader reader) throws GenerationException {
@@ -214,5 +235,4 @@ public class BoogieGenerator extends AbstractGenerator {
     public List<String> generatePreconditions() {
         return preconditions;
     }
-
 }

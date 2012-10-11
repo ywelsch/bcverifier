@@ -33,7 +33,7 @@ final class BuiltinFuncAt_place_sp extends BuiltinFunction {
 	public BPLExpression translateWelldefinedness(boolean isGlobalInvariant, List<Expr> arguments) {
 		Expr p = arguments.getChild(0);
 		Expr stackPointer = arguments.getChild(1);
-		BPLArrayExpression currentStackpointer = BuiltinFunctions.getCurrentSp(isGlobalInvariant, ((ExprTypeLocalPlace)p.attrType()).getVersion());
+		BPLArrayExpression currentStackpointer = BuiltinFunctions.getCurrentSp(isGlobalInvariant, ((ExprTypeLocalPlace)p.attrType()).getVersion(), p.attrCompilationUnit().getPhase());
 		return ExprWellDefinedness.conjunction(
 					new BPLRelationalExpression(BPLRelationalExpression.Operator.LESS_EQUAL, 
 							new BPLIntLiteral(0), stackPointer.translateExpr()),
@@ -51,7 +51,7 @@ final class BuiltinFuncAt_place_sp extends BuiltinFunction {
 		ExprTypeLocalPlace placeType = (ExprTypeLocalPlace) p.attrType();
 		// stack1[ip1][stackPointer][place] == p
 		return new BPLEqualityExpression(BPLEqualityExpression.Operator.EQUALS, 
-				BuiltinFunctions.stackProperty(isGlobalInvariant, placeType.getVersion(), stackPointer.translateExpr(), new BPLVariableExpression("place"))
+				BuiltinFunctions.stackProperty(isGlobalInvariant, placeType.getVersion(), p.attrCompilationUnit().getPhase(), stackPointer.translateExpr(), new BPLVariableExpression("place"))
 				, p.translateExpr()
 				);
 	}

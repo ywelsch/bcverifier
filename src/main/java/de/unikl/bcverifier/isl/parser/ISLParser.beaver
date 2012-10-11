@@ -61,8 +61,7 @@ import de.unikl.bcverifier.isl.ast.*;
 
 %terminals FORALL, EXISTS, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER, INVARIANT, LOCAL,
 	IN,
-	PLACE, LINE, WHEN, CALL, OF, PREDEFINED, 
-	// TERMINATION_MEASURE,
+	PLACE, LINE, STALL, WITH, MEASURE, WHEN, CALL, OF, PREDEFINED, 
 	IF, THEN, ELSE,
 	DOT,
 	MOD, MULT, DIV, PLUS, MINUS, LT, LTEQ, GT, GTEQ, NOT,
@@ -99,6 +98,8 @@ import de.unikl.bcverifier.isl.ast.*;
 %typeof placeposition = "ProgramPointExpr";
 %typeof placecondition = "Opt<Expr>";
 %typeof placemodifier = "PlaceModifier";
+%typeof stallcondition = "Opt<StallCondition>";
+%typeof measure = "Opt<Expr>";
 
 %goal cu;
 
@@ -119,8 +120,8 @@ statement =
 ;
 
 placedef =	
-	placemodifier.m PLACE id.i EQ placeposition.pos placecondition.cond SEMI
-		{: return new PlaceDef(m, i, pos, cond , new Opt<Expr>()); :}
+	placemodifier.m PLACE id.i EQ placeposition.pos placecondition.cond stallcondition.stallcond SEMI
+		{: return new PlaceDef(m, i, pos, cond , stallcond); :}
 ;
 
 placemodifier =
@@ -139,6 +140,20 @@ placecondition =
 	WHEN expr.cond
 		{: return new Opt<Expr>(cond); :}
 	| 
+		{: return new Opt<Expr>(); :}
+;
+
+stallcondition = 
+    STALL WHEN expr.cond measure.ms
+ 		{: return new Opt<StallCondition>(new StallCondition(cond, ms)); :}
+    |
+		{: return new Opt<StallCondition>(); :}
+;
+		
+measure =
+    WITH MEASURE expr.measure
+ 		{: return new Opt<Expr>(measure); :}
+    |
 		{: return new Opt<Expr>(); :}
 ;
 

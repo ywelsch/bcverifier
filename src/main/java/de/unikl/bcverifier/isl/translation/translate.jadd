@@ -47,5 +47,13 @@ aspect translate {
   eq MemberAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
   eq VarAccess.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
 
+  private Phase CompilationUnit.phase = Phase.POST;
 
+  public Phase CompilationUnit.getPhase() {
+    return phase;
+  }
+
+  public void CompilationUnit.setPhase(Phase p) {
+    phase = p;
+  }
 }

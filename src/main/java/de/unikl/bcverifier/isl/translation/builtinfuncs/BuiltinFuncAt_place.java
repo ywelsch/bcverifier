@@ -41,16 +41,16 @@ final class BuiltinFuncAt_place extends BuiltinFunction {
 		}
 		// stack1[ip1][stackPointer][place] == p
 		return new BPLEqualityExpression(BPLEqualityExpression.Operator.EQUALS, 
-				BuiltinFunctions.stackProperty(isGlobalInvariant, placeType.getVersion(), stackPointer, new BPLVariableExpression("place"))
+				BuiltinFunctions.stackProperty(isGlobalInvariant, placeType.getVersion(), p.attrCompilationUnit().getPhase(), stackPointer, new BPLVariableExpression("place"))
 				, p.translateExpr()
 				);
 	}
 	
 	@Override
 	public ExprType exactType(FuncCall call) {
-		if (call.attrIsInLocalPlaceDef()) {
+		/*if (call.attrIsInLocalPlaceDef()) {
 			call.addError("Function 'at' must not be used in local place definitions.");
-		}
+		}*/
 		return super.exactType(call);
 	}
 }
