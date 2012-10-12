@@ -44,6 +44,7 @@ public class ExampleLoader {
 			FileObject[] newJavaFiles = newDir.findFiles(new JavaFileSelector());
 	        Example ex = new Example();
 			ex.setId(description);
+			ex.setDir(dir);
 			ex.setInvariant(IOUtils.toString(invFile.getContent().getInputStream()));
 			List<String> lib1files = new ArrayList<String>();
 			for (FileObject f : oldJavaFiles) {

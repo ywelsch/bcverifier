@@ -53,6 +53,7 @@ public class HomePage extends WebPage {
 	private String boogieinput;
 	private List<String> lib1contents = new ArrayList<String>();
 	private List<String> lib2contents = new ArrayList<String>();
+	private static List<Example> examples = new ExampleLoader().loadExamples();
 	
 	public static Pattern BPL_FILE_DEBUG_PATTERN = Pattern.compile(/*"\\s*" +*/ ".*\\.bpl\\((\\d+)\\,(\\d+)\\)\\:" /*+ ".*"*/);
 	
@@ -67,6 +68,7 @@ public class HomePage extends WebPage {
 		add(form);
 		createDropDownSelector(form.pan1, form.pan2, form.pan3, form.opanel);
 		createOutputPanel();
+		selectExample(parameters.get("example").toString());
     }
     
     private void createOutputPanel() {
@@ -83,7 +85,6 @@ public class HomePage extends WebPage {
 
 	private void createDropDownSelector(final MarkupContainer pan1, final MarkupContainer pan2, final MarkupContainer pan3, final MarkupContainer opanel) {
     	final Model<Example> selectedExample = new Model<Example>();
-    	List<Example> examples = new ExampleLoader().loadExamples();
 		DropDownChoice<Example> choice = new DropDownChoice<Example>("examples", selectedExample, examples);
 		choice.setOutputMarkupId(true);
 		choice.add(new AjaxFormComponentUpdatingBehavior("onchange") {
@@ -131,6 +132,15 @@ public class HomePage extends WebPage {
 		this.boogieinput = boogieinput;
 	}
 
+	private void selectExample(String key) {
+		for (Example ex : examples) {
+			if (ex.getDir().equals(key)) {
+				selectExample(ex);
+				return;
+			}
+		}
+	}
+	
 	private void selectExample(Example ex) {
 		lib1contents.clear();
 		lib1contents.addAll(ex.getLib1files());
