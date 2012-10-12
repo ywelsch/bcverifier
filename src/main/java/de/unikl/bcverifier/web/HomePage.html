@@ -23,70 +23,72 @@
 			<a href="help.html" target="_blank"><img src="images/system-help-3.png" alt="Help menu"></a>
 		</div>
 	</div>
-	<div id="bd">
-		<form wicket:id="libForm" id="libForm">
-		<table id="maintable">
-		<tr>
-			<td>
-			<h2>Old library implementation:</h2>
-			</td>
-			<td>
-			<h2>New library implementation:</h2>
-			</td>
-		</tr>
-		<tr>
-			<td id="lib1td">
-			<div wicket:id="lib1panel">
-  				<span wicket:id="lib1contents">
-					<span wicket:id="libclass"></span>
-					<br/>
-				</span>
-				<a href="#" class="add" wicket:id="add1Row">+</a>
-				<a href="#" class="remove" wicket:id="remove1Row">-</a>
-			</div>
-			</td>
-			<td id="lib2td">
-			<div wicket:id="lib2panel">
-  				<span wicket:id="lib2contents">
-					<span wicket:id="libclass"></span>
-					<br/>
-				</span>
-				<a href="#" class="add" wicket:id="add2Row">+</a>
-				<a href="#" class="remove" wicket:id="remove2Row">-</a>
-			</div>
-			</td>
-		</tr>
-		</table>
-			<div id="invtitle">
-			<h2>Coupling invariant:</h2>
-			</div>
-			<div wicket:id="invpanel">
-				<span wicket:id="inv"></span>
-			</div>
-			<div id="optionstitle">
-			<a href="#" class="show" onClick="$('#optionpan').slideToggle('slow');">Toggle options</a>
+	<div id="bd_wrapper">
+		<div id="bd">
+			<form wicket:id="libForm" id="libForm">
+			<table id="maintable">
+			<tr>
+				<td>
+				<h2>Old library implementation:</h2>
+				</td>
+				<td>
+				<h2>New library implementation:</h2>
+				</td>
+			</tr>
+			<tr>
+				<td id="lib1td">
+				<div wicket:id="lib1panel">
+	  				<span wicket:id="lib1contents">
+						<span wicket:id="libclass"></span>
+						<br/>
+					</span>
+					<a href="#" class="add" wicket:id="add1Row">+</a>
+					<a href="#" class="remove" wicket:id="remove1Row">-</a>
+				</div>
+				</td>
+				<td id="lib2td">
+				<div wicket:id="lib2panel">
+	  				<span wicket:id="lib2contents">
+						<span wicket:id="libclass"></span>
+						<br/>
+					</span>
+					<a href="#" class="add" wicket:id="add2Row">+</a>
+					<a href="#" class="remove" wicket:id="remove2Row">-</a>
+				</div>
+				</td>
+			</tr>
+			</table>
+				<div id="invtitle">
+				<h2>Coupling invariant:</h2>
+				</div>
+				<div wicket:id="invpanel">
+					<span wicket:id="inv"></span>
+				</div>
+				<div id="optionstitle">
+				<a href="#" class="show" onClick="$('#optionpan').slideToggle('slow');">Toggle options</a>
+				<br/>
+				<div id="optionpan" wicket:id="optionpanel" style="display:none">
+					<span wicket:id="optioncontents">
+						<span wicket:id="option"></span>
+						<span wicket:id="description">Test ID</span> 
+						<br />
+					</span>
+				</div>
+				</div>
+				<div id="submitButton">
+					<input wicket:id="checkButton" type="submit" value="Check backward compatibility" id="formsubmit" />
+					<div id="ajax_indicator" style="display:none">
+		    		<h1>Verification in progress <img src="images/ajax-loader.gif" alt="Ajax loader"></h1>
+					</div>
+				</div>
+			</form>
 			<br/>
-			<div id="optionpan" wicket:id="optionpanel" style="display:none">
-				<span wicket:id="optioncontents">
-					<span wicket:id="option"></span>
-					<span wicket:id="description">Test ID</span> 
-					<br />
-				</span>
+			<div wicket:id="outputpanel">
+			<h2 id="outputlink">Output:</h2>
+				<span wicket:id="output">Output</span>
+				<a name="boogieinputbegin"><h3>Generated BPL file:</h3></a>
+				<div class="boogieoutput" wicket:id="boogieinput"></div>
 			</div>
-			</div>
-			<div id="submitButton">
-				<input wicket:id="checkButton" type="submit" value="Check backward compatibility" id="formsubmit" />
-				<div id="ajax_indicator" style="display:none">
-        		<h1>Verification in progress <img src="images/ajax-loader.gif" alt="Ajax loader"></h1>
-    			</div>
-			</div>
-		</form>
-		<br/>
-		<div wicket:id="outputpanel">
-		<h2 id="outputlink">Output:</h2>
-			<span wicket:id="output">Output</span>
-			<a name="boogieinputbegin"><h3>Generated BPL file:</h3></a>
-			<span wicket:id="boogieinput"></span>
 		</div>
 	</div>
 	<div id="ft"></div>
