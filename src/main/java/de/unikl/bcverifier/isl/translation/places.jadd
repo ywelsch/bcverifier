@@ -33,4 +33,13 @@ aspect translate {
 	public boolean PlaceDef.isPredefinedPlace() {
 		return getPlaceModifier() instanceof PlaceModifierPredefined;
 	}
+	
+	public boolean PlaceDef.hasPlaceOption(String option) {
+		for (Ident i : getPlaceOptions()) {
+			if (i.getName().equals(option)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

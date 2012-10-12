@@ -95,4 +95,10 @@ public class ISLGenerator extends AbstractGenerator {
 		init();
 		return cu.generatePlaces();
 	}
+	
+	@Override
+	public List<String> generatePreludeAddition() throws GenerationException {
+		init();
+		return cu.generatePreludeAddition();
+	}
 }

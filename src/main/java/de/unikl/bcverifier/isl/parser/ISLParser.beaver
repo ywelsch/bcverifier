@@ -100,6 +100,7 @@ import de.unikl.bcverifier.isl.ast.*;
 %typeof placemodifier = "PlaceModifier";
 %typeof stallcondition = "Opt<StallCondition>";
 %typeof measure = "Opt<Expr>";
+%typeof placeoptions = "List<Ident>";
 
 %goal cu;
 
@@ -120,14 +121,21 @@ statement =
 ;
 
 placedef =	
-	placemodifier.m PLACE id.i EQ placeposition.pos placecondition.cond stallcondition.stallcond SEMI
-		{: return new PlaceDef(m, i, pos, cond , stallcond); :}
+	placemodifier.m PLACE placeoptions.opts id.i EQ placeposition.pos placecondition.cond stallcondition.stallcond SEMI
+		{: return new PlaceDef(m, opts, i, pos, cond , stallcond); :}
 ;
 
 placemodifier =
 	  LOCAL {: return new PlaceModifierLocal(); :}
 	| PREDEFINED {: return new PlaceModifierPredefined(); :}
 ;
+
+placeoptions =
+	  LPAREN id.i RPAREN
+		{: return new List().add(i); :} 
+	|
+		{: return new List(); :}  
+;	
 
 placeposition = 
 	  LINE INTLITERAL.lineNr OF typedef.t 
