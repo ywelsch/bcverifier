@@ -5,6 +5,7 @@ import java.util.List;
 
 public class Example implements Serializable {
 	private String id;
+	private String dir;
 	private List<String> lib1files;
 	private List<String> lib2files;
 	private String invariant;
@@ -44,5 +45,13 @@ public class Example implements Serializable {
 	}
 	public void setUnrollCount(int unrollCount) {
 		this.unrollCount = unrollCount;
+	}
+
+	public String getDir() {
+		return dir;
+	}
+
+	public void setDir(String dir) {
+		this.dir = dir;
 	}
 }
