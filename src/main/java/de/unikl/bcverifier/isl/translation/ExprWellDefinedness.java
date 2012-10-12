@@ -60,33 +60,29 @@ public class ExprWellDefinedness {
 			BuiltinFunction builtinFunction = (BuiltinFunction) funcDef;
 			parameterchecks.add(builtinFunction.translateWelldefinedness(funcCall.attrIsInGlobalInvariant(), funcCall.getArgumentList()));
 		}
-		return conjunction(parameterchecks);
+		return TranslationHelper.conjunction(parameterchecks);
 	}
 
 	public static BPLExpression translate(IfThenElse e) {
 		// if e then s1 else s2
 		// >>> df(e) && if e then df(s1) else df(s2)
-		return conjunction(
-				e.getCond().translateExprWellDefinedness(),
-				new BPLIfThenElseExpression(
-							e.getCond().translateExpr(), 
-							e.getThenExpr().translateExprWellDefinedness(), 
-							e.getElseExpr().translateExprWellDefinedness())
-				);
+		BPLExpression[] exprs = { e.getCond().translateExprWellDefinedness(), new BPLIfThenElseExpression(
+					e.getCond().translateExpr(), 
+					e.getThenExpr().translateExprWellDefinedness(), 
+					e.getElseExpr().translateExprWellDefinedness()) };
+		return TranslationHelper.conjunction(exprs);
 	}
 
 
 	public static BPLExpression translate(MemberAccess e) {
 		// e.f
 		// >>> df(e) && tr(e) != null
-		return conjunction(
-				e.getLeft().translateExprWellDefinedness(),
-				new BPLEqualityExpression(
-						BPLEqualityExpression.Operator.NOT_EQUALS, 
-						e.getLeft().translateExpr(),
-						BPLNullLiteral.NULL
-						)
-				);
+		BPLExpression[] exprs = { e.getLeft().translateExprWellDefinedness(), new BPLEqualityExpression(
+				BPLEqualityExpression.Operator.NOT_EQUALS, 
+				e.getLeft().translateExpr(),
+				BPLNullLiteral.NULL
+				) };
+		return TranslationHelper.conjunction(exprs);
 	}
 
 	public static BPLExpression translate(ErrorExpr errorExpr) {
@@ -99,43 +95,35 @@ public class ExprWellDefinedness {
 		switch (e.getOperator()) {
 		case AND:
 		case IMPLIES:
+			BPLExpression[] exprs = { left.translateExprWellDefinedness(), new BPLBinaryLogicalExpression(
+					BPLBinaryLogicalExpression.Operator.IMPLIES, 
+					left.translateExpr(), 
+					right.translateExprWellDefinedness()) };
 			// left && right
 			// left ==> right
 			// >>> df(left) && (tr(left) ==> df(right))
-			return conjunction(
-					left.translateExprWellDefinedness(),
-					new BPLBinaryLogicalExpression(
-							BPLBinaryLogicalExpression.Operator.IMPLIES, 
-							left.translateExpr(), 
-							right.translateExprWellDefinedness())
-					);
+			return TranslationHelper.conjunction(exprs);
 		case OR:
+			BPLExpression[] exprs1 = { left.translateExprWellDefinedness(), new BPLBinaryLogicalExpression(
+					BPLBinaryLogicalExpression.Operator.IMPLIES, 
+					new BPLLogicalNotExpression(left.translateExpr()), 
+					right.translateExprWellDefinedness()) };
 			// left || right
 			// >>> df(left) && (!tr(left) ==> df(right))
-			return conjunction(
-					left.translateExprWellDefinedness(),
-					new BPLBinaryLogicalExpression(
-							BPLBinaryLogicalExpression.Operator.IMPLIES, 
-							new BPLLogicalNotExpression(left.translateExpr()), 
-							right.translateExprWellDefinedness())
-					);
+			return TranslationHelper.conjunction(exprs1);
 		case DIV:
 		case MOD:
+			BPLExpression[] exprs2 = { left.translateExprWellDefinedness(), right.translateExprWellDefinedness(), new BPLEqualityExpression(
+					BPLEqualityExpression.Operator.NOT_EQUALS, 
+					right.translateExpr(),
+					new BPLIntLiteral(0)) };
 			// left / right
 			// left % right
 			// >>> df(left) && df(right) && tr(right) != 0
-			return conjunction(
-					left.translateExprWellDefinedness(),
-					right.translateExprWellDefinedness(),
-					new BPLEqualityExpression(
-							BPLEqualityExpression.Operator.NOT_EQUALS, 
-							right.translateExpr(),
-							new BPLIntLiteral(0))
-					);
+			return TranslationHelper.conjunction(exprs2);
 		default:
-			return conjunction(
-					left.translateExprWellDefinedness(),
-					right.translateExprWellDefinedness()); 
+			BPLExpression[] exprs3 = { left.translateExprWellDefinedness(), right.translateExprWellDefinedness() };
+			return TranslationHelper.conjunction(exprs3); 
 		}
 	}
 
@@ -146,34 +134,6 @@ public class ExprWellDefinedness {
 				e.getQuantifier(),
 				e.getBoundVarList(), 
 				e.getExpr().translateExprWellDefinedness());
-	}
-
-	private static BPLExpression conjunction(java.util.Collection<BPLExpression> exprs) {
-		BPLExpression result = BPLBoolLiteral.TRUE;
-		for (BPLExpression e : exprs) {
-			if (result == BPLBoolLiteral.TRUE) {
-				result = e;
-			} else {
-				result = new BPLBinaryLogicalExpression(
-						BPLBinaryLogicalExpression.Operator.AND, result, e);
-			}
-		}
-		return result;
-	}
-
-	public static BPLExpression conjunction(BPLExpression... exprs) {
-		BPLExpression result = BPLBoolLiteral.TRUE;
-		for (BPLExpression e : exprs) {
-			if (result == BPLBoolLiteral.TRUE) {
-				result = e;
-			} else {
-				if (e != BPLBoolLiteral.TRUE) {
-					result = new BPLBinaryLogicalExpression(
-							BPLBinaryLogicalExpression.Operator.AND, result, e);
-				}
-			}
-		}
-		return result;
 	}
 
 	public static BPLExpression translate(LineNrProgramPoint lineNrProgramPoint) {

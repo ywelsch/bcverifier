@@ -11,6 +11,7 @@ import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.translation.ExprWellDefinedness;
+import de.unikl.bcverifier.isl.translation.TranslationHelper;
 
 
 /**
@@ -31,9 +32,8 @@ final class BuiltinFuncStack_place_sp extends BuiltinFunction {
 
 	@Override
 	public BPLExpression translateWelldefinedness(boolean isGlobalInvariant, List<Expr> arguments) {
-		return ExprWellDefinedness.conjunction(
-				this.builtinFunctions.FUNC_AT_place_sp.translateWelldefinedness(isGlobalInvariant, arguments),
-				this.builtinFunctions.FUNC_AT_place_sp.translateCall(isGlobalInvariant, arguments));
+		BPLExpression[] exprs = { this.builtinFunctions.FUNC_AT_place_sp.translateWelldefinedness(isGlobalInvariant, arguments), this.builtinFunctions.FUNC_AT_place_sp.translateCall(isGlobalInvariant, arguments) };
+		return TranslationHelper.conjunction(exprs);
 	}
 
 	@Override

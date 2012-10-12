@@ -16,6 +16,7 @@ import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.translation.ExprWellDefinedness;
+import de.unikl.bcverifier.isl.translation.TranslationHelper;
 /**
  * bool at(Place p, int stackPointer) 
  *
@@ -34,14 +35,11 @@ final class BuiltinFuncAt_place_sp extends BuiltinFunction {
 		Expr p = arguments.getChild(0);
 		Expr stackPointer = arguments.getChild(1);
 		BPLArrayExpression currentStackpointer = BuiltinFunctions.getCurrentSp(isGlobalInvariant, ((ExprTypeLocalPlace)p.attrType()).getVersion(), p.attrCompilationUnit().getPhase());
-		return ExprWellDefinedness.conjunction(
-					new BPLRelationalExpression(BPLRelationalExpression.Operator.LESS_EQUAL, 
-							new BPLIntLiteral(0), stackPointer.translateExpr()),
-					new BPLRelationalExpression(BPLRelationalExpression.Operator.LESS_EQUAL, 
-							stackPointer.translateExpr(), 
-							currentStackpointer)
-					 
-				);
+		BPLExpression[] exprs = { new BPLRelationalExpression(BPLRelationalExpression.Operator.LESS_EQUAL, 
+				new BPLIntLiteral(0), stackPointer.translateExpr()), new BPLRelationalExpression(BPLRelationalExpression.Operator.LESS_EQUAL, 
+				stackPointer.translateExpr(), 
+				currentStackpointer) };
+		return TranslationHelper.conjunction(exprs);
 	}
 
 	@Override
