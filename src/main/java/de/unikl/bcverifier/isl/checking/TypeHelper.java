@@ -49,6 +49,7 @@ import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.checking.types.UnknownType;
+import de.unikl.bcverifier.isl.translation.Translation;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
@@ -427,6 +428,13 @@ public class TypeHelper {
 				}
 			}
 			// TODO check if line is valid
+		}
+		
+		// check place options
+		for (Ident i : placeDef.getPlaceOptions()) {
+			if (!i.getName().equals(Translation.PLACE_OPTION_SPLITVC)) {
+				i.addError("Unsupported place option: " + i.getName());
+			}
 		}
 	}
 

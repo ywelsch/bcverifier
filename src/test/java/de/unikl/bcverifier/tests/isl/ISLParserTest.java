@@ -55,6 +55,17 @@ public class ISLParserTest {
 				new File("./libraries/iframeDestroy/new"), cu);
 	}
 	
+	@Test
+	public void predefinedplace_splitvc() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+				"predefined place (splitvc) callNotifyMe1 = call notifyMe in line 8 of old C;"
+				);
+		testTypeCheckOk(
+				new File("./libraries/iframeDestroy/old"), 
+				new File("./libraries/iframeDestroy/new"), cu);
+		translateAndPrint(cu);
+	}
+	
 	
 	@Test
 	public void iframeDestroy() throws IOException, Exception, CompileException {
@@ -218,15 +229,20 @@ public class ISLParserTest {
 	
 	protected void translateAndPrint(CompilationUnit cu) {
 		PrintWriter pw = new PrintWriter(System.out);
+		
+		pw.println("Invariants: ");
 		for (SpecInvariant inv : cu.generateInvariants()) {
 			print(pw, inv);
 		}
-		
+		pw.println("Local Invariants: ");
 		for (SpecInvariant inv : cu.generateLocalInvariants()) {
 			print(pw, inv);
 		}
-		
-		
+		pw.println("Prelude Additions: ");
+		for (String s : cu.generatePreludeAddition()) {
+			pw.println(s);
+		}
+		pw.flush();
 	}
 
 	private void print(PrintWriter pw, SpecInvariant inv) {

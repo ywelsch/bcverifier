@@ -38,7 +38,7 @@ abstract Statement : Def;
 
 Invariant : Statement ::= Expr;
 LocalInvariant: Statement ::= Expr;
-PlaceDef: Statement ::= PlaceModifier Name:Ident ProgramPoint:ProgramPointExpr [Condition:Expr] [StallCondition:StallCondition];
+PlaceDef: Statement ::= PlaceModifier PlaceOption:Ident* Name:Ident ProgramPoint:ProgramPointExpr [Condition:Expr] [StallCondition:StallCondition];
 ProgramPoint: Statement ::= Name:Ident ProgramPointExpr;
 
 StallCondition ::= Condition:Expr [Measure:Expr];

@@ -9,11 +9,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.output.StringBuilderWriter;
+
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.EmptyBPLVisitor;
 import b2bpl.bpl.IBPLVisitor;
+import b2bpl.bpl.ast.BPLArrayExpression;
+import b2bpl.bpl.ast.BPLAssignmentCommand;
 import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
 import b2bpl.bpl.ast.BPLBinaryLogicalExpression;
 import b2bpl.bpl.ast.BPLBoolLiteral;
@@ -37,6 +42,8 @@ import de.unikl.bcverifier.isl.ast.StallCondition;
 import de.unikl.bcverifier.isl.ast.Statement;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
@@ -47,6 +54,7 @@ public class Translation {
 
 	// varname used for quantifying over all iframes
 	public static final String IFRAME_VAR = "iframe";
+	public static final String PLACE_OPTION_SPLITVC = "splitvc";
 
 	public static java.util.List<SpecInvariant> generateInvariants(CompilationUnit cu) {
 		List<SpecInvariant> result = new ArrayList<SpecInvariant>();
@@ -196,6 +204,33 @@ public class Translation {
 		inv.accept(printer);
 		pw.flush();
 		return "(" + s.toString() + ")";
+	}
+
+	public static List<String> generatePreludeAddition(CompilationUnit cu) {
+		List<String> result = Lists.newArrayList();
+		for (Statement s : cu.getStatements()) {
+			if (s instanceof PlaceDef) {
+				PlaceDef def = (PlaceDef) s;
+				if (!(def.attrType() instanceof ExprTypePredefinedPlace)) {
+					continue;
+				}
+				ExprTypePredefinedPlace placeType = (ExprTypePredefinedPlace) def.attrType();
+				BPLExpression isHavoc;
+				if (def.hasPlaceOption(PLACE_OPTION_SPLITVC)) {
+					isHavoc = BPLBoolLiteral.TRUE;
+				} else {
+					isHavoc = BPLBoolLiteral.FALSE;
+				}
+				BPLAssignmentCommand r = new BPLAssignmentCommand(
+						new BPLArrayExpression(
+								new BPLVariableExpression(ITranslationConstants.USE_HAVOC)
+								, new BPLVariableExpression(placeType.getBoogiePlaceName())) 
+						,isHavoc
+						);
+				result.add(r.toString());
+			}
+		}
+		return result;
 	}
 	
 
