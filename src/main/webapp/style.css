@@ -30,7 +30,7 @@ body {
 	/*position : absolute;*/
 	bottom : 0;
 	width : 100%;
-	height : 99px;
+	height : 30px;
 	background-color : #6493D2;
 	z-index : 0;
 }
@@ -51,7 +51,6 @@ body {
 	display: inline;
 }
 #logo select {
-	margin-left : 50px;
 }
 #invtitle input {
 	margin-left : 20px;
@@ -63,7 +62,6 @@ body {
 	display:inline;
 	vertical-align: bottom;
 	margin-left : 35px;
-	margin-right : 5px;
 }
 #maintable {
 	width:100%;
@@ -103,23 +101,25 @@ div.boogieoutput {
 }
 
 div.libclass {
-	width: 42%;
+	width: 100%;
+	margin-bottom: 5px;
 }
 div.inv {
-    width: 87%;
+    width: 100%;
 }
 div.boogieinput {
-    width: 87%;
+    width: 100%;
     height: 220px;
 }
 #formsubmit {
-	background: #ccc;
+	/*background: #ccc;
 	font-family: 'Yanone Kaffeesatz', arial, serif;
 	font-size: 20pt;
-	box-shadow: 0px 0px 10px #888;
+	box-shadow: 0px 0px 10px #888;*/
 }
 #submitButton {
 	text-align: center;
+	padding-top: 20px;
 }
 #invcol {
 	z-index : 2;
@@ -135,6 +135,7 @@ div.boogieinput {
 }
 textarea.hiddeninput {
 	visibility: hidden;
+	display: none;
 }
 a, a:visited, a:hover, a:active {
 	color : #092E67;
@@ -172,5 +173,55 @@ h3 {
 
 #ajax_indicator h1 {
 	color:black;
+}
+
+/* options */
+
+#optionpan select {
+	width: 100px;
+	float: right;
+}
+
+#optionpan input {
+	width: 100px;
+	float: right;
+}
+
+#optionpan > span {
+	margin: 5px;
+	padding: 5px;
+	display:block;
+    	background-color: #FAFAFA;
+    	border-bottom: 1px solid #EEEEEE;
+}
+
+
+
+
+/* ace-editor */
+
+.ace_editor {
+	position: relative;
+}
+
+.ace_editor .ace_sb {
+	overflow-y: auto;
+}
+
+.ace_gutter {
+	border-radius: 10px 0 0 10px;
+}
+
+.ace_scroller {
+	border-radius: 0 10px 10px 0;
+}
+
+.libcontents {
+	margin-bottom: 5px;
+}
+
+
+.headmenu {
+	float:right;
 }
 
