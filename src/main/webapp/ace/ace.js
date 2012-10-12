@@ -222,7 +222,10 @@ require("./placeholder");
 exports.config = require("./config");
 exports.edit = function(el) {
     if (typeof(el) == "string") {
-        el = document.getElementById(el);
+        var _id = el;
+        if (!(el = document.getElementById(el))) {
+          console.log("can't match div #" + _id);
+        }
     }
 
     if (el.env && el.env.editor instanceof Editor)
@@ -2026,6 +2029,9 @@ var Keys = (function() {
     ret.enter = ret["return"];
     ret.escape = ret.esc;
     ret.del = ret["delete"];
+    
+    // workaround for firefox bug
+    ret[173] = '-';
 
     return ret;
 })();
@@ -2130,7 +2136,6 @@ var useragent = require("./lib/useragent");
 var TextInput = require("./keyboard/textinput").TextInput;
 var MouseHandler = require("./mouse/mouse_handler").MouseHandler;
 var FoldHandler = require("./mouse/fold_handler").FoldHandler;
-//var TouchHandler = require("./touch_handler").TouchHandler;
 var KeyBinding = require("./keyboard/keybinding").KeyBinding;
 var EditSession = require("./edit_session").EditSession;
 var Search = require("./search").Search;
@@ -2158,12 +2163,8 @@ var Editor = function(renderer, session) {
     this.keyBinding = new KeyBinding(this);
 
     // TODO detect touch event support
-    if (useragent.isIPad) {
-        //this.$mouseHandler = new TouchHandler(this);
-    } else {
-        this.$mouseHandler = new MouseHandler(this);
-        new FoldHandler(this);
-    }
+    this.$mouseHandler = new MouseHandler(this);
+    new FoldHandler(this);
 
     this.$blockScrolling = 0;
     this.$search = new Search().set({
@@ -2445,7 +2446,7 @@ var Editor = function(renderer, session) {
                 } else {
                     range = new Range(cursor.row, 0, cursor.row+1, 0);
                 }
-                session.$highlightLineMarker = session.addMarker(range, "ace_active_line", "background");
+                session.$highlightLineMarker = session.addMarker(range, "ace_active-line", "background");
             }
         }
     };
@@ -3546,16 +3547,20 @@ var dom = require("../lib/dom");
 
 var TextInput = function(parentNode, host) {
     var text = dom.createElement("textarea");
+    text.className = "ace_text-input";
     if (useragent.isTouchPad)
         text.setAttribute("x-palm-disable-auto-cap", true);
 
-    text.setAttribute("wrap", "off");
+    text.wrap = "off";
+    text.spellcheck = false;
 
     text.style.top = "-2em";
     parentNode.insertBefore(text, parentNode.firstChild);
 
-    var PLACEHOLDER = useragent.isIE ? "\x01" : "\x01";
-    sendText();
+    var PLACEHOLDER = useragent.isIE ? "\x01" : "\x00";
+    reset(true);
+    if (isFocused())
+        host.onFocus();
 
     var inCompostion = false;
     var copied = false;
@@ -3917,6 +3922,8 @@ var MouseHandler = function(editor) {
 
         this.x = ev.x;
         this.y = ev.y;
+        
+        this.isMousePressed = true;
 
         // do not move textarea during selection
         var renderer = this.editor.renderer;
@@ -3937,6 +3944,7 @@ var MouseHandler = function(editor) {
                 renderer.$keepTextAreaAtCursor = true;
                 renderer.$moveTextAreaToCursor();
             }
+            self.isMousePressed = false;
         };
 
         var onCaptureInterval = function() {
@@ -3975,7 +3983,7 @@ function DefaultHandlers(mouseHandler) {
     editor.setDefaultHandler("dblclick", this.onDoubleClick.bind(mouseHandler));
     editor.setDefaultHandler("tripleclick", this.onTripleClick.bind(mouseHandler));
     editor.setDefaultHandler("quadclick", this.onQuadClick.bind(mouseHandler));
-    editor.setDefaultHandler("mousewheel", this.onScroll.bind(mouseHandler));
+    editor.setDefaultHandler("mousewheel", this.onMouseWheel.bind(mouseHandler));
 
     var exports = ["select", "startSelect", "drag", "dragEnd", "dragWait",
         "dragWaitEnd", "startDrag", "focusWait"];
@@ -4229,7 +4237,10 @@ function DefaultHandlers(mouseHandler) {
         this.setState("null");
     };
 
-    this.onScroll = function(ev) {
+    this.onMouseWheel = function(ev) {
+        if (ev.getShiftKey() || ev.getAccelKey()){
+            return;
+        }
         var editor = this.editor;
         var isScrolable = editor.renderer.isScrollableBy(ev.wheelX * ev.speed, ev.wheelY * ev.speed);
         if (isScrolable) {
@@ -4295,9 +4306,13 @@ function GutterHandler(mouseHandler) {
 
         if (e.getShiftKey())
             selection.selectTo(row, 0);
-        else
+        else {
+            if (e.domEvent.detail == 2) {
+                editor.selectAll();
+                return e.preventDefault();
+            }
             mouseHandler.$clickSelection = editor.selection.getLineRange(row);
-
+        }
         mouseHandler.captureMouse(e, "selectByLines");
         return e.preventDefault();
     });
@@ -4306,7 +4321,7 @@ function GutterHandler(mouseHandler) {
     var tooltipTimeout, mouseEvent, tooltip, tooltipAnnotation;
     function createTooltip() {
         tooltip = dom.createElement("div");
-        tooltip.className = "ace_gutter_tooltip";
+        tooltip.className = "ace_gutter-tooltip";
         tooltip.style.maxWidth = "500px";
         tooltip.style.display = "none";
         editor.container.appendChild(tooltip);
@@ -4331,7 +4346,7 @@ function GutterHandler(mouseHandler) {
 
         if (tooltipAnnotation == annotation)
             return;
-        tooltipAnnotation = annotation.text.join("\n");
+        tooltipAnnotation = annotation.text.join("<br/>");
 
         tooltip.style.display = "block";
         tooltip.innerHTML = tooltipAnnotation;
@@ -4375,7 +4390,7 @@ function GutterHandler(mouseHandler) {
             return;
         tooltipTimeout = setTimeout(function() {
             tooltipTimeout = null;
-            if (mouseEvent)
+            if (mouseEvent && !mouseHandler.isMousePressed)
                 showTooltip();
             else
                 hideTooltip();
@@ -4963,7 +4978,7 @@ var EditSession = function(text, mode) {
 
     this.highlight = function(re) {
         if (!this.$searchHighlight) {
-            var highlight = new SearchHighlight(null, "ace_selected_word", "text");
+            var highlight = new SearchHighlight(null, "ace_selected-word", "text");
             this.$searchHighlight = this.addDynamicMarker(highlight);
         }
         this.$searchHighlight.setRegexp(re);
@@ -5176,15 +5191,7 @@ var EditSession = function(text, mode) {
     * Sets annotations for the `EditSession`. This functions emits the `'changeAnnotation'` event.
     **/
     this.setAnnotations = function(annotations) {
-        this.$annotations = {};
-        for (var i=0; i<annotations.length; i++) {
-            var annotation = annotations[i];
-            var row = annotation.row;
-            if (this.$annotations[row])
-                this.$annotations[row].push(annotation);
-            else
-                this.$annotations[row] = [annotation];
-        }
+        this.$annotations = annotations;
         this._emit("changeAnnotation", {});
     };
     this.getAnnotations = function() {
@@ -7930,7 +7937,7 @@ var Tokenizer = function(rules, flag) {
             });
 
             if (matchcount > 1 && state[i].token.length !== matchcount-1)
-                throw new Error("Matching groups and length of the token array don't match in rule #" + i + " of state " + key);
+                throw new Error("For " + state[i].regex + " the matching groups and length of the token array don't match (rule #" + i + " of state " + key + ")");
 
             mapping[matchTotal] = {
                 rule: i,
@@ -7995,6 +8002,11 @@ var Tokenizer = function(rules, flag) {
                     lastIndex = re.lastIndex;
 
                     re = this.regExps[currentState];
+
+                    if (re === undefined) {
+                         throw new Error("You indicated a state of " + rule.next + " to go to, but it doesn't exist!");
+                    }
+
                     re.lastIndex = lastIndex;
                 }
                 break;
@@ -10656,7 +10668,7 @@ var EventEmitter = require("../lib/event_emitter").EventEmitter;
 
 var CommandManager = function(platform, commands) {
     this.platform = platform;
-    this.commands = {};
+    this.commands = this.byName = {};
     this.commmandKeyBinding = {};
 
     this.addCommands(commands);
@@ -11451,9 +11463,6 @@ var VirtualRenderer = function(container, theme) {
 
     this.$markerFront = new MarkerLayer(this.content);
 
-    this.characterWidth = textLayer.getCharacterWidth();
-    this.lineHeight = textLayer.getLineHeight();
-
     this.$cursorLayer = new CursorLayer(this.content);
     this.$cursorPadding = 8;
 
@@ -11484,12 +11493,8 @@ var VirtualRenderer = function(container, theme) {
     };
 
     this.$textLayer.addEventListener("changeCharacterSize", function() {
-        _self.characterWidth = textLayer.getCharacterWidth();
-        _self.lineHeight = textLayer.getLineHeight();
-        _self.$updatePrintMargin();
+        _self.updateCharacterSize();
         _self.onResize(true);
-
-        _self.$loop.schedule(_self.CHANGE_FULL);
     });
 
     this.$size = {
@@ -11520,7 +11525,7 @@ var VirtualRenderer = function(container, theme) {
     this.$loop.schedule(this.CHANGE_FULL);
 
     this.setPadding(4);
-    this.$updatePrintMargin();
+    this.updateCharacterSize();
 };
 
 (function() {
@@ -11539,6 +11544,17 @@ var VirtualRenderer = function(container, theme) {
     this.CHANGE_H_SCROLL = 1024;
 
     oop.implement(this, EventEmitter);
+    
+    this.updateCharacterSize = function() {
+        if (this.$textLayer.allowBoldFonts != this.$allowBoldFonts) {
+            this.$allowBoldFonts = this.$textLayer.allowBoldFonts;
+            this.setStyle("ace_nobold", !this.$allowBoldFonts);
+        }
+        
+        this.characterWidth = this.$textLayer.getCharacterWidth();
+        this.lineHeight = this.$textLayer.getLineHeight();
+        this.$updatePrintMargin();
+    };
     this.setSession = function(session) {
         this.session = session;
         
@@ -11714,7 +11730,7 @@ var VirtualRenderer = function(container, theme) {
 
         if (!this.$gutterLineHighlight) {
             this.$gutterLineHighlight = dom.createElement("div");
-            this.$gutterLineHighlight.className = "ace_gutter_active_line";
+            this.$gutterLineHighlight.className = "ace_gutter-active-line";
             this.$gutter.appendChild(this.$gutterLineHighlight);
             return;
         }
@@ -11742,11 +11758,11 @@ var VirtualRenderer = function(container, theme) {
 
         if (!this.$printMarginEl) {
             containerEl = dom.createElement("div");
-            containerEl.className = "ace_print_margin_layer";
+            containerEl.className = "ace_layer ace_print-margin-layer";
             this.$printMarginEl = dom.createElement("div");
-            this.$printMarginEl.className = "ace_print_margin";
+            this.$printMarginEl.className = "ace_print-margin";
             containerEl.appendChild(this.$printMarginEl);
-            this.content.insertBefore(containerEl, this.$textLayer.element);
+            this.content.insertBefore(containerEl, this.content.firstChild);
         }
 
         var style = this.$printMarginEl.style;
@@ -11853,7 +11869,7 @@ var VirtualRenderer = function(container, theme) {
             this.scrollLeft = scrollLeft;
             this.session.setScrollLeft(scrollLeft);
 
-            this.scroller.className = this.scrollLeft == 0 ? "ace_scroller" : "ace_scroller horscroll";
+            this.scroller.className = this.scrollLeft == 0 ? "ace_scroller" : "ace_scroller ace_scroll-left";
         }
 
         // full
@@ -12113,9 +12129,11 @@ var VirtualRenderer = function(container, theme) {
             cursor = {row: cursor, column: 0};
 
         var pos = this.$cursorLayer.getPixelPosition(cursor);
-        var offset = pos.top - this.$size.scrollerHeight * (alignment || 0);
+        var h = this.$size.scrollerHeight - this.lineHeight;
+        var offset = pos.top - h * (alignment || 0);
 
         this.session.setScrollTop(offset);
+        return offset;
     };
 
     this.STEPS = 8;
@@ -12339,11 +12357,11 @@ var VirtualRenderer = function(container, theme) {
     *
     * [Adds a new class, `style`, to the editor.]{: #VirtualRenderer.setStyle}
     **/
-    this.setStyle = function setStyle(style) {
-      dom.addCssClass(this.container, style);
+    this.setStyle = function setStyle(style, include) {
+        dom.setCssClass(this.container, style, include != false);
     };
     this.unsetStyle = function unsetStyle(style) {
-      dom.removeCssClass(this.container, style);
+        dom.removeCssClass(this.container, style);
     };
     this.destroy = function() {
         this.$textLayer.destroy();
@@ -12371,14 +12389,18 @@ var Gutter = function(parentEl) {
     this.gutterWidth = 0;
 
     this.$annotations = [];
+    this.$updateAnnotations = this.$updateAnnotations.bind(this);
 };
 
 (function() {
 
     oop.implement(this, EventEmitter);
-    
+
     this.setSession = function(session) {
+        if (this.session)
+            this.session.removeEventListener("change", this.$updateAnnotations);
         this.session = session;
+        session.on("change", this.$updateAnnotations);
     };
 
     this.addGutterDecoration = function(row, className){
@@ -12395,28 +12417,43 @@ var Gutter = function(parentEl) {
 
     this.setAnnotations = function(annotations) {
         // iterate over sparse array
-        this.$annotations = [];
-        for (var row in annotations) if (annotations.hasOwnProperty(row)) {
-            var rowAnnotations = annotations[row];
-            if (!rowAnnotations)
-                continue;
-
-            var rowInfo = this.$annotations[row] = {
-                text: []
-            };
-            for (var i=0; i<rowAnnotations.length; i++) {
-                var annotation = rowAnnotations[i];
-                var annoText = annotation.text.replace(/"/g, "&quot;").replace(/'/g, "&#8217;").replace(/</, "&lt;");
-                if (rowInfo.text.indexOf(annoText) === -1)
-                    rowInfo.text.push(annoText);
-                var type = annotation.type;
-                if (type == "error")
-                    rowInfo.className = " ace_error";
-                else if (type == "warning" && rowInfo.className != " ace_error")
-                    rowInfo.className = " ace_warning";
-                else if (type == "info" && (!rowInfo.className))
-                    rowInfo.className = " ace_info";
+        this.$annotations = []
+        var rowInfo, row;
+        for (var i = 0; i < annotations.length; i++) {
+            var annotation = annotations[i];
+            var row = annotation.row;
+            var rowInfo = this.$annotations[row];
+            if (!rowInfo) {
+                rowInfo = this.$annotations[row] = {text: []};
             }
+            var annoText = annotation.text.replace(/"/g, "&quot;").replace(/'/g, "&#8217;").replace(/</g, "&lt;");
+            if (rowInfo.text.indexOf(annoText) === -1)
+                rowInfo.text.push(annoText);
+            var type = annotation.type;
+            if (type == "error")
+                rowInfo.className = " ace_error";
+            else if (type == "warning" && rowInfo.className != " ace_error")
+                rowInfo.className = " ace_warning";
+            else if (type == "info" && (!rowInfo.className))
+                rowInfo.className = " ace_info";
+        }
+    };
+
+    this.$updateAnnotations = function (e) {
+        if (!this.$annotations.length)
+            return;
+        var delta = e.data;
+        var range = delta.range;
+        var firstRow = range.start.row;
+        var len = range.end.row - firstRow;
+        if (len === 0) {
+            // do nothing
+        } else if (delta.action == "removeText" || delta.action == "removeLines") {
+            this.$annotations.splice(firstRow, len + 1, null);
+        } else {
+            var args = Array(len + 1);
+            args.unshift(firstRow, 1);
+            this.$annotations.splice.apply(this.$annotations, args);
         }
     };
 
@@ -12456,8 +12493,9 @@ var Gutter = function(parentEl) {
                     c = foldWidgets[i] = this.session.getFoldWidget(i);
                 if (c)
                     html.push(
-                        "<span class='ace_fold-widget ", c,
-                        c == "start" && i == foldStart && i < fold.end.row ? " closed" : " open",
+                        "<span class='ace_fold-widget ace_", c,
+                        c == "start" && i == foldStart && i < fold.end.row ? " ace_closed" : " ace_open",
+                        "' style='height:", config.lineHeight, "px",
                         "'></span>"
                     );
             }
@@ -12590,7 +12628,7 @@ var Marker = function(parentEl) {
             }
             else {
                 this.drawSingleLineMarker(
-                    html, range, marker.clazz + " start", config,
+                    html, range, marker.clazz + " ace_start", config,
                     null, marker.type
                 );
             }
@@ -12611,7 +12649,7 @@ var Marker = function(parentEl) {
             row, range.start.column,
             row, this.session.getScreenLastRowColumn(row)
         );
-        this.drawSingleLineMarker(stringBuilder, lineRange, clazz + " start", layerConfig, 1, "text");
+        this.drawSingleLineMarker(stringBuilder, lineRange, clazz + " ace_start", layerConfig, 1, "text");
 
         // selection end
         row = range.end.row;
@@ -12635,7 +12673,7 @@ var Marker = function(parentEl) {
         var left = Math.round(padding + range.start.column * config.characterWidth);
 
         stringBuilder.push(
-            "<div class='", clazz, " start' style='",
+            "<div class='", clazz, " ace_start' style='",
             "height:", height, "px;",
             "right:0;",
             "top:", top, "px;",
@@ -12713,7 +12751,8 @@ var Text = function(parentEl) {
     this.element.className = "ace_layer ace_text-layer";
     parentEl.appendChild(this.element);
 
-    this.$characterSize = this.$measureSizes() || {width: 0, height: 0};
+    this.$characterSize = {width: 0, height: 0};
+    this.checkForSizeChanges();
     this.$pollSizeChanges();
 };
 
@@ -12743,7 +12782,11 @@ var Text = function(parentEl) {
     this.checkForSizeChanges = function() {
         var size = this.$measureSizes();
         if (size && (this.$characterSize.width !== size.width || this.$characterSize.height !== size.height)) {
+            this.$measureNode.style.fontWeight = "bold";
+            var boldSize = this.$measureSizes();
+            this.$measureNode.style.fontWeight = "";
             this.$characterSize = size;
+            this.allowBoldFonts = boldSize && boldSize.width === size.width && boldSize.height === size.height;
             this._emit("changeCharacterSize", {data: size});
         }
     };
@@ -13441,6 +13484,10 @@ var Cursor = function(parentEl) {
             for (var i = selections.length; i--; ) {
                 sel = selections[i];
                 var pixelPos = this.getPixelPosition(sel.cursor, true);
+                if ((pixelPos.top > config.height + config.offset || 
+                     pixelPos.top < -config.offset) && i > 1) {
+                    continue;
+                }
 
                 var style = (this.cursors[cursorIndex++] || this.addCursor()).style;
 
@@ -13466,7 +13513,7 @@ var Cursor = function(parentEl) {
 
         var overwrite = this.session.getOverwrite();
         if (overwrite != this.overwrite)
-            this.$setOverite(overwrite);
+            this.$setOverwrite(overwrite);
 
         // cache for textarea and gutter highlight
         this.$pixelPos = pixelPos;
@@ -13474,7 +13521,7 @@ var Cursor = function(parentEl) {
         this.restartTimer();
     };
 
-    this.$setOverite = function(overwrite) {
+    this.$setOverwrite = function(overwrite) {
         this.overwrite = overwrite;
         for (var i = this.cursors.length; i--; ) {
             if (overwrite)
@@ -13511,9 +13558,10 @@ var EventEmitter = require("./lib/event_emitter").EventEmitter;
  **/
 var ScrollBar = function(parent) {
     this.element = dom.createElement("div");
-    this.element.className = "ace_sb";
+    this.element.className = "ace_scrollbar";
 
     this.inner = dom.createElement("div");
+    this.inner.className = "ace_scrollbar-inner";
     this.element.appendChild(this.inner);
 
     parent.appendChild(this.element);
@@ -13543,7 +13591,7 @@ var ScrollBar = function(parent) {
     this.setInnerHeight = function(height) {
         this.inner.style.height = height + "px";
     };
-    // TODO: on chrome 17+ after for small zoom levels after this function
+    // TODO: on chrome 17+ for small zoom levels after calling this function
     // this.element.scrollTop != scrollTop which makes page to scroll up.
     this.setScrollTop = function(scrollTop) {
         this.element.scrollTop = scrollTop;
@@ -13605,7 +13653,7 @@ exports.RenderLoop = RenderLoop;
 define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "    position: absolute;\n" +
   "    overflow: hidden;\n" +
-  "    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Droid Sans Mono', 'Consolas', monospace;\n" +
+  "    font-family: 'Menlo', 'Monaco', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;\n" +
   "    font-size: 12px;\n" +
   "}\n" +
   "\n" +
@@ -13616,9 +13664,9 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "\n" +
   ".ace_content {\n" +
   "    position: absolute;\n" +
-  "    box-sizing: border-box;\n" +
   "    -moz-box-sizing: border-box;\n" +
   "    -webkit-box-sizing: border-box;\n" +
+  "    box-sizing: border-box;\n" +
   "    cursor: text;\n" +
   "}\n" +
   "\n" +
@@ -13631,13 +13679,13 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "    z-index: 4;\n" +
   "}\n" +
   "\n" +
-  ".ace_gutter_active_line {\n" +
+  ".ace_gutter-active-line {\n" +
   "    position: absolute;\n" +
   "    left: 0;\n" +
   "    right: 0;\n" +
   "}\n" +
   "\n" +
-  ".ace_scroller.horscroll {\n" +
+  ".ace_scroller.ace_scroll-left {\n" +
   "    box-shadow: 17px 0 16px -16px rgba(0, 0, 0, 0.4) inset;\n" +
   "}\n" +
   "\n" +
@@ -13666,50 +13714,40 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoTWFjaW50b3NoKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpGRTk5MTVGREIxNDkxMUUxOTc5Q0FFREQyMTNGMjBFQyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDpGRTk5MTVGRUIxNDkxMUUxOTc5Q0FFREQyMTNGMjBFQyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZFOTkxNUZCQjE0OTExRTE5NzlDQUVERDIxM0YyMEVDIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkZFOTkxNUZDQjE0OTExRTE5NzlDQUVERDIxM0YyMEVDIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+SIDkjAAAAJ1JREFUeNpi/P//PwMlgImBQkB7A6qrq/+DMC55FkIGKCoq4pVnpFkgTp069f/+/fv/r1u37r+tre1/kg0A+ptn9uzZYLaRkRHpLvjw4cNXWVlZhufPnzOcO3eOdAO0tbVPAjHDmzdvGA4fPsxIsgGSkpJmv379Ynj37h2DjIyMCMkG3LhxQ/T27dsMampqDHZ2dq/pH41DxwCAAAMAFdc68dUsFZgAAAAASUVORK5CYII=\");\n" +
   "}\n" +
   "\n" +
-  ".ace_editor .ace_sb {\n" +
+  ".ace_scrollbar {\n" +
   "    position: absolute;\n" +
   "    overflow-x: hidden;\n" +
   "    overflow-y: scroll;\n" +
   "    right: 0;\n" +
   "}\n" +
   "\n" +
-  ".ace_editor .ace_sb div {\n" +
+  ".ace_scrollbar-inner {\n" +
   "    position: absolute;\n" +
   "    width: 1px;\n" +
   "    left: 0;\n" +
   "}\n" +
   "\n" +
-  ".ace_editor .ace_print_margin_layer {\n" +
-  "    z-index: 0;\n" +
-  "    position: absolute;\n" +
-  "    overflow: hidden;\n" +
-  "    margin: 0;\n" +
-  "    left: 0;\n" +
-  "    height: 100%;\n" +
-  "    width: 100%;\n" +
-  "}\n" +
-  "\n" +
-  ".ace_editor .ace_print_margin {\n" +
+  ".ace_print-margin {\n" +
   "    position: absolute;\n" +
   "    height: 100%;\n" +
   "}\n" +
   "\n" +
-  ".ace_editor > textarea {\n" +
+  ".ace_text-input {\n" +
   "    position: absolute;\n" +
   "    z-index: 0;\n" +
   "    width: 0.5em;\n" +
   "    height: 1em;\n" +
   "    opacity: 0;\n" +
   "    background: transparent;\n" +
-  "    appearance: none;\n" +
   "    -moz-appearance: none;\n" +
+  "    appearance: none;\n" +
   "    border: none;\n" +
   "    resize: none;\n" +
   "    outline: none;\n" +
   "    overflow: hidden;\n" +
   "}\n" +
   "\n" +
-  ".ace_editor > textarea.ace_composition {\n" +
+  ".ace_text-input.ace_composition {\n" +
   "    background: #fff;\n" +
   "    color: #000;\n" +
   "    z-index: 1000;\n" +
@@ -13725,15 +13763,15 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "    white-space: nowrap;\n" +
   "    height: 100%;\n" +
   "    width: 100%;\n" +
-  "    box-sizing: border-box;\n" +
   "    -moz-box-sizing: border-box;\n" +
   "    -webkit-box-sizing: border-box;\n" +
+  "    box-sizing: border-box;\n" +
   "    /* setting pointer-events: auto; on node under the mouse, which changes\n" +
   "        during scroll, will break mouse wheel scrolling in Safari */\n" +
   "    pointer-events: none;\n" +
   "}\n" +
   "\n" +
-  ".ace_gutter .ace_layer {\n" +
+  ".ace_gutter-layer {\n" +
   "    position: relative;\n" +
   "    width: auto;\n" +
   "    text-align: right;\n" +
@@ -13757,13 +13795,16 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   ".ace_cursor {\n" +
   "    z-index: 4;\n" +
   "    position: absolute;\n" +
+  "    -moz-box-sizing: border-box;\n" +
+  "    -webkit-box-sizing: border-box;\n" +
+  "    box-sizing: border-box;\n" +
   "}\n" +
   "\n" +
   ".ace_cursor.ace_hidden {\n" +
   "    opacity: 0.2;\n" +
   "}\n" +
   "\n" +
-  ".ace_editor.multiselect .ace_cursor {\n" +
+  ".ace_editor.ace_multiselect .ace_cursor {\n" +
   "    border-left-width: 1px;\n" +
   "}\n" +
   "\n" +
@@ -13786,23 +13827,23 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "    z-index: 6;\n" +
   "}\n" +
   "\n" +
-  ".ace_marker-layer .ace_active_line {\n" +
+  ".ace_marker-layer .ace_active-line {\n" +
   "    position: absolute;\n" +
   "    z-index: 2;\n" +
   "}\n" +
   "\n" +
-  ".ace_marker-layer .ace_selected_word {\n" +
+  ".ace_marker-layer .ace_selected-word {\n" +
   "    position: absolute;\n" +
   "    z-index: 4;\n" +
-  "    box-sizing: border-box;\n" +
   "    -moz-box-sizing: border-box;\n" +
   "    -webkit-box-sizing: border-box;\n" +
+  "    box-sizing: border-box;\n" +
   "}\n" +
   "\n" +
   ".ace_line .ace_fold {\n" +
-  "    box-sizing: border-box;\n" +
   "    -moz-box-sizing: border-box;\n" +
   "    -webkit-box-sizing: border-box;\n" +
+  "    box-sizing: border-box;\n" +
   "\n" +
   "    display: inline-block;\n" +
   "    height: 11px;\n" +
@@ -13836,11 +13877,11 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "    background-position: center center, top left;\n" +
   "}\n" +
   "\n" +
-  ".ace_dragging .ace_content {\n" +
+  ".ace_editor.ace_dragging .ace_content {\n" +
   "    cursor: move;\n" +
   "}\n" +
   "\n" +
-  ".ace_gutter_tooltip {\n" +
+  ".ace_gutter-tooltip {\n" +
   "    background-color: #FFFFD5;\n" +
   "    border: 1px solid gray;\n" +
   "    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);\n" +
@@ -13849,9 +13890,9 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "    padding: 4px;\n" +
   "    position: absolute;\n" +
   "    z-index: 300;\n" +
-  "    box-sizing: border-box;\n" +
   "    -moz-box-sizing: border-box;\n" +
   "    -webkit-box-sizing: border-box;\n" +
+  "    box-sizing: border-box;\n" +
   "    cursor: default;\n" +
   "}\n" +
   "\n" +
@@ -13860,15 +13901,14 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "}\n" +
   "\n" +
   ".ace_fold-widget {\n" +
-  "    box-sizing: border-box;\n" +
   "    -moz-box-sizing: border-box;\n" +
   "    -webkit-box-sizing: border-box;\n" +
+  "    box-sizing: border-box;\n" +
   "\n" +
   "    margin: 0 -12px 0 1px;\n" +
   "    display: inline-block;\n" +
-  "    height: 100%;\n" +
   "    width: 11px;\n" +
-  "    vertical-align: bottom;\n" +
+  "    vertical-align: top;\n" +
   "\n" +
   "    background-image: url(\"data:image/png,%89PNG%0D%0A%1A%0A%00%00%00%0DIHDR%00%00%00%05%00%00%00%05%08%06%00%00%00%8Do%26%E5%00%00%004IDATx%DAe%8A%B1%0D%000%0C%C2%F2%2CK%96%BC%D0%8F9%81%88H%E9%D0%0E%96%C0%10%92%3E%02%80%5E%82%E4%A9*-%EEsw%C8%CC%11%EE%96w%D8%DC%E9*Eh%0C%151(%00%00%00%00IEND%AEB%60%82\");\n" +
   "    background-repeat: no-repeat;\n" +
@@ -13879,11 +13919,11 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "    border: 1px solid transparent;\n" +
   "}\n" +
   "\n" +
-  ".ace_fold-widget.end {\n" +
+  ".ace_fold-widget.ace_end {\n" +
   "    background-image: url(\"data:image/png,%89PNG%0D%0A%1A%0A%00%00%00%0DIHDR%00%00%00%05%00%00%00%05%08%06%00%00%00%8Do%26%E5%00%00%004IDATx%DAm%C7%C1%09%000%08C%D1%8C%ECE%C8E(%8E%EC%02)%1EZJ%F1%C1'%04%07I%E1%E5%EE%CAL%F5%A2%99%99%22%E2%D6%1FU%B5%FE0%D9x%A7%26Wz5%0E%D5%00%00%00%00IEND%AEB%60%82\");\n" +
   "}\n" +
   "\n" +
-  ".ace_fold-widget.closed {\n" +
+  ".ace_fold-widget.ace_closed {\n" +
   "    background-image: url(\"data:image/png,%89PNG%0D%0A%1A%0A%00%00%00%0DIHDR%00%00%00%03%00%00%00%06%08%06%00%00%00%06%E5%24%0C%00%00%009IDATx%DA5%CA%C1%09%000%08%03%C0%AC*(%3E%04%C1%0D%BA%B1%23%A4Uh%E0%20%81%C0%CC%F8%82%81%AA%A2%AArGfr%88%08%11%11%1C%DD%7D%E0%EE%5B%F6%F6%CB%B8%05Q%2F%E9tai%D9%00%00%00%00IEND%AEB%60%82\");\n" +
   "}\n" +
   "\n" +
@@ -13908,10 +13948,10 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   ".ace_dark .ace_fold-widget {\n" +
   "    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHklEQVQIW2P4//8/AzoGEQ7oGCaLLAhWiSwB146BAQCSTPYocqT0AAAAAElFTkSuQmCC\");\n" +
   "}\n" +
-  ".ace_dark .ace_fold-widget.end {\n" +
+  ".ace_dark .ace_fold-widget.ace_end {\n" +
   "    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAH0lEQVQIW2P4//8/AxQ7wNjIAjDMgC4AxjCVKBirIAAF0kz2rlhxpAAAAABJRU5ErkJggg==\");\n" +
   "}\n" +
-  ".ace_dark .ace_fold-widget.closed {\n" +
+  ".ace_dark .ace_fold-widget.ace_closed {\n" +
   "    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAAFCAYAAACAcVaiAAAAHElEQVQIW2P4//+/AxAzgDADlOOAznHAKgPWAwARji8UIDTfQQAAAABJRU5ErkJggg==\");\n" +
   "}\n" +
   ".ace_dark .ace_fold-widget:hover {\n" +
@@ -13926,7 +13966,7 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "    \n" +
   "    \n" +
   "    \n" +
-  ".ace_fold-widget.invalid {\n" +
+  ".ace_fold-widget.ace_invalid {\n" +
   "    background-color: #FFB4B4;\n" +
   "    border-color: #DE5555;\n" +
   "}\n" +
@@ -13948,15 +13988,32 @@ define("text!ace/css/editor.css", [], ".ace_editor {\n" +
   "            transition: opacity 0.05s ease 0.05s;\n" +
   "    opacity:1;\n" +
   "}\n" +
+  "\n" +
+  ".ace_underline {\n" +
+  "    text-decoration: underline;\n" +
+  "}\n" +
+  "\n" +
+  ".ace_bold {\n" +
+  "    font-weight: bold;\n" +
+  "}\n" +
+  "\n" +
+  ".ace_nobold .ace_bold {\n" +
+  "    font-weight: normal;\n" +
+  "}\n" +
+  "\n" +
+  ".ace_italic {\n" +
+  "    font-style: italic;\n" +
+  "}\n" +
   "");
 
-define('ace/multi_select', ['require', 'exports', 'module' , 'ace/range_list', 'ace/range', 'ace/selection', 'ace/mouse/multi_select_handler', 'ace/lib/event', 'ace/commands/multi_select_commands', 'ace/search', 'ace/edit_session', 'ace/editor'], function(require, exports, module) {
+define('ace/multi_select', ['require', 'exports', 'module' , 'ace/range_list', 'ace/range', 'ace/selection', 'ace/mouse/multi_select_handler', 'ace/lib/event', 'ace/lib/lang', 'ace/commands/multi_select_commands', 'ace/search', 'ace/edit_session', 'ace/editor'], function(require, exports, module) {
 
 var RangeList = require("./range_list").RangeList;
 var Range = require("./range").Range;
 var Selection = require("./selection").Selection;
 var onMouseDown = require("./mouse/multi_select_handler").onMouseDown;
 var event = require("./lib/event");
+var lang = require("./lib/lang");
 var commands = require("./commands/multi_select_commands");
 exports.commands = commands.defaultCommands.concat(commands.multiSelectCommands);
 
@@ -14099,10 +14156,19 @@ var EditSession = require("./edit_session").EditSession;
             this.setSelectionRange(range, lastRange.cursor == lastRange.start);
         } else {
             var range = this.getRange();
+            var isBackwards = this.isBackwards();
             var startRow = range.start.row;
             var endRow = range.end.row;
-            if (startRow == endRow)
+            if (startRow == endRow) {
+                if (isBackwards)
+                    var start = range.end, end = range.start;
+                else
+                    var start = range.start, end = range.end;
+                
+                this.addRange(Range.fromPoints(end, end));
+                this.addRange(Range.fromPoints(start, start));
                 return;
+            }
 
             var rectSel = [];
             var r = this.getLineRange(startRow, true);
@@ -14204,9 +14270,9 @@ var EditSession = require("./edit_session").EditSession;
 // extend Editor
 var Editor = require("./editor").Editor;
 (function() {
-    
+
     /** extension
-     * Editor.updateSelectionMarkers() 
+     * Editor.updateSelectionMarkers()
      *
      * Updates the cursor and marker layers.
      **/
@@ -14266,7 +14332,7 @@ var Editor = require("./editor").Editor;
             return;
         this.inMultiSelectMode = true;
 
-        this.setStyle("multiselect");
+        this.setStyle("ace_multiselect");
         this.keyBinding.addKeyboardHandler(commands.keyboardHandler);
         this.commands.on("exec", this.$onMultiSelectExec);
 
@@ -14279,7 +14345,7 @@ var Editor = require("./editor").Editor;
             return;
         this.inMultiSelectMode = false;
 
-        this.unsetStyle("multiselect");
+        this.unsetStyle("ace_multiselect");
         this.keyBinding.removeKeyboardHandler(commands.keyboardHandler);
 
         this.commands.removeEventListener("exec", this.$onMultiSelectExec);
@@ -14359,7 +14425,7 @@ var Editor = require("./editor").Editor;
 
     // todo this should change when paste becomes a command
     this.onPaste = function(text) {
-        if (this.$readOnly) 
+        if (this.$readOnly)
             return;
 
         this._emit("paste", text);
@@ -14405,7 +14471,7 @@ var Editor = require("./editor").Editor;
 
     // commands
     /** extension
-     * Editor.selectMoreLines(dir, skip) 
+     * Editor.selectMoreLines(dir, skip)
      * - dir (Number): The direction of lines to select: -1 for up, 1 for down
      * - skip (Boolean): If `true`, removes the active selection range
      *
@@ -14486,13 +14552,13 @@ var Editor = require("./editor").Editor;
     }
 
     /** extension
-     * Editor.selectMore(dir, skip) 
+     * Editor.selectMore(dir, skip)
      * - dir (Number): The direction of lines to select: -1 for up, 1 for down
      * - skip (Boolean): If `true`, removes the active selection range
      *
      * Finds the next occurence of text in an active selection and adds it to the selections.
      **/
-    this.selectMore = function (dir, skip) {
+    this.selectMore = function(dir, skip) {
         var session = this.session;
         var sel = session.multiSelect;
 
@@ -14512,6 +14578,115 @@ var Editor = require("./editor").Editor;
         if (skip)
             this.multiSelect.substractPoint(range.cursor);
     };
+    this.alignCursors = function() {
+        var session = this.session;
+        var sel = session.multiSelect;
+        var ranges = sel.ranges;
+
+        if (!ranges.length) {
+            var range = this.selection.getRange();
+            var fr = range.start.row, lr = range.end.row;
+            var lines = this.session.doc.removeLines(fr, lr);
+            lines = this.$reAlignText(lines);
+            this.session.doc.insertLines(fr, lines);
+            range.start.column = 0;
+            range.end.column = lines[lines.length - 1].length;
+            this.selection.setRange(range);
+        } else {
+            // filter out ranges on same row
+            var row = -1;
+            var sameRowRanges = ranges.filter(function(r) {
+                if (r.cursor.row == row)
+                    return true;
+                row = r.cursor.row;
+            });
+            sel.$onRemoveRange(sameRowRanges);
+
+            var maxCol = 0;
+            var minSpace = Infinity;
+            var spaceOffsets = ranges.map(function(r) {
+                var p = r.cursor;
+                var line = session.getLine(p.row);
+                var spaceOffset = line.substr(p.column).search(/\S/g);
+                if (spaceOffset == -1)
+                    spaceOffset = 0;
+
+                if (p.column > maxCol)
+                    maxCol = p.column;
+                if (spaceOffset < minSpace)
+                    minSpace = spaceOffset;
+                return spaceOffset;
+            });
+            ranges.forEach(function(r, i) {
+                var p = r.cursor;
+                var l = maxCol - p.column;
+                var d = spaceOffsets[i] - minSpace;
+                if (l > d)
+                    session.insert(p, lang.stringRepeat(" ", l - d));
+                else
+                    session.remove(new Range(p.row, p.column, p.row, p.column - l + d));
+
+                r.start.column = r.end.column = maxCol;
+                r.start.row = r.end.row = p.row;
+                r.cursor = r.end;
+            });
+            sel.fromOrientedRange(ranges[0]);
+            this.renderer.updateCursor();
+            this.renderer.updateBackMarkers();
+        }
+    };
+
+    this.$reAlignText = function(lines) {
+        var isLeftAligned = true, isRightAligned = true;
+        var startW, textW, endW;
+
+        return lines.map(function(line) {
+            var m = line.match(/(\s*)(.*?)(\s*)([=:].*)/);
+            if (!m)
+                return [line];
+
+            if (startW == null) {
+                startW = m[1].length;
+                textW = m[2].length;
+                endW = m[3].length;
+                return m;
+            }
+
+            if (startW + textW + endW != m[1].length + m[2].length + m[3].length)
+                isRightAligned = false;
+            if (startW != m[1].length)
+                isLeftAligned = false;
+
+            if (startW > m[1].length)
+                startW = m[1].length;
+            if (textW < m[2].length)
+                textW = m[2].length;
+            if (endW > m[3].length)
+                endW = m[3].length;
+
+            return m;
+        }).map(isLeftAligned ? isRightAligned ? alignRight : alignLeft : unAlign);
+
+        function strRepeat(n, ch) {
+            return Array(n + 1).join(ch)
+        }
+
+        function alignLeft(m) {
+            return !m[2] ? m[0] : strRepeat(startW, " ") + m[2]
+                + strRepeat(textW - m[2].length + endW, " ")
+                + m[4].replace(/^([=:])\s+/, "$1 ")
+        }
+        function alignRight(m) {
+            return !m[2] ? m[0] : strRepeat(startW + textW - m[2].length, " ") + m[2]
+                + strRepeat(endW, " ")
+                + m[4].replace(/^([=:])\s+/, "$1 ")
+        }
+        function unAlign(m) {
+            return !m[2] ? m[0] : strRepeat(startW, " ") + m[2]
+                + strRepeat(endW, " ")
+                + m[4].replace(/^([=:])\s+/, "$1 ")
+        }
+    }
 }).call(Editor.prototype);
 
 
@@ -14557,7 +14732,7 @@ exports.onSessionChange = function(e) {
     }
 };
 
-// MultiSelect(editor) 
+// MultiSelect(editor)
 // adds multiple selection support to the editor
 // (note: should be called only once for each editor instance)
 function MultiSelect(editor) {
@@ -14970,11 +15145,15 @@ exports.defaultCommands = [{
 }, {
     name: "splitIntoLines",
     exec: function(editor) { editor.multiSelect.splitIntoLines(); },
-    bindKey: {win: "Ctrl-Shift-L", mac: "Ctrl-Shift-L"},
+    bindKey: {win: "Ctrl-Alt-L", mac: "Ctrl-Alt-L"},
     readonly: true
+}, {
+    name: "alignCursors",
+    exec: function(editor) { editor.alignCursors(); },
+    bindKey: {win: "Ctrl-Alt-A", mac: "Ctrl-Alt-A"}
 }];
 
-// commands active in multiselect mode
+// commands active only in multiselect mode
 exports.multiSelectCommands = [{
     name: "singleSelection",
     bindKey: "esc",
@@ -15547,20 +15726,12 @@ exports.cssText = require('text!./textmate.css');
 var dom = require("../lib/dom");
 dom.importCssString(exports.cssText, exports.cssClass);
 });
-define("text!ace/theme/textmate.css", [], ".ace-tm .ace_editor {\n" +
-  "  border: 2px solid rgb(159, 159, 159);\n" +
-  "}\n" +
-  "\n" +
-  ".ace-tm .ace_editor.ace_focus {\n" +
-  "  border: 2px solid #327fbd;\n" +
-  "}\n" +
-  "\n" +
-  ".ace-tm .ace_gutter {\n" +
+define("text!ace/theme/textmate.css", [], ".ace-tm .ace_gutter {\n" +
   "  background: #f0f0f0;\n" +
   "  color: #333;\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_print_margin {\n" +
+  ".ace-tm .ace_print-margin {\n" +
   "  width: 1px;\n" +
   "  background: #e8e8e8;\n" +
   "}\n" +
@@ -15569,7 +15740,8 @@ define("text!ace/theme/textmate.css", [], ".ace-tm .ace_editor {\n" +
   "    background-color: #6B72E6;\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_text-layer {\n" +
+  ".ace-tm .ace_scroller {\n" +
+  "  background-color: #FFFFFF;\n" +
   "}\n" +
   "\n" +
   ".ace-tm .ace_cursor {\n" +
@@ -15581,78 +15753,78 @@ define("text!ace/theme/textmate.css", [], ".ace-tm .ace_editor {\n" +
   "  border-bottom: 1px solid black;\n" +
   "}\n" +
   "        \n" +
-  ".ace-tm .ace_line .ace_invisible {\n" +
+  ".ace-tm .ace_invisible {\n" +
   "  color: rgb(191, 191, 191);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_storage,\n" +
-  ".ace-tm .ace_line .ace_keyword {\n" +
+  ".ace-tm .ace_storage,\n" +
+  ".ace-tm .ace_keyword {\n" +
   "  color: blue;\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_constant {\n" +
+  ".ace-tm .ace_constant {\n" +
   "  color: rgb(197, 6, 11);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_constant.ace_buildin {\n" +
+  ".ace-tm .ace_constant.ace_buildin {\n" +
   "  color: rgb(88, 72, 246);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_constant.ace_language {\n" +
+  ".ace-tm .ace_constant.ace_language {\n" +
   "  color: rgb(88, 92, 246);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_constant.ace_library {\n" +
+  ".ace-tm .ace_constant.ace_library {\n" +
   "  color: rgb(6, 150, 14);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_invalid {\n" +
+  ".ace-tm .ace_invalid {\n" +
   "  background-color: rgba(255, 0, 0, 0.1);\n" +
   "  color: red;\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_support.ace_function {\n" +
+  ".ace-tm .ace_support.ace_function {\n" +
   "  color: rgb(60, 76, 114);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_support.ace_constant {\n" +
+  ".ace-tm .ace_support.ace_constant {\n" +
   "  color: rgb(6, 150, 14);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_support.ace_type,\n" +
-  ".ace-tm .ace_line .ace_support.ace_class {\n" +
+  ".ace-tm .ace_support.ace_type,\n" +
+  ".ace-tm .ace_support.ace_class {\n" +
   "  color: rgb(109, 121, 222);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_keyword.ace_operator {\n" +
+  ".ace-tm .ace_keyword.ace_operator {\n" +
   "  color: rgb(104, 118, 135);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_string {\n" +
+  ".ace-tm .ace_string {\n" +
   "  color: rgb(3, 106, 7);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_comment {\n" +
+  ".ace-tm .ace_comment {\n" +
   "  color: rgb(76, 136, 107);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_comment.ace_doc {\n" +
+  ".ace-tm .ace_comment.ace_doc {\n" +
   "  color: rgb(0, 102, 255);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_comment.ace_doc.ace_tag {\n" +
+  ".ace-tm .ace_comment.ace_doc.ace_tag {\n" +
   "  color: rgb(128, 159, 191);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_constant.ace_numeric {\n" +
+  ".ace-tm .ace_constant.ace_numeric {\n" +
   "  color: rgb(0, 0, 205);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_variable {\n" +
+  ".ace-tm .ace_variable {\n" +
   "  color: rgb(49, 132, 149);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_line .ace_xml_pe {\n" +
+  ".ace-tm .ace_xml-pe {\n" +
   "  color: rgb(104, 104, 91);\n" +
   "}\n" +
   "\n" +
@@ -15660,9 +15832,6 @@ define("text!ace/theme/textmate.css", [], ".ace-tm .ace_editor {\n" +
   "  color: #0000A2;\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_markup.ace_markupine {\n" +
-  "    text-decoration:underline;\n" +
-  "}\n" +
   "\n" +
   ".ace-tm .ace_markup.ace_heading {\n" +
   "  color: rgb(12, 7, 255);\n" +
@@ -15672,10 +15841,18 @@ define("text!ace/theme/textmate.css", [], ".ace-tm .ace_editor {\n" +
   "  color:rgb(185, 6, 144);\n" +
   "}\n" +
   "\n" +
+  ".ace-tm .ace_meta.ace_tag {\n" +
+  "  color:rgb(0, 22, 142);\n" +
+  "}\n" +
+  "\n" +
+  ".ace-tm .ace_string.ace_regex {\n" +
+  "  color: rgb(255, 0, 0)\n" +
+  "}\n" +
+  "\n" +
   ".ace-tm .ace_marker-layer .ace_selection {\n" +
   "  background: rgb(181, 213, 255);\n" +
   "}\n" +
-  ".ace-tm.multiselect .ace_selection.start {\n" +
+  ".ace-tm.ace_multiselect .ace_selection.ace_start {\n" +
   "  box-shadow: 0 0 3px 0px white;\n" +
   "  border-radius: 2px;\n" +
   "}\n" +
@@ -15692,25 +15869,17 @@ define("text!ace/theme/textmate.css", [], ".ace-tm .ace_editor {\n" +
   "  border: 1px solid rgb(192, 192, 192);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_marker-layer .ace_active_line {\n" +
+  ".ace-tm .ace_marker-layer .ace_active-line {\n" +
   "  background: rgba(0, 0, 0, 0.07);\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_gutter_active_line {\n" +
+  ".ace-tm .ace_gutter-active-line {\n" +
   "    background-color : #dcdcdc;\n" +
   "}\n" +
   "\n" +
-  ".ace-tm .ace_marker-layer .ace_selected_word {\n" +
+  ".ace-tm .ace_marker-layer .ace_selected-word {\n" +
   "  background: rgb(250, 250, 255);\n" +
   "  border: 1px solid rgb(200, 200, 250);\n" +
-  "}\n" +
-  "\n" +
-  ".ace-tm .ace_meta.ace_tag {\n" +
-  "  color:rgb(0, 22, 142);\n" +
-  "}\n" +
-  "\n" +
-  ".ace-tm .ace_string.ace_regex {\n" +
-  "  color: rgb(255, 0, 0)\n" +
   "}\n" +
   "\n" +
   ".ace-tm .ace_indent-guide {\n" +

@@ -88,7 +88,9 @@ exports.handler = {
         if (hashId == 1)
             key = "ctrl-" + key;
         
-        if (data.state == "start") {
+        if ((key == "esc" && hashId == 0) || key == "ctrl-[") {
+            return {command: coreCommands.stop};
+        } else if (data.state == "start") {
             if (useragent.isMac && this.handleMacRepeat(data, hashId, key)) {
                 hashId = -1;
                 key = data.inputChar;
@@ -109,10 +111,7 @@ exports.handler = {
                 return {command: coreCommands.stop};
             }
         } else {
-            if (key == "esc" || key == "ctrl-[") {
-                data.state = "start";
-                return {command: coreCommands.stop};
-            } else if (key == "ctrl-w") {
+            if (key == "ctrl-w") {
                 return {command: "removewordleft"};
             }
         }
@@ -684,7 +683,7 @@ define('ace/keyboard/vim/maps/util', ['require', 'exports', 'module' , 'ace/keyb
 var registers = require("../registers");
 
 var dom = require("../../../lib/dom");
-dom.importCssString('.insert-mode. ace_cursor{\
+dom.importCssString('.insert-mode .ace_cursor{\
     border-left: 2px solid #333333;\
 }\
 .ace_dark.insert-mode .ace_cursor{\
@@ -827,10 +826,10 @@ module.exports = {
 };
 
 });
- 
-"use strict"
+
 
 define('ace/keyboard/vim/maps/motions', ['require', 'exports', 'module' , 'ace/keyboard/vim/maps/util', 'ace/search', 'ace/range'], function(require, exports, module) {
+
 
 var util = require("./util");
 
@@ -842,42 +841,27 @@ var keepScrollPosition = function(editor, fn) {
     editor.renderer.scrollToRow(editor.getCursorPosition().row - diff);
 };
 
-function Motion(getRange, type){
-    if (type == 'extend')
-        var extend = true;
-    else
-        var reverse = type;
-
-    this.nav = function(editor) {
-        var r = getRange(editor);
-        if (!r)
+function Motion(m) {
+    if (typeof m == "function") {
+        var getPos = m;
+        m = this;
+    } else {
+        var getPos = m.getPos;
+    }
+    m.nav = function(editor, range, count, param) {
+        var a = getPos(editor, range, count, param, false);
+        if (!a)
             return;
-        if (!r.end)
-            var a = r;
-        else if (reverse)
-            var a = r.start;
-        else
-            var a = r.end;
-
         editor.clearSelection();
         editor.moveCursorTo(a.row, a.column);
-    }
-    this.sel = function(editor){
-        var r = getRange(editor);
-        if (!r)
+    };
+    m.sel = function(editor, range, count, param) {
+        var a = getPos(editor, range, count, param, true);
+        if (!a)
             return;
-        if (extend)
-            return editor.selection.setSelectionRange(r);
-
-        if (!r.end)
-            var a = r;
-        else if (reverse)
-            var a = r.start;
-        else
-            var a = r.end;
-
         editor.selection.selectTo(a.row, a.column);
-    }
+    };
+    return m;
 }
 
 var nonWordRe = /[\s.\/\\()\"'-:,.;<>~!@#$%^&*|+=\[\]{}`~?]/;
@@ -890,20 +874,20 @@ var StringStream = function(editor, cursor) {
     this.row = cursor.row;
     this.col = cursor.column;
     var line = editor.session.getLine(this.row);
-    var maxRow = editor.session.getLength()
-    this.ch = line[this.col] || '\n'
+    var maxRow = editor.session.getLength();
+    this.ch = line[this.col] || '\n';
     this.skippedLines = 0;
 
     this.next = function() {
         this.ch = line[++this.col] || this.handleNewLine(1);
         //this.debug()
         return this.ch;
-    }
+    };
     this.prev = function() {
         this.ch = line[--this.col] || this.handleNewLine(-1);
         //this.debug()
         return this.ch;
-    }
+    };
     this.peek = function(dir) {
         var ch = line[this.col + dir];
         if (ch)
@@ -913,7 +897,7 @@ var StringStream = function(editor, cursor) {
         if (this.col == line.length - 1)
             return '\n';
         return editor.session.getLine(this.row + 1)[0] || '\n';
-    }
+    };
 
     this.handleNewLine = function(dir) {
         if (dir == 1){
@@ -928,7 +912,7 @@ var StringStream = function(editor, cursor) {
             return line[0] || '\n';
         }
         if (dir == -1) {
-            if (this.row == 0)
+            if (this.row === 0)
                 return '';
             this.row --;
             line = editor.session.getLine(this.row);
@@ -936,11 +920,11 @@ var StringStream = function(editor, cursor) {
             this.skippedLines--;
             return '\n';
         }
-    }
+    };
     this.debug = function() {
         console.log(line.substring(0, this.col)+'|'+this.ch+'\''+this.col+'\''+line.substr(this.col+1));
-    }
-}
+    };
+};
 
 var Search = require("ace/search").Search;
 var search = new Search();
@@ -979,7 +963,7 @@ module.exports = {
         else
             str.next();
 
-        return {column: str.col, row: str.row}
+        return {column: str.col, row: str.row};
     }),
     "b": new Motion(function(editor) {
         var str = new StringStream(editor);
@@ -999,7 +983,7 @@ module.exports = {
         return {column: str.col, row: str.row};
     }),
     "B": new Motion(function(editor) {
-        var str = new StringStream(editor)
+        var str = new StringStream(editor);
         str.prev();
         while(str.ch && !(!whiteRe.test(str.ch) && whiteRe.test(str.peek(-1))) && str.skippedLines > -2)
             str.prev();
@@ -1008,7 +992,7 @@ module.exports = {
             str.next();
 
         return {column: str.col, row: str.row};
-    }, true),
+    }),
     "e": new Motion(function(editor) {
         var str = new StringStream(editor);
 
@@ -1189,98 +1173,58 @@ module.exports = {
         }
     },
 
-    "f": {
+    "f": new Motion({
         param: true,
         handlesCount: true,
-        nav: function(editor, range, count, param) {
-            var ed = editor;
-            var cursor = ed.getCursorPosition();
+        getPos: function(editor, range, count, param, isSel) {
+            var cursor = editor.getCursorPosition();
             var column = util.getRightNthChar(editor, cursor, param, count || 1);
 
             if (typeof column === "number") {
-                ed.selection.clearSelection(); // Why does it select in the first place?
-                ed.moveCursorTo(cursor.row, column + cursor.column + 1);
+                cursor.column += column + (isSel ? 2 : 1);                
+                return cursor;
             }
-        },
-        sel: function(editor, range, count, param) {
-            var ed = editor;
-            var cursor = ed.getCursorPosition();
+        }
+    }),
+    "F": new Motion({
+        param: true,
+        handlesCount: true,
+        getPos: function(editor, range, count, param, isSel) {
+            var cursor = editor.getCursorPosition();
+            var column = util.getLeftNthChar(editor, cursor, param, count || 1);
+
+            if (typeof column === "number") {
+                cursor.column -= column + 1;
+                return cursor;
+            }
+        }
+    }),
+    "t": new Motion({
+        param: true,
+        handlesCount: true,
+        getPos: function(editor, range, count, param, isSel) {
+            var cursor = editor.getCursorPosition();
             var column = util.getRightNthChar(editor, cursor, param, count || 1);
 
             if (typeof column === "number") {
-                ed.moveCursorTo(cursor.row, column + cursor.column + 1);
+                cursor.column += column + (isSel ? 1 : 0);
+                return cursor;
             }
         }
-    },
-    "F": {
+    }),
+    "T": new Motion({
         param: true,
         handlesCount: true,
-        nav: function(editor, range, count, param) {
-            var ed = editor;
-            var cursor = ed.getCursorPosition();
+        getPos: function(editor, range, count, param, isSel) {
+            var cursor = editor.getCursorPosition();
             var column = util.getLeftNthChar(editor, cursor, param, count || 1);
 
             if (typeof column === "number") {
-                ed.selection.clearSelection(); // Why does it select in the first place?
-                ed.moveCursorTo(cursor.row, cursor.column - column - 1);
-            }
-        },
-        sel: function(editor, range, count, param) {
-            var ed = editor;
-            var cursor = ed.getCursorPosition();
-            var column = util.getLeftNthChar(editor, cursor, param, count || 1);
-
-            if (typeof column === "number") {
-                ed.moveCursorTo(cursor.row, cursor.column - column - 1);
+                cursor.column -= column;
+                return cursor;
             }
         }
-    },
-    "t": {
-        param: true,
-        handlesCount: true,
-        nav: function(editor, range, count, param) {
-            var ed = editor;
-            var cursor = ed.getCursorPosition();
-            var column = util.getRightNthChar(editor, cursor, param, count || 1);
-
-            if (typeof column === "number") {
-                ed.selection.clearSelection(); // Why does it select in the first place?
-                ed.moveCursorTo(cursor.row, column + cursor.column);
-            }
-        },
-        sel: function(editor, range, count, param) {
-            var ed = editor;
-            var cursor = ed.getCursorPosition();
-            var column = util.getRightNthChar(editor, cursor, param, count || 1);
-
-            if (typeof column === "number") {
-                ed.moveCursorTo(cursor.row, column + cursor.column);
-            }
-        }
-    },
-    "T": {
-        param: true,
-        handlesCount: true,
-        nav: function(editor, range, count, param) {
-            var ed = editor;
-            var cursor = ed.getCursorPosition();
-            var column = util.getLeftNthChar(editor, cursor, param, count || 1);
-
-            if (typeof column === "number") {
-                ed.selection.clearSelection(); // Why does it select in the first place?
-                ed.moveCursorTo(cursor.row, -column + cursor.column);
-            }
-        },
-        sel: function(editor, range, count, param) {
-            var ed = editor;
-            var cursor = ed.getCursorPosition();
-            var column = util.getLeftNthChar(editor, cursor, param, count || 1);
-
-            if (typeof column === "number") {
-                ed.moveCursorTo(cursor.row, -column + cursor.column);
-            }
-        }
-    },
+    }),
 
     "^": {
         nav: function(editor) {
@@ -1397,6 +1341,25 @@ module.exports = {
         });
 
         return match;
+    }),
+    "{": new Motion(function(ed) {
+        var session = ed.session;
+        var row = session.selection.lead.row;
+        while(row > 0 && !/\S/.test(session.getLine(row)))
+            row--;
+        while(/\S/.test(session.getLine(row)))
+            row--;
+        return {column: 0, row: row};
+    }),
+    "}": new Motion(function(ed) {
+        var session = ed.session;
+        var l = session.getLength();
+        var row = session.selection.lead.row;
+        while(row < l && !/\S/.test(session.getLine(row)))
+            row++;
+        while(/\S/.test(session.getLine(row)))
+            row++;        
+        return {column: 0, row: row};
     }),
     "ctrl-d": {
         nav: function(editor, range, count, param) {

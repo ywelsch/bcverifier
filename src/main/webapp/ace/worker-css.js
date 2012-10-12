@@ -1,8 +1,8 @@
 "no use strict";
 
 var console = {
-    log: function(msg) {
-        postMessage({type: "log", data: msg});
+    log: function(msgs) {
+        postMessage({type: "log", data: arguments.join(" ")});
     }
 };
 var window = {
@@ -30,6 +30,9 @@ var normalizeModule = function(parentId, moduleName) {
 };
 
 var require = function(parentId, id) {
+    if (!id.charAt)
+        throw new Error("worker.js require() accepts only (parentId, id) as arguments");
+
     var id = normalizeModule(parentId, id);
     
     var module = require.modules[id];
@@ -1431,34 +1434,201 @@ exports.implement = function(proto, mixin) {
 };
 
 });
- 
-define('ace/mode/css_worker', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/worker/mirror', 'ace/mode/css/csslint'], function(require, exports, module) {
+
+define('ace/mode/css_worker', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/lib/lang', 'ace/worker/mirror', 'ace/mode/css/csslint'], function(require, exports, module) {
 
 
 var oop = require("../lib/oop");
+var lang = require("../lib/lang");
 var Mirror = require("../worker/mirror").Mirror;
 var CSSLint = require("./css/csslint").CSSLint;
 
 var Worker = exports.Worker = function(sender) {
     Mirror.call(this, sender);
-    this.setTimeout(200);
+    this.setTimeout(400);
+    this.ruleset = null;
+    this.setDisabledRules("");
+    this.setInfoRules("adjoining-classes|qualified-headings|zero-units|gradients|import|outline-none");
 };
 
 oop.inherits(Worker, Mirror);
 
 (function() {
-    
+    this.setInfoRules = function(ruleNames) {
+        if (typeof ruleNames == "string")
+            ruleNames = ruleNames.split("|");
+        this.infoRules = lang.arrayToMap(ruleNames);
+        this.doc.getValue() && this.deferredUpdate.schedule(100);
+    };
+
+    this.setDisabledRules = function(ruleNames) {
+        if (!ruleNames) {
+            this.ruleset = null;
+        } else {
+            if (typeof ruleNames == "string")
+                ruleNames = ruleNames.split("|");
+            var all = {};
+
+            CSSLint.getRules().forEach(function(x){
+                all[x.id] = true;
+            });
+            ruleNames.forEach(function(x) {
+                delete all[x];
+            });
+            console.log(all)
+            this.ruleset = all;
+        }
+        this.doc.getValue() && this.deferredUpdate.schedule(100);
+    };
+
     this.onUpdate = function() {
         var value = this.doc.getValue();
-        
-        var result = CSSLint.verify(value);
+        var infoRules = this.infoRules;
+
+        var result = CSSLint.verify(value, this.ruleset);
         this.sender.emit("csslint", result.messages.map(function(msg) {
-            delete msg.rule;
-            return msg;
+            return {
+                row: msg.line - 1,
+                column: msg.col - 1,
+                text: msg.message,
+                type: infoRules[msg.rule.id] ? "info" : msg.type
+            }
         }));
     };
-    
+
 }).call(Worker.prototype);
+
+});
+
+define('ace/lib/lang', ['require', 'exports', 'module' ], function(require, exports, module) {
+
+
+exports.stringReverse = function(string) {
+    return string.split("").reverse().join("");
+};
+
+exports.stringRepeat = function (string, count) {
+     return new Array(count + 1).join(string);
+};
+
+var trimBeginRegexp = /^\s\s*/;
+var trimEndRegexp = /\s\s*$/;
+
+exports.stringTrimLeft = function (string) {
+    return string.replace(trimBeginRegexp, '');
+};
+
+exports.stringTrimRight = function (string) {
+    return string.replace(trimEndRegexp, '');
+};
+
+exports.copyObject = function(obj) {
+    var copy = {};
+    for (var key in obj) {
+        copy[key] = obj[key];
+    }
+    return copy;
+};
+
+exports.copyArray = function(array){
+    var copy = [];
+    for (var i=0, l=array.length; i<l; i++) {
+        if (array[i] && typeof array[i] == "object")
+            copy[i] = this.copyObject( array[i] );
+        else 
+            copy[i] = array[i];
+    }
+    return copy;
+};
+
+exports.deepCopy = function (obj) {
+    if (typeof obj != "object") {
+        return obj;
+    }
+    
+    var copy = obj.constructor();
+    for (var key in obj) {
+        if (typeof obj[key] == "object") {
+            copy[key] = this.deepCopy(obj[key]);
+        } else {
+            copy[key] = obj[key];
+        }
+    }
+    return copy;
+};
+
+exports.arrayToMap = function(arr) {
+    var map = {};
+    for (var i=0; i<arr.length; i++) {
+        map[arr[i]] = 1;
+    }
+    return map;
+
+};
+
+exports.createMap = function(props) {
+    var map = Object.create(null);
+    for (var i in props) {
+        map[i] = props[i];
+    }
+    return map;
+};
+exports.arrayRemove = function(array, value) {
+  for (var i = 0; i <= array.length; i++) {
+    if (value === array[i]) {
+      array.splice(i, 1);
+    }
+  }
+};
+
+exports.escapeRegExp = function(str) {
+    return str.replace(/([.*+?^${}()|[\]\/\\])/g, '\\$1');
+};
+
+exports.getMatchOffsets = function(string, regExp) {
+    var matches = [];
+
+    string.replace(regExp, function(str) {
+        matches.push({
+            offset: arguments[arguments.length-2],
+            length: str.length
+        });
+    });
+
+    return matches;
+};
+
+
+exports.deferredCall = function(fcn) {
+
+    var timer = null;
+    var callback = function() {
+        timer = null;
+        fcn();
+    };
+
+    var deferred = function(timeout) {
+        deferred.cancel();
+        timer = setTimeout(callback, timeout || 0);
+        return deferred;
+    };
+
+    deferred.schedule = deferred;
+
+    deferred.call = function() {
+        this.cancel();
+        fcn();
+        return deferred;
+    };
+
+    deferred.cancel = function() {
+        clearTimeout(timer);
+        timer = null;
+        return deferred;
+    };
+
+    return deferred;
+};
 
 });
 define('ace/worker/mirror', ['require', 'exports', 'module' , 'ace/document', 'ace/lib/lang'], function(require, exports, module) {
@@ -2473,138 +2643,6 @@ var Anchor = exports.Anchor = function(doc, row, column) {
 }).call(Anchor.prototype);
 
 });
-
-define('ace/lib/lang', ['require', 'exports', 'module' ], function(require, exports, module) {
-
-
-exports.stringReverse = function(string) {
-    return string.split("").reverse().join("");
-};
-
-exports.stringRepeat = function (string, count) {
-     return new Array(count + 1).join(string);
-};
-
-var trimBeginRegexp = /^\s\s*/;
-var trimEndRegexp = /\s\s*$/;
-
-exports.stringTrimLeft = function (string) {
-    return string.replace(trimBeginRegexp, '');
-};
-
-exports.stringTrimRight = function (string) {
-    return string.replace(trimEndRegexp, '');
-};
-
-exports.copyObject = function(obj) {
-    var copy = {};
-    for (var key in obj) {
-        copy[key] = obj[key];
-    }
-    return copy;
-};
-
-exports.copyArray = function(array){
-    var copy = [];
-    for (var i=0, l=array.length; i<l; i++) {
-        if (array[i] && typeof array[i] == "object")
-            copy[i] = this.copyObject( array[i] );
-        else 
-            copy[i] = array[i];
-    }
-    return copy;
-};
-
-exports.deepCopy = function (obj) {
-    if (typeof obj != "object") {
-        return obj;
-    }
-    
-    var copy = obj.constructor();
-    for (var key in obj) {
-        if (typeof obj[key] == "object") {
-            copy[key] = this.deepCopy(obj[key]);
-        } else {
-            copy[key] = obj[key];
-        }
-    }
-    return copy;
-};
-
-exports.arrayToMap = function(arr) {
-    var map = {};
-    for (var i=0; i<arr.length; i++) {
-        map[arr[i]] = 1;
-    }
-    return map;
-
-};
-
-exports.createMap = function(props) {
-    var map = Object.create(null);
-    for (var i in props) {
-        map[i] = props[i];
-    }
-    return map;
-};
-exports.arrayRemove = function(array, value) {
-  for (var i = 0; i <= array.length; i++) {
-    if (value === array[i]) {
-      array.splice(i, 1);
-    }
-  }
-};
-
-exports.escapeRegExp = function(str) {
-    return str.replace(/([.*+?^${}()|[\]\/\\])/g, '\\$1');
-};
-
-exports.getMatchOffsets = function(string, regExp) {
-    var matches = [];
-
-    string.replace(regExp, function(str) {
-        matches.push({
-            offset: arguments[arguments.length-2],
-            length: str.length
-        });
-    });
-
-    return matches;
-};
-
-
-exports.deferredCall = function(fcn) {
-
-    var timer = null;
-    var callback = function() {
-        timer = null;
-        fcn();
-    };
-
-    var deferred = function(timeout) {
-        deferred.cancel();
-        timer = setTimeout(callback, timeout || 0);
-        return deferred;
-    };
-
-    deferred.schedule = deferred;
-
-    deferred.call = function() {
-        this.cancel();
-        fcn();
-        return deferred;
-    };
-
-    deferred.cancel = function() {
-        clearTimeout(timer);
-        timer = null;
-        return deferred;
-    };
-
-    return deferred;
-};
-
-});
 define('ace/mode/css/csslint', ['require', 'exports', 'module' ], function(require, exports, module) {
 /*!
 CSSLint
@@ -2629,7 +2667,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 */
-/* Build time: 2-March-2012 02:47:11 */
+/* Build time: 14-May-2012 10:24:48 */
 
 /*!
 Parser-Lib
@@ -2654,7 +2692,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 */
-/* Version v0.1.6, Build time: 2-March-2012 02:44:32 */
+/* Version v0.1.7, Build time: 4-May-2012 03:57:04 */
 var parserlib = {};
 (function(){
 
@@ -3426,7 +3464,7 @@ EventTarget : EventTarget,
 TokenStreamBase : TokenStreamBase
 };
 })();
-/* Version v0.1.6, Build time: 2-March-2012 02:44:32 */
+/* Version v0.1.7, Build time: 4-May-2012 03:57:04 */
 (function(){
 var EventTarget = parserlib.util.EventTarget,
 TokenStreamBase = parserlib.util.TokenStreamBase,
@@ -4583,7 +4621,7 @@ Parser.prototype = function(){
                         
                         //there must be a next selector
                         if (nextSelector === null){
-                            this._unexpectedToken(this.LT(1));
+                            this._unexpectedToken(tokenStream.LT(1));
                         } else {
                         
                             //nextSelector is an instance of SelectorPart
@@ -5078,7 +5116,8 @@ Parser.prototype = function(){
                     expr        = null,
                     prio        = null,
                     error       = null,
-                    invalid     = null;
+                    invalid     = null,
+                    propertyName= "";
                 
                 property = this._property();
                 if (property !== null){
@@ -5094,9 +5133,15 @@ Parser.prototype = function(){
                     }
                     
                     prio = this._prio();
+                    propertyName = property.toString();
+                    if (this.options.starHack && property.hack == "*" ||
+                            this.options.underscoreHack && property.hack == "_") {
+                         
+                        propertyName = property.text;
+                    }
                     
                     try {
-                        this._validateProperty(property, expr);
+                        this._validateProperty(propertyName, expr);
                     } catch (ex) {
                         invalid = ex;
                     }
@@ -5929,6 +5974,7 @@ var Properties = {
     "background-repeat"             : { multi: "<repeat-style>" },
     "background-size"               : { multi: "<bg-size>", comma: true },
     "baseline-shift"                : "baseline | sub | super | <percentage> | <length>",
+    "behavior"                      : 1,
     "binding"                       : 1,
     "bleed"                         : "<length>",
     "bookmark-label"                : "<content> | <attr> | <string>",
@@ -6275,6 +6321,7 @@ var Properties = {
     "text-justify"                  : "auto | none | inter-word | inter-ideograph | inter-cluster | distribute | kashida",
     "text-outline"                  : 1,
     "text-overflow"                 : 1,
+    "text-rendering"                : "auto | optimizeSpeed | optimizeLegibility | geometricPrecision | inherit",
     "text-shadow"                   : 1,
     "text-transform"                : "capitalize | uppercase | lowercase | none | inherit",
     "text-wrap"                     : "normal | none | avoid",
@@ -8093,7 +8140,7 @@ var ValidationTypes = {
             i, len, found = false;
         
         for (i=0,len=args.length; i < len && !found; i++){
-            if (text == args[i]){
+            if (text == args[i].toLowerCase()){
                 found = true;
             }
         }
@@ -8185,7 +8232,7 @@ var ValidationTypes = {
         },        
         
         "<gradient>": function(part) {
-            return part.type == "function" && /^(?:\-(?:ms|moz|o|webkit)\-)?(?:repeating\-)?(?:radial|linear)\-gradient/i.test(part);
+            return part.type == "function" && /^(?:\-(?:ms|moz|o|webkit)\-)?(?:repeating\-)?(?:radial\-|linear\-)?gradient/i.test(part);
         },
         
         "<box>": function(part){
@@ -8275,8 +8322,7 @@ var ValidationTypes = {
                 xDir    = "left | center | right",
                 yDir    = "top | center | bottom",
                 part,
-                i, len;
-            
+                i, len;            
                 
             if (ValidationTypes.isAny(expression, "top | bottom")) {
                 result = true;
@@ -8440,7 +8486,7 @@ var CSSLint = (function(){
         formatters = [],
         api        = new parserlib.util.EventTarget();
         
-    api.version = "0.9.7";
+    api.version = "0.9.8";
 
     //-------------------------------------------------------------------------
     // Rule Management
@@ -9655,7 +9701,7 @@ CSSLint.addRule({
         parser.addListener("endstylesheet", function(){
             reporter.stat("important", count);
             if (count >= 10){
-                reporter.rollupWarn("Too many !important declarations (" + count + "), try to use less than 10 to avoid specifity issues.", rule);
+                reporter.rollupWarn("Too many !important declarations (" + count + "), try to use less than 10 to avoid specificity issues.", rule);
             }
         });
     }
@@ -10291,31 +10337,56 @@ CSSLint.addRule({
 CSSLint.addRule({
 
     //rule information
+    id: "star-property-hack",
+    name: "Disallow properties with a star prefix",
+    desc: "Checks for the star property hack (targets IE6/7)",
+    browsers: "All",
+
+    //initialization
+    init: function(parser, reporter){
+        var rule = this;
+
+        //check if property name starts with "*"
+        parser.addListener("property", function(event){
+            var property = event.property;
+
+            if (property.hack == "*") {
+                reporter.report("Property with star prefix found.", event.property.line, event.property.col, rule);
+            }
+        });
+    }
+});
+/*global CSSLint*/
+CSSLint.addRule({
+
+    //rule information
     id: "text-indent",
     name: "Disallow negative text-indent",
     desc: "Checks for text indent less than -99px",
     browsers: "All",
-    
+
     //initialization
     init: function(parser, reporter){
         var rule = this,
-            textIndent = false;
-            
-            
+            textIndent,
+            direction;
+
+
         function startRule(event){
             textIndent = false;
+            direction = "inherit";
         }
-        
+
         //event handler for end of rules
         function endRule(event){
-            if (textIndent){
+            if (textIndent && direction != "ltr"){
                 reporter.report("Negative text-indent doesn't work well with RTL. If you use text-indent for image replacement explicitly set direction for that item to ltr.", textIndent.line, textIndent.col, rule);
             }
-        }        
-        
+        }
+
         parser.addListener("startrule", startRule);
         parser.addListener("startfontface", startRule);
-    
+
         //check for use of "font-size"
         parser.addListener("property", function(event){
             var name = event.property.toString().toLowerCase(),
@@ -10324,15 +10395,38 @@ CSSLint.addRule({
             if (name == "text-indent" && value.parts[0].value < -99){
                 textIndent = event.property;
             } else if (name == "direction" && value == "ltr"){
-                textIndent = false;
+                direction = "ltr";
             }
         });
 
         parser.addListener("endrule", endRule);
-        parser.addListener("endfontface", endRule);     
+        parser.addListener("endfontface", endRule);
 
     }
 
+});
+/*global CSSLint*/
+CSSLint.addRule({
+
+    //rule information
+    id: "underscore-property-hack",
+    name: "Disallow properties with an underscore prefix",
+    desc: "Checks for the underscore property hack (targets IE6)",
+    browsers: "All",
+
+    //initialization
+    init: function(parser, reporter){
+        var rule = this;
+
+        //check if property name starts with "_"
+        parser.addListener("property", function(event){
+            var property = event.property;
+
+            if (property.hack == "_") {
+                reporter.report("Property with underscore prefix found.", event.property.line, event.property.col, rule);
+            }
+        });
+    }
 });
 /*global CSSLint*/
 CSSLint.addRule({
@@ -10645,289 +10739,6 @@ CSSLint.addRule({
 
     }
 
-});
-CSSLint.addFormatter({
-    //format information
-    id: "checkstyle-xml",
-    name: "Checkstyle XML format",
-
-    /**
-     * Return opening root XML tag.
-     * @return {String} to prepend before all results
-     */
-    startFormat: function(){
-        return "<?xml version=\"1.0\" encoding=\"utf-8\"?><checkstyle>";
-    },
-
-    /**
-     * Return closing root XML tag.
-     * @return {String} to append after all results
-     */
-    endFormat: function(){
-        return "</checkstyle>";
-    },
-
-    /**
-     * Given CSS Lint results for a file, return output for this format.
-     * @param results {Object} with error and warning messages
-     * @param filename {String} relative file path
-     * @param options {Object} (UNUSED for now) specifies special handling of output
-     * @return {String} output for results
-     */
-    formatResults: function(results, filename, options) {
-        var messages = results.messages,
-            output = [];
-        var generateSource = function(rule) {
-            if (!rule || !('name' in rule)) {
-                return "";
-            }
-            return 'net.csslint.' + rule.name.replace(/\s/g,'');
-        };
-        var escapeSpecialCharacters = function(str) {
-            if (!str || str.constructor !== String) {
-                return "";
-            }
-            return str.replace(/\"/g, "'").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        };
-
-        if (messages.length > 0) {
-            output.push("<file name=\""+filename+"\">");
-            CSSLint.Util.forEach(messages, function (message, i) {
-                //ignore rollups for now
-                if (!message.rollup) {
-                  output.push("<error line=\"" + message.line + "\" column=\"" + message.col + "\" severity=\"" + message.type + "\"" +
-                      " message=\"" + escapeSpecialCharacters(message.message) + "\" source=\"" + generateSource(message.rule) +"\"/>");
-                }
-            });
-            output.push("</file>");
-        }
-
-        return output.join("");
-    }
-});
-CSSLint.addFormatter({
-    //format information
-    id: "compact",
-    name: "Compact, 'porcelain' format",
-
-    /**
-     * Return content to be printed before all file results.
-     * @return {String} to prepend before all results
-     */
-    startFormat: function() {
-        return "";
-    },
-
-    /**
-     * Return content to be printed after all file results.
-     * @return {String} to append after all results
-     */
-    endFormat: function() {
-        return "";
-    },
-
-    /**
-     * Given CSS Lint results for a file, return output for this format.
-     * @param results {Object} with error and warning messages
-     * @param filename {String} relative file path
-     * @param options {Object} (Optional) specifies special handling of output
-     * @return {String} output for results
-     */
-    formatResults: function(results, filename, options) {
-        var messages = results.messages,
-            output = "";
-        options = options || {};
-        var capitalize = function(str) {
-            return str.charAt(0).toUpperCase() + str.slice(1);
-        };
-
-        if (messages.length === 0) {
-            return options.quiet ? "" : filename + ": Lint Free!";
-        }
-
-        CSSLint.Util.forEach(messages, function(message, i) {
-            if (message.rollup) {
-                output += filename + ": " + capitalize(message.type) + " - " + message.message + "\n";
-            } else {
-                output += filename + ": " + "line " + message.line + 
-                    ", col " + message.col + ", " + capitalize(message.type) + " - " + message.message + "\n";
-            }
-        });
-    
-        return output;
-    }
-});
-CSSLint.addFormatter({
-    //format information
-    id: "csslint-xml",
-    name: "CSSLint XML format",
-
-    /**
-     * Return opening root XML tag.
-     * @return {String} to prepend before all results
-     */
-    startFormat: function(){
-        return "<?xml version=\"1.0\" encoding=\"utf-8\"?><csslint>";
-    },
-
-    /**
-     * Return closing root XML tag.
-     * @return {String} to append after all results
-     */
-    endFormat: function(){
-        return "</csslint>";
-    },
-
-    /**
-     * Given CSS Lint results for a file, return output for this format.
-     * @param results {Object} with error and warning messages
-     * @param filename {String} relative file path
-     * @param options {Object} (UNUSED for now) specifies special handling of output
-     * @return {String} output for results
-     */
-    formatResults: function(results, filename, options) {
-        var messages = results.messages,
-            output = [];
-        var escapeSpecialCharacters = function(str) {
-            if (!str || str.constructor !== String) {
-                return "";
-            }
-            return str.replace(/\"/g, "'").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        };
-
-        if (messages.length > 0) {
-            output.push("<file name=\""+filename+"\">");
-            CSSLint.Util.forEach(messages, function (message, i) {
-                if (message.rollup) {
-                    output.push("<issue severity=\"" + message.type + "\" reason=\"" + escapeSpecialCharacters(message.message) + "\" evidence=\"" + escapeSpecialCharacters(message.evidence) + "\"/>");
-                } else {
-                    output.push("<issue line=\"" + message.line + "\" char=\"" + message.col + "\" severity=\"" + message.type + "\"" +
-                        " reason=\"" + escapeSpecialCharacters(message.message) + "\" evidence=\"" + escapeSpecialCharacters(message.evidence) + "\"/>");
-                }
-            });
-            output.push("</file>");
-        }
-
-        return output.join("");
-    }
-});
-CSSLint.addFormatter({
-    //format information
-    id: "lint-xml",
-    name: "Lint XML format",
-
-    /**
-     * Return opening root XML tag.
-     * @return {String} to prepend before all results
-     */
-    startFormat: function(){
-        return "<?xml version=\"1.0\" encoding=\"utf-8\"?><lint>";
-    },
-
-    /**
-     * Return closing root XML tag.
-     * @return {String} to append after all results
-     */
-    endFormat: function(){
-        return "</lint>";
-    },
-
-    /**
-     * Given CSS Lint results for a file, return output for this format.
-     * @param results {Object} with error and warning messages
-     * @param filename {String} relative file path
-     * @param options {Object} (UNUSED for now) specifies special handling of output
-     * @return {String} output for results
-     */
-    formatResults: function(results, filename, options) {
-        var messages = results.messages,
-            output = [];
-        var escapeSpecialCharacters = function(str) {
-            if (!str || str.constructor !== String) {
-                return "";
-            }
-            return str.replace(/\"/g, "'").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        };
-
-        if (messages.length > 0) {
-        
-            output.push("<file name=\""+filename+"\">");
-            CSSLint.Util.forEach(messages, function (message, i) {
-                if (message.rollup) {
-                    output.push("<issue severity=\"" + message.type + "\" reason=\"" + escapeSpecialCharacters(message.message) + "\" evidence=\"" + escapeSpecialCharacters(message.evidence) + "\"/>");
-                } else {
-                    output.push("<issue line=\"" + message.line + "\" char=\"" + message.col + "\" severity=\"" + message.type + "\"" +
-                        " reason=\"" + escapeSpecialCharacters(message.message) + "\" evidence=\"" + escapeSpecialCharacters(message.evidence) + "\"/>");
-                }
-            });
-            output.push("</file>");
-        }
-
-        return output.join("");
-    }
-});
-CSSLint.addFormatter({
-    //format information
-    id: "text",
-    name: "Plain Text",
-
-    /**
-     * Return content to be printed before all file results.
-     * @return {String} to prepend before all results
-     */
-    startFormat: function() {
-        return "";
-    },
-
-    /**
-     * Return content to be printed after all file results.
-     * @return {String} to append after all results
-     */
-    endFormat: function() {
-        return "";
-    },
-
-    /**
-     * Given CSS Lint results for a file, return output for this format.
-     * @param results {Object} with error and warning messages
-     * @param filename {String} relative file path
-     * @param options {Object} (Optional) specifies special handling of output
-     * @return {String} output for results
-     */
-    formatResults: function(results, filename, options) {
-        var messages = results.messages,
-            output = "";
-        options = options || {};
-
-        if (messages.length === 0) {
-            return options.quiet ? "" : "\n\ncsslint: No errors in " + filename + ".";
-        }
-
-        output = "\n\ncsslint: There are " + messages.length  +  " problems in " + filename + ".";
-        var pos = filename.lastIndexOf("/"),
-            shortFilename = filename;
-
-        if (pos === -1){
-            pos = filename.lastIndexOf("\\");       
-        }
-        if (pos > -1){
-            shortFilename = filename.substring(pos+1);
-        }
-
-        CSSLint.Util.forEach(messages, function (message, i) {
-            output = output + "\n\n" + shortFilename;
-            if (message.rollup) {
-                output += "\n" + (i+1) + ": " + message.type;
-                output += "\n" + message.message;
-            } else {
-                output += "\n" + (i+1) + ": " + message.type + " at line " + message.line + ", col " + message.col;
-                output += "\n" + message.message;
-                output += "\n" + message.evidence;
-            }
-        });
-    
-        return output;
-    }
 });
 
 

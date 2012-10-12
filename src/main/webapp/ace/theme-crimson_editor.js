@@ -30,15 +30,7 @@
 
 define('ace/theme/crimson_editor', ['require', 'exports', 'module', 'ace/lib/dom'], function(require, exports, module) {
 exports.isDark = false;
-exports.cssText = ".ace-crimson-editor .ace_editor {\
-  border: 2px solid rgb(159, 159, 159);\
-}\
-\
-.ace-crimson-editor .ace_editor.ace_focus {\
-  border: 2px solid #327fbd;\
-}\
-\
-.ace-crimson-editor .ace_gutter {\
+exports.cssText = ".ace-crimson-editor .ace_gutter {\
   background: #ebebeb;\
   color: #333;\
   overflow : hidden;\
@@ -49,9 +41,13 @@ exports.cssText = ".ace-crimson-editor .ace_editor {\
   text-align: right;\
 }\
 \
-.ace-crimson-editor .ace_print_margin {\
+.ace-crimson-editor .ace_print-margin {\
   width: 1px;\
   background: #e8e8e8;\
+}\
+\
+.ace-crimson-editor .ace_scroller {\
+  background-color: #FFFFFF;\
 }\
 \
 .ace-crimson-editor .ace_text-layer {\
@@ -67,80 +63,80 @@ exports.cssText = ".ace-crimson-editor .ace_editor {\
   border-bottom: 1px solid black;\
 }\
 \
-.ace-crimson-editor .ace_line .ace_invisible {\
+.ace-crimson-editor .ace_invisible {\
   color: rgb(191, 191, 191);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_identifier {\
+.ace-crimson-editor .ace_identifier {\
   color: black;\
 }\
 \
-.ace-crimson-editor .ace_line .ace_keyword {\
+.ace-crimson-editor .ace_keyword {\
   color: blue;\
 }\
 \
-.ace-crimson-editor .ace_line .ace_constant.ace_buildin {\
+.ace-crimson-editor .ace_constant.ace_buildin {\
   color: rgb(88, 72, 246);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_constant.ace_language {\
+.ace-crimson-editor .ace_constant.ace_language {\
   color: rgb(255, 156, 0);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_constant.ace_library {\
+.ace-crimson-editor .ace_constant.ace_library {\
   color: rgb(6, 150, 14);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_invalid {\
+.ace-crimson-editor .ace_invalid {\
   text-decoration: line-through;\
   color: rgb(224, 0, 0);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_fold {\
+.ace-crimson-editor .ace_fold {\
 }\
 \
-.ace-crimson-editor .ace_line .ace_support.ace_function {\
+.ace-crimson-editor .ace_support.ace_function {\
   color: rgb(192, 0, 0);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_support.ace_constant {\
+.ace-crimson-editor .ace_support.ace_constant {\
   color: rgb(6, 150, 14);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_support.ace_type,\
-.ace-crimson-editor .ace_line .ace_support.ace_class {\
+.ace-crimson-editor .ace_support.ace_type,\
+.ace-crimson-editor .ace_support.ace_class {\
   color: rgb(109, 121, 222);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_keyword.ace_operator {\
+.ace-crimson-editor .ace_keyword.ace_operator {\
   color: rgb(49, 132, 149);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_string {\
+.ace-crimson-editor .ace_string {\
   color: rgb(128, 0, 128);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_comment {\
+.ace-crimson-editor .ace_comment {\
   color: rgb(76, 136, 107);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_comment.ace_doc {\
+.ace-crimson-editor .ace_comment.ace_doc {\
   color: rgb(0, 102, 255);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_comment.ace_doc.ace_tag {\
+.ace-crimson-editor .ace_comment.ace_doc.ace_tag {\
   color: rgb(128, 159, 191);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_constant.ace_numeric {\
+.ace-crimson-editor .ace_constant.ace_numeric {\
   color: rgb(0, 0, 64);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_variable {\
+.ace-crimson-editor .ace_variable {\
   color: rgb(0, 64, 128);\
 }\
 \
-.ace-crimson-editor .ace_line .ace_xml_pe {\
+.ace-crimson-editor .ace_xml-pe {\
   color: rgb(104, 104, 91);\
 }\
 \
@@ -161,11 +157,11 @@ exports.cssText = ".ace-crimson-editor .ace_editor {\
   border: 1px solid rgb(192, 192, 192);\
 }\
 \
-.ace-crimson-editor .ace_marker-layer .ace_active_line {\
+.ace-crimson-editor .ace_marker-layer .ace_active-line {\
   background: rgb(232, 242, 254);\
 }\
 \
-.ace-crimson-editor .ace_gutter_active_line {\
+.ace-crimson-editor .ace_gutter-active-line {\
     background-color : #dcdcdc;\
 }\
 \
@@ -173,7 +169,7 @@ exports.cssText = ".ace-crimson-editor .ace_editor {\
   color:rgb(28, 2, 255);\
 }\
 \
-.ace-crimson-editor .ace_marker-layer .ace_selected_word {\
+.ace-crimson-editor .ace_marker-layer .ace_selected-word {\
   background: rgb(250, 250, 255);\
   border: 1px solid rgb(200, 200, 250);\
 }\

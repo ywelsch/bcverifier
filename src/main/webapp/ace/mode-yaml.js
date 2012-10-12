@@ -91,14 +91,23 @@ var YamlHighlightRules = function() {
                 token : "comment",
                 regex : "#.*$"
             }, {
-                token : "comment",
-                regex : "^---"
+                token : "list.markup",
+                regex : /^(?:-{3}|\.{3})\s*(?=#|$)/     
+            },  {
+                token : "list.markup",
+                regex : /^\s*[\-?](?:$|\s)/     
             }, {
-                token: "variable",
+                token: "constant",
+                regex: "!![\\w//]+"
+            }, {
+                token: "constant.language",
                 regex: "[&\\*][a-zA-Z0-9-_]+"
             }, {
-                token: ["identifier", "text"],
-                regex: "(\\w+\\s*:)(\\w*)"
+                token: ["meta.tag", "keyword"],
+                regex: /^(\s*\w.*?)(\:(?:\s+|$))/
+            },{
+                token: ["meta.tag", "keyword"],
+                regex: /(\w+?)(\s*\:(?:\s+|$))/
             }, {
                 token : "keyword.operator",
                 regex : "<<\\w*:\\w*"
@@ -118,10 +127,13 @@ var YamlHighlightRules = function() {
                 regex : "['](?:(?:\\\\.)|(?:[^'\\\\]))*?[']"
             }, {
                 token : "constant.numeric", // float
-                regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
+                regex : /[+\-]?[\d_]+(?:(?:\.[\d_]*)?(?:[eE][+\-]?[\d_]+)?)?\b/
+            }, {
+                token : "constant.numeric", // other number
+                regex : /[+\-]?\.inf\b|NaN\b|0x[\dA-Fa-f_]+|0b[10_]+/
             }, {
                 token : "constant.language.boolean",
-                regex : "(?:true|false|yes|no)\\b"
+                regex : "(?:true|false|TRUE|FALSE|True|False|yes|no)\\b"
             }, {
                 token : "invalid.illegal", // comments are not allowed
                 regex : "\\/\\/.*$"
@@ -134,6 +146,9 @@ var YamlHighlightRules = function() {
             }, {
                 token : "text",
                 regex : "\\s+"
+            }, {
+                token : "text",
+                regex : "\\w+"
             }
         ],
         "qqstring" : [
@@ -146,7 +161,7 @@ var YamlHighlightRules = function() {
                 merge : true,
                 regex : '.+'
             }
-        ]}
+        ]};
 
 };
 

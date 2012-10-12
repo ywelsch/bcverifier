@@ -57,6 +57,7 @@ exports.handler.attach = function(editor) {
             .emacs-mode .ace_cursor{\
                 border: 2px rgba(50,250,50,0.8) solid!important;\
                 -moz-box-sizing: border-box!important;\
+                -webkit-box-sizing: border-box!important;\
                 box-sizing: border-box!important;\
                 background-color: rgba(0,250,0,0.9);\
                 opacity: 0.5;\
@@ -212,7 +213,8 @@ exports.emacsKeys = {
     "S-C-Home"        : "selecttostart",
     "S-C-End"         : "selecttoend",
 
-    "C-l|M-s" : "centerselection",
+    "C-l" : "recenterTopBottom",
+    "M-s" : "centerselection",
     "M-g": "gotoline",
     "C-x C-p": "selectall",
 
@@ -270,6 +272,20 @@ exports.emacsKeys = {
 exports.handler.bindKeys(exports.emacsKeys);
 
 exports.handler.addCommands({
+    recenterTopBottom: function(editor) {
+        var renderer = editor.renderer;
+        var pos = renderer.$cursorLayer.getPixelPosition();
+        var h = renderer.$size.scrollerHeight - renderer.lineHeight;       
+        var scrollTop = renderer.scrollTop;
+        if (Math.abs(pos.top - scrollTop) < 2) {
+            scrollTop = pos.top - h;
+        } else if (Math.abs(pos.top - scrollTop - h * 0.5) < 2) {
+            scrollTop = pos.top;
+        } else {
+            scrollTop = pos.top - h * 0.5;
+        }
+        editor.session.setScrollTop(scrollTop);
+    },
     selectRectangularRegion:  function(editor) {
         editor.multiSelect.toggleBlockSelection();
     },
@@ -323,7 +339,7 @@ exports.handler.addCommands({
     },
     killRegion: function(editor) {
         exports.killRing.add(editor.getCopyText());
-        editor.cut();
+        editor.commands.byName.cut.exec(editor);
     },
     killRingSave: function(editor) {
         exports.killRing.add(editor.getCopyText());

@@ -118,25 +118,9 @@ oop.inherits(Mode, TextMode);
     this.createWorker = function(session) {
         var worker = new WorkerClient(["ace"], "ace/mode/javascript_worker", "JavaScriptWorker");
         worker.attachToDocument(session.getDocument());
-            
+
         worker.on("jslint", function(results) {
-            var errors = [];
-            for (var i=0; i<results.data.length; i++) {
-                var error = results.data[i];
-                if (error)
-                    errors.push({
-                        row: error.line-1,
-                        column: error.character-1,
-                        text: error.reason,
-                        type: "warning",
-                        lint: error
-                    });
-            }
-            session.setAnnotations(errors);
-        });
-        
-        worker.on("narcissus", function(e) {
-            session.setAnnotations([e.data]);
+            session.setAnnotations(results.data);
         });
         
         worker.on("terminate", function() {
@@ -151,11 +135,10 @@ oop.inherits(Mode, TextMode);
 exports.Mode = Mode;
 });
 
-define('ace/mode/javascript_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/unicode', 'ace/mode/doc_comment_highlight_rules', 'ace/mode/text_highlight_rules'], function(require, exports, module) {
+define('ace/mode/javascript_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/doc_comment_highlight_rules', 'ace/mode/text_highlight_rules'], function(require, exports, module) {
 
 
 var oop = require("../lib/oop");
-var unicode = require("../unicode");
 var DocCommentHighlightRules = require("./doc_comment_highlight_rules").DocCommentHighlightRules;
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 
@@ -174,11 +157,11 @@ var JavaScriptHighlightRules = function() {
             "JSON|Math|"                                                               + // Other
             "this|arguments|prototype|window|document"                                 , // Pseudo
         "invalid.deprecated":
-            "__parent__|__count__|escape|unescape|with|__proto__|debugger",
+            "__parent__|__count__|escape|unescape|with|__proto__",
         "keyword":
             "const|yield|import|get|set" +
             "break|case|catch|continue|default|delete|do|else|finally|for|function|" +
-            "if|in|instanceof|new|return|switch|throw|try|typeof|let|var|while|with|",
+            "if|in|instanceof|new|return|switch|throw|try|typeof|let|var|while|with|debugger",
         "storage.type":
             "const|let|var|function",
         "invalid.illegal":
@@ -186,14 +169,15 @@ var JavaScriptHighlightRules = function() {
             "public|interface|package|protected|static",
         "constant.language":
             "null|Infinity|NaN|undefined",
+        "support.function":
+            "alert"
     }, "identifier");
-
 
     // keywords which can be followed by regular expressions
     var kwBeforeRe = "case|do|else|finally|in|instanceof|return|throw|try|typeof|yield";
 
     // TODO: Unicode escape sequences
-    var identifierRe = "[a-zA-Z\\$_\u00a1-\uffff][a-zA-Z\d\\$_\u00a1-\uffff]*\\b";
+    var identifierRe = "[a-zA-Z\\$_\u00a1-\uffff][a-zA-Z\\d\\$_\u00a1-\uffff]*\\b";
 
     var escapedRe = "\\\\(?:x[0-9a-fA-F]{2}|" + // hex
         "u[0-9a-fA-F]{4}|" + // unicode
@@ -366,6 +350,7 @@ var JavaScriptHighlightRules = function() {
         ],
         "regex": [
             {
+                // escapes
                 token: "regexp.keyword.operator",
                 regex: "\\\\(?:u[\\da-fA-F]{4}|x[\\da-fA-F]{2}|.)"
             }, {
@@ -375,12 +360,20 @@ var JavaScriptHighlightRules = function() {
                 next: "start",
                 merge: true
             }, {
+                // invalid operators
+                token : "invalid",
+                regex: /\{\d+,?(?:\d+)?}[+*]|[+*$^?][+*]|[$^][?]|\?{3,}/
+            }, {
+                // operators
+                token : "constant.language.escape",
+                regex: /\(\?[:=!]|\)|{\d+,?(?:\d+)?}|{,\d+}|[+*]\?|[(|)$^+*?]/
+            }, {
                 token: "string.regexp",
-                regex: "[^\\\\/\\[]+",
+                regex: /{|[^{\[\/\\(|)$^+*?]+/,
                 merge: true
             }, {
-                token: "string.regexp.charachterclass",
-                regex: "\\[",
+                token: "constant.language.escape",
+                regex: /\[\^?/,
                 next: "regex_character_class",
                 merge: true
             }, {
@@ -394,13 +387,16 @@ var JavaScriptHighlightRules = function() {
                 token: "regexp.keyword.operator",
                 regex: "\\\\(?:u[\\da-fA-F]{4}|x[\\da-fA-F]{2}|.)"
             }, {
-                token: "string.regexp.charachterclass",
+                token: "constant.language.escape",
                 regex: "]",
                 next: "regex",
                 merge: true
             }, {
+                token: "constant.language.escape",
+                regex: "-",
+            }, {
                 token: "string.regexp.charachterclass",
-                regex: "[^\\\\\\]]+",
+                regex: /[^\]\-\\]+/,
                 merge: true
             }, {
                 token: "empty",

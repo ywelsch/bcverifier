@@ -74,7 +74,7 @@ var XmlHighlightRules = function() {
             regex : "<\\!\\[CDATA\\[",
             next : "cdata"
         }, {
-            token : "xml_pe",
+            token : "xml-pe",
             regex : "<\\?.*?\\?>"
         }, {
             token : "comment",
@@ -82,7 +82,7 @@ var XmlHighlightRules = function() {
             regex : "<\\!--",
             next : "comment"
         }, {
-            token : "xml_pe",
+            token : "xml-pe",
             regex : "<\\!.*?>"
         }, {
             token : "meta.tag", // opening tag
