@@ -21,7 +21,7 @@ Backward compatibility is proven by checking that the relation induced by the co
 
   - Computational steps where control of execution goes inside the library and back out. This means that the library code gets to execute.
 
-To define when observable states of two library implementations are indistinguishable, it is necessary to know what part of the state actually is caused by the library implementation and which part is caused by the program that uses the library (also called **program context**).
+To define whether or not observable states of two library implementations are indistinguishable, it is necessary to know what part of the state results from code of the library implementation and which part results from the program that uses the library (also called **program context**).
 
 Separation of state
 -------------------
@@ -29,20 +29,20 @@ Separation of state
 A program state usually consists of a stack and a heap. A *stack* is a sequence of stack frames. Stack frames are created by method invocations. If the body of the invoked method is defined in the library, then we say that the stack frame belongs to the library; otherwise it is part of the program context. We group consecutive  stack frames that have the same origin into *interaction frames*. A well-formed stack then consists of an alternating sequence of interaction frames that belong to the library and interaction frames that belong to the program context. The interaction frame at the bottom of the stack belongs to the program context as execution starts in the program context (with a main method).
 
 Separating the *heap* into a part that belongs to the library and a part that belongs to the program context is a bit more difficult. With inheritance, some code parts of an object can belong to the context and other parts to the library. We differentiate for fields whether they have been defined in classes of the program context or the library. Objects can be considered as mappings from field names to values.
-For the libraries to be indistinguishable, the state reachable from interaction frames of the program context must be similar. To better characterize the state reachable by the program context, we distinguish
+For the libraries to be indistinguishable, the heap state reachable from interaction frames of the program context must be similar. To better characterize which objects are potentially reachable by the program context, we distinguish
 
   - which objects have been created by code of the library or by code of the context.
 
   - which objects created by the program context have been made known to the library or vice-versa.
 
-The objects which are reachable by interaction frames of the program context are then only objects which have been created by the program context or those which have been created by the library and which have been exposed.
+As the theory has to consider all possible program contexts, we assume that every object which has been made known to the program context at some point in time can later be used again by the program context. The objects which can appear in interaction frames of the program context are then only objects which have been created by the program context or those which have been created by the library and which have been exposed.
 
 Indistinguishable states
 ------------------------
 
 The simulation relation equates program states which have the same number of interaction frames and where the interaction frames of the program context are similar. This allows interaction frames of the library implementations to look completely different. Due to the non-deterministic choice of object identifiers, the interaction frames of the program context can only be identical modulo a renaming between objects of the old and objects of the new state. The renaming tracks which new objects take the place of the old objects and must be a bijective function in order to guarantee indistinguishability (otherwise an identity check "==" from the program context would yield true for one library implementation and false for the other).
-The simulation relation thus equates program states for which there is a bijective renaming between the exposed objects of the first program state and the exposed objects of the second program state (we call this the **correspondence relation**). The two library implementations might however still create *different* objects as long as these are not exposed to the program context. Exposed objects can have different dynamic library types but must have the same public super types as the context can only use the public types to distinguish them. As we assume that code outside the library does not directly access fields that are defined in the library, we can abstract from the fields of classes that are defined in the library.
-Similarly, there must be a bijective renaming between the objects created by the program context of the first and second state. Here the runtime type of the objects must be exactly the same.
+The simulation relation thus equates program states for which there is a  renaming between the exposed objects of the first program state and the exposed objects of the second program state (we call this the **correspondence relation**). The two library implementations might however still create *different* objects as long as these are not exposed to the program context. Exposed objects can have different dynamic library types but must have the same public super types as the context can only use the public types to distinguish them. As we assume that code outside the library does not directly access fields that are defined in the library, we can abstract from the fields of classes that are defined in the library.
+Similarly, there must be a renaming between the objects created by the program context of the first and second state. Here the runtime type of the objects must be exactly the same.
 
 Proof obligations
 -----------------
