@@ -26,6 +26,7 @@ import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLType;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableExpression;
+import b2bpl.translation.ITranslationConstants;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Expr;
@@ -43,6 +44,9 @@ import de.unikl.bcverifier.specification.SpecInvariant;
 
 public class Translation {
 	
+
+	// varname used for quantifying over all iframes
+	public static final String IFRAME_VAR = "iframe";
 
 	public static java.util.List<SpecInvariant> generateInvariants(CompilationUnit cu) {
 		List<SpecInvariant> result = new ArrayList<SpecInvariant>();
@@ -67,45 +71,39 @@ public class Translation {
 	private static BPLExpression forallInteractionFrames(BPLExpression expr) {
 		
 		Map<String, BPLVariable> tofind = Maps.newHashMap();
-		tofind.put("iframe", null);
+		tofind.put(IFRAME_VAR, null);
 		UsedVariableFinder variableFinder = new UsedVariableFinder(tofind);
 		expr.accept(variableFinder);
 		if (variableFinder.getUsedVariables().size() == 0) {
 			// variable iframe not used in expression
 			return expr;
 		}
+		BPLExpression[] exprs = { new BPLRelationalExpression(
+				BPLRelationalExpression.Operator.LESS_EQUAL,
+				new BPLIntLiteral(0),
+				new BPLVariableExpression(IFRAME_VAR)
+				), new BPLRelationalExpression(
+				BPLRelationalExpression.Operator.LESS_EQUAL,
+				new BPLVariableExpression(IFRAME_VAR),
+				new BPLVariableExpression(ITranslationConstants.IP1_VAR)
+				), new BPLEqualityExpression(
+				BPLEqualityExpression.Operator.EQUALS,
+				new BPLBinaryArithmeticExpression(
+						BPLBinaryArithmeticExpression.Operator.REMAINDER,
+						new BPLVariableExpression(IFRAME_VAR),
+						new BPLIntLiteral(2)
+						),
+				new BPLIntLiteral(1)
+				) };
 		
 		expr = new BPLBinaryLogicalExpression(
 				BPLBinaryLogicalExpression.Operator.IMPLIES, 
-				ExprWellDefinedness.conjunction(
-					// 0 <= iframe 
-					new BPLRelationalExpression(
-							BPLRelationalExpression.Operator.LESS_EQUAL,
-							new BPLIntLiteral(0),
-							new BPLVariableExpression("iframe")
-							),
-					// iframe <= ip1
-					new BPLRelationalExpression(
-							BPLRelationalExpression.Operator.LESS_EQUAL,
-							new BPLVariableExpression("iframe"),
-							new BPLVariableExpression("ip1")
-							),
-					// iframe % 2 == 1				
-					new BPLEqualityExpression(
-							BPLEqualityExpression.Operator.EQUALS,
-							new BPLBinaryArithmeticExpression(
-									BPLBinaryArithmeticExpression.Operator.REMAINDER,
-									new BPLVariableExpression("iframe"),
-									new BPLIntLiteral(2)
-									),
-							new BPLIntLiteral(1)
-							)
-				), 
+				TranslationHelper.conjunction(exprs), 
 				expr); 
 		
 		return new BPLQuantifierExpression(
 				BPLQuantifierExpression.Operator.FORALL,
-				new BPLVariable[] { new BPLVariable("iframe", BPLBuiltInType.INT) },
+				new BPLVariable[] { new BPLVariable(IFRAME_VAR, BPLBuiltInType.INT) },
 				expr
 				);
 	}

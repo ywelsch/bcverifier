@@ -1,5 +1,8 @@
 package de.unikl.bcverifier.isl.translation;
 
+import static b2bpl.translation.CodeGenerator.var;
+
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 
 import b2bpl.bpl.ast.BPLArrayExpression;
@@ -21,6 +24,7 @@ import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLUnaryMinusExpression;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableExpression;
+import b2bpl.translation.CodeGenerator;
 import b2bpl.translation.ITranslationConstants;
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.BoolConst;
@@ -71,8 +75,7 @@ public class ExprTranslation {
 		case OR:
 			return new BPLBinaryLogicalExpression(BPLBinaryLogicalExpression.Operator.OR, left, right);
 		case RELATED:
-			BPLExpression related = new BPLVariableExpression("related"); //$NON-NLS-1$
-			return new BPLFunctionApplication("RelNull", left, right, related ); //$NON-NLS-1$
+			return CodeGenerator.relNull(left, right, var(ITranslationConstants.RELATED_RELATION));
 		case EQUALS:
 			return new BPLEqualityExpression(EQUALS, left, right);
 		case UNEQUALS:
@@ -131,10 +134,10 @@ public class ExprTranslation {
 		int i = 0;
 		for (VarDef boundVar : boundVars) {
 			if (boundVar.attrType() instanceof JavaType) {
-				BPLType type = new BPLTypeName(ITranslationConstants.REF_TYPE); //$NON-NLS-1$
+				BPLType type = new BPLTypeName(ITranslationConstants.REF_TYPE); 
 				variables[i] = new BPLVariable(boundVar.attrName(), type);
 			} else if (boundVar.attrType() instanceof BijectionType) {
-				BPLType type = new BPLTypeName(ITranslationConstants.BIJ_TYPE); //$NON-NLS-1$
+				BPLType type = new BPLTypeName(ITranslationConstants.BIJ_TYPE); 
 				variables[i] = new BPLVariable(boundVar.attrName(), type);
 			} else {
 				throw new Error("Quantification over primitive types not supported yet.");
@@ -206,8 +209,13 @@ public class ExprTranslation {
 				new BPLFunctionApplication(ITranslationConstants.REF_OF_TYPE_FUNC,  //$NON-NLS-1$
 						new BPLVariableExpression(boundVar.attrName()),
 						getHeap(version, phase), 
-						new BPLVariableExpression("$" + javaType.getTypeBinding().getQualifiedName()) //$NON-NLS-1$
+						getBoogieTypeName(javaType.getTypeBinding()) 
 						));
+	}
+
+	private static BPLVariableExpression getBoogieTypeName(
+			ITypeBinding typeBinding) {
+		return new BPLVariableExpression(ITranslationConstants.GLOBAL_VAR_PREFIX + typeBinding.getQualifiedName());
 	}
 	
 	private static BPLExpression makeTypeAssumption(VarDef boundVar, BijectionType bijType) {
@@ -255,7 +263,7 @@ public class ExprTranslation {
 			BPLExpression expr = new BPLArrayExpression(
 					getHeap(leftType.getVersion(), e.attrCompilationUnit().getPhase()), 
 					e.getLeft().translateExpr(),
-					new BPLVariableExpression("$" + leftType.getTypeBinding().getQualifiedName() + "." + e.getRight().getName()));
+					getBoogieFieldName(leftType.getTypeBinding(), e.getRight().getName()));
 			
 			if (field.getType().getQualifiedName().equals("boolean")) {
 				// boolean fields must be converted explicitly
@@ -264,6 +272,11 @@ public class ExprTranslation {
 			return expr;
 		}
 		throw new Error();
+	}
+
+	private static BPLVariableExpression getBoogieFieldName(
+			ITypeBinding typeBinding, String varName) {
+		return new BPLVariableExpression(ITranslationConstants.GLOBAL_VAR_PREFIX + typeBinding.getQualifiedName() + "." + varName);
 	}
 
 	public static BPLExpression translate(VarAccess e) {
@@ -332,7 +345,7 @@ public class ExprTranslation {
 		return new BPLFunctionApplication(ITranslationConstants.IS_INSTANCE_OF_FUNC, 
 				op.getLeft().translateExpr(), 
 				getHeap(jt.getVersion(), op.attrCompilationUnit().getPhase()), 
-				new BPLVariableExpression("$" + jt.getTypeBinding().getQualifiedName()));
+				getBoogieTypeName(jt.getTypeBinding()));
 	}
 
 

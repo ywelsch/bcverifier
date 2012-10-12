@@ -3,10 +3,12 @@ package de.unikl.bcverifier.isl.translation.builtinfuncs;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLVariableExpression;
+import b2bpl.translation.ITranslationConstants;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
+import de.unikl.bcverifier.isl.translation.Translation;
 
 /**
  * int sp1() 
@@ -21,12 +23,12 @@ final class BuiltinFuncSp1 extends BuiltinFunction {
 
 	@Override
 	public BPLExpression translateCall(boolean isInGlobalInv, List<Expr> arguments) {
-		String ip = "ip1";
+		String ip = ITranslationConstants.IP1_VAR;
 		if (isInGlobalInv) {
-			ip = "iframe";
+			ip = Translation.IFRAME_VAR;
 		}
 		return new BPLArrayExpression(
-				new BPLVariableExpression("spmap1"), 
+				new BPLVariableExpression(ITranslationConstants.SP_MAP1_VAR), 
 				new BPLVariableExpression(ip)) ;
 	}
 }
