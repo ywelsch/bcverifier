@@ -31,9 +31,13 @@ aspect translate {
   public LocalPlaceDefinitions CompilationUnit.generatePlaces() {
     return Translation.generatePlaces(this);
   }
-  
+
   public java.util.List<String> CompilationUnit.generatePreludeAddition() {
     return Translation.generatePreludeAddition(this);
+  }
+
+  public java.util.List<String> CompilationUnit.generatePreconditions() {
+      return Translation.generatePreconditions(this);
   }
 
   syn BPLExpression Expr.translateExprWellDefinedness();

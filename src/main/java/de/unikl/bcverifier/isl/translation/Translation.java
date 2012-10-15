@@ -207,6 +207,10 @@ public class Translation {
 	}
 
 	public static List<String> generatePreludeAddition(CompilationUnit cu) {
+		return Collections.emptyList();
+	}
+	
+	public static List<String> generatePreconditions(CompilationUnit cu) {
 		List<String> result = Lists.newArrayList();
 		for (Statement s : cu.getStatements()) {
 			if (s instanceof PlaceDef) {
@@ -217,21 +221,17 @@ public class Translation {
 				ExprTypePredefinedPlace placeType = (ExprTypePredefinedPlace) def.attrType();
 				BPLExpression isHavoc;
 				if (def.hasPlaceOption(PLACE_OPTION_SPLITVC)) {
-					isHavoc = BPLBoolLiteral.TRUE;
-				} else {
 					isHavoc = BPLBoolLiteral.FALSE;
+					BPLAssignmentCommand r = new BPLAssignmentCommand(
+							new BPLArrayExpression(
+									new BPLVariableExpression(ITranslationConstants.USE_HAVOC)
+									, new BPLVariableExpression(placeType.getBoogiePlaceName())) 
+							,isHavoc
+							);
+					result.add(r.toString());
 				}
-				BPLAssignmentCommand r = new BPLAssignmentCommand(
-						new BPLArrayExpression(
-								new BPLVariableExpression(ITranslationConstants.USE_HAVOC)
-								, new BPLVariableExpression(placeType.getBoogiePlaceName())) 
-						,isHavoc
-						);
-				result.add(r.toString());
 			}
 		}
 		return result;
 	}
-	
-
 }
