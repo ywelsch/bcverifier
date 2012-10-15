@@ -826,12 +826,30 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		assumeCmd
 				.addComment("Relate the methods that where originally called on the library.");
 		procAssumes.add(assumeCmd);
+		
+		// the receivers of the original methods were related		
+		assumeCmd = new BPLAssumeCommand(implies(
+				logicalAnd(
+						logicalNot(isStaticMethod(
+								var(IMPL1),
+								placeDefinedInType(stack1(ip1MinusOne, zero, var(PLACE_VARIABLE))),
+								stack1(ip1MinusOne, zero, var(METH_FIELD)))),
+						logicalNot(isStaticMethod(
+								var(IMPL2),
+								placeDefinedInType(stack2(ip2MinusOne, zero,var(PLACE_VARIABLE))),
+								stack2(ip2MinusOne, zero,var(METH_FIELD))))),
+				related(
+						stack1(ip1MinusOne, zero, receiver()),
+						stack2(ip2MinusOne, zero, receiver()))
+				));
 
-		assumeCmd = new BPLAssumeCommand(related(
-				stack1(ip1MinusOne, zero, receiver()),
-				stack2(ip2MinusOne, zero, receiver())));
-		assumeCmd
-				.addComment("The receiver and all parameters where initially related.");
+		
+//		assumeCmd = new BPLAssumeCommand(related(
+//				stack1(ip1MinusOne, zero, receiver()),
+//				stack2(ip2MinusOne, zero, receiver())));
+//		assumeCmd
+//				.addComment("The receiver and all parameters where initially related.");
+		procAssumes.add(assumeCmd);
 
 		// relate all parameters from the outside
 		// ///////////////////////////////////////

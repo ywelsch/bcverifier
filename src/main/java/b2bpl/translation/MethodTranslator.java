@@ -2865,7 +2865,6 @@ public class MethodTranslator implements ITranslationConstants {
                 
                 addAssume(nonNull(stack(receiver())));
                 
-                
                 //addAssignment(var(tc.getOldPlaceVar()), stack(var(PLACE_VARIABLE)));
                 if(!tc.isRound2() && localPlace.getOldMeasure() != null){
                 	addAssignment(var(OLD_MEASURE), var(localPlace.getOldMeasure()));

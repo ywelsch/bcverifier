@@ -1,5 +1,5 @@
 "specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
 "bpl/spec.bsl" ,"--iframes 1"     ,0                ,2                 ,3
 "bpl/spec.bsl" ,"--iframes 1"     ,1                ,0                 ,2
-"bpl/spec1.bsl","--iframes 1"     ,2                ,0                 ,2
+"bpl/spec1.bsl","--iframes 1"     ,0                ,0                 ,3
 "bpl/spec.isl" ,"--iframes 1"     ,0                ,2                 ,3

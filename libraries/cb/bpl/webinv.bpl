@@ -1,1 +1,0 @@
-( forall o: Ref :: ObjOfType(o,$cb.A,heap1) ==> heap1[o,$cb.A.g] % 2 == 0 )
