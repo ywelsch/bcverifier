@@ -458,6 +458,8 @@ public static final String NUM_PARAMS_FUNC = "numParams";
 
 public static final String PLACE_DEFINED_IN_TYPE = "placeDefinedInType";
 
+public static final String PLACE_DEFINED_IN_METHOD = "placeDefinedInMethod";
+
 static final String USE_HAVOC = "useHavoc";
 
 public static final String DYN_TYPE_FIELD = "dynType";

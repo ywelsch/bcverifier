@@ -20,6 +20,7 @@ import static b2bpl.translation.CodeGenerator.isEqual;
 import static b2bpl.translation.CodeGenerator.isEquiv;
 import static b2bpl.translation.CodeGenerator.isLocalPlace;
 import static b2bpl.translation.CodeGenerator.placeDefinedInType;
+import static b2bpl.translation.CodeGenerator.placeDefinedInMethod;
 import static b2bpl.translation.CodeGenerator.isOfType;
 import static b2bpl.translation.CodeGenerator.isNull;
 import static b2bpl.translation.CodeGenerator.isPublic;
@@ -1793,6 +1794,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 							placeDefinedInType(var(tc.buildPlace(
 									proc.getName(), true))),
 							var(GLOBAL_VAR_PREFIX + classType.getName()))));
+					
+					programDecls.add(new BPLAxiom(isEqual(
+							placeDefinedInMethod(var(tc.buildPlace(
+									proc.getName(), true))),
+							var(GLOBAL_VAR_PREFIX + MethodTranslator.getMethodName(method)))));
 
 					preMethodCommands
 							.add(new BPLAssumeCommand(isEqual(

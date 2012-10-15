@@ -62,6 +62,8 @@ import static b2bpl.translation.CodeGenerator.nullLiteral;
 import static b2bpl.translation.CodeGenerator.obj;
 import static b2bpl.translation.CodeGenerator.objectCoupling;
 import static b2bpl.translation.CodeGenerator.oneClassDown;
+import static b2bpl.translation.CodeGenerator.placeDefinedInType;
+import static b2bpl.translation.CodeGenerator.placeDefinedInMethod;
 import static b2bpl.translation.CodeGenerator.quantVarName;
 import static b2bpl.translation.CodeGenerator.receiver;
 import static b2bpl.translation.CodeGenerator.refOfType;
@@ -1554,7 +1556,13 @@ public class Translator implements ITranslationConstants {
                                     implies(
                                             less(var(sp), map(var(spmap), var(i))),
                                             logicalAnd(isNull(map1(var(stack), var(i) ,var(sp), var(RESULT_PARAM + REF_TYPE_ABBREV))), isEqual(map1(var(stack), var(i), var(sp), var(RESULT_PARAM + INT_TYPE_ABBREV)), new BPLIntLiteral(0))) )
-                            )
+                            ),
+                            forall(jVar, pVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i)), lessEqual(intLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), 
+                            		implies(logicalNot(isStaticMethod(
+                            					libImpl(var(heap)),
+                            					placeDefinedInType(map1(var(stack), var(j) ,var(p), var(PLACE_VARIABLE))),
+                            					placeDefinedInMethod(map1(var(stack), var(j) ,var(p), var(PLACE_VARIABLE))))), 
+                            				nonNull(map1(var(stack), var(j) ,var(p), receiver())))))
                     )
                     )));
             
@@ -1679,6 +1687,8 @@ public class Translator implements ITranslationConstants {
             addFunction(NUM_PARAMS_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.INT);
             
             addFunction(PLACE_DEFINED_IN_TYPE, new BPLTypeName(ADDRESS_TYPE), new BPLTypeName(NAME_TYPE));
+            
+            addFunction(PLACE_DEFINED_IN_METHOD, new BPLTypeName(ADDRESS_TYPE), new BPLTypeName(METHOD_TYPE));
             
             addFunction(VALID_HEAP_SUCC_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(STACK_TYPE), BPLBuiltInType.BOOL);
 
