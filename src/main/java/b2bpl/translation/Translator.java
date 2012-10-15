@@ -3836,10 +3836,5 @@ public class Translator implements ITranslationConstants {
             }
             return var(name);
         }
-
-        public void addLocalPlace(String localPlace) {
-            addConstants(new BPLVariable(localPlace, new BPLTypeName(ADDRESS_TYPE)));
-            addAxiom(isLocalPlace(var(localPlace)));
-        }
     }
 }

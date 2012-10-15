@@ -150,7 +150,7 @@ public class LibrarySource {
 					InvokeInstruction invokeInstruction = (InvokeInstruction) ins;
 					String methodName = invokeInstruction.getMethodName();
 					String invokedMethodName = MethodTranslator.getMethodName(invokeInstruction.getMethod());
-	                String boogiePlaceName = tc.buildPlace(MethodTranslator.getProcedureName(meth), invokedMethodName);
+	                String boogiePlaceName = tc.buildPlace(meth, invokedMethodName);
 	                Map<Integer, String> r = result.get(methodName);
 	                if (r == null) {
 	                	r = Maps.newHashMap();

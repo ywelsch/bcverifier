@@ -1,12 +1,12 @@
 package cb;
 
 public class A {
-  public int sum(int n) {
+  public static int sum(int n) {
 	  if (n <= 0) {
 		  return 0;
-	  }
-	  else {
-		 return n + sum(n - 1); 
+	  } else {
+		 int result = sum(n - 1);
+		 return result + n;
 	  }
   }
 }

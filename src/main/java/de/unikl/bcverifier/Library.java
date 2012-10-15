@@ -124,6 +124,7 @@ import b2bpl.translation.ITranslationConstants;
 import b2bpl.translation.MethodTranslator;
 import b2bpl.translation.Translator;
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
+import de.unikl.bcverifier.TranslationController.BoogiePlace;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
@@ -277,11 +278,24 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 			addNoopBlock(methodBlocks);
 
-			for (String place : tc.places()) {
+			for (BoogiePlace place : tc.places()) {
 				programDecls.add(new BPLConstantDeclaration(new BPLVariable(
-						place, new BPLTypeName(ADDRESS_TYPE))));
-				programDecls.add(new BPLAxiom(
-						logicalNot(isLocalPlace(var(place)))));
+						place.getName(), new BPLTypeName(ADDRESS_TYPE))));
+				
+				if (place.isLocal()) {
+					programDecls.add(new BPLAxiom(isLocalPlace(var(place.getName()))));
+				} else {
+					programDecls.add(new BPLAxiom(
+							logicalNot(isLocalPlace(var(place.getName())))));
+				}
+
+				programDecls.add(new BPLAxiom(isEqual(
+						placeDefinedInType(var(place.getName())),
+						var(GLOBAL_VAR_PREFIX + place.getMethod().getOwner().getName()))));
+				
+				programDecls.add(new BPLAxiom(isEqual(
+						placeDefinedInMethod(var(place.getName())),
+						var(GLOBAL_VAR_PREFIX + MethodTranslator.getMethodName(place.getMethod())))));
 			}
 
 			List<BPLVariableDeclaration> localVariables = new ArrayList<BPLVariableDeclaration>();
@@ -829,7 +843,16 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		procAssumes.add(assumeCmd);
 		
 		// the receivers of the original methods were related		
-		assumeCmd = new BPLAssumeCommand(implies(
+		procAssumes.add(new BPLAssumeCommand(isEquiv(isStaticMethod(
+								var(IMPL1),
+								placeDefinedInType(stack1(ip1MinusOne, zero, var(PLACE_VARIABLE))),
+								stack1(ip1MinusOne, zero, var(METH_FIELD))),
+						isStaticMethod(
+								var(IMPL2),
+								placeDefinedInType(stack2(ip2MinusOne, zero,var(PLACE_VARIABLE))),
+								stack2(ip2MinusOne, zero,var(METH_FIELD)))
+				)));
+		procAssumes.add(new BPLAssumeCommand(implies(
 				logicalAnd(
 						logicalNot(isStaticMethod(
 								var(IMPL1),
@@ -842,15 +865,14 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				related(
 						stack1(ip1MinusOne, zero, receiver()),
 						stack2(ip2MinusOne, zero, receiver()))
-				));
-
+				)));
 		
 //		assumeCmd = new BPLAssumeCommand(related(
 //				stack1(ip1MinusOne, zero, receiver()),
 //				stack2(ip2MinusOne, zero, receiver())));
 //		assumeCmd
 //				.addComment("The receiver and all parameters where initially related.");
-		procAssumes.add(assumeCmd);
+		
 
 		// relate all parameters from the outside
 		// ///////////////////////////////////////
@@ -1788,17 +1810,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 					List<BPLCommand> preMethodCommands = new ArrayList<BPLCommand>();
 					preMethodCommands.add(new BPLAssumeCommand(isEqual(
 							stack(var(PLACE_VARIABLE)),
-							var(tc.buildPlace(proc.getName(), true)))));
-
-					programDecls.add(new BPLAxiom(isEqual(
-							placeDefinedInType(var(tc.buildPlace(
-									proc.getName(), true))),
-							var(GLOBAL_VAR_PREFIX + classType.getName()))));
-					
-					programDecls.add(new BPLAxiom(isEqual(
-							placeDefinedInMethod(var(tc.buildPlace(
-									proc.getName(), true))),
-							var(GLOBAL_VAR_PREFIX + MethodTranslator.getMethodName(method)))));
+							var(tc.buildPlace(method, true)))));
 
 					preMethodCommands
 							.add(new BPLAssumeCommand(isEqual(

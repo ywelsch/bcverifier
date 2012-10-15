@@ -1,10 +1,9 @@
 package cb;
 
 public class A {
-	public int sum(int n) {
-		if (n <= 0) return 0;
+	public static int sum(int n) {
 		int result = 0;
-		for (int i = 0; i <= n; i++) {
+		for (int i = 1; i <= n; i++) {
 			result += i;
 		}
 		return result;

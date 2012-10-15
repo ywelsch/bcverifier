@@ -79,6 +79,4 @@ public interface ITranslationContext {
    *                 literal.
    */
   BPLExpression translateClassLiteral(JType literal);
-
-  void addLocalPlace(String localPlace);
 }

@@ -183,6 +183,7 @@ import b2bpl.bytecode.instructions.VCastInstruction;
 import b2bpl.bytecode.instructions.VConstantInstruction;
 import b2bpl.translation.helpers.ModifiedHeapLocation;
 import de.unikl.bcverifier.TranslationController;
+import de.unikl.bcverifier.TranslationController.BoogiePlace;
 import de.unikl.bcverifier.specification.Place;
 
 
@@ -1374,7 +1375,7 @@ public class MethodTranslator implements ITranslationConstants {
         String methodName = MethodTranslator.getMethodName(method);
 //        addCommand(new BPLAssumeCommand(isEqual(stack(var(PLACE_VARIABLE)), var(tc.buildPlace(getProcedureName(method), true)))));
         addCommand(new BPLAssumeCommand(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX+methodName))));
-        addAssignment(stack(var(PLACE_VARIABLE)), var(tc.buildPlace(getProcedureName(method), true)));
+        addAssignment(stack(var(PLACE_VARIABLE)), var(tc.buildPlace(method, true)));
         
         String currentLabel = blockLabel;
         
@@ -2808,7 +2809,8 @@ public class MethodTranslator implements ITranslationConstants {
                 startBlock(localPlace.getName() + CHECK_POSTFIX);
                 Logger.getLogger(InstructionTranslator.class).debug("adding local place "+localPlace.getName());
                 addAssume(var(localPlace.getCondition())); //TODO raw expression here
-                context.addLocalPlace(localPlace.getName());
+                BoogiePlace bp = new BoogiePlace(localPlace.getName(), method, true);
+                tc.addPlace(bp);
                 addAssignment(stack(var(PLACE_VARIABLE)), var(localPlace.getName()), "local place");
                 rawEndBlock(tc.getCheckLabel());
                 
@@ -3220,7 +3222,7 @@ public class MethodTranslator implements ITranslationConstants {
                 final String callPostfix = "_call";
 
                 String invokedMethodName = getMethodName(invokedMethod);
-                String thisPlace = tc.buildPlace(getProcedureName(method), invokedMethodName);
+                String thisPlace = tc.buildPlace(method, invokedMethodName);
                 addAssignment(stack(var(PLACE_VARIABLE)), var(thisPlace), "methodcall: "+insn.getMethod().getName()+" of type "+insn.getMethodOwner()+" in sourceline "+handle.getSourceLine());
                 String nextLabel = tc.nextLabel();
                 String boundaryLabel = nextLabel + BOUNDARY_LABEL_POSTFIX;

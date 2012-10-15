@@ -7,13 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import de.unikl.bcverifier.TranslationController.BoogiePlace;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
 
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bytecode.BCField;
+import b2bpl.bytecode.BCMethod;
 import b2bpl.bytecode.JClassType;
 import b2bpl.translation.ITranslationConstants;
+import b2bpl.translation.MethodTranslator;
 
 public class TranslationController implements ITranslationConstants {
     public static final String LABEL_PREFIX1 = "lib1_";
@@ -37,7 +40,7 @@ public class TranslationController implements ITranslationConstants {
     private HashSet<BCField> referencedFields = new HashSet<BCField>();
     private HashSet<JClassType> globalReferencedTypes = new HashSet<JClassType>();
     private HashSet<BCField> globalReferencedFields = new HashSet<BCField>();
-    private HashSet<String> places = new HashSet<String>();
+    private HashSet<BoogiePlace> places = new HashSet<BoogiePlace>();
     private HashMap<String, Set<String>> methodDefinitions = new HashMap<String, Set<String>>();
     private Set<String> returnLabels = new HashSet<String>();
     public int maxLocals;
@@ -105,7 +108,7 @@ public class TranslationController implements ITranslationConstants {
         methodDefinitions.put(className, Collections.<String> emptySet());
     }
     
-    public HashSet<String> places() {
+    public HashSet<BoogiePlace> places() {
         return places;
     }
     
@@ -303,18 +306,20 @@ public class TranslationController implements ITranslationConstants {
      * if we should be a place for some loop or other usable location in the code
      * @return
      */
-    public String buildPlace(String methodName, boolean atBegin){
+    public String buildPlace(BCMethod method, boolean atBegin){
         String placeName;
+        String methodName = MethodTranslator.getProcedureName(method);
         if(atBegin){
             placeName = prefix(methodName+"_begin");
-            places.add(placeName);
+            places.add(new BoogiePlace(placeName, method));
             return placeName;
         } else {
             // we have a loop or some other place inside the method, no method call
             for(int i = 0; i<Integer.MAX_VALUE; i++){
                 placeName = prefix(methodName+"_"+i);
-                if(!places.contains(placeName)){
-                    places.add(placeName);
+                BoogiePlace bp = new BoogiePlace(placeName, method);
+                if(!places.contains(bp)){
+                    places.add(bp);
                     return placeName;
                 }
             }
@@ -322,12 +327,14 @@ public class TranslationController implements ITranslationConstants {
         }
     }
     
-    public String buildPlace(String methodName, String invocedMethod) {
+    public String buildPlace(BCMethod method, String invocedMethod) {
         String placeName;
+        String methodName = MethodTranslator.getProcedureName(method);
         for(int i=0; i<Integer.MAX_VALUE; i++){
             placeName = prefix(methodName + "_" + invocedMethod+"_"+i);
-            if(!places.contains(placeName)){
-                places.add(placeName);
+            BoogiePlace bp = new BoogiePlace(placeName, method);
+            if(!places.contains(bp)){
+                places.add(bp);
                 nextLabel = invocedMethod+"_"+i;
                 returnLabels.add(prefix(methodName + "_" + nextLabel));
                 return placeName;
@@ -346,5 +353,68 @@ public class TranslationController implements ITranslationConstants {
 
 	public String boogieFieldName(BCField field) {
 		return GLOBAL_VAR_PREFIX+field.getQualifiedName(); //TODO add type information to make field name unambiguous?
+	}
+	
+	
+	public static class BoogiePlace {
+		public BoogiePlace(String name, BCMethod method) {
+			super();
+			this.name = name;
+			this.method = method;
+		}
+		public BoogiePlace(String name, BCMethod method, boolean b) {
+			this(name, method);
+			setLocal(b);
+		}
+		private String name;
+		private boolean local;
+		private BCMethod method;
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		public BCMethod getMethod() {
+			return method;
+		}
+		public void setMethod(BCMethod method) {
+			this.method = method;
+		}
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((name == null) ? 0 : name.hashCode());
+			return result;
+		}
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			BoogiePlace other = (BoogiePlace) obj;
+			if (name == null) {
+				if (other.name != null)
+					return false;
+			} else if (!name.equals(other.name))
+				return false;
+			return true;
+		}
+		public boolean isLocal() {
+			return local;
+		}
+		public void setLocal(boolean local) {
+			this.local = local;
+		}
+		
+	}
+
+
+	public void addPlace(BoogiePlace bp) {
+		places.add(bp);
 	}
 }
