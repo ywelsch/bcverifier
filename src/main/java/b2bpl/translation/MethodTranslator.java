@@ -1374,7 +1374,8 @@ public class MethodTranslator implements ITranslationConstants {
         String methodName = MethodTranslator.getMethodName(method);
 //        addCommand(new BPLAssumeCommand(isEqual(stack(var(PLACE_VARIABLE)), var(tc.buildPlace(getProcedureName(method), true)))));
         addCommand(new BPLAssumeCommand(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX+methodName))));
-
+        addAssignment(stack(var(PLACE_VARIABLE)), var(tc.buildPlace(getProcedureName(method), true)));
+        
         String currentLabel = blockLabel;
         
         String boundaryReturnLabel = currentLabel + "_boundary_return";
@@ -1383,7 +1384,7 @@ public class MethodTranslator implements ITranslationConstants {
         
         startBlock(boundaryReturnLabel);
         addAssume(logicalAnd(isEqual(spmap(), intLiteral(0)), isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
-        addAssignment(stack(var(PLACE_VARIABLE)), var(tc.buildPlace(getProcedureName(method), true)));
+
         if(method.isConstructor()){
             rawEndBlock(tc.getNextConstructorLabel());
         } else {

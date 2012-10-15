@@ -1296,7 +1296,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 								stack2(var(RESULT_VAR + INT_TYPE_ABBREV)))))));
 
 		// reduce the interaction frame pointer so we have the same situation
-		// (beeing in the context) as at the begin
+		// (being in the context) as at the begin
 		checkingCommand.add(new BPLAssignmentCommand(var(IP1_VAR), sub(
 				var(IP1_VAR), new BPLIntLiteral(1))));
 		checkingCommand.add(new BPLAssignmentCommand(var(IP2_VAR), sub(

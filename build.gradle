@@ -92,6 +92,12 @@ task doc {
 	}
 }
 
+applicationDistribution.from(doc) {
+    into "doc"
+}
+applicationDistribution.from("libraries") {
+	into "examples"
+}
 
 task copyDocAssets(type:Copy) {
 	from (srcDocDir + "/assets") {

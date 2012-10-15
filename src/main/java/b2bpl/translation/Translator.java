@@ -684,6 +684,7 @@ public class Translator implements ITranslationConstants {
                                     forall(refVar, fieldIntVar, implies(logicalNot(map(var(heap), var(r), var(alloc))), isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), intLiteral(0)))),
                                     forall(refVar, fieldRefVar, isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(heap), fieldType(libImpl(var(heap)), var(f)))),
                                     forall(refVar, fieldIntVar, isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), fieldType(libImpl(var(heap)), var(f)))),
+                                    forall(refVar, logicalNot(isMemberlessType(libImpl(var(heap)), typ(var(r), var(heap))))),
                                     forall(refVar, logicalOr(libType(libImpl(var(heap)), new BPLArrayExpression(var(heap), var(r), var(dynType))), ctxtType(new BPLArrayExpression(var(heap), var(r), var(dynType)))))
                                     ))
                     ));
@@ -696,8 +697,8 @@ public class Translator implements ITranslationConstants {
                                     bijective(var(related)),
                                     objectCoupling(var(HEAP1), var(HEAP2), var(related)),
                                     forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(new BPLArrayExpression(var(HEAP1),  var(r1), var(exposed)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))))),
-                                    forall(r1Var, implies(logicalAnd(notEqual(var(r1), var("null")), new BPLArrayExpression(var(HEAP1), var(r1), var(alloc)), new BPLArrayExpression(var(HEAP1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
-                                    forall(r2Var, implies(logicalAnd(notEqual(var(r2), var("null")), new BPLArrayExpression(var(HEAP2), var(r2), var(alloc)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
+                                    forall(r1Var, implies(logicalAnd(nonNull(var(r1)), map(var(HEAP1), var(r1), var(alloc)), new BPLArrayExpression(var(HEAP1), var(r1), var(exposed))), exists(r2Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
+                                    forall(r2Var, implies(logicalAnd(nonNull(var(r2)), map(var(HEAP2), var(r2), var(alloc)), new BPLArrayExpression(var(HEAP2), var(r2), var(exposed))), exists(r1Var, new BPLArrayExpression(var(related), var(r1), var(r2))))),
                                     forall(r1Var, r2Var, implies(related(var(r1), var(r2)), forall(tVar, implies(logicalAnd(isPublic(libImpl(var(HEAP1)), var(t)), libType(libImpl(var(HEAP1)), var(t))), isEquiv(isOfType(var(r1), var(HEAP1), var(t)), isOfType(var(r2), var(HEAP2), var(t)))))))
                                     ))
                     ));
@@ -706,7 +707,7 @@ public class Translator implements ITranslationConstants {
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
                     isEquiv(objectCoupling(var(HEAP1), var(HEAP2), var(related)),
-                            forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(obj(var(HEAP1), var(r1)), obj(var(HEAP2), var(r2))))))
+                    		forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(nonNull(var(r1)), map(var(HEAP1), var(r1), var(ALLOC_FIELD)), nonNull(var(r2)), map(var(HEAP2), var(r2), var(ALLOC_FIELD))))))
                     ));
 
 
@@ -877,12 +878,7 @@ public class Translator implements ITranslationConstants {
                     ));
 
             addFunction(IS_MEMBERLESS_TYPE_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
-            addAxiom(forall(
-                    oVar, heapVar,
-                    logicalNot(isMemberlessType(libImpl(var(heap)), typ(var(o), var(heap)))),
-                    new BPLTrigger(isMemberlessType(libImpl(var(heap)), typ(var(o), var(heap))))
-                    ));
-
+            
             // primitive types
             for (JBaseType valueType : valueTypes) {
                 addConstants(new BPLVariable(

@@ -1,5 +1,9 @@
 public class C{
 	private MyList list;
+	
+	public void setList(MyList list) {
+		this.list = list;
+	}
 
 	public void m(){
 		int i = 0;
