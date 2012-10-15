@@ -66,18 +66,18 @@
 					<span wicket:id="inv"></span>
 				</div>
 				<div id="optionstitle">
-				<a href="#" class="show" onClick="$('#optionpan').slideToggle('slow');">Toggle options</a>
-				<br/>
 				<div id="optionpan" wicket:id="optionpanel" style="display:none">
 					<span wicket:id="optioncontents">
 						<span wicket:id="option"></span>
 						<span wicket:id="description">Test ID</span> 
-						<br />
 					</span>
 				</div>
 				</div>
 				<div id="submitButton">
+					<p>
 					<input class="btn btn-success btn-large" wicket:id="checkButton" type="submit" value="Check backward compatibility" id="formsubmit" />
+					<button id="optionsButton" class="btn btn-large" type="button">Options</button>
+					</p>
 					<div id="ajax_indicator" style="display:none">
 		    		<h1>Verification in progress <img src="images/ajax-loader.gif" alt="Ajax loader"></h1>
 					</div>
@@ -107,6 +107,19 @@ href="http://statcounter.com/free-hit-counter/" target="_blank"><img
 class="statcounter" src="http://c.statcounter.com/8373477/0/3bfd892f/1/"
 alt="hit counter"></a></div></noscript>
 <!-- End of StatCounter Code for Default Guide -->
+
+<script type="text/javascript">
+var height = $('#optionpan').hide().height();
+$('#optionsButton').toggle(function() {
+    $('#optionpan').slideDown(2000);
+    $('html, body').animate({ scrollTop: '+=' + height }, 2000);
+    return false;
+}, function() {
+    $('#optionpan').slideUp(2000);
+    $('html, body').animate({ scrollTop: '-=' + height }, 2000);
+    return false;
+});
+</script>
 
 </body>
 </html>

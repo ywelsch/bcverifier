@@ -231,7 +231,7 @@ public class Configuration implements Serializable {
 		singleFormulaInvariant = true;
 		checkSourceCompatibility = true;
 		iframes = 1;
-		proverTimelimit = 20;
+		proverTimelimit = 30;
 	}
 	public int getProverTimelimit() {
 		return proverTimelimit;
