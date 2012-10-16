@@ -78,7 +78,7 @@ public class JavaVariableDef extends Def {
 				}
 			}
 		}
-		throw new Error("Var " + attrName() + " not found in line " + placeType.getLineNr());
+		throw new RuntimeException("Var " + attrName() + " not found in line " + placeType.getLineNr());
 	}
 
 	public Expr getStackPointerExpr() {
