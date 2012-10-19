@@ -204,7 +204,7 @@ h3 {
 	position: relative;
 }
 
-.ace_editor .ace_sb {
+.ace_editor .ace_scrollbar {
 	overflow-y: auto;
 }
 
