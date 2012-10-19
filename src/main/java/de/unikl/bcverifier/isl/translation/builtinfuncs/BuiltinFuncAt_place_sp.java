@@ -46,7 +46,7 @@ final class BuiltinFuncAt_place_sp extends BuiltinFunction {
 	public BPLExpression translateCall(boolean isGlobalInvariant, List<Expr> arguments) {
 		Expr p = arguments.getChild(0);
 		Expr stackPointer = arguments.getChild(1);
-		ExprTypeLocalPlace placeType = (ExprTypeLocalPlace) p.attrType();
+		ExprTypePlace placeType = (ExprTypePlace) p.attrType();
 		// stack1[ip1][stackPointer][place] == p
 		return new BPLEqualityExpression(BPLEqualityExpression.Operator.EQUALS, 
 				BuiltinFunctions.stackProperty(isGlobalInvariant, placeType.getVersion(), p.attrCompilationUnit().getPhase(), stackPointer.translateExpr(), new BPLVariableExpression("place"))

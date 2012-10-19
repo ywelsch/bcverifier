@@ -80,7 +80,8 @@ public class ExampleLoader {
 				new String[]{ "oneOffLoop", "OneOffLoop example", "4", "spec.isl" },
 				new String[]{ "diverge", "Divergence example", "3", "spec.isl" },
 				new String[]{ "diverge2", "Divergence example (alt)", "3", "spec.isl" },
-				new String[]{ "measure", "Termination example", "3", "spec.isl" }
+				new String[]{ "measure", "Termination example", "3", "spec.isl" },
+				new String[]{ "predefinedplaces", "ComplexPlaces example", "4", "spec.isl" }
 		};
 		for (String[] entry : TO_LOAD) {
 			Example ex = loadExample(entry[0], entry[1], entry[2], entry[3]);
