@@ -4,6 +4,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 
+import b2bpl.Project;
 import b2bpl.bytecode.attributes.MethodSpecificationAttribute;
 import b2bpl.bytecode.bml.ast.BMLBooleanLiteral;
 import b2bpl.bytecode.bml.ast.BMLEnsuresClause;
@@ -17,6 +18,12 @@ import b2bpl.bytecode.bml.ast.BMLSpecificationCase;
 
 
 public class DefaultSpecificationProvider implements ISpecificationProvider {
+	
+	private Project project;
+	
+	public DefaultSpecificationProvider(Project project) {
+		this.project = project;
+	}
 
   public ClassVisitor forClass(JClassType type, ClassVisitor classVisitor) {
     return classVisitor;
@@ -39,7 +46,7 @@ public class DefaultSpecificationProvider implements ISpecificationProvider {
       BMLMethodSpecification spec = new BMLMethodSpecification(
           new BMLRequiresClause(new BMLPredicate(BMLBooleanLiteral.TRUE)),
           specCase);
-      methodVisitor.visitAttribute(new MethodSpecificationAttribute(spec));
+      methodVisitor.visitAttribute(new MethodSpecificationAttribute(project.getTypeLoader(), spec));
     }
     return methodVisitor;
   }

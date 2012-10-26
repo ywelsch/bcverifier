@@ -47,7 +47,9 @@ import b2bpl.bytecode.instructions.InvokeSpecialInstruction;
  */
 public class FlowAnalyzer extends Analyzer {
 
-  /**
+  private static Verifier verifier;
+
+/**
    * Whether to explicitly model the runtime exceptions thrown by some bytecode
    * instructions in the program flow.
    */
@@ -70,6 +72,8 @@ public class FlowAnalyzer extends Analyzer {
   @SuppressWarnings("unchecked")
   private List<ExceptionHandler>[] activeHandlers;
 
+  private TypeLoader typeLoader;
+
   /**
    * Instantiates a new flow analyzer which is configured once and which can
    * then be used to analyze different bytecode methods.
@@ -78,8 +82,10 @@ public class FlowAnalyzer extends Analyzer {
    *                                exceptions thrown by some bytecode
    *                                instructions in the program flow.
    */
-  public FlowAnalyzer(boolean modelRuntimeExceptions) {
-    super(new Verifier());
+  public FlowAnalyzer(TypeLoader typeLoader, boolean modelRuntimeExceptions) {
+    super(verifier = new Verifier());
+    verifier.parent = this;
+    this.typeLoader = typeLoader;
     this.modelRuntimeExceptions = modelRuntimeExceptions;
   }
 
@@ -100,7 +106,7 @@ public class FlowAnalyzer extends Analyzer {
     
     if (asmMethod == null) return null;
     
-    JClassType ownerType = TypeLoader.getClassType(owner);
+    JClassType ownerType = typeLoader.getClassType(owner);
        
     method = ownerType.getMethod(asmMethod.name, asmMethod.desc);
     Instructions insns = method.getInstructions();
@@ -267,7 +273,7 @@ public class FlowAnalyzer extends Analyzer {
     if (modelRuntimeExceptions) {
       Instruction instruction = insn.getInstruction();
       for (String runtimeException : instruction.getRuntimeExceptions()) {
-        JType exception = TypeLoader.getClassType(runtimeException);
+        JType exception = typeLoader.getClassType(runtimeException);
         for (ExceptionHandler handler : activeHandlers[insn.getIndex()]) {
           JType handlerType = handler.getType();
           // We must only check for handler types which are supertypes of the
@@ -292,7 +298,7 @@ public class FlowAnalyzer extends Analyzer {
    * @return           The set of exceptions which may be thrown by the given
    *                   bytecode instruction {@code insn}.
    */
-  private static List<JType> computeExceptions(
+  private List<JType> computeExceptions(
       InstructionHandle insn,
       Frame insnFrame) {
     Instruction instruction = insn.getInstruction();
@@ -320,7 +326,7 @@ public class FlowAnalyzer extends Analyzer {
    * @param maxStack   The maximal number of stack elements of the frame.
    * @return           The converted JVM frame.
    */
-  private static StackFrame convertFrame(
+  private StackFrame convertFrame(
       Frame asmFrame,
       int maxLocals,
       int maxStack) {
@@ -347,7 +353,7 @@ public class FlowAnalyzer extends Analyzer {
    * @param asmType  The type of the ASM bytecode library to convert.
    * @return         The converted type.
    */
-  private static JType convertType(Type asmType) {
+  private JType convertType(Type asmType) {
     if (asmType != null) {
       switch (asmType.getSort()) {
         case Type.INT:
@@ -370,10 +376,10 @@ public class FlowAnalyzer extends Analyzer {
           if (asmType.getDescriptor().equals("Lnull;")) {
             return JNullType.NULL;
           }
-          return TypeLoader.getClassType(asmType.getClassName());
+          return typeLoader.getClassType(asmType.getClassName());
         case Type.ARRAY:
           JType elementType = convertType(asmType.getElementType());
-          return new JArrayType(elementType, asmType.getDimensions());
+          return new JArrayType(typeLoader, elementType, asmType.getDimensions());
       }
     }
     return null;
@@ -396,16 +402,18 @@ public class FlowAnalyzer extends Analyzer {
    *
    * @author Ovidio Mallo
    */
-  private static final class Verifier extends SimpleVerifier {
+  private final static class Verifier extends SimpleVerifier {
 
-    /**
+	public FlowAnalyzer parent;
+
+	/**
      * Returns whether the given type {@code t} is an interface.
      *
      * @param t  The eventual interface type.
      * @return   Whether the given type {@code t} is an interface.
      */
     protected boolean isInterface(Type t) {
-      JType type = convertType(t);
+      JType type = parent.convertType(t);
       if (type.isClassType()) {
         return ((JClassType) type).isInterface();
       }
@@ -419,12 +427,12 @@ public class FlowAnalyzer extends Analyzer {
      * @return   The superclass of the given type {@code t}.
      */
     protected Type getSuperClass(Type t) {
-      JType type = convertType(t);
+      JType type = parent.convertType(t);
       JType supertype = null;
       if (type.isClassType()) {
         supertype = ((JClassType) type).getSupertype();
       } else if (type.isArrayType()) {
-        supertype = TypeLoader.getClassType("java.lang.Object");
+        supertype = parent.typeLoader.getClassType("java.lang.Object");
       }
       if (supertype != null) {
         return Type.getType(supertype.getDescriptor());
@@ -442,8 +450,8 @@ public class FlowAnalyzer extends Analyzer {
      *                  a subtype of the type contained {@code expected} value.
      */
     protected boolean isSubTypeOf(final Value value, final Value expected) {
-      JType subtype = convertType(((BasicValue) value).getType());
-      JType supertype = convertType(((BasicValue) expected).getType());
+      JType subtype = parent.convertType(((BasicValue) value).getType());
+      JType supertype = parent.convertType(((BasicValue) expected).getType());
       return subtype.isSubtypeOf(supertype);
     }
 
@@ -457,8 +465,8 @@ public class FlowAnalyzer extends Analyzer {
      *           {@code u}.
      */
     protected boolean isAssignableFrom(Type t, Type u) {
-      JType src = convertType(u);
-      JType dst = convertType(t);
+      JType src = parent.convertType(u);
+      JType dst = parent.convertType(t);
       return src.isSubtypeOf(dst);
     }
   }

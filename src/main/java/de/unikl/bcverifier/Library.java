@@ -65,6 +65,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -255,6 +256,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			addDefinesMethodAxioms(programDecls);
 			addLibraryFields(programDecls);
 
+			addConstantDeclarations(programDecls);
+			
 			// ///////////////////////////////////
 			// add method definition for java.lang.Object default constructor
 			// ///////////////////////////////////
@@ -326,6 +329,39 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		}
 	}
 
+	/**
+	 * adds the constant declarations for classes, fields, methods 
+	 */
+	private void addConstantDeclarations(List<BPLDeclaration> programDecls) {
+		Set<String> names = new HashSet<String>();
+		addConstantDeclarationsForTypes(programDecls, names);
+		addConstantDeclarationsForFields(programDecls, names);
+	}
+
+	private void addConstantDeclarationsForFields(List<BPLDeclaration> programDecls, Set<String> names) {
+		for (BCField field : tc.globalReferencedFields()) {
+			String fieldName = tc.boogieFieldName(field);
+			if (!names.contains(fieldName)) {
+				programDecls.add(new BPLConstantDeclaration(
+						new BPLVariable(fieldName, new BPLTypeName(FIELD_TYPE, CodeGenerator.type(field.getType())))));
+				names.add(fieldName);
+			}
+		}
+	}
+
+	private void addConstantDeclarationsForTypes(List<BPLDeclaration> programDecls, Set<String> names) {
+		for (JClassType classType : tc.globalReferencedTypes()) {
+			String classTypeName = TranslationController.getClassTypeName(classType);
+			if (!names.contains(classTypeName)) {
+				// Declare the constant representing the given class type.
+				programDecls.add(new BPLConstantDeclaration(new BPLVariable(
+		                classTypeName,
+		                new BPLTypeName(NAME_TYPE))));
+		        names.add(classTypeName);
+			}
+		}
+	}
+
 	private void addNoopBlock(List<BPLBasicBlock> methodBlocks) {
 		methodBlocks.add(new BPLBasicBlock("noop", new BPLCommand[0],
 				new BPLReturnCommand()));
@@ -335,11 +371,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		CodeGenerator.setProject(project);
 		CodeGenerator.setTranslationController(tc);
 
-		TypeLoader.setProject(project);
-		TypeLoader.setProjectTypes(project.getProjectTypes());
-		TypeLoader.setSpecificationProvider(project.getSpecificationProvider());
-		TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, this));
-		TypeLoader.setTroubleReporter(this);
+		TypeLoader typeLoader = project.getTypeLoader();
+		typeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, this));
+		typeLoader.setTroubleReporter(this);
 
 		tc.setConfig(config);
 	}
@@ -2104,17 +2138,14 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 	public static JClassType[] setProjectAndLoadTypes(Project project,
 			ITroubleReporter troubleReporter) {
-		TypeLoader.setProject(project);
-		TypeLoader.setProjectTypes(project.getProjectTypes());
-		TypeLoader.setSpecificationProvider(project.getSpecificationProvider());
-		TypeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project,
-				troubleReporter));
-		TypeLoader.setTroubleReporter(troubleReporter);
-
+		TypeLoader typeLoader = project.getTypeLoader();
+		typeLoader.setSemanticAnalyzer(new SemanticAnalyzer(project, troubleReporter));
+		typeLoader.setTroubleReporter(troubleReporter);
+		
 		String[] projectTypeNames = project.getProjectTypes();
 		JClassType[] projectTypes = new JClassType[projectTypeNames.length];
 		for (int i = 0; i < projectTypes.length; i++) {
-			projectTypes[i] = TypeLoader.getClassType(projectTypeNames[i]);
+			projectTypes[i] = typeLoader.getClassType(projectTypeNames[i]);
 		}
 		return projectTypes;
 	}

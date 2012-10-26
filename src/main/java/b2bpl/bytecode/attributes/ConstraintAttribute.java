@@ -7,6 +7,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 
 import b2bpl.bytecode.JClassType;
+import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.bml.ast.BMLConstraint;
 import b2bpl.bytecode.bml.ast.BMLPredicate;
 
@@ -19,14 +20,18 @@ public class ConstraintAttribute extends Attribute {
 
   private final BMLConstraint[] constraints;
 
-  public ConstraintAttribute(JClassType owner) {
+  private final TypeLoader typeLoader;
+  
+  public ConstraintAttribute(TypeLoader typeLoader, JClassType owner) {
     super(NAME);
+    this.typeLoader = typeLoader;
     this.owner = owner;
     this.constraints = null;
   }
 
-  public ConstraintAttribute(BMLConstraint[] constraints) {
+  public ConstraintAttribute(TypeLoader typeLoader, BMLConstraint[] constraints) {
     super(NAME);
+    this.typeLoader = typeLoader;
     this.owner = null;
     this.constraints = constraints;
   }
@@ -48,7 +53,7 @@ public class ConstraintAttribute extends Attribute {
       char[] buf,
       int codeOff,
       Label[] labels) {
-    BMLAttributeReader reader = new BMLAttributeReader(cr, off, len, buf);
+    BMLAttributeReader reader = new BMLAttributeReader(typeLoader, cr, off, len, buf);
 
     // FIXME[om]: This does not correspond to the attribute format of the Mobius project!
     int invariantCount = 1;//reader.readShort();
@@ -60,7 +65,7 @@ public class ConstraintAttribute extends Attribute {
       constraints[i] = new BMLConstraint(0, owner, predicate);
     }
 
-    return new ConstraintAttribute(constraints);
+    return new ConstraintAttribute(typeLoader, constraints);
   }
 
   /** {@inheritDoc} */

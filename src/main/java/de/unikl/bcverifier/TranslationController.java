@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import de.unikl.bcverifier.TranslationController.BoogiePlace;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
 
@@ -417,4 +416,18 @@ public class TranslationController implements ITranslationConstants {
 	public void addPlace(BoogiePlace bp) {
 		places.add(bp);
 	}
+	
+	/**
+     * Returns the name of a BoogiePL constant to be used to reference the given
+     * class {@code type}.
+     *
+     * @param type  The class type for which to build the constant name.
+     * @return      The name of the constant representing the given class
+     *              {@code type}.
+     */
+    public static String getClassTypeName(JClassType type) {
+        return GLOBAL_VAR_PREFIX + type.getName();
+    }
+
+	
 }

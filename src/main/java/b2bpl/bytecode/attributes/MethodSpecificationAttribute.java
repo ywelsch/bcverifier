@@ -7,6 +7,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 
 import b2bpl.bytecode.JType;
+import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.bml.ast.BMLEnsuresClause;
 import b2bpl.bytecode.bml.ast.BMLExpression;
 import b2bpl.bytecode.bml.ast.BMLExsuresClause;
@@ -24,12 +25,16 @@ public class MethodSpecificationAttribute extends Attribute {
 
   private final BMLMethodSpecification specification;
 
-  public MethodSpecificationAttribute() {
-    this(null);
+  private final TypeLoader typeLoader;
+  
+  
+  public MethodSpecificationAttribute(TypeLoader typeLoader) {
+    this(typeLoader, null);
   }
 
-  public MethodSpecificationAttribute(BMLMethodSpecification specification) {
+  public MethodSpecificationAttribute(TypeLoader typeLoader, BMLMethodSpecification specification) {
     super(NAME);
+    this.typeLoader = typeLoader;
     this.specification = specification;
   }
 
@@ -50,7 +55,7 @@ public class MethodSpecificationAttribute extends Attribute {
       char[] buf,
       int codeOff,
       Label[] labels) {
-    BMLAttributeReader reader = new BMLAttributeReader(cr, off, len, buf);
+    BMLAttributeReader reader = new BMLAttributeReader(typeLoader, cr, off, len, buf);
 
     BMLPredicate predicate = reader.readPredicate();
     BMLRequiresClause requires = new BMLRequiresClause(predicate);
@@ -64,7 +69,7 @@ public class MethodSpecificationAttribute extends Attribute {
     BMLMethodSpecification specification =
       new BMLMethodSpecification(requires, specCases);
 
-    return new MethodSpecificationAttribute(specification);
+    return new MethodSpecificationAttribute(typeLoader, specification);
   }
 
   private static BMLSpecificationCase readSpecificationCase(

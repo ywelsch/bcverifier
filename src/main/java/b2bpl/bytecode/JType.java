@@ -5,6 +5,12 @@ import java.util.List;
 
 
 public abstract class JType {
+	
+	protected final TypeLoader typeLoader;
+	
+	public JType(TypeLoader typeLoader) {
+		this.typeLoader = typeLoader;
+	}
 
   public boolean isBaseType() {
     return false;
@@ -42,15 +48,15 @@ public abstract class JType {
     return isSubtypeOf(type) && !equals(type);
   }
 
-  public static JType fromDescriptor(String descriptor) {
-    return fromDescriptor(descriptor.toCharArray(), 0);
+  public static JType fromDescriptor(TypeLoader typeLoader, String descriptor) {
+    return fromDescriptor(typeLoader, descriptor.toCharArray(), 0);
   }
 
   public String getDescriptor() {
     return null;
   }
 
-  private static JType fromDescriptor(char[] descriptor, int offset) {
+  private static JType fromDescriptor(TypeLoader typeLoader, char[] descriptor, int offset) {
     switch (descriptor[offset]) {
       case 'B':
         return JBaseType.BYTE;
@@ -79,7 +85,7 @@ public abstract class JType {
           break;
         }
         String name = new String(descriptor, offset + 1, end - (offset + 1));
-        return TypeLoader.getClassType(name);
+        return typeLoader.getClassType(name);
       case '[':
         int dimension = 0;
         while ((offset < descriptor.length) && (descriptor[offset] == '[')) {
@@ -89,42 +95,42 @@ public abstract class JType {
         if (offset == descriptor.length) {
           break;
         }
-        JType elementType = fromDescriptor(descriptor, offset);
+        JType elementType = fromDescriptor(typeLoader, descriptor, offset);
         if (elementType == JBaseType.VOID) {
           break;
         }
-        return new JArrayType(elementType, dimension);
+        return new JArrayType(typeLoader, elementType, dimension);
     }
 
     // TODO[om]: Throw some exception!
     return null;
   }
 
-  public static JType[] fromMethodDescriptor(String descriptor) {
+  public static JType[] fromMethodDescriptor(TypeLoader typeLoader, String descriptor) {
     List<JType> types = new ArrayList<JType>();
 
     int offset = 1;
     while (descriptor.charAt(offset) != ')') {
       String typeDescriptor = extractDescriptor(descriptor, offset);
-      types.add(fromDescriptor(typeDescriptor));
+      types.add(fromDescriptor(typeLoader, typeDescriptor));
       offset += typeDescriptor.length();
     }
 
     String typeDescriptor = extractDescriptor(descriptor, offset + 1);
-    types.add(fromDescriptor(typeDescriptor));
+    types.add(fromDescriptor(typeLoader, typeDescriptor));
 
     return types.toArray(new JType[types.size()]);
   }
 
-  public static JType[] argumentTypes(String descriptor) {
-    JType[] types = fromMethodDescriptor(descriptor);
+  public static JType[] argumentTypes(TypeLoader typeLoader, String descriptor) {
+    JType[] types = fromMethodDescriptor(typeLoader, descriptor);
     JType[] argumentTypes = new JType[types.length - 1];
     System.arraycopy(types, 0, argumentTypes, 0, argumentTypes.length);
     return argumentTypes;
   }
 
-  public static JType returnType(String descriptor) {
-    JType[] types = fromMethodDescriptor(descriptor);
+  public static JType returnType(TypeLoader typeLoader, String descriptor) {
+    JType[] types = fromMethodDescriptor(typeLoader, descriptor);
     return types[types.length - 1];
   }
 

@@ -32,7 +32,8 @@ public class JClassType extends JReferenceType implements IConstants {
 
   private HashMap<String, BCMethod> methodsMap;
 
-  public JClassType(String name) {
+  public JClassType(TypeLoader typeLoader, String name) {
+	super(typeLoader);
     this.name = name.replace('/', '.');
   }
 
@@ -53,17 +54,17 @@ public class JClassType extends JReferenceType implements IConstants {
   }
 
   public int getAccessModifiers() {
-    TypeLoader.loadType(getName());
+    typeLoader.loadType(getName());
     return accessModifiers;
   }
 
   public JClassType getSupertype() {
-    TypeLoader.loadType(getName());
+    typeLoader.loadType(getName());
     return supertype;
   }
 
   public JClassType[] getInterfaces() {
-    TypeLoader.loadType(getName());
+    typeLoader.loadType(getName());
     return interfaces;
   }
 
@@ -105,22 +106,22 @@ public class JClassType extends JReferenceType implements IConstants {
   }
 
   public BCField[] getFields() {
-    TypeLoader.loadType(getName());
+    typeLoader.loadType(getName());
     return fields;
   }
 
   public BCMethod[] getMethods() {
-    TypeLoader.loadType(getName());
+    typeLoader.loadType(getName());
     return methods;
   }
 
   public BMLInvariant[] getInvariants() {
-    TypeLoader.loadType(getName());
+    typeLoader.loadType(getName());
     return invariants;
   }
 
   public BMLConstraint[] getConstraints() {
-    TypeLoader.loadType(getName());
+    typeLoader.loadType(getName());
     return constraints;
   }
 
@@ -163,12 +164,12 @@ public class JClassType extends JReferenceType implements IConstants {
   }
 
   public BCField getField(String name) {
-    TypeLoader.loadType(getName());
+    typeLoader.loadType(getName());
     return fieldsMap.get(name);
   }
 
   public BCMethod getMethod(String name, String descriptor) {
-    TypeLoader.loadType(getName());
+    typeLoader.loadType(getName());
     return methodsMap.get(name + descriptor);
   }
 
@@ -213,7 +214,7 @@ public class JClassType extends JReferenceType implements IConstants {
   }
 
   public List<BCMethod> getMethodOverrides(String name, String descriptor) {
-    TypeLoader.loadType(getName());
+    typeLoader.loadType(getName());
     List<BCMethod> accumMethods = new ArrayList<BCMethod>();
     accumMethodOverrides(name, descriptor, accumMethods);
     return accumMethods;

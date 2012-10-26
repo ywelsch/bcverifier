@@ -134,10 +134,11 @@ public class CFGBuilder {
    *
    * @param method  The bytecode method for which to construct the control flow
    *                graph.
+ * @param typeLoader 
    * @return        The control flow graph for the given bytecode
    *                {@code method}.
    */
-  public ControlFlowGraph build(BCMethod method) {
+  public ControlFlowGraph build(BCMethod method, TypeLoader typeLoader) {
     this.method = method;
 
     // Initialize the internal datastructures.
@@ -167,7 +168,7 @@ public class CFGBuilder {
           // Explicitly model the program flow cause by the runtime exceptions
           // thrown by the current instruction.
           for (String rtException : insn.getRuntimeExceptions()) {
-            JType exception = TypeLoader.getClassType(rtException);
+            JType exception = typeLoader.getClassType(rtException);
             addRuntimeExceptionEdges(instruction, exception);
           }
 

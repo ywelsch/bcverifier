@@ -7,7 +7,8 @@ public class JArrayType extends JReferenceType {
 
   private final int dimension;
 
-  public JArrayType(JType componentType, int dimension) {
+  public JArrayType(TypeLoader typeLoader, JType componentType, int dimension) {
+	super(typeLoader);
     this.componentType = componentType;
     this.dimension = dimension;
   }
@@ -24,7 +25,7 @@ public class JArrayType extends JReferenceType {
     if (dimension == 1) {
       return componentType;
     }
-    return new JArrayType(componentType, dimension - 1);
+    return new JArrayType(typeLoader, componentType, dimension - 1);
   }
 
   public String getName() {
@@ -59,18 +60,18 @@ public class JArrayType extends JReferenceType {
         type = arrayType.componentType;
       }
     }
-    return type.equals(TypeLoader.getClassType("java.lang.Object"))
-           || type.equals(TypeLoader.getClassType("java.lang.Cloneable"))
-           || type.equals(TypeLoader.getClassType("java.io.Serializable"));
+    return type.equals(typeLoader.getClassType("java.lang.Object"))
+           || type.equals(typeLoader.getClassType("java.lang.Cloneable"))
+           || type.equals(typeLoader.getClassType("java.io.Serializable"));
   }
 
   public BCField lookupField(String name) {
-    JClassType object = TypeLoader.getClassType("java.lang.Object");
+    JClassType object = typeLoader.getClassType("java.lang.Object");
     return object.lookupField(name);
   }
 
   public BCMethod lookupMethod(String name, String descriptor) {
-    JClassType object = TypeLoader.getClassType("java.lang.Object");
+    JClassType object = typeLoader.getClassType("java.lang.Object");
     return object.lookupMethod(name, descriptor);
   }
 

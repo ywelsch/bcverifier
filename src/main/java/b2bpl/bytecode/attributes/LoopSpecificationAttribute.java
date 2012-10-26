@@ -6,6 +6,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 
+import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.bml.ast.BMLExpression;
 import b2bpl.bytecode.bml.ast.BMLLoopInvariant;
 import b2bpl.bytecode.bml.ast.BMLLoopModifiesClause;
@@ -23,14 +24,18 @@ public class LoopSpecificationAttribute extends Attribute {
 
   private final BMLLoopSpecification[] loopSpecifications;
 
-  public LoopSpecificationAttribute() {
-    this(null, null);
+  private final TypeLoader typeLoader;
+  
+  public LoopSpecificationAttribute(TypeLoader typeLoader) {
+    this(typeLoader, null, null);
   }
 
   public LoopSpecificationAttribute(
+		  TypeLoader typeLoader, 
       Label[] labels,
       BMLLoopSpecification[] loopSpecifications) {
     super(NAME);
+    this.typeLoader = typeLoader;
     this.labels = labels;
     this.loopSpecifications = loopSpecifications;
   }
@@ -56,7 +61,7 @@ public class LoopSpecificationAttribute extends Attribute {
       char[] buf,
       int codeOff,
       Label[] labels) {
-    BMLAttributeReader reader = new BMLAttributeReader(cr, off, len, buf);
+    BMLAttributeReader reader = new BMLAttributeReader(typeLoader, cr, off, len, buf);
 
     int loopCount = reader.readShort();
     Label[] specLabels = new Label[loopCount];
@@ -81,7 +86,7 @@ public class LoopSpecificationAttribute extends Attribute {
       loopSpecs[i] = new BMLLoopSpecification(modifies, invariant, variant);
     }
 
-    return new LoopSpecificationAttribute(specLabels, loopSpecs);
+    return new LoopSpecificationAttribute(typeLoader, specLabels, loopSpecs);
   }
 
   private static Label getLabel(int index, Label[] labels) {

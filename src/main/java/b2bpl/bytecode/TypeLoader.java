@@ -41,29 +41,30 @@ import b2bpl.bytecode.instructions.LocalVariableInstruction;
 
 public class TypeLoader {
 
-  private static final HashMap<String, JClassType> classTypes = new HashMap<String, JClassType>();
+  private final HashMap<String, JClassType> classTypes = new HashMap<String, JClassType>();
 
-  private static final HashSet<JClassType> loadedClassTypes = new HashSet<JClassType>();
+  private final HashSet<JClassType> loadedClassTypes = new HashSet<JClassType>();
 
-  private static Project project = null;
+  private Project project = null;
   
-  private static HashSet<String> projectTypes = new HashSet<String>();
+  private HashSet<String> projectTypes = new HashSet<String>();
 
-  private static ISpecificationProvider specProvider = new EmptySpecificationProvider();
+  private ISpecificationProvider specProvider = new EmptySpecificationProvider();
 
-  private static SemanticAnalyzer semanticAnalyzer;
+  private SemanticAnalyzer semanticAnalyzer;
 
-  private static ITroubleReporter troubleReporter;
+  private ITroubleReporter troubleReporter;
 
-  private TypeLoader() {
-    // hide the constructor
+  public InstructionFactory instructionFactory = new InstructionFactory(this);
+
+  public TypeLoader() {
   }
   
-  public static void setProject(Project p) {
+  public void setProject(Project p) {
     project = p;
   }
 
-  public static void setProjectTypes(String... types) {
+  public  void setProjectTypes(String... types) {
     loadedClassTypes.clear();
     projectTypes = new HashSet<String>();
     for (String type : types) {
@@ -71,25 +72,25 @@ public class TypeLoader {
     }
   }
 
-  public static void setSpecificationProvider(ISpecificationProvider provider) {
+  public  void setSpecificationProvider(ISpecificationProvider provider) {
     assert provider != null;
     specProvider = provider;
   }
 
-  public static void setSemanticAnalyzer(SemanticAnalyzer analyzer) {
+  public  void setSemanticAnalyzer(SemanticAnalyzer analyzer) {
     semanticAnalyzer = analyzer;
   }
 
-  public static void setTroubleReporter(ITroubleReporter reporter) {
+  public  void setTroubleReporter(ITroubleReporter reporter) {
     troubleReporter = reporter;
   }
 
-  public static JClassType getClassType(String name) {
+  public  JClassType getClassType(String name) {
     name = name.replace('.', '/');
     JClassType type = classTypes.get(name);
     
     if (type == null) {
-      type = new JClassType(name);
+      type = new JClassType(this, name);
       classTypes.put(name, type);
       
       
@@ -97,7 +98,7 @@ public class TypeLoader {
     return type;
   }
   
-  private static ClassReader getClassReader(String typeName) {
+  private  ClassReader getClassReader(String typeName) {
     try {
 //      // Create class reader from type name
 ////System.out.println("Reading class from name:\t" + typeName);
@@ -138,7 +139,7 @@ public class TypeLoader {
     }
   }
 
-  public static void loadType(String name) {
+  public  void loadType(String name) {
     
     JClassType type = getClassType(name);
     
@@ -149,20 +150,20 @@ public class TypeLoader {
         Attribute[] attributes;
         if (projectTypes.contains(type.getName())) {
           attributes = new Attribute[] {
-              new ClassInvariantAttribute(type),
-              new ConstraintAttribute(type),
-              new ModelFieldAttribute(type),
-              new MethodSpecificationAttribute(),
-              new AssertAttribute(),
-              new AssumeAttribute(),
-              new LoopSpecificationAttribute()
+              new ClassInvariantAttribute(this, type),
+              new ConstraintAttribute(this, type),
+              new ModelFieldAttribute(this, type),
+              new MethodSpecificationAttribute(this),
+              new AssertAttribute(this),
+              new AssumeAttribute(this),
+              new LoopSpecificationAttribute(this)
           };
         } else {
           attributes = new Attribute[] {
-              new ClassInvariantAttribute(type),
-              new ConstraintAttribute(type),
-              new ModelFieldAttribute(type),
-              new MethodSpecificationAttribute()
+              new ClassInvariantAttribute(this, type),
+              new ConstraintAttribute(this, type),
+              new ModelFieldAttribute(this, type),
+              new MethodSpecificationAttribute(this)
           };
           flags |= ClassReader.SKIP_CODE;
         }
@@ -188,15 +189,15 @@ public class TypeLoader {
     }
   }
 
-  public static JClassType[] getClassTypes() {
+  public  JClassType[] getClassTypes() {
     return classTypes.values().toArray(new JClassType[classTypes.size()]);
   }
 
-  public static ClassNode getASMClassTypeNode(JClassType type) {
+  public  ClassNode getASMClassTypeNode(JClassType type) {
     try {
       ClassNode cn = new ClassNode();
 //System.out.println("L 194: " + type.getName());
-      ClassReader cr = TypeLoader.getClassReader(type.getName()); // new ClassReader(type.getName());
+      ClassReader cr = getClassReader(type.getName()); // new ClassReader(type.getName());
       cr.accept(cn, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
       return cn;
     } catch (Exception e) {
@@ -205,7 +206,7 @@ public class TypeLoader {
     return null;
   }
 
-  private static final class JClassTypeBuilder implements ClassVisitor {
+  private  final class JClassTypeBuilder implements ClassVisitor {
 
     private final JClassType type;
 
@@ -231,14 +232,14 @@ public class TypeLoader {
         String[] interfaceNames) {
       JClassType supertype = null;
       if (superName != null) {
-        supertype = TypeLoader.getClassType(superName);
+        supertype = getClassType(superName);
       }
 
       JClassType[] interfaces = JClassType.EMPTY_ARRAY;
       if (interfaceNames != null) {
         interfaces = new JClassType[interfaceNames.length];
         for (int i = 0; i < interfaces.length; i++) {
-          interfaces[i] = TypeLoader.getClassType(interfaceNames[i]);
+          interfaces[i] = getClassType(interfaceNames[i]);
         }
       }
 
@@ -289,7 +290,7 @@ public class TypeLoader {
         String descriptor,
         String signature,
         Object value) {
-      JType fieldType = JType.fromDescriptor(descriptor);
+      JType fieldType = JType.fromDescriptor(TypeLoader.this, descriptor);
 
       BCField field = new BCField(access, type, name, fieldType);
       fields.add(field);
@@ -303,13 +304,13 @@ public class TypeLoader {
         String descriptor,
         String signature,
         String[] exceptionNames) {
-      JType returnType = JType.returnType(descriptor);
-      JType[] argumentTypes = JType.argumentTypes(descriptor);
+      JType returnType = JType.returnType(TypeLoader.this, descriptor);
+      JType[] argumentTypes = JType.argumentTypes(TypeLoader.this, descriptor);
       JClassType[] exceptions = JClassType.EMPTY_ARRAY;
       if (exceptionNames != null) {
         exceptions = new JClassType[exceptionNames.length];
         for (int i = 0; i < exceptions.length; i++) {
-          exceptions[i] = TypeLoader.getClassType(exceptionNames[i]);
+          exceptions[i] = getClassType(exceptionNames[i]);
         }
       }
 
@@ -341,7 +342,7 @@ public class TypeLoader {
     }
   }
 
-  private static final class BCMethodBuilder implements MethodVisitor {
+  private  final class BCMethodBuilder implements MethodVisitor {
 
     private final BCMethod method;
 
@@ -456,7 +457,7 @@ public class TypeLoader {
       // type, or else, the descriptor of an array type.
       JReferenceType type;
       if (descriptor.startsWith("[")) {
-        type = (JArrayType) JType.fromDescriptor(descriptor);
+        type = (JArrayType) JType.fromDescriptor(TypeLoader.this, descriptor);
       } else {
         type = getClassType(descriptor);
       }
@@ -477,9 +478,9 @@ public class TypeLoader {
       try {
         addInstruction(InstructionFactory.fromFieldInsn(
             opcode,
-            TypeLoader.getClassType(owner),
+            getClassType(owner),
             name,
-            JType.fromDescriptor(descriptor)));
+            JType.fromDescriptor(TypeLoader.this, descriptor)));
       } catch (UnsupportedInstructionException e) {
         reportTrouble(
             B2BPLMessages.UNSUPPORTED_INSTRUCTION, IOpCodes.NAMES[opcode]);
@@ -496,12 +497,12 @@ public class TypeLoader {
       // ASM is the array's descriptor.
       JReferenceType ownerType;
       if (owner.startsWith("[")) {
-        ownerType = (JArrayType) JType.fromDescriptor(owner);
+        ownerType = (JArrayType) JType.fromDescriptor(TypeLoader.this, owner);
       } else {
         ownerType = getClassType(owner);
       }
-      JType returnType = JType.returnType(descriptor);
-      JType[] parameterTypes = JType.argumentTypes(descriptor);
+      JType returnType = JType.returnType(TypeLoader.this, descriptor);
+      JType[] parameterTypes = JType.argumentTypes(TypeLoader.this, descriptor);
 
       try {
         addInstruction(InstructionFactory.fromMethodInsn(
@@ -533,7 +534,7 @@ public class TypeLoader {
 
     public void visitLdcInsn(Object cst) {
       try {
-        addInstruction(InstructionFactory.fromLdcInsn(cst));
+        addInstruction(instructionFactory.fromLdcInsn(cst));
       } catch (UnsupportedInstructionException e) {
         reportTrouble(
             B2BPLMessages.UNSUPPORTED_INSTRUCTION, IOpCodes.NAMES[IOpCodes.LDC]);
@@ -593,7 +594,7 @@ public class TypeLoader {
     public void visitMultiANewArrayInsn(String descriptor, int dims) {
       try {
         addInstruction(InstructionFactory.fromMultiANewArrayInsn(
-            (JArrayType) JType.fromDescriptor(descriptor),
+            (JArrayType) JType.fromDescriptor(TypeLoader.this, descriptor),
             dims));
       } catch (UnsupportedInstructionException e) {
         reportTrouble(
@@ -619,7 +620,7 @@ public class TypeLoader {
           getHandleFor(start),
           getHandleFor(end),
           getHandleFor(handler),
-          TypeLoader.getClassType(type));
+          getClassType(type));
 
       exceptionHandlers.add(exceptionHandler);
     }

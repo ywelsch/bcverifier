@@ -55,11 +55,15 @@ public class BMLAttributeReader {
 
   private final char[] buffer;
 
+  private TypeLoader typeLoader;
+
   public BMLAttributeReader(
+		  TypeLoader typeLoader,
       ClassReader classReader,
       int offset,
       int length,
       char[] buffer) {
+	this.typeLoader = typeLoader;
     this.classReader = classReader;
     this.current = offset;
     this.end = offset + length;
@@ -273,9 +277,9 @@ public class BMLAttributeReader {
     String desc = classReader.readUTF8(cpIndex + 2, buffer);
 
     return new BMLFieldExpression(
-        TypeLoader.getClassType(owner),
+        typeLoader.getClassType(owner),
         name,
-        JType.fromDescriptor(desc),
+        JType.fromDescriptor(typeLoader, desc),
         isGhostField);
   }
 
@@ -423,9 +427,9 @@ public class BMLAttributeReader {
     String desc = classReader.readUTF8(cpIndex + 2, buffer);
 
     return new BMLFieldStoreRef(
-        TypeLoader.getClassType(owner),
+        typeLoader.getClassType(owner),
         name,
-        JType.fromDescriptor(desc),
+        JType.fromDescriptor(typeLoader, desc),
         isGhostField);
   }
 
@@ -446,7 +450,7 @@ public class BMLAttributeReader {
     // data offset as argument and simply skip the actual index.
     String descriptor = classReader.readUTF8(current, buffer);
     readShort();
-    return JType.fromDescriptor(descriptor);
+    return JType.fromDescriptor(typeLoader, descriptor);
   }
 
   public int peekByte() throws TroubleException {

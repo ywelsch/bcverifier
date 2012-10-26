@@ -231,6 +231,8 @@ public class Translator implements ITranslationConstants {
      */
     private List<String> declarationComments = new ArrayList<String>();
 
+	private TypeLoader typeLoader;
+
     /** The set of value types explicitly supported by the translation. */
     private static final JBaseType[] valueTypes = new JBaseType[] {
         JBaseType.LONG,
@@ -258,6 +260,7 @@ public class Translator implements ITranslationConstants {
      * @see #translate(JClassType[])
      */
     public Translator(Project project) {
+    	this.typeLoader = project.getTypeLoader();
         this.project = project;
     }
 
@@ -272,7 +275,7 @@ public class Translator implements ITranslationConstants {
     public BPLProgram translate(JClassType... types) {
         context = new Context();
         declarations = new ArrayList<BPLDeclaration>();
-        MethodTranslator methodTranslator = new MethodTranslator(project);
+        MethodTranslator methodTranslator = new MethodTranslator(typeLoader, project);
         methodTranslator.setTranslationController(tc);
         generateTheory();
         for (JClassType type : types) {
@@ -294,7 +297,7 @@ public class Translator implements ITranslationConstants {
 
         context = new Context();
         declarations = new ArrayList<BPLDeclaration>();
-        MethodTranslator methodTranslator = new MethodTranslator(project);
+        MethodTranslator methodTranslator = new MethodTranslator(typeLoader, project);
         methodTranslator.setTranslationController(tc);
 
         BPLProcedure proc;
@@ -486,17 +489,7 @@ public class Translator implements ITranslationConstants {
         return VALUE_TYPE_PREFIX + type.getName();
     }
 
-    /**
-     * Returns the name of a BoogiePL constant to be used to reference the given
-     * class {@code type}.
-     *
-     * @param type  The class type for which to build the constant name.
-     * @return      The name of the constant representing the given class
-     *              {@code type}.
-     */
-    private String getClassTypeName(JClassType type) {
-        return GLOBAL_VAR_PREFIX + type.getName();
-    }
+    
 
     /**
      * Returns the smallest integer constant in the value range of the given
@@ -3625,10 +3618,7 @@ public class Translator implements ITranslationConstants {
                 if(!tc.globalReferencedTypes().contains(type)) {
                     tc.globalReferencedTypes().add(classType);
     
-                    // Declare the constant representing the given class type.
-                    addConstants(new BPLVariable(
-                            getClassTypeName(classType),
-                            new BPLTypeName(NAME_TYPE)));
+                    
                 }
                 
                 if(!tc.localReferencedTypes().contains(type)) {
@@ -3677,7 +3667,7 @@ public class Translator implements ITranslationConstants {
             if (type.isBaseType()) {
                 return var(getValueTypeName((JBaseType) type));
             } else if (type.isClassType()) {
-                return var(getClassTypeName((JClassType) type));
+                return var(TranslationController.getClassTypeName((JClassType) type));
             } else {
                 //TODO implement array access
 //                // We must have an array type.
@@ -3716,9 +3706,6 @@ public class Translator implements ITranslationConstants {
             String fieldName = tc.boogieFieldName(field);
             if (!tc.globalReferencedFields().contains(field)) {
                 tc.globalReferencedFields().add(field);
-
-                // Declare the constant representing the given field.
-                addConstants(new BPLVariable(fieldName, new BPLTypeName(FIELD_TYPE, CodeGenerator.type(field.getType()))));
 
                 String o = quantVarName("o");
                 String h = quantVarName("h");
@@ -3793,7 +3780,7 @@ public class Translator implements ITranslationConstants {
 
                 // State that the object representing the literal is of type String and
                 // that it is alive in any heap.
-                JType string = TypeLoader.getClassType("java.lang.String");
+                JType string = typeLoader.getClassType("java.lang.String");
                 String h = quantVarName("h");
                 BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
                 //                addAxiom(forall(
@@ -3822,7 +3809,7 @@ public class Translator implements ITranslationConstants {
 
                 // State that the object representing the literal is of type Class and
                 // that it is alive in any heap.
-                JType clazz = TypeLoader.getClassType("java.lang.Class");
+                JType clazz = typeLoader.getClassType("java.lang.Class");
                 String h = quantVarName("h");
                 BPLVariable hVar = new BPLVariable(h, new BPLTypeName(HEAP_TYPE));
                 //                addAxiom(forall(

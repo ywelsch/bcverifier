@@ -10,6 +10,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 
 import b2bpl.bytecode.JClassType;
+import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.bml.ast.BMLInvariant;
 import b2bpl.bytecode.bml.ast.BMLPredicate;
 
@@ -21,15 +22,19 @@ public class ClassInvariantAttribute extends Attribute {
   private final JClassType owner;
 
   private final BMLInvariant[] invariants;
+  
+  private final TypeLoader typeLoader;
 
-  public ClassInvariantAttribute(JClassType owner) {
+  public ClassInvariantAttribute(TypeLoader typeLoader, JClassType owner) {
     super(NAME);
+    this.typeLoader = typeLoader;
     this.owner = owner;
     this.invariants = null;
   }
 
-  public ClassInvariantAttribute(BMLInvariant[] invariants) {
+  public ClassInvariantAttribute(TypeLoader typeLoader, BMLInvariant[] invariants) {
     super(NAME);
+    this.typeLoader = typeLoader;
     this.owner = null;
     this.invariants = invariants;
   }
@@ -51,7 +56,7 @@ public class ClassInvariantAttribute extends Attribute {
       char[] buf,
       int codeOff,
       Label[] labels) {
-    BMLAttributeReader reader = new BMLAttributeReader(cr, off, len, buf);
+    BMLAttributeReader reader = new BMLAttributeReader(typeLoader, cr, off, len, buf);
 
     // FIXME[om]: This does not correspond to the attribute format of the Mobius project!
     int invariantCount = 1;//reader.readShort();
@@ -72,7 +77,7 @@ public class ClassInvariantAttribute extends Attribute {
     //                             this.a.b != null;
     // TODO: this should be replaced by a more sophisticated algorithm,
     //       particularly if the admissibility of invariants changes.
-    ClassInvariantAttribute cia = new ClassInvariantAttribute(invariants);
+    ClassInvariantAttribute cia = new ClassInvariantAttribute(typeLoader, invariants);
     Pattern pattern = Pattern.compile("^invariant\\s([^\\.]*|this.[^\\.]*)(\\s&&\\s([^\\.]*|this.[^\\.]*))*;$");
 
     for (BMLInvariant inv : cia.getInvariants()) {
@@ -81,7 +86,7 @@ public class ClassInvariantAttribute extends Attribute {
         System.out.println("COMPILE ERROR: The following invariant is not admissible in " + owner.getName() + ":\n\t" + inv.toString());
     }
     
-    return new ClassInvariantAttribute(invariants);
+    return new ClassInvariantAttribute(typeLoader, invariants);
   }
 
   /** {@inheritDoc} */

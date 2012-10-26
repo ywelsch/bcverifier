@@ -67,7 +67,13 @@ import b2bpl.bytecode.instructions.VConstantInstruction;
 
 public class InstructionFactory {
 
-  public static Instruction fromInsn(int opcode)
+  private final TypeLoader typeLoader;
+  
+  public InstructionFactory(TypeLoader typeLoader) {
+	 this.typeLoader = typeLoader;
+  }
+
+public static Instruction fromInsn(int opcode)
       throws UnsupportedInstructionException {
     switch (opcode) {
       case IOpCodes.NOP:
@@ -376,11 +382,11 @@ public class InstructionFactory {
     }
   }
 
-  public static Instruction fromLdcInsn(Object cst)
+  public Instruction fromLdcInsn(Object cst)
       throws UnsupportedInstructionException {
     if (cst instanceof Type) {
       Type type = (Type) cst;
-      cst = JType.fromDescriptor(type.getDescriptor());
+      cst = JType.fromDescriptor(typeLoader, type.getDescriptor());
     }
     return new LdcInstruction(cst);
   }

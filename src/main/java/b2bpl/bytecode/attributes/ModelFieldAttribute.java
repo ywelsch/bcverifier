@@ -9,6 +9,7 @@ import org.objectweb.asm.Label;
 import b2bpl.bytecode.BCField;
 import b2bpl.bytecode.JClassType;
 import b2bpl.bytecode.JType;
+import b2bpl.bytecode.TypeLoader;
 
 
 public class ModelFieldAttribute extends Attribute {
@@ -19,14 +20,18 @@ public class ModelFieldAttribute extends Attribute {
 
   private final BCField[] fields;
 
-  public ModelFieldAttribute(JClassType owner) {
+  private final TypeLoader typeLoader;
+  
+  public ModelFieldAttribute(TypeLoader typeLoader, JClassType owner) {
     super(NAME);
+    this.typeLoader = typeLoader;
     this.owner = owner;
     fields = null;
   }
 
-  public ModelFieldAttribute(BCField... fields) {
+  public ModelFieldAttribute(TypeLoader typeLoader, BCField... fields) {
     super(NAME);
+    this.typeLoader = typeLoader;
     owner = null;
     this.fields = fields;
   }
@@ -48,7 +53,7 @@ public class ModelFieldAttribute extends Attribute {
       char[] buf,
       int codeOff,
       Label[] labels) {
-    BMLAttributeReader reader = new BMLAttributeReader(cr, off, len, buf);
+    BMLAttributeReader reader = new BMLAttributeReader(typeLoader, cr, off, len, buf);
 
     int fieldCount = reader.readShort();
     BCField[] fields = new BCField[fieldCount];
@@ -59,7 +64,7 @@ public class ModelFieldAttribute extends Attribute {
       fields[i] = new BCField(accessModifiers, owner, name, fieldType, true);
     }
 
-    return new ModelFieldAttribute(fields);
+    return new ModelFieldAttribute(typeLoader, fields);
   }
 
   /** {@inheritDoc} */

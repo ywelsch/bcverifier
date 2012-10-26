@@ -6,6 +6,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 
+import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.bml.ast.BMLAssertStatement;
 import b2bpl.bytecode.bml.ast.BMLPredicate;
 
@@ -18,12 +19,15 @@ public class AssertAttribute extends Attribute {
 
   private final BMLAssertStatement[] assertions;
 
-  public AssertAttribute() {
-    this(null, null);
+  private TypeLoader typeLoader;
+
+  public AssertAttribute(TypeLoader typeLoader) {
+    this(typeLoader, null, null);
   }
 
-  public AssertAttribute(Label[] labels, BMLAssertStatement[] assertions) {
+  public AssertAttribute(TypeLoader typeLoader, Label[] labels, BMLAssertStatement[] assertions) {
     super(NAME);
+    this.typeLoader = typeLoader;
     this.labels = labels;
     this.assertions = assertions;
   }
@@ -50,7 +54,7 @@ public class AssertAttribute extends Attribute {
       char[] buf,
       int codeOff,
       Label[] labels) {
-    BMLAttributeReader reader = new BMLAttributeReader(cr, off, len, buf);
+    BMLAttributeReader reader = new BMLAttributeReader(typeLoader, cr, off, len, buf);
 
     int assertionCount = reader.readShort();
     Label[] assertionLabels = new Label[assertionCount];
@@ -62,7 +66,7 @@ public class AssertAttribute extends Attribute {
       assertions[i] = new BMLAssertStatement(predicate);
     }
 
-    return new AssertAttribute(assertionLabels, assertions);
+    return new AssertAttribute(typeLoader, assertionLabels, assertions);
   }
 
   private static Label getLabel(int index, Label[] labels) {

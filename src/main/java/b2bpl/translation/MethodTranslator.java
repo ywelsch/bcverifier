@@ -291,6 +291,8 @@ public class MethodTranslator implements ITranslationConstants {
      * used.
      */
     private int callStatements = 0;
+
+	private TypeLoader typeLoader;
     
     public void setTranslationController(TranslationController controller){
         this.tc = controller;
@@ -307,7 +309,8 @@ public class MethodTranslator implements ITranslationConstants {
      * 
      * @see #translate(ITranslationContext, BCMethod)
      */
-    public MethodTranslator(Project project) {
+    public MethodTranslator(TypeLoader typeLoader, Project project) {
+    	this.typeLoader = typeLoader;
         this.project = project;
     }
 
@@ -2464,8 +2467,8 @@ public class MethodTranslator implements ITranslationConstants {
         return localVar(index, type);
     }*/
 
-    private static String thisVar() {
-        return localVar(0, new JClassType("java.lang.Object")); //TODO 'this' is not really of type Object, but of some subtype
+    private String thisVar() {
+        return localVar(0, new JClassType(typeLoader, "java.lang.Object")); //TODO 'this' is not really of type Object, but of some subtype
         // return THIS_VAR;
     }
 
@@ -2736,7 +2739,7 @@ public class MethodTranslator implements ITranslationConstants {
             // an exception handler whose handler type is a proper subtype of the
             // runtime exception (as is usually necessary for other exceptions thrown
             // e.g. by method calls or the ATHROW instruction).
-            JType exception = TypeLoader.getClassType(exceptionName);
+            JType exception = typeLoader.getClassType(exceptionName);
             Set<String> labels = new LinkedHashSet<String>();
             for (ExceptionHandler handler : method.getExceptionHandlers()) {
                 if (handler.isActiveFor(handle)) {

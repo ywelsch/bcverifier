@@ -6,6 +6,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 
+import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.bml.ast.BMLAssumeStatement;
 import b2bpl.bytecode.bml.ast.BMLPredicate;
 
@@ -18,12 +19,15 @@ public class AssumeAttribute extends Attribute {
 
   private final BMLAssumeStatement[] assumptions;
 
-  public AssumeAttribute() {
-    this(null, null);
+  private TypeLoader typeLoader;
+
+  public AssumeAttribute(TypeLoader typeLoader) {
+    this(typeLoader, null, null);
   }
 
-  public AssumeAttribute(Label[] labels, BMLAssumeStatement[] assumptions) {
+  public AssumeAttribute(TypeLoader typeLoader, Label[] labels, BMLAssumeStatement[] assumptions) {
     super(NAME);
+    this.typeLoader = typeLoader;
     this.labels = labels;
     this.assumptions = assumptions;
   }
@@ -50,7 +54,7 @@ public class AssumeAttribute extends Attribute {
       char[] buf,
       int codeOff,
       Label[] labels) {
-    BMLAttributeReader reader = new BMLAttributeReader(cr, off, len, buf);
+    BMLAttributeReader reader = new BMLAttributeReader(typeLoader, cr, off, len, buf);
 
     int assumptionCount = reader.readShort();
     Label[] assumptionLabels = new Label[assumptionCount];
@@ -62,7 +66,7 @@ public class AssumeAttribute extends Attribute {
       assumptions[i] = new BMLAssumeStatement(predicate);
     }
 
-    return new AssumeAttribute(assumptionLabels, assumptions);
+    return new AssumeAttribute(typeLoader, assumptionLabels, assumptions);
   }
 
   private static Label getLabel(int index, Label[] labels) {

@@ -5,7 +5,12 @@ import b2bpl.bytecode.bml.ast.BMLInvariant;
 
 public abstract class JReferenceType extends JType {
 
-  public boolean isReferenceType() {
+	
+  public JReferenceType(TypeLoader typeLoader) {
+		super(typeLoader);
+	}
+
+public boolean isReferenceType() {
     return true;
   }
 

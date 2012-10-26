@@ -8,6 +8,7 @@ import b2bpl.bpl.transformation.IBPLTransformator;
 import b2bpl.bpl.transformation.LoopTransformator;
 import b2bpl.bytecode.DefaultSpecificationProvider;
 import b2bpl.bytecode.ISpecificationProvider;
+import b2bpl.bytecode.TypeLoader;
 import b2bpl.bytecode.bml.ISpecificationDesugarer;
 import b2bpl.bytecode.bml.StandardDesugarer;
 
@@ -44,7 +45,7 @@ public class Project {
    *
    * @see #getSpecificationProvider()
    */
-  private ISpecificationProvider specificationProvider = new DefaultSpecificationProvider();
+  private ISpecificationProvider specificationProvider = new DefaultSpecificationProvider(this);
 
   /**
    * The {@link ISpecificationDesugarer} to be used for BML specifications.
@@ -146,6 +147,8 @@ public class Project {
    * @see #getBaseDirectory = "";
    */
   private String baseDirectory = "";
+
+  private TypeLoader typeLoader = null;
 
   /**
    * Creates a new project which is configured according to the set of command
@@ -317,4 +320,15 @@ public class Project {
     messageWriter.write("  The class files or type names of the classes to verify (drawn from the CLASSPATH).\n");
     messageWriter.flush();
   }
+
+	public TypeLoader getTypeLoader() {
+		if (typeLoader == null) {
+			typeLoader = new TypeLoader();
+			// TODO set typeloader properties
+			typeLoader.setProject(this);
+			typeLoader.setProjectTypes(getProjectTypes());
+			typeLoader.setSpecificationProvider(getSpecificationProvider());
+		}
+		return typeLoader;
+	}
 }

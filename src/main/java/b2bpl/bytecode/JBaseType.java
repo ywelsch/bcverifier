@@ -26,6 +26,7 @@ public class JBaseType extends JType {
   private final String descriptor;
 
   private JBaseType(String name, String descriptor) {
+	super(null);
     this.name = name;
     this.descriptor = descriptor;
   }

@@ -90,9 +90,12 @@ public class SemanticAnalyzer {
 
   private HashMap<String, MethodNode> asmMethods = new HashMap<String, MethodNode>();
 
+  private TypeLoader typeLoader;
+
   public SemanticAnalyzer(Project project, ITroubleReporter troubleReporter) {
     this.project = project;
     this.troubleReporter = troubleReporter;
+    this.typeLoader = project.getTypeLoader();
   }
 
   public void analyze(JClassType... types) {
@@ -142,7 +145,7 @@ public class SemanticAnalyzer {
   private MethodNode getASMMethod(BCMethod method) {
     String key = method.getQualifiedName() + method.getDescriptor();
     if (asmMethods.get(key) == null) {
-      ClassNode cn = TypeLoader.getASMClassTypeNode(method.getOwner());
+      ClassNode cn = typeLoader.getASMClassTypeNode(method.getOwner());
       for (Object o : cn.methods) {
         MethodNode mn = (MethodNode) o;
         asmMethods.put(cn.name.replace('/', '.') + "." + mn.name + mn.desc, mn);
@@ -155,7 +158,7 @@ public class SemanticAnalyzer {
     InstructionAnalyzer insnAnalyzer = new InstructionAnalyzer();
     CFGBuilder cfgBuilder = new CFGBuilder(project.isModelRuntimeExceptions());
     
-    FlowAnalyzer flowAnalyzer = new FlowAnalyzer(project.isModelRuntimeExceptions());
+    FlowAnalyzer flowAnalyzer = new FlowAnalyzer(typeLoader, project.isModelRuntimeExceptions());
    
     for (BCMethod method : type.getMethods()) {
       try {
@@ -164,7 +167,7 @@ public class SemanticAnalyzer {
           method.getInstructions().accept(insnAnalyzer);
           
           flowAnalyzer.analyze(type.getInternalName(), getASMMethod(method));
-          ControlFlowGraph cfg = cfgBuilder.build(method);
+          ControlFlowGraph cfg = cfgBuilder.build(method, typeLoader);
           cfg.analyze();
           method.setCFG(cfg);
           if (!cfg.isReducible()) {

@@ -7,6 +7,7 @@ public class JNullType extends JReferenceType {
 
   private JNullType() {
     // hide the constructor
+	  super(null);
   }
 
   public String getName() {
