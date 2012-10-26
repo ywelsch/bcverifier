@@ -1,60 +1,31 @@
-place afterLoop: old C, line 8;
-place endLoop: new C, line 14;
-place afterRec: new C, line 6;
+local place afterLoop = line 12 of old C 
+	stall when at(endLoop) with measure sp2();
+local place endLoop = line 18 of new C;
+local place afterRec = line 10 of new C;
 
-// lists are related:
+predefined place(splitvc) callSet1 = call set in line 10 of old C;
+predefined place(splitvc) callSet2 = call set in line 16 of new C;
+predefined place beforeLoop2 = call loop in line 9 of new C;
+
+//lists are related:
 invariant forall old C o1, new C o2 :: o1 ~ o2 ==> o1.list ~ o2.list;
-// lists are related in local places:
+//lists are related in local places:
 local invariant forall old C o1, new C o2 :: o1 ~ o2 ==> o1.list ~ o2.list;
 
-local invariant at(call1) <==> at(call2);
+invariant at(callSet1) <==> at(callSet2);
+invariant at(callSet1) && at(callSet2) ==> stack(callSet1, i) == stack(callSet2, i);
+invariant at(callSet1) && at(callSet2) ==> stack(callSet1, i <= 5);
+invariant at(callSet1) && at(callSet2) ==> sp1() == 0; 
+invariant at(callSet1) && at(callSet2) ==> sp2() == 1 + stack(callSet1, i);
+	
 
-/*
-(stack1[libip(ip1)][spmap1[libip(ip1)]][place] == call1) <==> (stack2[libip(ip2)][spmap2[libip(ip2)]][place] == call2)
-
-function libip(ip: int) returns (int);
-axiom (forall ip: int :: ip % 2 == 0 ==> libip(ip) == ip-1);
-axiom (forall ip: int :: ip % 2 == 1 ==> libip(ip) == ip);
-*/
-
-
-local invariant at(call1) && at(call2) ==>  old i == new i;
-
-/*
-stack1[libip(ip1)][spmap1[libip(ip1)]][place] == call1 
- && stack2[libip(ip2)][spmap2[libip(ip2)]][place] == call2) ==>
- 	stack1[libip(ip1)][spmap1[libip(ip1)]][i] == stack2[libip(ip2)][spmap2[libip(ip2)]][i]
-*/
-
-local invariant at(call1) ==>  i <= 5;
-
-/*
- stack1[libip(ip1)][spmap1[libip(ip1)]][place] == call1 ==>
- 	stack1[libip(ip1)][spmap1[libip(ip1)]][i] <= 5 
- */
-
-local invariant at(call1, SP1) && at(call2, SP2) ==> 
-	   SP1 == 1 
-	&& SP2 == stack(call1, SP1, i) + 1;
-
-/*
-stack1[libip(ip1)][spmap1[libip(ip1)]][place] == call1 
- && stack2[libip(ip2)][spmap2[libip(ip2)]][place] == call2 ==>
-   	   spmap1[libip(ip1)] == 1
-   	&& spmap2[libip(ip2)] == stack1[libip(ip1)][spmap1[libip(ip1)]][i] + 1
-*/
+// 'this' is the same as in the lowest stack frame
+invariant at(callSet2) ==> at(beforeLoop2, 0) && stack(callSet2, this) == stack(beforeLoop2, 0, this);	   
 	   
-	   
-local invariant at(call2) ==> new this == stack(call2, 0, this);		
 
-/*
-stack2[libip(ip2)][spmap2[libip(ip2)]][place] == call2 ==>
-   	   stack2[libip(ip2)][spmap2[libip(ip2)]][this] == stack2[libip(ip2)][0][this]
-*/
-
-local invariant at(afterLoop1) <==> (at(endLoop2) || at(afterRec2));
-local invariant at(endLoop2) ==> (SP2 >= 1 && SP2 <= 6);
+local invariant at(afterLoop) <==> (at(endLoop) || at(afterRec));
+local invariant at(endLoop) ==> sp2() >= 1;
+local invariant at(endLoop) ==> sp2() <= 6;
+local invariant at(endLoop) ==> at(beforeLoop2, 0);
 
 
-
- 
