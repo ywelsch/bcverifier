@@ -34,7 +34,7 @@ final class BuiltinFuncAt_place_sp extends BuiltinFunction {
 	public BPLExpression translateWelldefinedness(boolean isGlobalInvariant, List<Expr> arguments) {
 		Expr p = arguments.getChild(0);
 		Expr stackPointer = arguments.getChild(1);
-		BPLArrayExpression currentStackpointer = BuiltinFunctions.getCurrentSp(isGlobalInvariant, ((ExprTypeLocalPlace)p.attrType()).getVersion(), p.attrCompilationUnit().getPhase());
+		BPLArrayExpression currentStackpointer = BuiltinFunctions.getCurrentSp(isGlobalInvariant, ((ExprTypePlace)p.attrType()).getVersion(), p.attrCompilationUnit().getPhase());
 		BPLExpression[] exprs = { new BPLRelationalExpression(BPLRelationalExpression.Operator.LESS_EQUAL, 
 				new BPLIntLiteral(0), stackPointer.translateExpr()), new BPLRelationalExpression(BPLRelationalExpression.Operator.LESS_EQUAL, 
 				stackPointer.translateExpr(), 
@@ -58,7 +58,7 @@ final class BuiltinFuncAt_place_sp extends BuiltinFunction {
 	public ExprType exactType(FuncCall call) {
 		ExprTypePlace place = (ExprTypePlace) call.getArgument(0).attrType();
 		if (!(place instanceof ExprTypePredefinedPlace)) {
-			call.addError("Function 'stack' can only be used with predefined places.");
+			call.addError("Function 'at' can only be used with predefined places.");
 		}
 		return super.exactType(call);
 	}

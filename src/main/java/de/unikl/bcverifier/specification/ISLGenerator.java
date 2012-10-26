@@ -101,4 +101,10 @@ public class ISLGenerator extends AbstractGenerator {
 		init();
 		return cu.generatePreludeAddition();
 	}
+	
+	@Override
+	public List<String> generatePreconditions() throws GenerationException {
+		init();
+		return cu.generatePreconditions();
+	}
 }

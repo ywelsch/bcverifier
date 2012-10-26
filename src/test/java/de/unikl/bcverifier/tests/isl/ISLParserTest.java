@@ -242,6 +242,10 @@ public class ISLParserTest {
 		for (String s : cu.generatePreludeAddition()) {
 			pw.println(s);
 		}
+		pw.println("Prelude Additions: ");
+		for (String s : cu.generatePreconditions()) {
+			pw.println(s);
+		}
 		pw.flush();
 	}
 
