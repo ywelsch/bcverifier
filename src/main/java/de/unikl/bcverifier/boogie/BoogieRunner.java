@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -105,27 +106,33 @@ public class BoogieRunner {
         return lastUnreachableCodeCount;
     }
     
+    public List<String> boogieParams() {
+    	ArrayList<String> parameters = new ArrayList<String>();
+        parameters.add("/nologo");
+        parameters.add("/noinfer");
+        parameters.add("/loopUnroll:" + loopUnroll);
+        if(smokeTest){
+            parameters.add("/smoke");
+        }
+        if (timelimit > 0) {
+        	parameters.add("/timeLimit:" + timelimit);
+        }
+//        parameters.add("/mv:boogie.model");
+//        parameters.add("/errorTrace:2");
+        if(!verify){
+            parameters.add("/noVerify");
+        }
+        return parameters;
+    }
+    
     public void runBoogie(File boogieFile) throws BoogieRunException{
         Runtime runtime = Runtime.getRuntime();
         File workingDir = boogieFile.getParentFile();
         InputStream processOutput = null;
         try {
-            ArrayList<String> parameters = new ArrayList<String>();
+            List<String> parameters = new ArrayList<String>();
             Collections.addAll(parameters, getBoogieCommand().split(" "));
-            parameters.add("/nologo");
-            parameters.add("/noinfer");
-            parameters.add("/loopUnroll:" + loopUnroll);
-            if(smokeTest){
-                parameters.add("/smoke");
-            }
-            if (timelimit > 0) {
-            	parameters.add("/timeLimit:" + timelimit);
-            }
-//            parameters.add("/mv:boogie.model");
-//            parameters.add("/errorTrace:2");
-            if(!verify){
-                parameters.add("/noVerify");
-            }
+            parameters.addAll(boogieParams());
             parameters.add(boogieFile.getAbsolutePath());
             Process p = runtime.exec(parameters.toArray(new String[parameters.size()]), null, workingDir);
             processOutput = p.getInputStream();

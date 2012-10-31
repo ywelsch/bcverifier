@@ -321,6 +321,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			// create output dir
 			config.output().getParentFile().mkdirs();
 			PrintWriter writer = new PrintWriter(config.output());
+			writer.print("// Run Boogie with ");
+			for (String s : setupBoogieRunner().boogieParams()) {
+				writer.print(s + " ");
+			}
+			writer.println();
 			program.accept(new BPLPrinter(writer));
 			writer.close();
 		} catch (FileNotFoundException e) {
@@ -2081,11 +2086,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 	}
 
 	public BoogieRunner check() {
-		BoogieRunner runner = new BoogieRunner();
-		runner.setVerify(config.isVerify());
-		runner.setSmokeTest(config.isSmokeTestOn());
-		runner.setLoopUnroll(config.getLoopUnrollCap() + 1);
-		runner.setTimelimit(config.getProverTimelimit());
+		BoogieRunner runner = setupBoogieRunner();
 		try {
 			log.debug("Checking " + config.output());
 			runner.runBoogie(config.output());
@@ -2098,6 +2099,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		} catch (BoogieRunException e) {
 			e.printStackTrace();
 		}
+		return runner;
+	}
+
+	private BoogieRunner setupBoogieRunner() {
+		BoogieRunner runner = new BoogieRunner();
+		runner.setVerify(config.isVerify());
+		runner.setSmokeTest(config.isSmokeTestOn());
+		runner.setLoopUnroll(config.getLoopUnrollCap() + 1);
+		runner.setTimelimit(config.getProverTimelimit());
 		return runner;
 	}
 
