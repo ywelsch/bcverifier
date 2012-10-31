@@ -1609,11 +1609,6 @@ public class MethodTranslator implements ITranslationConstants {
         if (cfgBlock.isBackEdgeTarget()) {
             // update unroll count when entering a loop
             ///////////////////////////////////////////
-            BPLExpression unrollLoop = var(tc.prefix(ITranslationConstants.UNROLL_COUNT));
-            addAssignment(unrollLoop, add(unrollLoop, new BPLIntLiteral(1)));
-            addAssert(less(unrollLoop, var(ITranslationConstants.MAX_LOOP_UNROLL)));
-            
-            
             InstructionHandle insn = cfgBlock.getFirstInstruction();
 
             // Assume the type information contained in the loop headers stack frame

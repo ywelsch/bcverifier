@@ -110,6 +110,7 @@ public class BoogieRunner {
     	ArrayList<String> parameters = new ArrayList<String>();
         parameters.add("/nologo");
         parameters.add("/noinfer");
+        parameters.add("/soundLoopUnrolling");
         parameters.add("/loopUnroll:" + loopUnroll);
         if(smokeTest){
             parameters.add("/smoke");

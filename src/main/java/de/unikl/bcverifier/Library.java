@@ -266,16 +266,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			programDecls.add(new BPLConstantDeclaration(new BPLVariable(
 					objectConstructorName, new BPLTypeName(METHOD_TYPE))));
 
-			// ///////////////////////////////////
-			// add maxLoopUnroll constant to the prelude
-			// ///////////////////////////////////
-			BPLVariable maxLoopUnrollVar = new BPLVariable(
-					ITranslationConstants.MAX_LOOP_UNROLL, BPLBuiltInType.INT);
-			programDecls.add(new BPLConstantDeclaration(maxLoopUnrollVar));
-			programDecls.add(new BPLAxiom(isEqual(
-					var(ITranslationConstants.MAX_LOOP_UNROLL),
-					new BPLIntLiteral(config.getLoopUnrollCap()))));
-
 			addCheckingBlocks(invAssertions, invAssumes, localInvAssertions,
 					localInvAssumes, methodBlocks);
 
@@ -527,22 +517,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		String sp = "sp";
 		BPLVariable spVar = new BPLVariable(sp, new BPLTypeName(STACK_PTR_TYPE));
 
-		String unrollCount1 = TranslationController.LABEL_PREFIX1
-				+ ITranslationConstants.UNROLL_COUNT;
-		String unrollCount2 = TranslationController.LABEL_PREFIX2
-				+ ITranslationConstants.UNROLL_COUNT;
-
 		List<BPLCommand> procAssumes;
 
 		// ///////////////////////////////////
 		// preconditions of before checking
 		// //////////////////////////////////
 		procAssumes = new ArrayList<BPLCommand>();
-
-		procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount1),
-				new BPLIntLiteral(0))));
-		procAssumes.add(new BPLAssumeCommand(isEqual(var(unrollCount2),
-				new BPLIntLiteral(0))));
 
 		final String i = "i";
 		BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
@@ -1217,23 +1197,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 	}
 
 	private void addLocalVariables(List<BPLVariableDeclaration> localVariables) {
-		String unrollCount1 = TranslationController.LABEL_PREFIX1
-				+ ITranslationConstants.UNROLL_COUNT;
-		BPLVariable unrollCount1Var = new BPLVariable(unrollCount1,
-				BPLBuiltInType.INT);
-		String unrollCount2 = TranslationController.LABEL_PREFIX2
-				+ ITranslationConstants.UNROLL_COUNT;
-		BPLVariable unrollCount2Var = new BPLVariable(unrollCount2,
-				BPLBuiltInType.INT);
-
 		for (BPLVariable var : tc.usedVariables().values()) {
 			localVariables.add(new BPLVariableDeclaration(var));
 		}
-
-		// add variables for loop unroll checking
-		// ////////////////////////////////////
-		localVariables.add(new BPLVariableDeclaration(unrollCount1Var));
-		localVariables.add(new BPLVariableDeclaration(unrollCount2Var));
 
 		// add variables for saving away the old configurations
 		// ////////////////////////////////////////////
@@ -1940,12 +1906,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		dispatchCommands = new ArrayList<BPLCommand>();
 		dispatchCommands.add(new BPLAssumeCommand(CodeGenerator
 				.isLocalPlace(stack(var(PLACE_VARIABLE)))));
-		BPLExpression unrollLoop = var(tc
-				.prefix(ITranslationConstants.UNROLL_COUNT));
-		dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(
-				unrollLoop, new BPLIntLiteral(1))));
-		dispatchCommands.add(new BPLAssertCommand(less(unrollLoop,
-				var(ITranslationConstants.MAX_LOOP_UNROLL))));
 		dispatchTransferCmd = new BPLGotoCommand(placesLabels);
 
 		methodBlocks.add(
@@ -1960,11 +1920,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		dispatchCommands = new ArrayList<BPLCommand>();
 		dispatchCommands.add(new BPLAssumeCommand(
 				logicalNot(isLocalPlace(stack(var(PLACE_VARIABLE))))));
-		dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(
-				unrollLoop, new BPLIntLiteral(1))));
-		dispatchCommands.add(new BPLAssertCommand(less(unrollLoop,
-				var(ITranslationConstants.MAX_LOOP_UNROLL))));
-
+		
 		methodLabels.add("noop");
 		dispatchTransferCmd = new BPLGotoCommand(
 				methodLabels.toArray(new String[methodLabels.size()]));
@@ -1999,11 +1955,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		dispatchCommands = new ArrayList<BPLCommand>();
 		dispatchCommands.add(new BPLAssumeCommand(
 				logicalNot(isLocalPlace(stack(var(PLACE_VARIABLE))))));
-		dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(
-				unrollLoop, new BPLIntLiteral(1))));
-		dispatchCommands.add(new BPLAssertCommand(less(unrollLoop,
-				var(ITranslationConstants.MAX_LOOP_UNROLL))));
-
+		
 		dispatchTransferCmd = new BPLGotoCommand(returnLabels);
 
 		methodBlocks.add(
@@ -2047,11 +1999,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		// dispatchCommands.add(new BPLAssumeCommand(isCallable(
 		// typ(stack(receiver()), var(tc.getHeap())),
 		// stack(var(METH_FIELD)))));
-		dispatchCommands.add(new BPLAssignmentCommand(unrollLoop, add(
-				unrollLoop, new BPLIntLiteral(1))));
-		dispatchCommands.add(new BPLAssertCommand(less(unrollLoop,
-				var(ITranslationConstants.MAX_LOOP_UNROLL))));
-
+		
 		constructorLabels.add("noop");
 		dispatchTransferCmd = new BPLGotoCommand(
 				constructorLabels.toArray(new String[constructorLabels.size()]));
@@ -2106,7 +2054,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		BoogieRunner runner = new BoogieRunner();
 		runner.setVerify(config.isVerify());
 		runner.setSmokeTest(config.isSmokeTestOn());
-		runner.setLoopUnroll(config.getLoopUnrollCap() + 1);
+		runner.setLoopUnroll(config.getLoopUnrollCap());
 		runner.setTimelimit(config.getProverTimelimit());
 		return runner;
 	}

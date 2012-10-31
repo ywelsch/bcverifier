@@ -71,17 +71,17 @@ public class ExampleLoader {
 	public List<Example> loadExamples() {
 		List<Example> examples = new ArrayList<Example>();
 		String[][] TO_LOAD = new String[][] { 
-				new String[]{ "cell", "Cell example", "2", "spec.isl" },
+				new String[]{ "cell", "Cell example", "1", "spec.isl" },
 				new String[]{ "cb", "Callback example", "3", "spec.isl" },
 				new String[]{ "obool", "OBool example", "5", "spec.isl" },
 				new String[]{ "obool", "OBool example (alt.1)", "5", "spec2.isl" },
 				new String[]{ "obool", "OBool example (alt.2)", "5", "spec3.isl" },
-				new String[]{ "subtypes", "Subtypes example", "3", "spec.isl" },
-				new String[]{ "oneOffLoop", "OneOffLoop example", "4", "spec.isl" },
-				new String[]{ "diverge", "Divergence example", "3", "spec.isl" },
-				new String[]{ "diverge2", "Divergence example (alt)", "3", "spec.isl" },
-				new String[]{ "measure", "Termination example", "3", "spec.isl" },
-				new String[]{ "predefinedplaces", "ComplexPlaces example", "4", "spec.isl" }
+				new String[]{ "subtypes", "Subtypes example", "2", "spec.isl" },
+				new String[]{ "oneOffLoop", "OneOffLoop example", "2", "spec.isl" },
+				new String[]{ "diverge", "Divergence example", "2", "spec.isl" },
+				new String[]{ "diverge2", "Divergence example (alt)", "2", "spec.isl" },
+				new String[]{ "measure", "Termination example", "2", "spec.isl" },
+				new String[]{ "predefinedplaces", "ComplexPlaces example", "2", "spec.isl" }
 		};
 		for (String[] entry : TO_LOAD) {
 			Example ex = loadExample(entry[0], entry[1], entry[2], entry[3]);

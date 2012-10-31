@@ -21,6 +21,7 @@ public class LibraryTestsNG extends AbstractLibraryTestsNG {
 	public void verifyBoogieFiles(BCCheckDefinition test, File boogieFile) throws BoogieRunException{
 	    BoogieRunner runner = new BoogieRunner();
 	    runner.setVerify(true);
+	    runner.setLoopUnroll(test.getLoopUnrollCap());
 	    runner.runBoogie(boogieFile);
 	    if(test.getExpectedErrors()>0){
 	        if(runner.getLastReturn() || runner.getLastErrorCount() != test.getExpectedErrors()){ //not expected
