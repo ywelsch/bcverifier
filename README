@@ -6,11 +6,20 @@ Code Repository
 
 https://softech.cs.uni-kl.de/hg/public/bcverifier
 
+Dependencies
+------------
+
+- Java 1.6 runtime
+- [Boogie](http://boogie.codeplex.com/) and its dependencies:
+  - [Microsoft .NET](http://www.microsoft.com/net) or [Mono runtime](http://www.mono-project.com/)
+  - [Z3](http://z3.codeplex.com/)
+The command to run Boogie must be configured in the environment variable $BOOGIE_CMD.
+
 Build System
 ------------
 
-Gradle: http://gradle.org/
-For Eclipse integration, use STS with gradle support: http://static.springsource.org/sts/docs/latest/reference/html/gradle/installation.html
+[Gradle](http://gradle.org/)
+For Eclipse integration, use [STS with gradle support](http://static.springsource.org/sts/docs/latest/reference/html/gradle/installation.html)
 
 Main gradle goals:
 
