@@ -97,7 +97,7 @@ public class Translation {
 				), new BPLEqualityExpression(
 				BPLEqualityExpression.Operator.EQUALS,
 				new BPLBinaryArithmeticExpression(
-						BPLBinaryArithmeticExpression.Operator.REMAINDER,
+						BPLBinaryArithmeticExpression.Operator.REMAINDER_INT,
 						new BPLVariableExpression(IFRAME_VAR),
 						new BPLIntLiteral(2)
 						),

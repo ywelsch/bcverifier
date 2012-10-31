@@ -10,7 +10,6 @@ import static b2bpl.translation.CodeGenerator.bitXor;
 import static b2bpl.translation.CodeGenerator.bool2int;
 import static b2bpl.translation.CodeGenerator.cast;
 import static b2bpl.translation.CodeGenerator.classRepr;
-import static b2bpl.translation.CodeGenerator.divide;
 import static b2bpl.translation.CodeGenerator.emptyInteractionFrame;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldAccess;
@@ -34,7 +33,8 @@ import static b2bpl.translation.CodeGenerator.logicalOr;
 import static b2bpl.translation.CodeGenerator.map;
 import static b2bpl.translation.CodeGenerator.map1;
 import static b2bpl.translation.CodeGenerator.memberOf;
-import static b2bpl.translation.CodeGenerator.modulo;
+import static b2bpl.translation.CodeGenerator.modulo_int;
+import static b2bpl.translation.CodeGenerator.divide_int;
 import static b2bpl.translation.CodeGenerator.multiply;
 import static b2bpl.translation.CodeGenerator.neg;
 import static b2bpl.translation.CodeGenerator.nonNull;
@@ -1387,7 +1387,7 @@ public class MethodTranslator implements ITranslationConstants {
         endBlock(boundaryReturnLabel, internReturnLabel);
         
         startBlock(boundaryReturnLabel);
-        addAssume(logicalAnd(isEqual(spmap(), intLiteral(0)), isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        addAssume(logicalAnd(isEqual(spmap(), intLiteral(0)), isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
 
         if(method.isConstructor()){
             rawEndBlock(tc.getNextConstructorLabel());
@@ -1397,7 +1397,7 @@ public class MethodTranslator implements ITranslationConstants {
         
         String retTableLabel = tc.prefix("rettable");
         startBlock(internReturnLabel);
-        addAssume(logicalAnd(greater(spmap(), intLiteral(0)), isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
+        addAssume(logicalAnd(greater(spmap(), intLiteral(0)), isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
         rawEndBlock(retTableLabel);
     }
 
@@ -3558,7 +3558,7 @@ public class MethodTranslator implements ITranslationConstants {
               ////////////////////////////////////////////////////////////////////
               startBlock(internalReturnLabel);
               
-              addAssume(isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1)));
+              addAssume(isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1)));
               if(hasReturnValue){
                   addAssignment(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
               }
@@ -3575,7 +3575,7 @@ public class MethodTranslator implements ITranslationConstants {
               ///////////////////////////////////////////////////////////////////////////
               startBlock(boundaryReturnLabel);
               
-              addAssume(isEqual(modulo(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(0)));
+              addAssume(isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(0)));
               if(hasReturnValue){
                   addAssignment(stack(ipMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
               }
@@ -3748,7 +3748,7 @@ public class MethodTranslator implements ITranslationConstants {
                 } else {
                     addAssume(notEqual(stack(var(right)), intLiteral(0)));
                 }
-                expr = divide(stack(var(left)), stack(var(right)));
+                expr = divide_int(stack(var(left)), stack(var(right)));
                 break;
             case IOpCodes.IREM:
             case IOpCodes.LREM:
@@ -3758,7 +3758,7 @@ public class MethodTranslator implements ITranslationConstants {
                 } else {
                     addAssume(notEqual(stack(var(right)), intLiteral(0)));
                 }
-                expr = modulo(stack(var(left)), stack(var(right)));
+                expr = modulo_int(stack(var(left)), stack(var(right)));
                 break;
             }
             addAssignment(stack(var(intStackVar(stackLeft))), expr);

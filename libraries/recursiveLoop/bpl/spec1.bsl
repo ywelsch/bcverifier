@@ -1,11 +1,11 @@
 >>>invariant
 (forall o1,o2: Ref :: ObjOfType(o1, $C, heap1) && ObjOfType(o2, $C, heap2) && related[o1, o2] ==> RelNull(heap1[o1, $C.list], heap2[o2, $C.list], related))
 
-(ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object_0) ==> (stack2[ip2-1][spmap2[ip2-1]][place] == lib2_C.loop$int_set$int$java.lang.Object_0)
-(ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object_0) ==> (stack1[ip1-1][spmap1[ip1-1]][reg1_i] == stack2[ip2-1][spmap2[ip2-1]][reg1_i])
-(ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object_0) ==> (stack1[ip1-1][spmap1[ip1-1]][reg1_i] <= 5)
-(ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object_0) ==> (spmap1[ip1-1] == 0 && spmap2[ip2-1] == (spmap1[ip1-1] + 1 + stack1[ip1-1][spmap1[ip1-1]][reg1_i]))
-(ip1 % 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object_0) ==> (stack1[ip1-1][spmap1[ip1-1]][reg0_r] == stack1[ip1-1][0][reg0_r] && stack2[ip2-1][spmap2[ip2-1]][reg0_r] == stack2[ip2-1][0][reg0_r])
+(ip1 mod 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object_0) ==> (stack2[ip2-1][spmap2[ip2-1]][place] == lib2_C.loop$int_set$int$java.lang.Object_0)
+(ip1 mod 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object_0) ==> (stack1[ip1-1][spmap1[ip1-1]][reg1_i] == stack2[ip2-1][spmap2[ip2-1]][reg1_i])
+(ip1 mod 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object_0) ==> (stack1[ip1-1][spmap1[ip1-1]][reg1_i] <= 5)
+(ip1 mod 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object_0) ==> (spmap1[ip1-1] == 0 && spmap2[ip2-1] == (spmap1[ip1-1] + 1 + stack1[ip1-1][spmap1[ip1-1]][reg1_i]))
+(ip1 mod 2 == 0 && stack1[ip1-1][spmap1[ip1-1]][place] == lib1_C.m_set$int$java.lang.Object_0) ==> (stack1[ip1-1][spmap1[ip1-1]][reg0_r] == stack1[ip1-1][0][reg0_r] && stack2[ip2-1][spmap2[ip2-1]][reg0_r] == stack2[ip2-1][0][reg0_r])
 
 <<<
 >>>local_invariant

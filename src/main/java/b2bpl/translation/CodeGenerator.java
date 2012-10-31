@@ -538,16 +538,30 @@ public final class CodeGenerator implements ITranslationConstants {
 
     // @ requires left != null && right != null;
     // @ ensures \result != null;
-    public static BPLExpression divide(BPLExpression left, BPLExpression right) {
+    public static BPLExpression divide_int(BPLExpression left, BPLExpression right) {
         return new BPLBinaryArithmeticExpression(
-                BPLBinaryArithmeticExpression.Operator.DIVIDE, left, right);
+                BPLBinaryArithmeticExpression.Operator.DIVIDE_INT, left, right);
+    }
+    
+ // @ requires left != null && right != null;
+    // @ ensures \result != null;
+    public static BPLExpression divide_real(BPLExpression left, BPLExpression right) {
+        return new BPLBinaryArithmeticExpression(
+                BPLBinaryArithmeticExpression.Operator.DIVIDE_REAL, left, right);
     }
 
     // @ requires left != null && right != null;
     // @ ensures \result != null;
-    public static BPLExpression modulo(BPLExpression left, BPLExpression right) {
+    public static BPLExpression modulo_int(BPLExpression left, BPLExpression right) {
         return new BPLBinaryArithmeticExpression(
-                BPLBinaryArithmeticExpression.Operator.REMAINDER, left, right);
+                BPLBinaryArithmeticExpression.Operator.REMAINDER_INT, left, right);
+    }
+
+    // @ requires left != null && right != null;
+    // @ ensures \result != null;
+    public static BPLExpression modulo_real(BPLExpression left, BPLExpression right) {
+        return new BPLBinaryArithmeticExpression(
+                BPLBinaryArithmeticExpression.Operator.REMAINDER_REAL, left, right);
     }
 
 //    // @ requires expr != null;

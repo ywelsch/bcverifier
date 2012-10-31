@@ -13,7 +13,7 @@ import static b2bpl.translation.CodeGenerator.classRepr;
 import static b2bpl.translation.CodeGenerator.classReprInv;
 import static b2bpl.translation.CodeGenerator.ctxtType;
 import static b2bpl.translation.CodeGenerator.definesMethod;
-import static b2bpl.translation.CodeGenerator.divide;
+import static b2bpl.translation.CodeGenerator.divide_int;
 import static b2bpl.translation.CodeGenerator.emptyInteractionFrame;
 import static b2bpl.translation.CodeGenerator.emptyStrackFrame;
 import static b2bpl.translation.CodeGenerator.exists;
@@ -54,7 +54,7 @@ import static b2bpl.translation.CodeGenerator.logicalOr;
 import static b2bpl.translation.CodeGenerator.map;
 import static b2bpl.translation.CodeGenerator.map1;
 import static b2bpl.translation.CodeGenerator.memberOf;
-import static b2bpl.translation.CodeGenerator.modulo;
+import static b2bpl.translation.CodeGenerator.modulo_int;
 import static b2bpl.translation.CodeGenerator.multiply;
 import static b2bpl.translation.CodeGenerator.nonNull;
 import static b2bpl.translation.CodeGenerator.notEqual;
@@ -952,6 +952,7 @@ public class Translator implements ITranslationConstants {
             String j = quantVarName("j");
             BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
             BPLVariable jVar = new BPLVariable(j, BPLBuiltInType.INT);
+            /*
             // i % j == i - i / j * j
             addAxiom(forall(
                     iVar, jVar,
@@ -1081,7 +1082,7 @@ public class Translator implements ITranslationConstants {
                             ),
                             trigger(modulo(sub(var(i), var(j)), var(j)))
                     ));
-
+                    
             String a = quantVarName("a");
             String b = quantVarName("b");
             String d = quantVarName("d");
@@ -1101,7 +1102,7 @@ public class Translator implements ITranslationConstants {
                                             trigger(modulo(var(a), var(d)), modulo(var(b), var(d)))
                     ));
             
-            
+            */
             //TODO distribution of * and +/-
 
             iVar = new BPLVariable(i, BPLBuiltInType.INT);
@@ -1223,7 +1224,7 @@ public class Translator implements ITranslationConstants {
                     iVar, jVar,
                     implies(
                             lessEqual(intLiteral(1), var(j)),
-                            isEqual(bitShr(var(i), var(j)), divide(bitShr(var(i), sub(var(j), intLiteral(1))), intLiteral(2)))),
+                            isEqual(bitShr(var(i), var(j)), divide_int(bitShr(var(i), sub(var(j), intLiteral(1))), intLiteral(2)))),
                             trigger(bitShr(var(i), var(j)))
                     ));
             
@@ -1535,7 +1536,7 @@ public class Translator implements ITranslationConstants {
                             forall(jVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i))),
                                     lessEqual(new BPLIntLiteral(0), map(var(spmap), var(j)))
                                 )),
-                            forall(jVar, pVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i)), isEqual(modulo(var(j), new BPLIntLiteral(2)), new BPLIntLiteral(0)), lessEqual(new BPLIntLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), map(var(heap), map1(var(stack), var(j), var(p), receiver()), var(CREATED_BY_CTXT_FIELD)))),
+                            forall(jVar, pVar, implies(logicalAnd(lessEqual(new BPLIntLiteral(0), var(j)), lessEqual(var(j), var(i)), isEqual(modulo_int(var(j), new BPLIntLiteral(2)), new BPLIntLiteral(0)), lessEqual(new BPLIntLiteral(0), var(p)), lessEqual(var(p), map(var(spmap), var(j)))), map(var(heap), map1(var(stack), var(j), var(p), receiver()), var(CREATED_BY_CTXT_FIELD)))),
                             forall(spVar, jVar,
                                     implies(
                                             logicalAnd(

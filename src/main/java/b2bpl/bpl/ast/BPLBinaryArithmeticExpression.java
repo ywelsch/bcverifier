@@ -48,9 +48,11 @@ public class BPLBinaryArithmeticExpression extends BPLBinaryExpression {
 
     TIMES("*", Precedence.MULTIPLICATIVE),
 
-    DIVIDE("/", Precedence.MULTIPLICATIVE),
+    DIVIDE_INT("div", Precedence.MULTIPLICATIVE),
+    DIVIDE_REAL("/", Precedence.MULTIPLICATIVE),
 
-    REMAINDER("%", Precedence.MULTIPLICATIVE);
+    REMAINDER_INT("mod", Precedence.MULTIPLICATIVE),
+    REMAINDER_REAL("%", Precedence.MULTIPLICATIVE);
 
     private final String token;
 

@@ -37,7 +37,7 @@ import static b2bpl.translation.CodeGenerator.subtype;
 import static b2bpl.translation.CodeGenerator.map;
 import static b2bpl.translation.CodeGenerator.map1;
 import static b2bpl.translation.CodeGenerator.memberOf;
-import static b2bpl.translation.CodeGenerator.modulo;
+import static b2bpl.translation.CodeGenerator.modulo_int;
 import static b2bpl.translation.CodeGenerator.nonNull;
 import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.receiver;
@@ -582,7 +582,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 		if (config.getNumberOfIframes() == 0) {
 			procAssumes.add(new BPLAssumeCommand(isEqual(
-					modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+					modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 					new BPLIntLiteral(0))));
 		} else {
 			// procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR),
@@ -645,10 +645,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 		if (config.getNumberOfIframes() == 0) {
 			procAssumes.add(new BPLAssumeCommand(isEqual(
-					modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+					modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 					new BPLIntLiteral(0))));
 		} else {
-			// procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR),
+			// procAssumes.add(new BPLAssumeCommand(isEqual(modulo_int(var(IP1_VAR),
 			// new BPLIntLiteral(2)), new BPLIntLiteral(0))));
 			procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR),
 					new BPLIntLiteral((config.getNumberOfIframes() - 1) * 2))));
@@ -804,21 +804,21 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		procAssumes = new ArrayList<BPLCommand>();
 		// procAssumes.add(new BPLAssumeCommand(
 		// logicalAnd(
-		// isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)), new
+		// isEqual(modulo_int(var(IP1_VAR), new BPLIntLiteral(2)), new
 		// BPLIntLiteral(0)),
 		// isEqual(spmap1(), new BPLIntLiteral(0))
 		// )
 		// ));
 		// procAssumes.add(new BPLAssumeCommand(
 		// logicalAnd(
-		// isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)), new
+		// isEqual(modulo_int(var(IP2_VAR), new BPLIntLiteral(2)), new
 		// BPLIntLiteral(0)),
 		// isEqual(spmap2(), new BPLIntLiteral(0))
 		// )
 		// ));
 		if (config.getNumberOfIframes() == 0) {
 			procAssumes.add(new BPLAssumeCommand(isEqual(
-					modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+					modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 					new BPLIntLiteral(0))));
 		} else {
 			procAssumes.add(new BPLAssumeCommand(isEqual(var(IP1_VAR),
@@ -987,11 +987,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		procAssumes.add(new BPLAssumeCommand(
 				isLocalPlace(stack2(var(PLACE_VARIABLE)))));
 
-		// procAssumes.add(new BPLAssumeCommand(isEqual(modulo(var(IP1_VAR), new
+		// procAssumes.add(new BPLAssumeCommand(isEqual(modulo_int(var(IP1_VAR), new
 		// BPLIntLiteral(2)), new BPLIntLiteral(1))));
 		if (config.getNumberOfIframes() == 0) {
 			procAssumes.add(new BPLAssumeCommand(isEqual(
-					modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+					modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 					new BPLIntLiteral(1))));
 		} else {
 			procAssumes
@@ -1275,23 +1275,23 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
 		checkingCommand.add(new BPLAssertCommand(logicalOr(
 				logicalAnd(
-						isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+						isEqual(modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 								new BPLIntLiteral(1)),
 						isEqual(spmap1(), new BPLIntLiteral(0)),
-						isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+						isEqual(modulo_int(var(IP2_VAR), new BPLIntLiteral(2)),
 								new BPLIntLiteral(1)),
 						isEqual(spmap2(), new BPLIntLiteral(0))),
 				logicalAnd(
-						isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+						isEqual(modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 								new BPLIntLiteral(0)),
 						isEqual(spmap1(), new BPLIntLiteral(0)),
-						isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+						isEqual(modulo_int(var(IP2_VAR), new BPLIntLiteral(2)),
 								new BPLIntLiteral(0)),
 						isEqual(spmap2(), new BPLIntLiteral(0))),
 				logicalAnd(
-						isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+						isEqual(modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 								new BPLIntLiteral(1)),
-						isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+						isEqual(modulo_int(var(IP2_VAR), new BPLIntLiteral(2)),
 								new BPLIntLiteral(1)),
 						isLocalPlace(stack1(var(PLACE_VARIABLE))),
 						isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
@@ -1305,10 +1305,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		// ///////////////////////////////
 		checkingCommand = new ArrayList<BPLCommand>();
 		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-				isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+				isEqual(modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 						new BPLIntLiteral(1)),
 				isEqual(spmap1(), new BPLIntLiteral(0)),
-				isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+				isEqual(modulo_int(var(IP2_VAR), new BPLIntLiteral(2)),
 						new BPLIntLiteral(1)),
 				isEqual(spmap2(), new BPLIntLiteral(0)))));
 		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
@@ -1403,10 +1403,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		// ////////////////////////////////
 		checkingCommand.clear();
 		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-				isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+				isEqual(modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 						new BPLIntLiteral(0)),
 				isEqual(spmap1(), new BPLIntLiteral(0)),
-				isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+				isEqual(modulo_int(var(IP2_VAR), new BPLIntLiteral(2)),
 						new BPLIntLiteral(0)),
 				isEqual(spmap2(), new BPLIntLiteral(0)))));
 		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
@@ -1527,9 +1527,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		// ////////////////////////////////
 		checkingCommand.clear();
 		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
-				isEqual(modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+				isEqual(modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 						new BPLIntLiteral(1)),
-				isEqual(modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+				isEqual(modulo_int(var(IP2_VAR), new BPLIntLiteral(2)),
 						new BPLIntLiteral(1)),
 				isLocalPlace(stack1(var(PLACE_VARIABLE))),
 				isLocalPlace(stack2(var(PLACE_VARIABLE))))));
@@ -1622,10 +1622,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		// /////////////////////////////////
 		checkingCommand.clear();
 		checkingCommand.add(new BPLAssumeCommand(isEqual(
-				modulo(var(IP1_VAR), new BPLIntLiteral(2)),
+				modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 				new BPLIntLiteral(0))));
 		checkingCommand.add(new BPLAssumeCommand(isEqual(
-				modulo(var(IP2_VAR), new BPLIntLiteral(2)),
+				modulo_int(var(IP2_VAR), new BPLIntLiteral(2)),
 				new BPLIntLiteral(0))));
 		checkingCommand.addAll(invAssumes);
 
@@ -1978,7 +1978,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		dispatchCommands = new ArrayList<BPLCommand>();
 		dispatchCommands.add(new BPLAssumeCommand(
 				logicalAnd(
-						isEqual(modulo(ip, new BPLIntLiteral(2)),
+						isEqual(modulo_int(ip, new BPLIntLiteral(2)),
 								new BPLIntLiteral(1)),
 						isEqual(sp, new BPLIntLiteral(0)))));
 
@@ -2014,11 +2014,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		dispatchCommands = new ArrayList<BPLCommand>();
 		dispatchCommands.add(new BPLAssumeCommand(logicalOr(
 				logicalAnd(
-						isEqual(modulo(var(tc.getInteractionFramePointer()),
+						isEqual(modulo_int(var(tc.getInteractionFramePointer()),
 								new BPLIntLiteral(2)), new BPLIntLiteral(1)),
 						greater(spmap(), new BPLIntLiteral(0))),
 				logicalAnd(
-						isEqual(modulo(var(tc.getInteractionFramePointer()),
+						isEqual(modulo_int(var(tc.getInteractionFramePointer()),
 								new BPLIntLiteral(2)), new BPLIntLiteral(0)),
 						isEqual(spmap(), new BPLIntLiteral(0))))));
 

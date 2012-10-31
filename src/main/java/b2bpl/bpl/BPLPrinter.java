@@ -465,10 +465,16 @@ public class BPLPrinter implements IBPLVisitor<Object> {
       case TIMES:
         print(" * ");
         break;
-      case DIVIDE:
+      case DIVIDE_INT:
+        print(" div ");
+        break;
+      case DIVIDE_REAL:
         print(" / ");
         break;
-      case REMAINDER:
+      case REMAINDER_INT:
+        print(" mod ");
+        break;
+      case REMAINDER_REAL:
       default:
         print(" % ");
         break;

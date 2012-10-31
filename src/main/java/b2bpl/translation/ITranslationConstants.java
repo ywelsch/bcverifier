@@ -15,7 +15,7 @@ public interface ITranslationConstants {
 
   String FUNC_PREFIX = "";
 
-  String REAL_TYPE = "real";
+  String REAL_TYPE = "customreal";
  
   String ARRAY_TYPE = "Elements";
   

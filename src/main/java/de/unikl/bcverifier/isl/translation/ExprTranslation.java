@@ -81,9 +81,9 @@ public class ExprTranslation {
 		case UNEQUALS:
 			return new BPLEqualityExpression(NOT_EQUALS, left, right);
 		case MOD:
-			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.REMAINDER, left, right);
+			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.REMAINDER_INT, left, right);
 		case DIV:
-			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.DIVIDE, left, right);
+			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.DIVIDE_INT, left, right);
 		case MINUS:
 			return new BPLBinaryArithmeticExpression(BPLBinaryArithmeticExpression.Operator.MINUS, left, right);
 		case MULT:
