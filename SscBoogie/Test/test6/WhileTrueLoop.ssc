@@ -1,9 +1,0 @@
-public class Test
-{
-  public void M()
-  {
-    while (true)
-    {
-    }
-  }
-}
