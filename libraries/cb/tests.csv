@@ -3,3 +3,4 @@
 "bpl/spec.bsl" ,"--iframes 1"     ,1                ,0                 ,2
 "bpl/spec1.bsl","--iframes 1"     ,0                ,0                 ,3
 "bpl/spec.isl" ,"--iframes 1"     ,0                ,2                 ,3
+"bpl/spec2.isl" ,"--iframes 1"     ,0                ,2                 ,3
