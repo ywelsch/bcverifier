@@ -110,15 +110,19 @@ alt="hit counter"></a></div></noscript>
 
 <script type="text/javascript">
 var height = $('#optionpan').hide().height();
-$('#optionsButton').toggle(function() {
-    $('#optionpan').slideDown(2000);
-    $('html, body').animate({ scrollTop: '+=' + height }, 2000);
-    return false;
-}, function() {
-    $('#optionpan').slideUp(2000);
-    $('html, body').animate({ scrollTop: '-=' + height }, 2000);
-    return false;
+
+
+$("#bd").delegate("#optionsButton", 'click', function () {
+	if ($("#optionpan").is(":hidden")) {
+		$('#optionpan').slideDown(2000);
+    	$('html, body').animate({ scrollTop: '+=' + height }, 2000);
+	} else {
+		$('#optionpan').slideUp(2000);
+	    $('html, body').animate({ scrollTop: '-=' + height }, 2000);
+	}
+	return false;
 });
+
 </script>
 
 </body>
