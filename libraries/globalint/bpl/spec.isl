@@ -1,0 +1,1 @@
+invariant forall old C a, new C b :: a ~ b ==> a.g == b.f - 1;
