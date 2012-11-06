@@ -10,8 +10,6 @@ import org.objectweb.asm.Opcodes;
 import de.unikl.bcverifier.LibraryCompiler;
 import de.unikl.bcverifier.isl.ast.Version;
 
-
-
 public class TwoLibraryModel {
 	private LibrarySource src1, src2;
 
@@ -34,8 +32,6 @@ public class TwoLibraryModel {
 		}
 		return "op" +op;
 	}
-
-	
 
 	public LibrarySource getSrc1() {
 		return src1;
@@ -60,7 +56,7 @@ public class TwoLibraryModel {
 		case NEW:
 			return src2;
 		default:
-			throw new Error("Version must be OLD or NEW.");
+			throw new RuntimeException("Version must be OLD or NEW.");
 		}
 	}
 	
