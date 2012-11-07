@@ -1,1 +1,2 @@
-public class Apple implements Fruit {}
+public class Apple
+  implements Fruit {}

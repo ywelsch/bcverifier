@@ -1,1 +1,2 @@
-public class ChiquitaBanana extends Banana {}
+public class ChiquitaBanana
+  extends Banana {}
