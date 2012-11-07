@@ -66,7 +66,7 @@ exports.handler.attach = function(editor) {
                 opacity: 1;\
                 background-color: transparent;\
             }\
-            .emacs-mode .ace_cursor.ace_overwrite {\
+            .emacs-mode .ace_overwrite-cursors .ace_cursor {\
                 opacity: 1;\
                 background-color: transparent;\
                 border-width: 0 0 2px 2px !important;\
@@ -189,7 +189,6 @@ exports.handler.handleKeyboard = function(data, hashId, key, keyCode) {
 };
 
 exports.emacsKeys = {
-    // movement
     "Up|C-p"      : "golineup",
     "Down|C-n"    : "golinedown",
     "Left|C-b"    : "gotoleft",
@@ -200,8 +199,6 @@ exports.emacsKeys = {
     "End|C-e"     : "gotolineend",
     "C-Home|S-M-,": "gotostart",
     "C-End|S-M-." : "gotoend",
-
-    // selection
     "S-Up|S-C-p"      : "selectup",
     "S-Down|S-C-n"    : "selectdown",
     "S-Left|S-C-b"    : "selectleft",
@@ -217,8 +214,6 @@ exports.emacsKeys = {
     "M-s" : "centerselection",
     "M-g": "gotoline",
     "C-x C-p": "selectall",
-
-    // todo fix these
     "C-Down": "gotopagedown",
     "C-Up": "gotopageup",
     "PageDown|C-v": "gotopagedown",
@@ -230,8 +225,6 @@ exports.emacsKeys = {
     "M-C-s": "findnext",
     "M-C-r": "findprevious",
     "S-M-5": "replace",
-
-    // basic editing
     "Backspace": "backspace",
     "Delete|C-d": "del",
     "Return|C-m": {command: "insertstring", args: "\n"}, // "newline"
@@ -261,11 +254,7 @@ exports.emacsKeys = {
 
     "C-/|C-x u|S-C--|C-z": "undo",
     "S-C-/|S-C-x u|C--|S-C-z": "redo", //infinite undo?
-    // vertical editing
     "C-x r":  "selectRectangularRegion"
-
-    // todo
-    // "M-x" "C-x C-t" "M-t" "M-c" "F11" "C-M- "M-q"
 };
 
 

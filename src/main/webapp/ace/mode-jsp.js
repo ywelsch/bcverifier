@@ -141,9 +141,6 @@ var tagMap = lang.createMap({
 });
 
 var HtmlHighlightRules = function() {
-
-    // regexp must not have capturing parentheses
-    // regexps are ordered -> the first match is used
     this.$rules = {
         start : [{
             token : "text",
@@ -163,11 +160,11 @@ var HtmlHighlightRules = function() {
             regex : "<\\!.*?>"
         }, {
             token : "meta.tag",
-            regex : "<(?=\s*script\\b)",
+            regex : "<(?=script\\b)",
             next : "script"
         }, {
             token : "meta.tag",
-            regex : "<(?=\s*style\\b)",
+            regex : "<(?=style\\b)",
             next : "style"
         }, {
             token : "meta.tag", // opening tag
@@ -250,9 +247,6 @@ var CssHighlightRules = function() {
         "support.constant.color": "aqua|black|blue|fuchsia|gray|green|lime|maroon|navy|olive|orange|purple|red|silver|teal|white|yellow",
         "support.constant.fonts": "arial|century|comic|courier|garamond|georgia|helvetica|impact|lucida|symbol|system|tahoma|times|trebuchet|utopia|verdana|webdings|sans-serif|serif|monospace"
     }, "text", true);
-
-    // regexp must not have capturing parentheses. Use (?:) instead.
-    // regexps are ordered -> the first match is used
 
     var numRe = "\\-?(?:(?:[0-9]+)|(?:[0-9]*\\.[0-9]+))";
     var pseudoElements = "(\\:+)\\b(after|before|first-letter|first-line|moz-selection|selection)\\b";
@@ -414,7 +408,6 @@ var DocCommentHighlightRules = require("./doc_comment_highlight_rules").DocComme
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 
 var JavaScriptHighlightRules = function() {
-    // see: https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects
     var keywordMapper = this.createKeywordMapper({
         "variable.language":
             "Array|Boolean|Date|Function|Iterator|Number|Object|RegExp|String|Proxy|"  + // Constructors
@@ -430,7 +423,7 @@ var JavaScriptHighlightRules = function() {
         "invalid.deprecated":
             "__parent__|__count__|escape|unescape|with|__proto__",
         "keyword":
-            "const|yield|import|get|set" +
+            "const|yield|import|get|set|" +
             "break|case|catch|continue|default|delete|do|else|finally|for|function|" +
             "if|in|instanceof|new|return|switch|throw|try|typeof|let|var|while|with|debugger",
         "storage.type":
@@ -443,11 +436,7 @@ var JavaScriptHighlightRules = function() {
         "support.function":
             "alert"
     }, "identifier");
-
-    // keywords which can be followed by regular expressions
     var kwBeforeRe = "case|do|else|finally|in|instanceof|return|throw|try|typeof|yield";
-
-    // TODO: Unicode escape sequences
     var identifierRe = "[a-zA-Z\\$_\u00a1-\uffff][a-zA-Z\\d\\$_\u00a1-\uffff]*\\b";
 
     var escapedRe = "\\\\(?:x[0-9a-fA-F]{2}|" + // hex
@@ -457,9 +446,6 @@ var JavaScriptHighlightRules = function() {
         "37[0-7]?|" + // oct
         "[4-7][0-7]?|" + //oct
         ".)";
-
-    // regexp must not have capturing parentheses. Use (?:) instead.
-    // regexps are ordered -> the first match is used
 
     this.$rules = {
         "start" : [
@@ -488,7 +474,6 @@ var JavaScriptHighlightRules = function() {
                 token : "constant.numeric", // float
                 regex : /[+-]?\d+(?:(?:\.\d*)?(?:[eE][+-]?\d+)?)?\b/
             }, {
-                // Sound.prototype.play =
                 token : [
                     "storage.type", "punctuation.operator", "support.function",
                     "punctuation.operator", "entity.name.function", "text","keyword.operator"
@@ -496,7 +481,6 @@ var JavaScriptHighlightRules = function() {
                 regex : "(" + identifierRe + ")(\\.)(prototype)(\\.)(" + identifierRe +")(\\s*)(=)",
                 next: "function_arguments"
             }, {
-                // Sound.play = function() {  }
                 token : [
                     "storage.type", "punctuation.operator", "entity.name.function", "text",
                     "keyword.operator", "text", "storage.type", "text", "paren.lparen"
@@ -504,7 +488,6 @@ var JavaScriptHighlightRules = function() {
                 regex : "(" + identifierRe + ")(\\.)(" + identifierRe +")(\\s*)(=)(\\s*)(function)(\\s*)(\\()",
                 next: "function_arguments"
             }, {
-                // play = function() {  }
                 token : [
                     "entity.name.function", "text", "keyword.operator", "text", "storage.type",
                     "text", "paren.lparen"
@@ -512,7 +495,6 @@ var JavaScriptHighlightRules = function() {
                 regex : "(" + identifierRe +")(\\s*)(=)(\\s*)(function)(\\s*)(\\()",
                 next: "function_arguments"
             }, {
-                // Sound.play = function play() {  }
                 token : [
                     "storage.type", "punctuation.operator", "entity.name.function", "text",
                     "keyword.operator", "text",
@@ -521,14 +503,12 @@ var JavaScriptHighlightRules = function() {
                 regex : "(" + identifierRe + ")(\\.)(" + identifierRe +")(\\s*)(=)(\\s*)(function)(\\s+)(\\w+)(\\s*)(\\()",
                 next: "function_arguments"
             }, {
-                // function myFunc(arg) { }
                 token : [
                     "storage.type", "text", "entity.name.function", "text", "paren.lparen"
                 ],
                 regex : "(function)(\\s+)(" + identifierRe + ")(\\s*)(\\()",
                 next: "function_arguments"
             }, {
-                // foobar: function() { }
                 token : [
                     "entity.name.function", "text", "punctuation.operator",
                     "text", "storage.type", "text", "paren.lparen"
@@ -536,7 +516,6 @@ var JavaScriptHighlightRules = function() {
                 regex : "(" + identifierRe + ")(\\s*)(:)(\\s*)(function)(\\s*)(\\()",
                 next: "function_arguments"
             }, {
-                // : function() { } (this is for issues with 'foo': function() { })
                 token : [
                     "text", "text", "storage.type", "text", "paren.lparen"
                 ],
@@ -591,8 +570,6 @@ var JavaScriptHighlightRules = function() {
                 regex : /\s+/
             }
         ],
-        // regular expressions are only allowed after certain tokens. This
-        // makes sure we don't mix up regexps with the divison operator
         "regex_allowed": [
             DocCommentHighlightRules.getStartRule("doc-start"),
             {
@@ -612,8 +589,6 @@ var JavaScriptHighlightRules = function() {
                 token : "text",
                 regex : "\\s+"
             }, {
-                // immediately return to the start mode without matching
-                // anything
                 token: "empty",
                 regex: "",
                 next: "start"
@@ -621,21 +596,17 @@ var JavaScriptHighlightRules = function() {
         ],
         "regex": [
             {
-                // escapes
                 token: "regexp.keyword.operator",
                 regex: "\\\\(?:u[\\da-fA-F]{4}|x[\\da-fA-F]{2}|.)"
             }, {
-                // flag
                 token: "string.regexp",
                 regex: "/\\w*",
                 next: "start",
                 merge: true
             }, {
-                // invalid operators
                 token : "invalid",
                 regex: /\{\d+,?(?:\d+)?}[+*]|[+*$^?][+*]|[$^][?]|\?{3,}/
             }, {
-                // operators
                 token : "constant.language.escape",
                 regex: /\(\?[:=!]|\)|{\d+,?(?:\d+)?}|{,\d+}|[+*]\?|[(|)$^+*?]/
             }, {
@@ -664,7 +635,7 @@ var JavaScriptHighlightRules = function() {
                 merge: true
             }, {
                 token: "constant.language.escape",
-                regex: "-",
+                regex: "-"
             }, {
                 token: "string.regexp.charachterclass",
                 regex: /[^\]\-\\]+/,
@@ -866,7 +837,6 @@ exports.tag = function(states, name, nextState, tagMap) {
         token : "text",
         regex : "\\s+"
     }, {
-        //token : "meta.tag",
         
     token : !tagMap ? "meta.tag.tag-name" : function(value) {
             if (tagMap[value])
@@ -915,8 +885,6 @@ var DocCommentHighlightRules = require("./doc_comment_highlight_rules").DocComme
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 
 var JavaHighlightRules = function() {
-
-    // taken from http://download.oracle.com/javase/tutorial/java/nutsandbolts/_keywords.html
     var keywords = (
     "abstract|continue|for|new|switch|" +
     "assert|default|goto|package|synchronized|" +
@@ -964,12 +932,8 @@ var JavaHighlightRules = function() {
         "variable.language": "this",
         "keyword": keywords,
         "constant.language": buildinConstants,
-        "support.function": langClasses,
-
+        "support.function": langClasses
     }, "identifier");
-
-    // regexp must not have capturing parentheses. Use (?:) instead.
-    // regexps are ordered -> the first match is used
 
     this.$rules = {
         "start" : [
@@ -1003,8 +967,6 @@ var JavaHighlightRules = function() {
                 regex : "(?:true|false)\\b"
             }, {
                 token : keywordMapper,
-                // TODO: Unicode escape sequences
-                // TODO: Unicode identifiers
                 regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
             }, {
                 token : "keyword.operator",
@@ -1087,24 +1049,69 @@ var MatchingBraceOutdent = function() {};
 exports.MatchingBraceOutdent = MatchingBraceOutdent;
 });
 
-define('ace/mode/behaviour/cstyle', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/behaviour'], function(require, exports, module) {
+define('ace/mode/behaviour/cstyle', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/behaviour', 'ace/token_iterator'], function(require, exports, module) {
 
 
 var oop = require("../../lib/oop");
 var Behaviour = require("../behaviour").Behaviour;
+var TokenIterator = require("../../token_iterator").TokenIterator;
+
+var autoInsertedBrackets = 0;
+var autoInsertedRow = -1;
+var autoInsertedLineEnd = "";
 
 var CstyleBehaviour = function () {
+    
+    CstyleBehaviour.isSaneInsertion = function(editor, session) {
+        var cursor = editor.getCursorPosition();
+        var iterator = new TokenIterator(session, cursor.row, cursor.column);
+        if (!this.$matchTokenType(iterator.getCurrentToken() || "text", ["text", "paren.rparen"])) {
+            iterator = new TokenIterator(session, cursor.row, cursor.column + 1);
+            if (!this.$matchTokenType(iterator.getCurrentToken() || "text", ["text", "paren.rparen"]))
+                return false;
+        }
+        iterator.stepForward();
+        return iterator.getCurrentTokenRow() !== cursor.row ||
+            this.$matchTokenType(iterator.getCurrentToken() || "text", ["text", "comment", "paren.rparen"]);
+    };
+    
+    CstyleBehaviour.$matchTokenType = function(token, types) {
+        return types.indexOf(token.type || token) > -1;
+    };
+    
+    CstyleBehaviour.recordAutoInsert = function(editor, session, bracket) {
+        var cursor = editor.getCursorPosition();
+        var line = session.doc.getLine(cursor.row);
+        if (!this.isAutoInsertedClosing(cursor, line, autoInsertedLineEnd[0]))
+            autoInsertedBrackets = 0;
+        autoInsertedRow = cursor.row;
+        autoInsertedLineEnd = bracket + line.substr(cursor.column);
+        autoInsertedBrackets++;
+    };
+    
+    CstyleBehaviour.isAutoInsertedClosing = function(cursor, line, bracket) {
+        return autoInsertedBrackets > 0 &&
+            cursor.row === autoInsertedRow &&
+            bracket === autoInsertedLineEnd[0] &&
+            line.substr(cursor.column) === autoInsertedLineEnd;
+    };
+    
+    CstyleBehaviour.popAutoInsertedClosing = function() {
+        autoInsertedLineEnd = autoInsertedLineEnd.substr(1);
+        autoInsertedBrackets--;
+    };
 
     this.add("braces", "insertion", function (state, action, editor, session, text) {
         if (text == '{') {
             var selection = editor.getSelectionRange();
             var selected = session.doc.getTextRange(selection);
-            if (selected !== "") {
+            if (selected !== "" && selected !== "{") {
                 return {
                     text: '{' + selected + '}',
                     selection: false
                 };
-            } else {
+            } else if (CstyleBehaviour.isSaneInsertion(editor, session)) {
+                CstyleBehaviour.recordAutoInsert(editor, session, "}");
                 return {
                     text: '{}',
                     selection: [1, 1]
@@ -1116,14 +1123,15 @@ var CstyleBehaviour = function () {
             var rightChar = line.substring(cursor.column, cursor.column + 1);
             if (rightChar == '}') {
                 var matching = session.$findOpeningBracket('}', {column: cursor.column + 1, row: cursor.row});
-                if (matching !== null) {
+                if (matching !== null && CstyleBehaviour.isAutoInsertedClosing(cursor, line, text)) {
+                    CstyleBehaviour.popAutoInsertedClosing();
                     return {
                         text: '',
                         selection: [1, 1]
                     };
                 }
             }
-        } else if (text == "\n") {
+        } else if (text == "\n" || text == "\r\n") {
             var cursor = editor.getCursorPosition();
             var line = session.doc.getLine(cursor.row);
             var rightChar = line.substring(cursor.column, cursor.column + 1);
@@ -1164,7 +1172,8 @@ var CstyleBehaviour = function () {
                     text: '(' + selected + ')',
                     selection: false
                 };
-            } else {
+            } else if (CstyleBehaviour.isSaneInsertion(editor, session)) {
+                CstyleBehaviour.recordAutoInsert(editor, session, ")");
                 return {
                     text: '()',
                     selection: [1, 1]
@@ -1176,7 +1185,8 @@ var CstyleBehaviour = function () {
             var rightChar = line.substring(cursor.column, cursor.column + 1);
             if (rightChar == ')') {
                 var matching = session.$findOpeningBracket(')', {column: cursor.column + 1, row: cursor.row});
-                if (matching !== null) {
+                if (matching !== null && CstyleBehaviour.isAutoInsertedClosing(cursor, line, text)) {
+                    CstyleBehaviour.popAutoInsertedClosing();
                     return {
                         text: '',
                         selection: [1, 1]
@@ -1207,7 +1217,8 @@ var CstyleBehaviour = function () {
                     text: '[' + selected + ']',
                     selection: false
                 };
-            } else {
+            } else if (CstyleBehaviour.isSaneInsertion(editor, session)) {
+                CstyleBehaviour.recordAutoInsert(editor, session, "]");
                 return {
                     text: '[]',
                     selection: [1, 1]
@@ -1219,7 +1230,8 @@ var CstyleBehaviour = function () {
             var rightChar = line.substring(cursor.column, cursor.column + 1);
             if (rightChar == ']') {
                 var matching = session.$findOpeningBracket(']', {column: cursor.column + 1, row: cursor.row});
-                if (matching !== null) {
+                if (matching !== null && CstyleBehaviour.isAutoInsertedClosing(cursor, line, text)) {
+                    CstyleBehaviour.popAutoInsertedClosing();
                     return {
                         text: '',
                         selection: [1, 1]
@@ -1255,13 +1267,9 @@ var CstyleBehaviour = function () {
                 var cursor = editor.getCursorPosition();
                 var line = session.doc.getLine(cursor.row);
                 var leftChar = line.substring(cursor.column-1, cursor.column);
-
-                // We're escaped.
                 if (leftChar == '\\') {
                     return null;
                 }
-
-                // Find what token we're inside.
                 var tokens = session.getTokens(selection.start.row);
                 var col = 0, token;
                 var quotepos = -1; // Track whether we're inside an open quote.
@@ -1278,15 +1286,12 @@ var CstyleBehaviour = function () {
                     }
                     col += tokens[x].value.length;
                 }
-
-                // Try and be smart about when we auto insert.
                 if (!token || (quotepos < 0 && token.type !== "comment" && (token.type !== "string" || ((selection.start.column !== token.value.length+col-1) && token.value.lastIndexOf(quote) === token.value.length-1)))) {
                     return {
                         text: quote + quote,
                         selection: [1,1]
                     };
                 } else if (token && token.type === "string") {
-                    // Ignore input and move right one if we're typing over the closing quote.
                     var rightChar = line.substring(cursor.column, cursor.column + 1);
                     if (rightChar == quote) {
                         return {
@@ -1332,7 +1337,7 @@ oop.inherits(FoldMode, BaseFoldMode);
 
     this.foldingStartMarker = /(\{|\[)[^\}\]]*$|^\s*(\/\*)/;
     this.foldingStopMarker = /^[^\[\{]*(\}|\])|^[\s\*]*(\*\/)/;
-    
+
     this.getFoldWidgetRange = function(session, foldStyle, row) {
         var line = session.getLine(row);
         var match = line.match(this.foldingStartMarker);
@@ -1342,114 +1347,21 @@ oop.inherits(FoldMode, BaseFoldMode);
             if (match[1])
                 return this.openingBracketBlock(session, match[1], row, i);
 
-            var range = session.getCommentFoldRange(row, i + match[0].length);
-            range.end.column -= 2;
-            return range;
+            return session.getCommentFoldRange(row, i + match[0].length, 1);
         }
 
         if (foldStyle !== "markbeginend")
             return;
-            
+
         var match = line.match(this.foldingStopMarker);
         if (match) {
             var i = match.index + match[0].length;
 
-            if (match[2]) {
-                var range = session.getCommentFoldRange(row, i);
-                range.end.column -= 2;
-                return range;
-            }
+            if (match[1])
+                return this.closingBracketBlock(session, match[1], row, i);
 
-            var end = {row: row, column: i};
-            var start = session.$findOpeningBracket(match[1], end);
-            
-            if (!start)
-                return;
-
-            start.column++;
-            end.column--;
-
-            return  Range.fromPoints(start, end);
+            return session.getCommentFoldRange(row, i, -1);
         }
-    };
-    
-}).call(FoldMode.prototype);
-
-});
-
-define('ace/mode/folding/fold_mode', ['require', 'exports', 'module' , 'ace/range'], function(require, exports, module) {
-
-
-var Range = require("../../range").Range;
-
-var FoldMode = exports.FoldMode = function() {};
-
-(function() {
-
-    this.foldingStartMarker = null;
-    this.foldingStopMarker = null;
-
-    // must return "" if there's no fold, to enable caching
-    this.getFoldWidget = function(session, foldStyle, row) {
-        var line = session.getLine(row);
-        if (this.foldingStartMarker.test(line))
-            return "start";
-        if (foldStyle == "markbeginend"
-                && this.foldingStopMarker
-                && this.foldingStopMarker.test(line))
-            return "end";
-        return "";
-    };
-
-    this.getFoldWidgetRange = function(session, foldStyle, row) {
-        return null;
-    };
-
-    this.indentationBlock = function(session, row, column) {
-        var re = /\S/;
-        var line = session.getLine(row);
-        var startLevel = line.search(re);
-        if (startLevel == -1)
-            return;
-
-        var startColumn = column || line.length;
-        var maxRow = session.getLength();
-        var startRow = row;
-        var endRow = row;
-
-        while (++row < maxRow) {
-            var level = session.getLine(row).search(re);
-
-            if (level == -1)
-                continue;
-
-            if (level <= startLevel)
-                break;
-
-            endRow = row;
-        }
-
-        if (endRow > startRow) {
-            var endColumn = session.getLine(endRow).length;
-            return new Range(startRow, startColumn, endRow, endColumn);
-        }
-    };
-
-    this.openingBracketBlock = function(session, bracket, row, column, typeRe) {
-        var start = {row: row, column: column + 1};
-        var end = session.$findClosingBracket(bracket, start, typeRe);
-        if (!end)
-            return;
-
-        var fw = session.foldWidgets[end.row];
-        if (fw == null)
-            fw = this.getFoldWidget(session, end.row);
-
-        if (fw == "start" && end.row > start.row) {
-            end.row --;
-            end.column = session.getLine(end.row).length;
-        }
-        return Range.fromPoints(start, end);
     };
 
 }).call(FoldMode.prototype);

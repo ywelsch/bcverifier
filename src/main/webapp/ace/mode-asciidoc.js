@@ -80,7 +80,6 @@ var AsciidocHighlightRules = function() {
             {token: "string",  regex: /^\+{4,}\s*$/,  next: "passthroughBlock"},
             {token: "keyword", regex: /^={4,}\s*$/},
             {token: "text",    regex: /^\s*$/},
-            // immediately return to the start mode without matching anything
             {token: "empty", regex: "", next: "dissallowDelimitedBlock"}
         ],
 
@@ -97,7 +96,6 @@ var AsciidocHighlightRules = function() {
         "paragraphEnd": [
             {token: "doc.comment", regex: /^\/{4,}\s*$/,    next: "commentBlock"},
             {token: "tableBlock",  regex: /^\s*[|!]=+\s*$/, next: "tableBlock"},
-            // open block, ruller
             {token: "keyword",     regex: /^(?:--|''')\s*$/, next: "start"},
             {token: "option",      regex: /^\[.*\]\s*$/,     next: "start"},
             {token: "pageBreak",   regex: /^>{3,}$/,         next: "start"},
@@ -106,7 +104,6 @@ var AsciidocHighlightRules = function() {
             {token: "singleLineTitle",   regex: /^={1,5}\s+\S.*$/, next: "start"},
 
             {token: "otherBlock",    regex: /^(?:\*{2,}|_{2,})\s*$/, next: "start"},
-            // .optional title
             {token: "optionalTitle", regex: /^\.[^.\s].+$/,  next: "start"}
         ],
 
@@ -114,7 +111,6 @@ var AsciidocHighlightRules = function() {
             {token: "keyword",  regex: /^\s*(?:\d+\.|[a-zA-Z]\.|[ixvmIXVM]+\)|\*{1,5}|-|\.{1,5})\s/, next: "listText"},
             {token: "meta.tag", regex: /^.+(?::{2,4}|;;)(?: |$)/, next: "listText"},
             {token: "support.function.list.callout", regex: /^(?:<\d+>|\d+>|>) /, next: "text"},
-            // continuation
             {token: "keyword",  regex: /^\+\s*$/, next: "start"}
         ],
 
@@ -128,19 +124,15 @@ var AsciidocHighlightRules = function() {
             {token: "escape", regex: /\((?:C|TM|R)\)|\.{3}|->|<-|=>|<=|&#(?:\d+|x[a-fA-F\d]+);|(?: |^)--(?=\s+\S)/},
             {token: "escape", regex: /\\[_*'`+#]|\\{2}[_*'`+#]{2}/},
             {token: "keyword", regex: /\s\+$/},
-            // any word
             {token: "text", regex: identifierRe},
             {token: ["keyword", "string", "keyword"],
                 regex: /(<<[\w\d\-$]+,)(.*?)(>>|$)/, merge: true},
             {token: "keyword", regex: /<<[\w\d\-$]+,?|>>/, merge: true},
             {token: "constant.character", regex: /\({2,3}.*?\){2,3}/, merge: true},
-            // Anchor
             {token: "keyword", regex: /\[\[.+?\]\]/},
-            // bibliography
             {token: "support", regex: /^\[{3}[\w\d =\-]+\]{3}/},
 
             {include: "quotes"},
-            // text block end
             {token: "empty", regex: /^\s*$/, next: "start"}
         ],
 
@@ -228,8 +220,6 @@ var AsciidocHighlightRules = function() {
         return prefix + ch + "[^" + ch + "].*?" + ch + "(?![\\w*])";
     }
 
-    //addQuoteBlock("text")
-
     var tokenMap = {
         macro: "constant.character",
         tableBlock: "doc.comment",
@@ -278,7 +268,7 @@ var FoldMode = exports.FoldMode = function() {};
 oop.inherits(FoldMode, BaseFoldMode);
 
 (function() {
-    this.foldingStartMarker = /^(?:\|={10,}|[\.\/=\-~^+]{4,}|={1,5} )/;
+    this.foldingStartMarker = /^(?:\|={10,}|[\.\/=\-~^+]{4,}\s*$|={1,5} )/;
     this.singleLineHeadingRe = /^={1,5}(?=\s+\S)/;
 
     this.getFoldWidget = function(session, foldStyle, row) {
@@ -374,85 +364,6 @@ oop.inherits(FoldMode, BaseFoldMode);
                 }
             }
         }
-    };
-
-}).call(FoldMode.prototype);
-
-});
-
-define('ace/mode/folding/fold_mode', ['require', 'exports', 'module' , 'ace/range'], function(require, exports, module) {
-
-
-var Range = require("../../range").Range;
-
-var FoldMode = exports.FoldMode = function() {};
-
-(function() {
-
-    this.foldingStartMarker = null;
-    this.foldingStopMarker = null;
-
-    // must return "" if there's no fold, to enable caching
-    this.getFoldWidget = function(session, foldStyle, row) {
-        var line = session.getLine(row);
-        if (this.foldingStartMarker.test(line))
-            return "start";
-        if (foldStyle == "markbeginend"
-                && this.foldingStopMarker
-                && this.foldingStopMarker.test(line))
-            return "end";
-        return "";
-    };
-
-    this.getFoldWidgetRange = function(session, foldStyle, row) {
-        return null;
-    };
-
-    this.indentationBlock = function(session, row, column) {
-        var re = /\S/;
-        var line = session.getLine(row);
-        var startLevel = line.search(re);
-        if (startLevel == -1)
-            return;
-
-        var startColumn = column || line.length;
-        var maxRow = session.getLength();
-        var startRow = row;
-        var endRow = row;
-
-        while (++row < maxRow) {
-            var level = session.getLine(row).search(re);
-
-            if (level == -1)
-                continue;
-
-            if (level <= startLevel)
-                break;
-
-            endRow = row;
-        }
-
-        if (endRow > startRow) {
-            var endColumn = session.getLine(endRow).length;
-            return new Range(startRow, startColumn, endRow, endColumn);
-        }
-    };
-
-    this.openingBracketBlock = function(session, bracket, row, column, typeRe) {
-        var start = {row: row, column: column + 1};
-        var end = session.$findClosingBracket(bracket, start, typeRe);
-        if (!end)
-            return;
-
-        var fw = session.foldWidgets[end.row];
-        if (fw == null)
-            fw = this.getFoldWidget(session, end.row);
-
-        if (fw == "start" && end.row > start.row) {
-            end.row --;
-            end.column = session.getLine(end.row).length;
-        }
-        return Range.fromPoints(start, end);
     };
 
 }).call(FoldMode.prototype);
