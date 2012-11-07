@@ -6,7 +6,7 @@ apply plugin: 'jetty'
 apply plugin: 'application'
 
 version = '0.0.1-SNAPSHOT'
-description = 'BCVerifier -- Verifying backward compatibility for Java packages'
+description = 'BCVerifier -- A Backward Compatibility Verifier for Java Libraries'
 
 defaultTasks 'classes'
 
@@ -20,29 +20,29 @@ String parserGenDir = "$islGenDir/de/unikl/bcverifier/isl/parser"
 String astGenDir = "$islGenDir/de/unikl/bcverifier/isl/ast"
 String srcDocDir = "$projectDir/doc"
 String destDocDir = "$buildDir/doc"
-int docOptions = org.pegdown.Extensions.AUTOLINKS | org.pegdown.Extensions.WIKILINKS | org.pegdown.Extensions.SMARTYPANTS 
+int docOptions = org.pegdown.Extensions.AUTOLINKS | org.pegdown.Extensions.WIKILINKS | org.pegdown.Extensions.SMARTYPANTS
 
 configurations {
     sshAntTask
 }
 
 repositories {
-	mavenCentral()
+  mavenCentral()
     maven {
         url "https://repository.apache.org/content/repositories/snapshots/"
     }
 }
 
 buildscript {
-	repositories {
-		mavenCentral()
-		maven {
-			url "http://scala-tools.org/repo-releases"
-		}
-	}
-	dependencies {
-		classpath group: 'org.pegdown', name: 'pegdown', version: '1.1.0'
-	}
+  repositories {
+    mavenCentral()
+    maven {
+      url "http://scala-tools.org/repo-releases"
+    }
+  }
+  dependencies {
+    classpath group: 'org.pegdown', name: 'pegdown', version: '1.1.0'
+  }
 }
 
 dependencies {
@@ -64,66 +64,66 @@ dependencies {
     compile group: 'com.beust', name: 'jcommander', version: '1.25'
     compile files("$projectDir/lib/ostermillerutils-1.08.02.jar")
     compile files("$projectDir/lib/beaver-rt.jar")
-	compile fileTree("$projectDir/lib").include('org.eclipse.*.jar')
+  compile fileTree("$projectDir/lib").include('org.eclipse.*.jar')
     compile group: 'com.google.guava', name: 'guava-io', version: 'r03'
-	compile group: 'com.google.guava', name: 'guava-collections', version: 'r03'
+  compile group: 'com.google.guava', name: 'guava-collections', version: 'r03'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.1'
-	sshAntTask group: 'org.apache.ant', name: 'ant-jsch', version: '1.8.4'
+  sshAntTask group: 'org.apache.ant', name: 'ant-jsch', version: '1.8.4'
 }
 
 test {
     useTestNG()
-	options.suites("build/resources/test/testng.xml")
+  options.suites("build/resources/test/testng.xml")
 }
 
 task doc {
-	inputs.files{fileTree(dir: srcDocDir, includes: ['**/*.markdown','**/*.mdown'])}
-	outputs.dir(destDocDir)
-	
-	doLast {
-		new File(destDocDir).mkdirs();
-		inputs.files.each{ source ->
-	       def mp = new PegDownProcessor(docOptions)
-		   def relrenamed = new File(srcDocDir).toURI().relativize(source.toURI()).getPath().replaceFirst('(markdown|mdown)$', 'html')
-		   def target = new File(new File(destDocDir), relrenamed)
-		   target.getParentFile().mkdirs();
-	       target.text = new File(srcDocDir + "/assets/template.html").text.replace("{{{content}}}", mp.markdownToHtml(source.text));
-		}
-	}
+  inputs.files{fileTree(dir: srcDocDir, includes: ['**/*.markdown','**/*.mdown'])}
+  outputs.dir(destDocDir)
+
+  doLast {
+    new File(destDocDir).mkdirs();
+    inputs.files.each{ source ->
+         def mp = new PegDownProcessor(docOptions)
+       def relrenamed = new File(srcDocDir).toURI().relativize(source.toURI()).getPath().replaceFirst('(markdown|mdown)$', 'html')
+       def target = new File(new File(destDocDir), relrenamed)
+       target.getParentFile().mkdirs();
+         target.text = new File(srcDocDir + "/assets/template.html").text.replace("{{{content}}}", mp.markdownToHtml(source.text));
+    }
+  }
 }
 
 applicationDistribution.from(doc) {
     into "doc"
 }
 applicationDistribution.from("libraries") {
-	into "examples"
+  into "examples"
 }
 
 task copyDocAssets(type:Copy) {
-	from (srcDocDir + "/assets") {
-		include '**/*.js'
-		include '**/*.css'
-		include '**/*.png'
-	}
-	from ('src/main/webapp/') {
-		include '**/*.woff'
-		include '**/*.css'
-	}
-	into (destDocDir + "/assets")
+  from (srcDocDir + "/assets") {
+    include '**/*.js'
+    include '**/*.css'
+    include '**/*.png'
+  }
+  from ('src/main/webapp/') {
+    include '**/*.woff'
+    include '**/*.css'
+  }
+  into (destDocDir + "/assets")
 }
 
 doc.dependsOn copyDocAssets
 
 task docReadme {
-	def readme = file("$projectDir/README")
-	inputs.file(readme)
-	outputs.dir(destDocDir)
-	doLast {
-		new File(destDocDir).mkdirs();
-		def mp = new PegDownProcessor(docOptions)
-	    def target = new File(destDocDir, 'readme.html')
-	    target.text = mp.markdownToHtml(readme.text);
-	}
+  def readme = file("$projectDir/README")
+  inputs.file(readme)
+  outputs.dir(destDocDir)
+  doLast {
+    new File(destDocDir).mkdirs();
+    def mp = new PegDownProcessor(docOptions)
+      def target = new File(destDocDir, 'readme.html')
+      target.text = mp.markdownToHtml(readme.text);
+  }
 }
 
 doc.dependsOn docReadme
@@ -145,79 +145,79 @@ sourceSets {
 mainClassName = "de.unikl.bcverifier.Main"
 
 startScripts {
-	applicationName = "bcv"
+  applicationName = "bcv"
 }
 
 war {
-	archiveName = 'bcverifier.war'
-	from(destDocDir) {
-		include '**/*'
-	}
+  archiveName = 'bcverifier.war'
+  from(destDocDir) {
+    include '**/*'
+  }
 }
 
 war.dependsOn doc
 
 task uploadWar {
-	description = 'Deploy war to remote Tomcat server.'
-	doLast {
-		ant.taskdef(name: 'sshexec', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.SSHExec', classpath: configurations.sshAntTask.asPath)
-		ant.taskdef(name: 'scp', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.Scp', classpath: configurations.sshAntTask.asPath)
-		ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: '/bin/bash -l /home/yoz/bcverifier/tomcat/bin/catalina.sh stop', verbose: 'true')
-		ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: 'rm -rf /home/yoz/bcverifier/tomcat/webapps/bcverifier*', verbose: 'true')
-		ant.scp(todir: 'yoz@welsch.lu:~/bcverifier/tomcat/webapps', port: '54321', file: war.archivePath.path, keyfile: '${user.home}/.ssh/id_rsa')
-		ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: '/bin/bash -l /home/yoz/bcverifier/tomcat/bin/catalina.sh start', verbose: 'true')
-	}
+  description = 'Deploy war to remote Tomcat server.'
+  doLast {
+    ant.taskdef(name: 'sshexec', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.SSHExec', classpath: configurations.sshAntTask.asPath)
+    ant.taskdef(name: 'scp', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.Scp', classpath: configurations.sshAntTask.asPath)
+    ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: '/bin/bash -l /home/yoz/bcverifier/tomcat/bin/catalina.sh stop', verbose: 'true')
+    ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: 'rm -rf /home/yoz/bcverifier/tomcat/webapps/bcverifier*', verbose: 'true')
+    ant.scp(todir: 'yoz@welsch.lu:~/bcverifier/tomcat/webapps', port: '54321', file: war.archivePath.path, keyfile: '${user.home}/.ssh/id_rsa')
+    ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: '/bin/bash -l /home/yoz/bcverifier/tomcat/bin/catalina.sh start', verbose: 'true')
+  }
 }
 uploadWar.dependsOn war
 
 def getHGRevision = {
-	def res = ""
-	try {
-	new ByteArrayOutputStream().withStream { os ->
-		def result = exec {
-			executable = 'hg'
-			args = ['parent', '--template', '"rev.{rev} ({date|shortdate})"']
-			standardOutput = os
-		}
-		res = os.toString().replaceAll (/"/, '')
-		}
-	} catch (Exception e) {}
-	return res
+  def res = ""
+  try {
+  new ByteArrayOutputStream().withStream { os ->
+    def result = exec {
+      executable = 'hg'
+      args = ['parent', '--template', '"rev.{rev} ({date|shortdate})"']
+      standardOutput = os
+    }
+    res = os.toString().replaceAll (/"/, '')
+    }
+  } catch (Exception e) {}
+  return res
 }
 
 import org.apache.tools.ant.filters.ReplaceTokens
 processResources {
-	def hgrevision = getHGRevision()
-	inputs.property('hgrevision', hgrevision)
-	from('src/main/resources/project.properties') {
-		filter(ReplaceTokens, tokens: [version: hgrevision])
-	}
+  def hgrevision = getHGRevision()
+  inputs.property('hgrevision', hgrevision)
+  from('src/main/resources/project.properties') {
+    filter(ReplaceTokens, tokens: [version: hgrevision])
+  }
 }
 
 processTestResources {
-	def numProcessors = Math.max(Runtime.getRuntime().availableProcessors() - 2, 1)
-	inputs.property('numProcessors', numProcessors)
-	from('src/test/resources/testng.xml') {
-		filter(ReplaceTokens, tokens: [threadcount: numProcessors.toString()])
-	}
+  def numProcessors = Math.max(Runtime.getRuntime().availableProcessors() - 2, 1)
+  inputs.property('numProcessors', numProcessors)
+  from('src/test/resources/testng.xml') {
+    filter(ReplaceTokens, tokens: [threadcount: numProcessors.toString()])
+  }
 }
 
 httpPort = 60602
 
 eclipse {
-	project {
-		name = 'BCVerifier'		
-		natures 'com.springsource.sts.gradle.core.nature', 'org.eclipse.jdt.groovy.core.groovyNature'
-		comment = description
-	}
+  project {
+    name = 'BCVerifier'
+    natures 'com.springsource.sts.gradle.core.nature', 'org.eclipse.jdt.groovy.core.groovyNature'
+    comment = description
+  }
     classpath {
         //customizing the classes output directory:
         defaultOutputDir = file('build-eclipse')
-		
-		containers 'com.springsource.sts.gradle.classpathcontainer', 'com.springsource.sts.gradle.dsld.classpathcontainer', 'GROOVY_DSL_SUPPORT'
-    
-		//minusConfigurations += configurations.compile
-		//minusConfigurations += configurations.testCompile
+
+    containers 'com.springsource.sts.gradle.classpathcontainer', 'com.springsource.sts.gradle.dsld.classpathcontainer', 'GROOVY_DSL_SUPPORT'
+
+    //minusConfigurations += configurations.compile
+    //minusConfigurations += configurations.testCompile
         //default settings for dependencies sources/javadoc download:
         downloadSources = true
         downloadJavadoc = false
@@ -257,7 +257,7 @@ task runJFlex {
     outputs.file("$parserGenDir/ISLScanner.java")
     doLast {
         ant.taskdef name: 'jflex', classname: 'JFlex.anttask.JFlexTask', classpath: "$projectDir/lib/JFlex.jar"
-    
+
         ant.jflex(file: flexFile, outdir: parserGenDir)
     }
 }

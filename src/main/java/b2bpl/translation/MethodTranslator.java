@@ -2844,24 +2844,7 @@ public class MethodTranslator implements ITranslationConstants {
                     }
                 }
                 
-                // type information of the method parameters
-                JType[] params = new JType[method.getParameterCount() + 1];
-                params[0] = method.getOwner();
-                System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
-                for(int i=0; i<params.length; i++){
-                    if(params[i].isBaseType()){
-                        addAssume(isInRange(stack(var(localVar(i, params[i]))), typeRef(params[i])));
-                    } else {
-                        addAssume(isOfType(stack(var(localVar(i, params[i]))), var(tc.getHeap()), typeRef(params[i])));
-                    }
-//                    if(method.isStatic()){
-//                        if(i>0){
-//                            addAssignment(stack(var(localVar(i-1, params[i]))), stack(var(paramVar(i, params[i]))));
-//                        }
-//                    } else {
-//                        addAssignment(stack(var(localVar(i, params[i]))), stack(var(paramVar(i, params[i]))));
-//                    }
-                }
+                typeMethodParams();
                 
                 addAssume(nonNull(stack(receiver())));
                 
@@ -3609,17 +3592,7 @@ public class MethodTranslator implements ITranslationConstants {
               }
               
               // type information of the method parameters
-              JType[] params = new JType[method.getParameterCount() + 1];
-              params[0] = method.getOwner();
-              System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
-              for(int i=0; i<params.length; i++){
-                  if(params[i].isBaseType()){
-                      addAssume(isInRange(stack(var(localVar(i, params[i]))), typeRef(params[i])));
-                  } else {
-                      addAssume(isOfType(stack(var(localVar(i, params[i]))), var(tc.getHeap()), typeRef(params[i])));
-                  }
-                  addAssignment(stack(var(localVar(i, params[i]))), stack(var(localVar(i, params[i]))));
-              }
+              typeMethodParams();
               
               addAssume(nonNull(stack(receiver())));
               
@@ -3696,6 +3669,23 @@ public class MethodTranslator implements ITranslationConstants {
                 callStatements++;
             }
         }
+
+		private void typeMethodParams() {
+			JType[] params = method.getParameterTypes();
+			if (!method.isStatic()) {
+				params = new JType[method.getParameterCount() + 1];
+				params[0] = method.getOwner();
+				System.arraycopy(method.getParameterTypes(), 0, params, 1, method.getParameterCount());
+			}
+
+			for(int i=0; i<params.length; i++){
+				if(params[i].isBaseType()){
+					addAssume(isInRange(stack(var(localVar(i, params[i]))), typeRef(params[i])));
+				} else {
+					addAssume(isOfType(stack(var(localVar(i, params[i]))), var(tc.getHeap()), typeRef(params[i])));
+				}
+			}
+		}
 
         //@ requires insn != null;
         public void visitInvokeVirtualInstruction(InvokeVirtualInstruction insn) {

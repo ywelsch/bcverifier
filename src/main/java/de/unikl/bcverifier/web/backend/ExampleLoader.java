@@ -73,10 +73,13 @@ public class ExampleLoader {
 		String[][] TO_LOAD = new String[][] { 
 				new String[]{ "cell", "Cell example", "1", "spec.isl" },
 				new String[]{ "cb", "Callback example", "3", "spec.isl" },
+				new String[]{ "cbalt", "Callback example (alt.1)", "3", "spec.isl" },
+				new String[]{ "cbalt", "Callback example (alt.2)", "3", "spec2.isl" },
 				new String[]{ "obool", "OBool example", "5", "spec.isl" },
 				new String[]{ "obool", "OBool example (alt.1)", "5", "spec2.isl" },
 				new String[]{ "obool", "OBool example (alt.2)", "5", "spec3.isl" },
 				new String[]{ "subtypes", "Subtypes example", "2", "spec.isl" },
+				new String[]{ "subtypes3", "Subtypes example (alt.1)", "4", "spec.isl" },
 				new String[]{ "oneOffLoop", "OneOffLoop example", "2", "spec.isl" },
 				new String[]{ "diverge", "Divergence example", "2", "spec.isl" },
 				new String[]{ "diverge2", "Divergence example (alt)", "2", "spec.isl" },
