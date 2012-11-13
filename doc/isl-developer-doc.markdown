@@ -43,6 +43,14 @@ Translation
 	// i has type boolean
 	tr(i) := int2bool(stackX[ipX][sp][register(i)])
 	
+### instanceof
+
+	tr(a instanceof C) := isInstanceOf(tr(a), heap1, C) 
+
+isInstanceOf is defined as in Java: 
+	
+	isInstanceOf(o, heap, t) <==> o != null && isOfType(o, heap, t))
+
 ### Builtin functions
 
 	tr(at(p, sp)) := stackX[ipX][tr(sp)][place] == p
@@ -84,6 +92,8 @@ Well-definedness
 	wd(a % b) := wd(a / b)
 	
 	wd(forall x :: e) := forall x :: wd(e)
+
+	wd(exists x :: e) := forall x :: wd(e)
 	
 ### Builtin functions
 
@@ -92,3 +102,7 @@ Well-definedness
 	wd(stack(p, sp, e) := wd(at(p, sp)) && tr(at(p, sp)) && wd(e)
 	
 	wd(stack(p, e) := tr(at(p)) && wd(e)
+
+	wd(exposed(e)) := tr(e) != null
+
+	wd(createdByCtxt(e)) := tr(e) != null

@@ -1,6 +1,8 @@
 package de.unikl.bcverifier.isl.translation.builtinfuncs;
 
+import b2bpl.bpl.ast.BPLEqualityExpression;
 import b2bpl.bpl.ast.BPLExpression;
+import b2bpl.bpl.ast.BPLNullLiteral;
 import b2bpl.translation.ITranslationConstants;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.List;
@@ -24,5 +26,12 @@ final class BuiltinFuncExposed extends BuiltinFunction {
 	@Override
 	public BPLExpression translateCall(boolean isInGlobalInv, List<Expr> arguments) {
 		return BuiltinFunctions.heapProperty(arguments.getChild(0), ITranslationConstants.EXPOSED_FIELD);
+	}
+	
+	@Override
+	public BPLExpression translateWelldefinedness(boolean isGlobalInvariant, List<Expr> arguments) {
+		Expr arg = arguments.getChild(0);
+		return new BPLEqualityExpression(BPLEqualityExpression.Operator.NOT_EQUALS, 
+				arg.translateExpr(), BPLNullLiteral.NULL);
 	}
 }
