@@ -170,6 +170,19 @@ task uploadWar {
 }
 uploadWar.dependsOn war
 
+task byronDeploy {
+  description = 'Deploy war to remote Tomcat server.'
+  doLast {
+    ant.taskdef(name: 'sshexec', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.SSHExec', classpath: configurations.sshAntTask.asPath)
+    ant.taskdef(name: 'scp', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.Scp', classpath: configurations.sshAntTask.asPath)
+    ant.sshexec(host: 'byron', username: '${user.name}', keyfile: '${user.home}/.ssh/id_rsa', command: 'sudo service tomcat6 stop', verbose: 'true')
+/*    ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: 'rm -rf /home/yoz/bcverifier/tomcat/webapps/bcverifier*', verbose: 'true')
+    ant.scp(todir: 'yoz@welsch.lu:~/bcverifier/tomcat/webapps', port: '54321', file: war.archivePath.path, keyfile: '${user.home}/.ssh/id_rsa')
+    ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: '/bin/bash -l /home/yoz/bcverifier/tomcat/bin/catalina.sh start', verbose: 'true') */
+  }
+}
+byronDeploy.dependsOn war
+
 def getHGRevision = {
   def res = ""
   try {
@@ -269,6 +282,15 @@ generateSources.dependsOn runBeaver
 generateSources.dependsOn runJFlex
 
 compileJava.dependsOn generateSources
+
+task runTest(type: JavaExec) {
+	main = "de.unikl.bcverifier.SingleTestRunner"
+	classpath = project.sourceSets.main.runtimeClasspath
+	if (project.hasProperty("test")){
+		args test
+	}
+}
+runTest.dependsOn classes
 
 task removeGenFolder(type: Delete) {
     delete islGenDir
