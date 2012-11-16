@@ -61,11 +61,17 @@ public class TypeHelper {
 	public static ExprType attrType(NamedTypeDef t) {
 		Version version = t.getVersion();
 		String qualifiedName = getQualifiedName(t.getNames());
-		if (version.equals(Version.BOTH) && t.getNameList().getNumChild() == 1 && t.getName(0).getName().equals(BijectionType.instance().toString())) {
-			return BijectionType.instance();
-		} else {
-			return JavaType.create(t, version, qualifiedName);
+		if (version.equals(Version.BOTH) && t.getNameList().getNumChild() == 1) {
+			String typeName = t.getName(0).getName();
+			if (typeName.equals(BijectionType.instance().toString())) {
+				return BijectionType.instance();
+			} else if (typeName.equals(ExprTypeInt.instance().toString())) {
+				return ExprTypeInt.instance();
+			} else if (typeName.equals(ExprTypeBool.instance().toString())) {
+				return ExprTypeBool.instance();
+			}
 		}
+		return JavaType.create(t, version, qualifiedName);
 	}
 
 	private static String getQualifiedName(List<Ident> names) {
