@@ -1355,7 +1355,7 @@ public class MethodTranslator implements ITranslationConstants {
                     BPLExpression topElem = stack(var(resVar(retType)));
                     
                     if(tc.isActive() && method.isConstructor()){
-                        addAssignment(topElem, stack(var(stackVar(0, retType))));
+                        addAssignment(topElem, stack(var(localVar(0, retType))));
                     }
 
                     if (method.getReturnType().isReferenceType() || method.isConstructor()) {

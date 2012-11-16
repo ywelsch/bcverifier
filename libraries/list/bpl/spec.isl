@@ -7,8 +7,8 @@ invariant forall new List l1, new List l2 :: l1 != l2 ==> l1.snt != l2.snt;
 invariant forall new Node n1, new Node n2 :: n1 != n2 && (n1.next != null || n2.next != null) ==> n1.next != n2.next;
 invariant forall new List l, new Node n :: l.snt != n.next;
 
-invariant forall old List l :: l.fst != null ==> !createdByCtxt(l.fst);
-invariant forall new List l :: !createdByCtxt(l.snt);
+invariant forall old List l :: l.fst != null ==> createdByLibrary(l.fst);
+invariant forall new List l :: createdByLibrary(l.snt);
 
 
 
@@ -25,7 +25,7 @@ invariant exists Bijection bij ::
 // (forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> n1.ob ~ n2.ob) &&
 // (forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> !(n1.ob instanceof old Node) && !(n2.ob instanceof new Node)) &&
 // (forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> related(bij, n1.next, n2.next)) &&
-// (forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> !createdByCtxt(n1) && !exposed(n1) && !createdByCtxt(n2) && !exposed(n2)) &&
+// (forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> createdByLibrary(n1) && !exposed(n1) && createdByLibrary(n2) && !exposed(n2)) &&
 true
 ;
 

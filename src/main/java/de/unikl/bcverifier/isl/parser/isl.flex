@@ -92,7 +92,7 @@ IntLiteral = 0 | [1-9][0-9]*
  "with" { return sym(Terminals.WITH); }
  "of" { return sym(Terminals.OF); }
  "call" { return sym(Terminals.CALL); }
- "predefined" { return sym(Terminals.PREDEFINED); }
+// "predefined" { return sym(Terminals.PREDEFINED); }
 // "termination measure" { return sym(Terminals.TERMINATION_MEASURE); }
 }
 

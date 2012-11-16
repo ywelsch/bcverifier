@@ -29,6 +29,8 @@ aspect exprType {
   eq IntConst.attrType() = ExprTypeInt.instance();
 
   eq NullConst.attrType() = TypeHelper.attrType(this);
+  
+  eq VersionConst.attrType() = TypeHelper.attrType(this);
 
   syn ExprType ProgramPointExpr.attrType() circular [UnknownType.instance()];
 

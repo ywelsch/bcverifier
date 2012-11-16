@@ -7,6 +7,7 @@ import b2bpl.bpl.ast.BPLExpression;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.isl.ast.VersionConst;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
@@ -37,20 +38,12 @@ public class StackpointerExpr extends Expr {
 
 	@Override
 	public BPLExpression translateExpr() {
-		if (version == Version.OLD) {
-			return BuiltinFunctions.FUNC_SP1.translateCall(attrIsInGlobalInvariant(), new List<Expr>());
-		} else {
-			return BuiltinFunctions.FUNC_SP2.translateCall(attrIsInGlobalInvariant(), new List<Expr>());
-		}
+		return BuiltinFunctions.FUNC_STACKINDEX.translateCall(attrIsInGlobalInvariant(), new List<Expr>().add(new VersionConst(version)));
 	}
 
 	@Override
 	public BPLExpression translateExprWellDefinedness() {
-		if (version == Version.OLD) {
-			return BuiltinFunctions.FUNC_SP1.translateWelldefinedness(attrIsInGlobalInvariant(), new List<Expr>());
-		} else {
-			return BuiltinFunctions.FUNC_SP2.translateWelldefinedness(attrIsInGlobalInvariant(), new List<Expr>());
-		}
+		return BuiltinFunctions.FUNC_STACKINDEX.translateWelldefinedness(attrIsInGlobalInvariant(), new List<Expr>().add(new VersionConst(version)));
 	}
 
 	

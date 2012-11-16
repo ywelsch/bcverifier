@@ -5,10 +5,13 @@ import static b2bpl.translation.CodeGenerator.var;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.IntType;
+
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
 import b2bpl.bpl.ast.BPLBinaryLogicalExpression;
 import b2bpl.bpl.ast.BPLBoolLiteral;
+import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLEqualityExpression;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLFunctionApplication;
@@ -43,9 +46,11 @@ import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.isl.ast.VersionConst;
 import de.unikl.bcverifier.isl.checking.JavaVariableDef;
 import de.unikl.bcverifier.isl.checking.types.BijectionType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
@@ -133,35 +138,42 @@ public class ExprTranslation {
 		BPLVariable[] variables = new BPLVariable[boundVars.getNumChild()];
 		int i = 0;
 		for (VarDef boundVar : boundVars) {
+			BPLType type;
 			if (boundVar.attrType() instanceof JavaType) {
-				BPLType type = new BPLTypeName(ITranslationConstants.REF_TYPE); 
-				variables[i] = new BPLVariable(boundVar.attrName(), type);
+				type = new BPLTypeName(ITranslationConstants.REF_TYPE); 
 			} else if (boundVar.attrType() instanceof BijectionType) {
-				BPLType type = new BPLTypeName(ITranslationConstants.BIJ_TYPE); 
-				variables[i] = new BPLVariable(boundVar.attrName(), type);
+				type = new BPLTypeName(ITranslationConstants.BIJ_TYPE); 
+			} else if (boundVar.attrType() instanceof ExprTypeInt) {
+				type = BPLBuiltInType.INT; 
+			} else if (boundVar.attrType() instanceof ExprTypeBool) {
+				type = BPLBuiltInType.BOOL; 
 			} else {
 				throw new Error("Quantification over primitive types not supported yet.");
 			}
+			variables[i] = new BPLVariable(boundVar.attrName(), type);
 			i++;
 		}
 		BPLExpression leftExpr = null;
 		for (VarDef boundVar : boundVars) {
+			BPLExpression typeAssumtion;
 			if (boundVar.attrType() instanceof JavaType) {
 				JavaType javaType = (JavaType) boundVar.attrType();
-				BPLExpression typeAssumtion = makeTypeAssumption(boundVar, javaType);
-				if (leftExpr == null) {
-					leftExpr = typeAssumtion;
-				} else {
-					leftExpr = new BPLBinaryLogicalExpression(AND, leftExpr, typeAssumtion);
-				}
+				typeAssumtion = makeTypeAssumption(boundVar, javaType);
 			} else if (boundVar.attrType() instanceof BijectionType) {
 				BijectionType bijType = (BijectionType) boundVar.attrType();
-				BPLExpression typeAssumtion = makeTypeAssumption(boundVar, bijType);
-				if (leftExpr == null) {
-					leftExpr = typeAssumtion;
-				} else {
-					leftExpr = new BPLBinaryLogicalExpression(AND, leftExpr, typeAssumtion);
-				}
+				typeAssumtion = makeTypeAssumption(boundVar, bijType);
+			} else if (boundVar.attrType() instanceof ExprTypeInt) {
+				typeAssumtion = new BPLFunctionApplication(
+						ITranslationConstants.IS_IN_RANGE_FUNC, 
+						new BPLVariableExpression(boundVar.attrName()),
+						new BPLVariableExpression(ITranslationConstants.VALUE_TYPE_PREFIX + "int"));
+			} else {
+				continue;
+			}
+			if (leftExpr == null) {
+				leftExpr = typeAssumtion;
+			} else {
+				leftExpr = new BPLBinaryLogicalExpression(AND, leftExpr, typeAssumtion);
 			}
 		}
 		
@@ -346,6 +358,10 @@ public class ExprTranslation {
 				op.getLeft().translateExpr(), 
 				getHeap(jt.getVersion(), op.attrCompilationUnit().getPhase()), 
 				getBoogieTypeName(jt.getTypeBinding()));
+	}
+
+	public static BPLExpression translate(VersionConst versionConst) {
+		throw new Error("Cannot translate VersionConst expressions");
 	}
 
 

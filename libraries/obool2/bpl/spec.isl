@@ -2,8 +2,8 @@
 invariant forall old OBool o :: o.g != null;
 invariant forall new OBool o :: o.g != null;
 // internal:
-invariant forall old OBool o :: !createdByCtxt(o.g) && !exposed(o.g);
-invariant forall new OBool o :: !createdByCtxt(o.g) && !exposed(o.g);
+invariant forall old OBool o :: createdByLibrary(o.g) && !exposed(o.g);
+invariant forall new OBool o :: createdByLibrary(o.g) && !exposed(o.g);
 // unique (no aliasing on field g):
 invariant forall old OBool o1, old OBool o2 :: o1 != o2 ==> o1.g != o2.g;
 invariant forall new OBool o1, new OBool o2 :: o1 != o2 ==> o1.g != o2.g;

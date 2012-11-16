@@ -8,10 +8,10 @@ local invariant at(oldBeforeReturn) || at(oldInLoop) <==> at(newBeforeReturn);
 
 // loop invariant
 	local invariant at(oldInLoop) && at(newBeforeReturn) 
-		==> stack(oldInLoop, n) == stack(newBeforeReturn, n);
+		==> eval(oldInLoop, n) == eval(newBeforeReturn, n);
 	
 	local invariant at(oldInLoop) 
-		==> stack(oldInLoop, 
+		==> eval(oldInLoop, 
 				   x == (i-1)*i / 2
 				&& 0 <= i 
 				&& i <= n);  
@@ -19,10 +19,10 @@ local invariant at(oldBeforeReturn) || at(oldInLoop) <==> at(newBeforeReturn);
 
 // equal at return:
 	local invariant at(oldBeforeReturn) 
-		==> stack(oldBeforeReturn, x == if n >= 0 then (n+1)*n / 2 else 0);
+		==> eval(oldBeforeReturn, x == if n >= 0 then (n+1)*n / 2 else 0);
 		
 	local invariant at(newBeforeReturn)
-		==> stack(newBeforeReturn, x == if n >= 0 then (n+1)*n / 2 else 0);
+		==> eval(newBeforeReturn, x == if n >= 0 then (n+1)*n / 2 else 0);
 	
 	local invariant at(oldBeforeReturn) && at(newBeforeReturn) 
-		==> stack(oldBeforeReturn, n) == stack(newBeforeReturn, n);
+		==> eval(oldBeforeReturn, n) == eval(newBeforeReturn, n);

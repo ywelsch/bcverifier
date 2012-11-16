@@ -26,6 +26,10 @@ public class JavaType extends ExprType {
 	}
 	
 	public static ExprType create(ASTNode<?> loc, Version version, String qualifiedName) {
+		if (version == BOTH) {
+			loc.addError("No version specified for type " + qualifiedName + ".");
+			return UnknownType.instance();
+		}
 		TwoLibraryModel env = loc.attrCompilationUnit().getTwoLibraryModel();
 		ITypeBinding c = env.getSrc(version).resolveType(qualifiedName);
 		if (c == null) {

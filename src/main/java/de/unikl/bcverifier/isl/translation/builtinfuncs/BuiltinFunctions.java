@@ -19,8 +19,7 @@ import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class BuiltinFunctions {
 	
-	public static final BuiltinFunction FUNC_SP1 = new BuiltinFuncSp1();
-	public static final BuiltinFunction FUNC_SP2 = new BuiltinFuncSp2();
+	public static final BuiltinFunction FUNC_STACKINDEX = new BuiltinFuncStackIndex();
 
 	public final BuiltinFunction FUNC_AT_place_sp = new BuiltinFuncAt_place_sp();
 	public final BuiltinFunction FUNC_AT_place = new BuiltinFuncAt_place();
@@ -45,19 +44,17 @@ public class BuiltinFunctions {
 		// bool exposed(Object o)
 		addFunc(new BuiltinFuncExposed(twoLibraryModel));
 		// bool createdByCtxt(Object o)
-		addFunc(new BuiltinFuncCreatedByCtxt(twoLibraryModel));
+		addFunc(new BuiltinFuncCreatedByLibrary(twoLibraryModel));
 		// bool at(Place p, int stackPointer)
 		addFunc(FUNC_AT_place_sp);
 		// bool at(Place p)
 		addFunc(FUNC_AT_place);
 		// T stack(Place p, int stackPointer, T expr)
-		addFunc(new BuiltinFuncStack_place_sp(this));
+		addFunc(new BuiltinFuncEval_place_sp(this));
 		// T stack(Place p, T expr)
-		addFunc(new BuiltinFuncStack_place(this));
-		// int sp1()
-		addFunc(FUNC_SP1);
-		// int sp2()
-		addFunc(FUNC_SP2);
+		addFunc(new BuiltinFuncEval_place(this));
+		// int stackIndex(version v)
+		addFunc(FUNC_STACKINDEX);
 		// bool related(Bijection b, Object o1, Object o2)
 		addFunc(new BuiltinFuncRelated(twoLibraryModel));
 	}

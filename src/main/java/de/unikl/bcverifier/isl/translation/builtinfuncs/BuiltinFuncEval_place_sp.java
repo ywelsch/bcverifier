@@ -20,12 +20,12 @@ import de.unikl.bcverifier.isl.translation.TranslationHelper;
  * evaluates the expression expr in the context of the given place and stackpointer
  * (i.e. local variables visible at p can be used in expr)
  */
-final class BuiltinFuncStack_place_sp extends BuiltinFunction {
+final class BuiltinFuncEval_place_sp extends BuiltinFunction {
 	private final BuiltinFunctions builtinFunctions;
 
 
-	public BuiltinFuncStack_place_sp(BuiltinFunctions builtinFunctions) {
-		super("stack", ExprTypeAny.instance(), new ExprType[] { ExprTypePlace.instance(),
+	public BuiltinFuncEval_place_sp(BuiltinFunctions builtinFunctions) {
+		super(BuiltinFuncEval_place.name, ExprTypeAny.instance(), new ExprType[] { ExprTypePlace.instance(),
 			ExprTypeInt.instance(), ExprTypeAny.instance() });
 		this.builtinFunctions = builtinFunctions;
 	}

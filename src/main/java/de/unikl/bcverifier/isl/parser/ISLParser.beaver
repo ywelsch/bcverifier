@@ -61,7 +61,7 @@ import de.unikl.bcverifier.isl.ast.*;
 
 %terminals FORALL, EXISTS, TRUE, FALSE, INVALIDTOKEN, OLD, NEW, IDENTIFIER, INVARIANT, LOCAL,
 	IN,
-	PLACE, LINE, STALL, WITH, MEASURE, WHEN, CALL, OF, PREDEFINED, 
+	PLACE, LINE, STALL, WITH, MEASURE, WHEN, CALL, OF, 
 	IF, THEN, ELSE,
 	DOT,
 	MOD, MULT, DIV, PLUS, MINUS, LT, LTEQ, GT, GTEQ, NOT,
@@ -121,17 +121,19 @@ statement =
 ;
 
 placedef =	
-	placemodifier.m PLACE placeoptions.opts id.i EQ placeposition.pos placecondition.cond stallcondition.stallcond SEMI
+	placemodifier.m PLACE id.i EQ placeposition.pos placecondition.cond stallcondition.stallcond placeoptions.opts SEMI
 		{: return new PlaceDef(m, opts, i, pos, cond , stallcond); :}
 ;
 
 placemodifier =
-	  LOCAL {: return new PlaceModifierLocal(); :}
-	| PREDEFINED {: return new PlaceModifierPredefined(); :}
+	  LOCAL 
+	  	{: return new PlaceModifierLocal(); :}
+	| 		// no modifier = predefined place
+		{: return new PlaceModifierPredefined(); :}
 ;
 
 placeoptions =
-	  LPAREN id.i RPAREN
+	  id.i
 		{: return new List().add(i); :} 
 	|
 		{: return new List(); :}  
@@ -178,6 +180,10 @@ expr =
     	{: return new IntConst(i); :}
     | NULL
     	{: return new NullConst(); :}
+    | OLD 
+    	{: return new VersionConst(Version.OLD); :}
+    | NEW 
+    	{: return new VersionConst(Version.NEW); :}
     | id.i
     	{: return new VarAccess(i); :}
     | id.f LPAREN parameterlist.p RPAREN

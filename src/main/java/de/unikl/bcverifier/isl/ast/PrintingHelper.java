@@ -122,4 +122,15 @@ public class PrintingHelper {
 		return null;
 	}
 
+
+
+	public static Void print(Appendable r, VersionConst versionConst) {
+		switch (versionConst.getVal()) {
+		case NEW: print(r, "new");
+		case OLD: print(r, "old");
+		case BOTH: print(r, "both");
+		}
+		return null;
+	}
+
 }
