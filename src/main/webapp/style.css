@@ -225,3 +225,6 @@ h3 {
 	float:right;
 }
 
+.ace-cobalt .ace_builtinfunction {
+  font-style: italic;
+}

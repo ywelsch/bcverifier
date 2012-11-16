@@ -248,14 +248,14 @@ var ClojureHighlightRules = function() {
                 regex : '[!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+||=|!=|<=|>=|<>|<|>|!|&&]'
             }, {
                 token : keywordMapper,
-                regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+                regex : "[a-zA-Z_$][a-zA-Z0-9_$\\-]*\\b"
             }, {
                 token : "string", // single line
                 regex : '"',
                 next: "string"
             }, {
                 token : "string", // symbol
-                regex : "[:](?:[a-zA-Z]|\\d)+"
+                regex : /:[\w*+!\-_?:\/]+/
             }, {
                 token : "string.regexp", //Regular Expressions
                 regex : '/#"(?:\\.|(?:\\\")|[^\""\n])*"/g'

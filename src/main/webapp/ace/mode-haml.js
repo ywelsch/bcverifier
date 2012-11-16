@@ -1,7 +1,7 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
- * Copyright (c) 2010, Ajax.org B.V.
+ * Copyright (c) 2012, Ajax.org B.V.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -26,87 +26,160 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ *
+ * Contributor(s):
+ * 
+ * Garen J. Torikian < gjtorikian AT gmail DOT com >
+ *
  * ***** END LICENSE BLOCK ***** */
 
-define('ace/mode/ruby', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text', 'ace/tokenizer', 'ace/mode/ruby_highlight_rules', 'ace/mode/matching_brace_outdent', 'ace/range', 'ace/mode/folding/coffee'], function(require, exports, module) {
+define('ace/mode/haml', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text', 'ace/tokenizer', 'ace/mode/haml_highlight_rules'], function(require, exports, module) {
 
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
 var Tokenizer = require("../tokenizer").Tokenizer;
-var RubyHighlightRules = require("./ruby_highlight_rules").RubyHighlightRules;
-var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
-var Range = require("../range").Range;
-var FoldMode = require("./folding/coffee").FoldMode;
+var HamlHighlightRules = require("./haml_highlight_rules").HamlHighlightRules;
 
 var Mode = function() {
-    this.$tokenizer = new Tokenizer(new RubyHighlightRules().getRules());
-    this.$outdent = new MatchingBraceOutdent();
-    this.foldingRules = new FoldMode();
+    var highlighter = new HamlHighlightRules();
+    
+    this.$tokenizer = new Tokenizer(highlighter.getRules());
 };
 oop.inherits(Mode, TextMode);
 
 (function() {
-
-    this.toggleCommentLines = function(state, doc, startRow, endRow) {
-        var outdent = true;
-        var re = /^(\s*)#/;
-
-        for (var i=startRow; i<= endRow; i++) {
-            if (!re.test(doc.getLine(i))) {
-                outdent = false;
-                break;
-            }
-        }
-
-        if (outdent) {
-            var deleteRange = new Range(0, 0, 0, 0);
-            for (var i=startRow; i<= endRow; i++)
-            {
-                var line = doc.getLine(i);
-                var m = line.match(re);
-                deleteRange.start.row = i;
-                deleteRange.end.row = i;
-                deleteRange.end.column = m[0].length;
-                doc.replace(deleteRange, m[1]);
-            }
-        }
-        else {
-            doc.indentRows(startRow, endRow, "#");
-        }
-    };
-
-    this.getNextLineIndent = function(state, line, tab) {
-        var indent = this.$getIndent(line);
-
-        var tokenizedLine = this.$tokenizer.getLineTokens(line, state);
-        var tokens = tokenizedLine.tokens;
-
-        if (tokens.length && tokens[tokens.length-1].type == "comment") {
-            return indent;
-        }
-        
-        if (state == "start") {
-            var match = line.match(/^.*[\{\(\[]\s*$/);
-            if (match) {
-                indent += tab;
-            }
-        }
-
-        return indent;
-    };
-
-    this.checkOutdent = function(state, line, input) {
-        return this.$outdent.checkOutdent(line, input);
-    };
-
-    this.autoOutdent = function(state, doc, row) {
-        this.$outdent.autoOutdent(doc, row);
-    };
-
 }).call(Mode.prototype);
 
 exports.Mode = Mode;
+});define('ace/mode/haml_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text_highlight_rules', 'ace/mode/ruby_highlight_rules'], function(require, exports, module) {
+
+
+var oop = require("../lib/oop");
+var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
+var RubyExports = require("./ruby_highlight_rules");
+var RubyHighlightRules = RubyExports.RubyHighlightRules;
+
+var HamlHighlightRules = function() {
+
+    this.$rules = 
+        {
+    "start": [
+        {
+            "token" : "punctuation.section.comment",
+            "regex" : /^\s*\/.*/
+        },
+        {
+            "token" : "punctuation.section.comment",
+            "regex" : /^\s*#.*/
+        },
+        {
+            "token": "string.quoted.double",
+            "regex": "==.+?=="
+        },
+        {
+            "token": "keyword.other.doctype",
+            "regex": "^!!!\\s*(?:[a-zA-Z0-9-_]+)?"
+        },
+        RubyExports.qString,
+        RubyExports.qqString,
+        RubyExports.tString,
+        {
+            "token": ["entity.name.tag.haml"],
+            "regex": /^\s*%[\w:]+/,
+            "next": "tag_single"
+        },
+        {
+            "token": [ "meta.escape.haml" ],
+            "regex": "^\\s*\\\\."
+        },
+        RubyExports.constantNumericHex,
+        RubyExports.constantNumericFloat,
+        
+        RubyExports.constantOtherSymbol,
+        {
+            "token": "text",
+            "regex": "=|-|~",
+            "next": "embedded_ruby"
+        }
+    ],
+    "tag_single": [
+        {
+            "token": "entity.other.attribute-name.class.haml",
+            "regex": "\\.[\\w-]+"
+        },
+        {
+            "token": "entity.other.attribute-name.id.haml",
+            "regex": "#[\\w-]+"
+        },
+        {
+            "token": "punctuation.section",
+            "regex": "\\{",
+            "next": "section"
+        },
+        
+        RubyExports.constantOtherSymbol,
+        
+        {
+            "token": "text",
+            "regex": /\s/,
+            "next": "start"
+        },
+        {
+            "token": ["text", "punctuation"],
+            "regex": "($)|((?!\\.|#|\\{|\\[|=|-|~|\\/))",
+            "next": "start"
+        }
+    ],
+    "section": [
+        RubyExports.constantOtherSymbol,
+        
+        RubyExports.qString,
+        RubyExports.qqString,
+        RubyExports.tString,
+        
+        RubyExports.constantNumericHex,
+        RubyExports.constantNumericFloat,
+        {
+            "token": "punctuation.section",
+            "regex": "\\}",
+            "next": "start"
+        } 
+    ],
+    "embedded_ruby": [ 
+        RubyExports.constantNumericHex,
+        RubyExports.constantNumericFloat,
+        {
+                token : "support.class", // class name
+                regex : "[A-Z][a-zA-Z_\\d]+"
+        },    
+        {
+            "token" : new RubyHighlightRules().getKeywords(),
+            "regex" : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+        },
+        {
+            "token" : ["keyword", "text", "text"],
+            "regex" : "(?:do|\\{)(?: \\|[^|]+\\|)?$",
+            "next"  : "start"
+        }, 
+        {
+            "token" : ["text"],
+            "regex" : "^$",
+            "next"  : "start"
+        }, 
+        {
+            "token" : ["text"],
+            "regex" : "^(?!.*\\|\\s*$)",
+            "next"  : "start"
+        }
+    ]
+}
+
+};
+
+oop.inherits(HamlHighlightRules, TextHighlightRules);
+
+exports.HamlHighlightRules = HamlHighlightRules;
 });
 
 define('ace/mode/ruby_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text_highlight_rules'], function(require, exports, module) {
@@ -277,136 +350,4 @@ var RubyHighlightRules = function() {
 oop.inherits(RubyHighlightRules, TextHighlightRules);
 
 exports.RubyHighlightRules = RubyHighlightRules;
-});
-
-define('ace/mode/matching_brace_outdent', ['require', 'exports', 'module' , 'ace/range'], function(require, exports, module) {
-
-
-var Range = require("../range").Range;
-
-var MatchingBraceOutdent = function() {};
-
-(function() {
-
-    this.checkOutdent = function(line, input) {
-        if (! /^\s+$/.test(line))
-            return false;
-
-        return /^\s*\}/.test(input);
-    };
-
-    this.autoOutdent = function(doc, row) {
-        var line = doc.getLine(row);
-        var match = line.match(/^(\s*\})/);
-
-        if (!match) return 0;
-
-        var column = match[1].length;
-        var openBracePos = doc.findMatchingBracket({row: row, column: column});
-
-        if (!openBracePos || openBracePos.row == row) return 0;
-
-        var indent = this.$getIndent(doc.getLine(openBracePos.row));
-        doc.replace(new Range(row, 0, row, column-1), indent);
-    };
-
-    this.$getIndent = function(line) {
-        var match = line.match(/^(\s+)/);
-        if (match) {
-            return match[1];
-        }
-
-        return "";
-    };
-
-}).call(MatchingBraceOutdent.prototype);
-
-exports.MatchingBraceOutdent = MatchingBraceOutdent;
-});
-
-define('ace/mode/folding/coffee', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/folding/fold_mode', 'ace/range'], function(require, exports, module) {
-
-
-var oop = require("../../lib/oop");
-var BaseFoldMode = require("./fold_mode").FoldMode;
-var Range = require("../../range").Range;
-
-var FoldMode = exports.FoldMode = function() {};
-oop.inherits(FoldMode, BaseFoldMode);
-
-(function() {
-
-    this.getFoldWidgetRange = function(session, foldStyle, row) {
-        var range = this.indentationBlock(session, row);
-        if (range)
-            return range;
-
-        var re = /\S/;
-        var line = session.getLine(row);
-        var startLevel = line.search(re);
-        if (startLevel == -1 || line[startLevel] != "#")
-            return;
-
-        var startColumn = line.length;
-        var maxRow = session.getLength();
-        var startRow = row;
-        var endRow = row;
-
-        while (++row < maxRow) {
-            line = session.getLine(row);
-            var level = line.search(re);
-
-            if (level == -1)
-                continue;
-
-            if (line[level] != "#")
-                break;
-
-            endRow = row;
-        }
-
-        if (endRow > startRow) {
-            var endColumn = session.getLine(endRow).length;
-            return new Range(startRow, startColumn, endRow, endColumn);
-        }
-    };
-    this.getFoldWidget = function(session, foldStyle, row) {
-        var line = session.getLine(row);
-        var indent = line.search(/\S/);
-        var next = session.getLine(row + 1);
-        var prev = session.getLine(row - 1);
-        var prevIndent = prev.search(/\S/);
-        var nextIndent = next.search(/\S/);
-
-        if (indent == -1) {
-            session.foldWidgets[row - 1] = prevIndent!= -1 && prevIndent < nextIndent ? "start" : "";
-            return "";
-        }
-        if (prevIndent == -1) {
-            if (indent == nextIndent && line[indent] == "#" && next[indent] == "#") {
-                session.foldWidgets[row - 1] = "";
-                session.foldWidgets[row + 1] = "";
-                return "start";
-            }
-        } else if (prevIndent == indent && line[indent] == "#" && prev[indent] == "#") {
-            if (session.getLine(row - 2).search(/\S/) == -1) {
-                session.foldWidgets[row - 1] = "start";
-                session.foldWidgets[row + 1] = "";
-                return "";
-            }
-        }
-
-        if (prevIndent!= -1 && prevIndent < indent)
-            session.foldWidgets[row - 1] = "start";
-        else
-            session.foldWidgets[row - 1] = "";
-
-        if (indent < nextIndent)
-            return "start";
-        else
-            return "";
-    };
-
-}).call(FoldMode.prototype);
-
 });

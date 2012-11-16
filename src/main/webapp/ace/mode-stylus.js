@@ -1,7 +1,7 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
- * Copyright (c) 2010, Ajax.org B.V.
+ * Copyright (c) 2012, Ajax.org B.V.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -26,72 +26,202 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ *
+ * Contributor(s):
+ * 
+ *
+ *
  * ***** END LICENSE BLOCK ***** */
 
-define('ace/mode/css', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text', 'ace/tokenizer', 'ace/mode/css_highlight_rules', 'ace/mode/matching_brace_outdent', 'ace/worker/worker_client', 'ace/mode/folding/cstyle'], function(require, exports, module) {
+define('ace/mode/stylus', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text', 'ace/tokenizer', 'ace/mode/stylus_highlight_rules'], function(require, exports, module) {
 
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
 var Tokenizer = require("../tokenizer").Tokenizer;
-var CssHighlightRules = require("./css_highlight_rules").CssHighlightRules;
-var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
-var WorkerClient = require("../worker/worker_client").WorkerClient;
-var CStyleFoldMode = require("./folding/cstyle").FoldMode;
+var StylusHighlightRules = require("./stylus_highlight_rules").StylusHighlightRules;
 
 var Mode = function() {
-    this.$tokenizer = new Tokenizer(new CssHighlightRules().getRules(), "i");
-    this.$outdent = new MatchingBraceOutdent();
-    this.foldingRules = new CStyleFoldMode();
+    var highlighter = new StylusHighlightRules();
+    
+    this.$tokenizer = new Tokenizer(highlighter.getRules());
 };
 oop.inherits(Mode, TextMode);
 
 (function() {
-
-    this.foldingRules = "cStyle";
-
-    this.getNextLineIndent = function(state, line, tab) {
-        var indent = this.$getIndent(line);
-        var tokens = this.$tokenizer.getLineTokens(line, state).tokens;
-        if (tokens.length && tokens[tokens.length-1].type == "comment") {
-            return indent;
-        }
-
-        var match = line.match(/^.*\{\s*$/);
-        if (match) {
-            indent += tab;
-        }
-
-        return indent;
-    };
-
-    this.checkOutdent = function(state, line, input) {
-        return this.$outdent.checkOutdent(line, input);
-    };
-
-    this.autoOutdent = function(state, doc, row) {
-        this.$outdent.autoOutdent(doc, row);
-    };
-
-    this.createWorker = function(session) {
-        var worker = new WorkerClient(["ace"], "ace/mode/css_worker", "Worker");
-        worker.attachToDocument(session.getDocument());
-
-        worker.on("csslint", function(e) {
-            session.setAnnotations(e.data);
-        });
-
-        worker.on("terminate", function() {
-            session.clearAnnotations();
-        });
-
-        return worker;
-    };
-
 }).call(Mode.prototype);
 
 exports.Mode = Mode;
+});
 
+define('ace/mode/stylus_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text_highlight_rules', 'ace/mode/css_highlight_rules'], function(require, exports, module) {
+
+
+var oop = require("../lib/oop");
+var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
+var CssHighlightRules = require("./css_highlight_rules");
+
+var StylusHighlightRules = function() {
+
+    var keywordMapper = this.createKeywordMapper({
+        "support.type": CssHighlightRules.supportType,
+        "support.function": CssHighlightRules.supportFunction,
+        "support.constant": CssHighlightRules.supportConstant,
+        "support.constant.color": CssHighlightRules.supportConstantColor,
+        "support.constant.fonts": CssHighlightRules.supportConstantFonts
+    }, "text", true);
+
+    this.$rules = 
+        {
+    "start": [
+        {
+            token : "comment",
+            regex : /\/\/.*$/
+        },
+        {
+            token : "comment", // multi line comment
+            merge : true,
+            regex : /\/\*/,
+            next : "comment"
+        },
+        {
+            "token": ["entity.name.function.stylus", "text"],
+            "regex": "^([-a-zA-Z_][-\\w]*)?(\\()"
+        },
+        {
+            "token": ["entity.other.attribute-name.class.stylus"],
+            "regex": "\\.-?[_a-zA-Z]+[_a-zA-Z0-9-]*"
+        },
+        {
+            "token": ["entity.language.stylus"],
+            "regex": "^ *&"
+        },
+        {
+            "token": ["variable.language.stylus"],
+            "regex": "(arguments)"
+        },
+        {
+            "token": ["keyword.stylus"],
+            "regex": "@[-\\w]+"
+        },
+        {
+            token : ["punctuation", "entity.other.attribute-name.pseudo-element.css"],
+            regex : CssHighlightRules.pseudoElements
+        }, {
+            token : ["punctuation", "entity.other.attribute-name.pseudo-class.css"],
+            regex : CssHighlightRules.pseudoClasses
+        }, 
+        {
+            "token": ["entity.name.tag.stylus"],
+            "regex": "(?:\\b)(a|abbr|acronym|address|area|article|aside|audio|b|base|big|blockquote|body|br|button|canvas|caption|cite|code|col|colgroup|datalist|dd|del|details|dfn|dialog|div|dl|dt|em|eventsource|fieldset|figure|figcaption|footer|form|frame|frameset|(?:h[1-6])|head|header|hgroup|hr|html|i|iframe|img|input|ins|kbd|label|legend|li|link|map|mark|menu|meta|meter|nav|noframes|noscript|object|ol|optgroup|option|output|p|param|pre|progress|q|samp|script|section|select|small|span|strike|strong|style|sub|summary|sup|table|tbody|td|textarea|tfoot|th|thead|time|title|tr|tt|ul|var|video)(?:\\b)"
+        },
+        {
+            token : "constant.numeric",  // hex6 color
+            regex : "#[a-f0-9]{6}"
+        }, 
+        {
+            token : "constant.numeric", // hex3 color
+            regex : "#[a-f0-9]{3}"
+        }, 
+        {
+            "token": ["punctuation.definition.entity.stylus", "entity.other.attribute-name.id.stylus"],
+            "regex": "(#)([a-zA-Z][a-zA-Z0-9_-]*)"
+        },
+        {
+            "token": "meta.vendor-prefix.stylus",
+            "regex": "-webkit-|-moz\\-|-ms-|-o-"
+        },
+        {
+            "token": ["keyword.control.stylus"],
+            "regex": "(?:\\b|\\s)(!important|for|in|return|true|false|null|if|else|unless|return)(?:\\b)"
+        },
+        {
+            "token": ["keyword.operator.stylus"],
+            "regex": "((?:!|~|\\+|-|(?:\\*)?\\*|\\/|%|(?:\\.)\\.\\.|<|>|(?:=|:|\\?|\\+|-|\\*|\\/|%|<|>)?=|!=))"
+        },
+        {
+            "token": ["keyword.operator.stylus"],
+            "regex": "(?:\\b)(in|is(?:nt)?|not)(?:\\b)"
+        },
+        {
+            token : "string",
+            regex : "'(?=.)",
+            next  : "qstring"
+        }, {
+            token : "string",
+            regex : '"(?=.)',
+            next  : "qqstring"
+        }, 
+        {
+            token : "constant.numeric",
+            regex : CssHighlightRules.numRe
+        }, 
+        {
+            token : ["keyword"],
+            regex : "(ch|cm|deg|em|ex|fr|gd|grad|Hz|in|kHz|mm|ms|pc|pt|px|rad|rem|s|turn|vh|vm|vw|%)"
+        }, 
+        {
+            token : keywordMapper,
+            regex : "\\-?[a-zA-Z_][a-zA-Z0-9_\\-]*"
+        }
+    ],
+    "comment" : [
+        {
+            token : "comment", // closing comment
+            regex : ".*?\\*\\/",
+            merge : true,
+            next : "start"
+        }, {
+            token : "comment", // comment spanning whole line
+            merge : true,
+            regex : ".+"
+        }
+    ],
+    "qqstring" : [
+        {
+            token : "string",
+            regex : '[^"\\\\]+',
+            merge : true
+        }, 
+        {
+            token : "string",
+            regex : "\\\\$",
+            next  : "qqstring",
+            merge : true
+        }, 
+        {
+            token : "string",
+            regex : '"|$',
+            next  : "start",
+            merge : true
+        }
+    ],
+    "qstring" : [
+        {
+            token : "string",
+            regex : "[^'\\\\]+",
+            merge : true
+        }, 
+        {
+            token : "string",
+            regex : "\\\\$",
+            next  : "qstring",
+            merge : true
+        }, 
+        {
+            token : "string",
+            regex : "'|$",
+            next  : "start",
+            merge : true
+        }
+    ]
+}
+
+};
+
+oop.inherits(StylusHighlightRules, TextHighlightRules);
+
+exports.StylusHighlightRules = StylusHighlightRules;
 });
 
 define('ace/mode/css_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/lib/lang', 'ace/mode/text_highlight_rules'], function(require, exports, module) {
@@ -265,95 +395,5 @@ var CssHighlightRules = function() {
 oop.inherits(CssHighlightRules, TextHighlightRules);
 
 exports.CssHighlightRules = CssHighlightRules;
-
-});
-
-define('ace/mode/matching_brace_outdent', ['require', 'exports', 'module' , 'ace/range'], function(require, exports, module) {
-
-
-var Range = require("../range").Range;
-
-var MatchingBraceOutdent = function() {};
-
-(function() {
-
-    this.checkOutdent = function(line, input) {
-        if (! /^\s+$/.test(line))
-            return false;
-
-        return /^\s*\}/.test(input);
-    };
-
-    this.autoOutdent = function(doc, row) {
-        var line = doc.getLine(row);
-        var match = line.match(/^(\s*\})/);
-
-        if (!match) return 0;
-
-        var column = match[1].length;
-        var openBracePos = doc.findMatchingBracket({row: row, column: column});
-
-        if (!openBracePos || openBracePos.row == row) return 0;
-
-        var indent = this.$getIndent(doc.getLine(openBracePos.row));
-        doc.replace(new Range(row, 0, row, column-1), indent);
-    };
-
-    this.$getIndent = function(line) {
-        var match = line.match(/^(\s+)/);
-        if (match) {
-            return match[1];
-        }
-
-        return "";
-    };
-
-}).call(MatchingBraceOutdent.prototype);
-
-exports.MatchingBraceOutdent = MatchingBraceOutdent;
-});
-
-define('ace/mode/folding/cstyle', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/range', 'ace/mode/folding/fold_mode'], function(require, exports, module) {
-
-
-var oop = require("../../lib/oop");
-var Range = require("../../range").Range;
-var BaseFoldMode = require("./fold_mode").FoldMode;
-
-var FoldMode = exports.FoldMode = function() {};
-oop.inherits(FoldMode, BaseFoldMode);
-
-(function() {
-
-    this.foldingStartMarker = /(\{|\[)[^\}\]]*$|^\s*(\/\*)/;
-    this.foldingStopMarker = /^[^\[\{]*(\}|\])|^[\s\*]*(\*\/)/;
-
-    this.getFoldWidgetRange = function(session, foldStyle, row) {
-        var line = session.getLine(row);
-        var match = line.match(this.foldingStartMarker);
-        if (match) {
-            var i = match.index;
-
-            if (match[1])
-                return this.openingBracketBlock(session, match[1], row, i);
-
-            return session.getCommentFoldRange(row, i + match[0].length, 1);
-        }
-
-        if (foldStyle !== "markbeginend")
-            return;
-
-        var match = line.match(this.foldingStopMarker);
-        if (match) {
-            var i = match.index + match[0].length;
-
-            if (match[1])
-                return this.closingBracketBlock(session, match[1], row, i);
-
-            return session.getCommentFoldRange(row, i, -1);
-        }
-    };
-
-}).call(FoldMode.prototype);
 
 });

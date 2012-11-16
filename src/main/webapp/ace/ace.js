@@ -35,23 +35,10 @@ var ACE_NAMESPACE = "";
 var global = (function() {
     return this;
 })();
-if (!ACE_NAMESPACE && typeof requirejs !== "undefined") {
 
-    var define = global.define;
-    global.define = function(id, deps, callback) {
-        if (typeof callback !== "function")
-            return define.apply(this, arguments);
 
-        return define(id, deps, function(require, exports, module) {
-            if (deps[2] == "module")
-                module.packaged = true;
-            return callback.apply(this, arguments);
-        });
-    };
-    global.define.packaged = true;
-
+if (!ACE_NAMESPACE && typeof requirejs !== "undefined")
     return;
-}
 
 
 var _define = function(module, deps, payload) {
@@ -2013,7 +2000,6 @@ var Editor = function(renderer, session) {
     this.insert = function(text) {
         var session = this.session;
         var mode = session.getMode();
-
         var cursor = this.getCursorPosition();
 
         if (this.getBehavioursEnabled()) {
@@ -2037,9 +2023,8 @@ var Editor = function(renderer, session) {
 
         var start = cursor.column;
         var lineState = session.getState(cursor.row);
-        var shouldOutdent = mode.checkOutdent(lineState, session.getLine(cursor.row), text);
         var line = session.getLine(cursor.row);
-        var lineIndent = mode.getNextLineIndent(lineState, line.slice(0, cursor.column), session.getTabString());
+        var shouldOutdent = mode.checkOutdent(lineState, line, text);
         var end = session.insert(cursor, text);
 
         if (transform && transform.selection) {
@@ -2055,9 +2040,9 @@ var Editor = function(renderer, session) {
                               transform.selection[3]));
             }
         }
-
-        var lineState = session.getState(cursor.row);
         if (session.getDocument().isNewLine(text)) {
+            var lineIndent = mode.getNextLineIndent(lineState, line.slice(0, cursor.column), session.getTabString());
+
             this.moveCursorTo(cursor.row+1, 0);
 
             var size = session.getTabSize();
@@ -2221,6 +2206,14 @@ var Editor = function(renderer, session) {
     };
     this.getBehavioursEnabled = function () {
         return this.$modeBehaviours;
+    };
+
+    this.$modeWrapBehaviours = true;
+    this.setWrapBehavioursEnabled = function (enabled) {
+        this.$modeWrapBehaviours = enabled;
+    };
+    this.getWrapBehavioursEnabled = function () {
+        return this.$modeWrapBehaviours;
     };
     this.setShowFoldWidgets = function(show) {
         var gutter = this.renderer.$gutterLayer;
@@ -6998,7 +6991,7 @@ var Tokenizer = function(rules, flag) {
             });
 
             if (matchcount > 1 && state[i].token.length !== matchcount-1)
-                throw new Error("For " + state[i].regex + " the matching groups and length of the token array don't match (rule #" + i + " of state " + key + ")");
+                throw new Error("For " + state[i].regex + " the matching groups (" +(matchcount-1) + ") and length of the token array (" + state[i].token.length + ") don't match (rule #" + i + " of state " + key + ")");
 
             mapping[matchTotal] = {
                 rule: i,
@@ -7145,27 +7138,25 @@ var TextHighlightRules = function() {
         return this.$rules;
     };
 
-    this.embedRules = function (HighlightRules, prefix, escapeRules, states) {
+    this.embedRules = function (HighlightRules, prefix, escapeRules, states, append) {
         var embedRules = new HighlightRules().getRules();
         if (states) {
-            for (var i = 0; i < states.length; i++) {
+            for (var i = 0; i < states.length; i++)
                 states[i] = prefix + states[i];
-            }
         } else {
             states = [];
-            for (var key in embedRules) {
+            for (var key in embedRules)
                 states.push(prefix + key);
-            }
         }
+        
         this.addRules(embedRules, prefix);
 
-        for (var i = 0; i < states.length; i++) {
-            Array.prototype.unshift.apply(this.$rules[states[i]], lang.deepCopy(escapeRules));
-        }
+        var addRules = Array.prototype[append ? "push" : "unshift"];
+        for (var i = 0; i < states.length; i++)
+            addRules.apply(this.$rules[states[i]], lang.deepCopy(escapeRules));       
 
-        if (!this.$embeds) {
+        if (!this.$embeds)
             this.$embeds = [];
-        }
         this.$embeds.push(prefix);
     }
 
@@ -7185,6 +7176,10 @@ var TextHighlightRules = function() {
             ? function(value) {return keywords[value.toLowerCase()] || defaultToken }
             : function(value) {return keywords[value] || defaultToken };
     }
+
+    this.getKeywords = function() {
+        return this.$keywords;
+    };
 
 }).call(TextHighlightRules.prototype);
 
@@ -8979,10 +8974,10 @@ var Range = require("../range").Range;
 
 function BracketMatch() {
 
-    this.findMatchingBracket = function(position) {
+    this.findMatchingBracket = function(position, char) {
         if (position.column == 0) return null;
 
-        var charBeforeCursor = this.getLine(position.row).charAt(position.column-1);
+        var charBeforeCursor = char || this.getLine(position.row).charAt(position.column-1);
         if (charBeforeCursor == "") return null;
 
         var match = charBeforeCursor.match(/([\(\[\{])|([\)\]\}])/);

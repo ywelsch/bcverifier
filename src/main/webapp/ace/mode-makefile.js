@@ -1,7 +1,7 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * Distributed under the BSD license:
  *
- * Copyright (c) 2010, Ajax.org B.V.
+ * Copyright (c) 2012, Ajax.org B.V.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -26,110 +26,103 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ *
+ * Contributor(s):
+ * 
+ *
+ *
  * ***** END LICENSE BLOCK ***** */
 
-define('ace/mode/sh', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text', 'ace/tokenizer', 'ace/mode/sh_highlight_rules', 'ace/range'], function(require, exports, module) {
+define('ace/mode/makefile', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text', 'ace/tokenizer', 'ace/mode/makefile_highlight_rules'], function(require, exports, module) {
 
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
 var Tokenizer = require("../tokenizer").Tokenizer;
-var ShHighlightRules = require("./sh_highlight_rules").ShHighlightRules;
-var Range = require("../range").Range;
+var MakefileHighlightRules = require("./makefile_highlight_rules").MakefileHighlightRules;
 
 var Mode = function() {
-    this.$tokenizer = new Tokenizer(new ShHighlightRules().getRules());
+    var highlighter = new MakefileHighlightRules();
+    
+    this.$tokenizer = new Tokenizer(highlighter.getRules());
 };
 oop.inherits(Mode, TextMode);
 
 (function() {
-
-    this.toggleCommentLines = function(state, doc, startRow, endRow) {
-        var outdent = true;
-        var re = /^(\s*)#/;
-
-        for (var i=startRow; i<= endRow; i++) {
-            if (!re.test(doc.getLine(i))) {
-                outdent = false;
-                break;
-            }
-        }
-
-        if (outdent) {
-            var deleteRange = new Range(0, 0, 0, 0);
-            for (var i=startRow; i<= endRow; i++)
-            {
-                var line = doc.getLine(i);
-                var m = line.match(re);
-                deleteRange.start.row = i;
-                deleteRange.end.row = i;
-                deleteRange.end.column = m[0].length;
-                doc.replace(deleteRange, m[1]);
-            }
-        }
-        else {
-            doc.indentRows(startRow, endRow, "#");
-        }
-    };
-
-    this.getNextLineIndent = function(state, line, tab) {
-        var indent = this.$getIndent(line);
-
-        var tokenizedLine = this.$tokenizer.getLineTokens(line, state);
-        var tokens = tokenizedLine.tokens;
-
-        if (tokens.length && tokens[tokens.length-1].type == "comment") {
-            return indent;
-        }
-
-        if (state == "start") {
-            var match = line.match(/^.*[\{\(\[\:]\s*$/);
-            if (match) {
-                indent += tab;
-            }
-        }
-
-        return indent;
-    };
-
-    var outdents = {
-        "pass": 1,
-        "return": 1,
-        "raise": 1,
-        "break": 1,
-        "continue": 1
-    };
-
-    this.checkOutdent = function(state, line, input) {
-        if (input !== "\r\n" && input !== "\r" && input !== "\n")
-            return false;
-
-        var tokens = this.$tokenizer.getLineTokens(line.trim(), state).tokens;
-
-        if (!tokens)
-            return false;
-        do {
-            var last = tokens.pop();
-        } while (last && (last.type == "comment" || (last.type == "text" && last.value.match(/^\s+$/))));
-
-        if (!last)
-            return false;
-
-        return (last.type == "keyword" && outdents[last.value]);
-    };
-
-    this.autoOutdent = function(state, doc, row) {
-
-        row += 1;
-        var indent = this.$getIndent(doc.getLine(row));
-        var tab = doc.getTabString();
-        if (indent.slice(-tab.length) == tab)
-            doc.remove(new Range(row, indent.length-tab.length, row, indent.length));
-    };
-
 }).call(Mode.prototype);
 
 exports.Mode = Mode;
+});define('ace/mode/makefile_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text_highlight_rules', 'ace/mode/sh_highlight_rules'], function(require, exports, module) {
+
+
+var oop = require("../lib/oop");
+var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
+
+var ShHighlightFile = require("./sh_highlight_rules");
+
+var MakefileHighlightRules = function() {
+
+    var keywordMapper = this.createKeywordMapper({
+        "keyword": ShHighlightFile.reservedKeywords,
+        "support.function.builtin": ShHighlightFile.languageConstructs,
+        "invalid.deprecated": "debugger"
+    }, "string");
+
+    this.$rules = 
+        {
+    "start": [
+        {
+            "token": "string.interpolated.backtick.makefile",
+            "regex": "`",
+            "next": "shell-start"
+        },
+        {
+            "token": "punctuation.definition.comment.makefile",
+            "regex": /#(?=.)/,
+            "next": "comment"
+        },
+        {
+            "token": [ "keyword.control.makefile"],
+            "regex": "^(?:\\s*\\b)(\\-??include|ifeq|ifneq|ifdef|ifndef|else|endif|vpath|export|unexport|define|endef|override)(?:\\b)"
+        },
+        {// ^([^\t ]+(\s[^\t ]+)*:(?!\=))\s*.*
+            "token": ["entity.name.function.makefile", "text"],
+            "regex": "^([^\\t ]+(?:\\s[^\\t ]+)*:)(\\s*.*)"
+        }
+    ],
+    "comment": [
+        {
+            "token" : "punctuation.definition.comment.makefile",
+            "regex" : /.+\\/
+        },
+        {
+            "token" : "punctuation.definition.comment.makefile",
+            "regex" : ".+",
+            "next"  : "start"
+        }
+    ],
+    "shell-start": [
+        {
+            "token": keywordMapper,
+            "regex" : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+        }, 
+        {
+            "token": "string",
+            "regex" : "\\w+"
+        }, 
+        {
+            "token" : "string.interpolated.backtick.makefile",
+            "regex" : "`",
+            "next"  : "start"
+        }
+    ]
+}
+
+};
+
+oop.inherits(MakefileHighlightRules, TextHighlightRules);
+
+exports.MakefileHighlightRules = MakefileHighlightRules;
 });
 
 define('ace/mode/sh_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text_highlight_rules'], function(require, exports, module) {
