@@ -8,9 +8,9 @@ local invariant at(oldpl1) <==> at(newpl1);
 local invariant at(oldpl2) <==> at(newpl2);
 
 // the values are ...
-local invariant at(oldpl1) ==> stack(oldpl1, n) == stack(newpl1, n);
-local invariant at(oldpl2) ==> stack(oldpl2, n) == stack(newpl2, n);
-local invariant (at(oldpl1) || at(oldpl2)) ==> sp1() == sp2() - 1;
-local invariant at(oldpl1) && sp1() > 0 ==> at(oldpl1, sp1() - 1);
-local invariant at(oldpl1) && sp1() > 0 ==> stack(oldpl1, sp1() - 1, n) == stack(oldpl1, n);
-//local invariant at(p1) ==> stack(p1, result) * stack(p2, a) == stack(p2, result);
+local invariant at(oldpl1) ==> eval(oldpl1, n) == eval(newpl1, n);
+local invariant at(oldpl2) ==> eval(oldpl2, n) == eval(newpl2, n);
+local invariant (at(oldpl1) || at(oldpl2)) ==> stackIndex(old) == stackIndex(new) - 1;
+local invariant at(oldpl1) && stackIndex(old) > 0 ==> at(oldpl1, stackIndex(old) - 1);
+local invariant at(oldpl1) && stackIndex(old) > 0 ==> eval(oldpl1, stackIndex(old) - 1, n) == eval(oldpl1, n);
+//local invariant at(p1) ==> eval(p1, result) * eval(p2, a) == eval(p2, result);

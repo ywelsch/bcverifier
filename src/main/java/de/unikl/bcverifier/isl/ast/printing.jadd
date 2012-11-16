@@ -25,6 +25,8 @@ aspect printing {
   eq IntConst.printTo(Appendable r) = PrintingHelper.print(r, this);
 
   eq NullConst.printTo(Appendable r) = PrintingHelper.print(r, this);
+  
+  eq VersionConst.printTo(Appendable r) = PrintingHelper.print(r, this);
 
   eq InstanceofOperation.printTo(Appendable r) = PrintingHelper.print(r, this);
 

@@ -38,6 +38,7 @@ import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.UnknownDef;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.isl.ast.VersionConst;
 import de.unikl.bcverifier.isl.checking.types.BijectionType;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
@@ -47,9 +48,11 @@ import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeVersion;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.checking.types.UnknownType;
 import de.unikl.bcverifier.isl.translation.Translation;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFuncEval_place;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
@@ -303,7 +306,7 @@ public class TypeHelper {
 		// special lookup rule for stack function
 		if (expr.getParent().getParent() instanceof FuncCall) {
 			FuncCall funcCall = (FuncCall) expr.getParent().getParent();
-			if (funcCall.getFuncName().getName().equals("stack")) { 
+			if (funcCall.getFuncName().getName().equals(BuiltinFuncEval_place.name)) { 
 				if (funcCall.getNumArgument() == 3
 						&& funcCall.getArgument(0).attrType() instanceof ExprTypePlace
 						&& funcCall.getArgument(2) == expr) { 
@@ -590,6 +593,10 @@ public class TypeHelper {
 			}
 		}
 		return ExprTypeBool.instance();
+	}
+
+	public static ExprType attrType(VersionConst c) {
+		return ExprTypeVersion.get(c.getVal());
 	}
 	
 

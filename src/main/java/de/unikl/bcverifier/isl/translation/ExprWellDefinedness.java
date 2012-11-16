@@ -15,16 +15,17 @@ import de.unikl.bcverifier.isl.ast.BoolConst;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.ErrorExpr;
 import de.unikl.bcverifier.isl.ast.Expr;
-import de.unikl.bcverifier.isl.ast.InstanceofOperation;
-import de.unikl.bcverifier.isl.ast.QExpr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
+import de.unikl.bcverifier.isl.ast.InstanceofOperation;
 import de.unikl.bcverifier.isl.ast.IntConst;
 import de.unikl.bcverifier.isl.ast.LineNrProgramPoint;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NullConst;
+import de.unikl.bcverifier.isl.ast.QExpr;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
+import de.unikl.bcverifier.isl.ast.VersionConst;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 
 public class ExprWellDefinedness {
@@ -142,5 +143,9 @@ public class ExprWellDefinedness {
 
 	public static BPLExpression translate(InstanceofOperation op) {
 		return op.getLeft().translateExprWellDefinedness();
+	}
+
+	public static BPLExpression translate(VersionConst versionConst) {
+		return BPLBoolLiteral.TRUE;
 	}
 }

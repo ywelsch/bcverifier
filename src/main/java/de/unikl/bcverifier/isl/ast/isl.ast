@@ -24,6 +24,7 @@ ErrorExpr : Expr ::= <Message>;
 // constant expressions:
 BoolConst : Expr ::= <Val:boolean>;
 IntConst : Expr ::= <Val>;
+VersionConst : Expr ::= <Val:de.unikl.bcverifier.isl.ast.Version>;
 NullConst : Expr ::=;
 
 

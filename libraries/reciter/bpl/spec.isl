@@ -5,10 +5,10 @@ local place inLoop = line 7 of new A;
 
 local invariant at(afterCall) <==> at(inLoop);
 local invariant at(beforeCall) <==> at(beforeLoop);
-local invariant at(afterCall) && at(inLoop) ==> stack(inLoop, i) == stack(afterCall, n);
-local invariant at(afterCall) && at(inLoop) ==> stack(inLoop, result) == stack(afterCall, result);
-local invariant at(inLoop) ==> stack(inLoop, i > 1 && i <= n);
-local invariant at(afterCall) && at(inLoop) ==> stack(inLoop, n) == stack(afterCall, n) ==> sp1() == 0;
+local invariant at(afterCall) && at(inLoop) ==> eval(inLoop, i) == eval(afterCall, n);
+local invariant at(afterCall) && at(inLoop) ==> eval(inLoop, result) == eval(afterCall, result);
+local invariant at(inLoop) ==> eval(inLoop, i > 1 && i <= n);
+local invariant at(afterCall) && at(inLoop) ==> eval(inLoop, n) == eval(afterCall, n) ==> stackIndex(old) == 0;
 
-local invariant at(beforeLoop) && at(beforeCall) ==> stack(beforeLoop, n) <= stack(beforeCall, n);
+local invariant at(beforeLoop) && at(beforeCall) ==> eval(beforeLoop, n) <= eval(beforeCall, n);
 */

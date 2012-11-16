@@ -43,6 +43,7 @@ import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.isl.ast.VersionConst;
 import de.unikl.bcverifier.isl.checking.JavaVariableDef;
 import de.unikl.bcverifier.isl.checking.types.BijectionType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
@@ -346,6 +347,10 @@ public class ExprTranslation {
 				op.getLeft().translateExpr(), 
 				getHeap(jt.getVersion(), op.attrCompilationUnit().getPhase()), 
 				getBoogieTypeName(jt.getTypeBinding()));
+	}
+
+	public static BPLExpression translate(VersionConst versionConst) {
+		throw new Error("Cannot translate VersionConst expressions");
 	}
 
 

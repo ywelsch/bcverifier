@@ -4,7 +4,9 @@ import b2bpl.bpl.IBPLVisitor;
 import b2bpl.bpl.ast.BPLEqualityExpression;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLLiteral;
+import b2bpl.bpl.ast.BPLLogicalNotExpression;
 import b2bpl.bpl.ast.BPLNullLiteral;
+import b2bpl.bpl.ast.BPLUnaryExpression;
 import b2bpl.translation.ITranslationConstants;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.List;
@@ -19,17 +21,18 @@ import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
  * returns true if o was created by the context
  * returns false if o was created by the library
  */
-final class BuiltinFuncCreatedByCtxt extends BuiltinFunction {
+final class BuiltinFuncCreatedByLibrary extends BuiltinFunction {
 
-	BuiltinFuncCreatedByCtxt(TwoLibraryModel twoLibraryModel) {
-		super("createdByCtxt", ExprTypeBool.instance(),
+	BuiltinFuncCreatedByLibrary(TwoLibraryModel twoLibraryModel) {
+		super("createdByLibrary", ExprTypeBool.instance(),
 				new ExprType[] { JavaType.object(twoLibraryModel) });
 	}
 
 	@Override
 	public BPLExpression translateCall(boolean isInGlobalInv, List<Expr> arguments) {
-		return BuiltinFunctions.heapProperty(arguments.getChild(0),
-				ITranslationConstants.CREATED_BY_CTXT_FIELD);
+		return new BPLLogicalNotExpression(
+				BuiltinFunctions.heapProperty(arguments.getChild(0),
+				ITranslationConstants.CREATED_BY_CTXT_FIELD));
 	}
 	
 	@Override

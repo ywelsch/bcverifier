@@ -16,7 +16,7 @@ public class BijectionType extends ExprType {
 	
 	@Override
 	public String toString() {
-		return "Bijection";
+		return "bijection";
 	}
 	
 }

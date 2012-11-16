@@ -3,8 +3,8 @@ ISL Developer Documentation
 
 The translation is described using two functions:
 
-- tr() translates an isl expression into a boogie expression
-- wd() generates the boogie well-definedness condition for an isl expression
+- TR() translates an isl expression into a boogie expression
+- WD() generates the boogie well-definedness condition for an isl expression
 
 Translation
 -----------
@@ -15,37 +15,37 @@ Translation
 
 ### Correspondence relation
 
-	tr(a ~ b) := RelNull(tr(a), tr(b), related)
+	TR(a ~ b) := RelNull(TR(a), TR(b), related)
 	
 ### Forall expression
 	
-	tr(forall T_1 o_1, ..., T_n o_n :: expr) := 
+	TR(forall T_1 o_1, ..., T_n o_n :: expr) := 
 		forall Ref o_1, ..., Ref o_n :: 
 			Obj(heapX, o_1) && RefOfType(o_1, heapX, $T_1)
 			&& ... 
 			&& Obj(heapX, on) && RefOfType(o_n, heapX, $T_n) 
-			==> tr(expr)  
+			==> TR(expr)  
 
 ### Field access
 
 	// assuming o is of type C and has a field f of type int or Object  (or a subtype)
-	tr(o.f) := heapX[tr(o), $T.f]
+	TR(o.f) := heapX[TR(o), $T.f]
 	
 	// assuming o is of type C and has a field f of type boolean
-	tr(o.f) := int2bool(heapX[tr(o), $T.f])
+	TR(o.f) := int2bool(heapX[TR(o), $T.f])
 
 ### Local variable access
 	
 	// assuming i references a local Java variable in a context with stackpointer sp
 	// and i has type int or Object (or a subtype)
-	tr(i) := stackX[ipX][sp][register(i)]
+	TR(i) := stackX[ipX][sp][register(i)]
 	
 	// i has type boolean
-	tr(i) := int2bool(stackX[ipX][sp][register(i)])
+	TR(i) := int2bool(stackX[ipX][sp][register(i)])
 	
 ### instanceof
 
-	tr(a instanceof C) := isInstanceOf(tr(a), heap1, C) 
+	TR(a instanceof C) := isInstanceOf(TR(a), heap1, C) 
 
 isInstanceOf is defined as in Java: 
 	
@@ -53,19 +53,19 @@ isInstanceOf is defined as in Java:
 
 ### Builtin functions
 
-	tr(at(p, sp)) := stackX[ipX][tr(sp)][place] == p
+	TR(at(p, sp)) := stackX[ipX][TR(sp)][place] == p
 	
-	tr(at(p)) := tr(at(p, spX()))
+	TR(at(p)) := TR(at(p, spX()))
 	
-	tr(sp1()) := spmap1[ip1]
-	tr(sp2()) := spmap2[ip2]
+	TR(sp1()) := spmap1[ip1]
+	TR(sp2()) := spmap2[ip2]
 	
-	tr(exposed(o)) := heapX[tr(o), exposed]
+	TR(exposed(o)) := heapX[TR(o), exposed]
 	
-	tr(createdByCtxt(o)) := heapX[tr(o), createdByCtxt]
+	TR(createdByCtxt(o)) := heapX[TR(o), createdByCtxt]
 	
-	tr(stack(p, sp, e)) := tr(e)
-	tr(stack(p, e)) := tr(e)
+	TR(stack(p, sp, e)) := TR(e)
+	TR(stack(p, e)) := TR(e)
 	
 The builtin function `stack` has no direct effect on the translation, but it provides the context
 for accessing the local variables in `e`.
@@ -77,32 +77,32 @@ Well-definedness
 - Only the non-trivial translations are listed here.
 
 
-	wd(if e then e1 else e2) := wd(e) && if tr(e) then wd(e1) else wd(e2)
+	WD(if e then e1 else e2) := WD(e) && if TR(e) then WD(e1) else WD(e2)
 	
-	wd(o.f) := wd(o) && tr(o) != null
+	WD(o.f) := WD(o) && TR(o) != null
 	
-	wd(a && b) := wd(a) && (tr(a) ==> wd(b))
+	WD(a && b) := WD(a) && (TR(a) ==> WD(b))
 	
-	wd(a ==> b) := wd(a && b)
+	WD(a ==> b) := WD(a && b)
 	
-	wd(a || b) := wd(left) && (!tr(left) ==> wd(right))
+	WD(a || b) := WD(left) && (!TR(left) ==> WD(right))
 	
-	wd(a / b) := wd(a) && wd(b) && tr(b) != 0
+	WD(a / b) := WD(a) && WD(b) && TR(b) != 0
 	
-	wd(a % b) := wd(a / b)
+	WD(a % b) := WD(a / b)
 	
-	wd(forall x :: e) := forall x :: wd(e)
+	WD(forall x :: e) := forall x :: WD(e)
 
-	wd(exists x :: e) := forall x :: wd(e)
+	WD(exists x :: e) := forall x :: WD(e)
 	
 ### Builtin functions
 
-	wd(at(p, sp)) := wd(sp) && 0 <= tr(sp) && tr <= tr(spX())
+	WD(at(p, sp)) := WD(sp) && 0 <= TR(sp) && tr <= TR(spX())
 	
-	wd(stack(p, sp, e) := wd(at(p, sp)) && tr(at(p, sp)) && wd(e)
+	WD(stack(p, sp, e) := WD(at(p, sp)) && TR(at(p, sp)) && WD(e)
 	
-	wd(stack(p, e) := tr(at(p)) && wd(e)
+	WD(stack(p, e) := TR(at(p)) && WD(e)
 
-	wd(exposed(e)) := tr(e) != null
+	WD(exposed(e)) := TR(e) != null
 
-	wd(createdByCtxt(e)) := tr(e) != null
+	WD(createdByCtxt(e)) := TR(e) != null
