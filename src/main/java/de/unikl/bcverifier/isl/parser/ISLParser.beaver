@@ -66,9 +66,9 @@ import de.unikl.bcverifier.isl.ast.*;
 	DOT,
 	MOD, MULT, DIV, PLUS, MINUS, LT, LTEQ, GT, GTEQ, NOT,
 	EQUALS, UNEQUALS,
-	COLON, COLONCOLON, COMMA, LPAREN, RPAREN, SEMI, EQ,
+	COLONCOLON, COMMA, LPAREN, RPAREN, SEMI, EQ,
 	IMPLIES, IFF, AND, OR, RELATED,
-	INTLITERAL, NULL, INSTANCEOF
+	INTLITERAL, NULL, INSTANCEOF, VAR, ASSIGN
 ;
 
 // operator precedences, highest first
@@ -101,6 +101,7 @@ import de.unikl.bcverifier.isl.ast.*;
 %typeof stallcondition = "Opt<StallCondition>";
 %typeof measure = "Opt<Expr>";
 %typeof placeoptions = "List<Ident>";
+%typeof assign = "Assign";
 
 %goal cu;
 
@@ -117,12 +118,19 @@ statement =
 	| LOCAL INVARIANT expr.e SEMI
 		{: return new LocalInvariant(e); :}
 	| placedef.p
-	
+	| VAR vardef.v EQ expr.e SEMI
+		{: return new GlobVarDef(v, e); :}
+	| assign.a SEMI
+;
+
+assign =
+	ASSIGN id.i EQ expr.e
+		{: return new Assign(i, e); :}	
 ;
 
 placedef =	
-	placemodifier.m PLACE id.i EQ placeposition.pos placecondition.cond stallcondition.stallcond placeoptions.opts SEMI
-		{: return new PlaceDef(m, opts, i, pos, cond , stallcond); :}
+	placemodifier.m PLACE id.i EQ placeposition.pos placecondition.cond stallcondition.stallcond placeoptions.opts assign.a* SEMI
+		{: return new PlaceDef(m, opts, i, pos, cond , stallcond, list(a)); :}
 ;
 
 placemodifier =

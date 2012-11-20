@@ -8,8 +8,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import b2bpl.bpl.ast.BPLCommand;
-
 import de.unikl.bcverifier.Configuration;
 
 public class AbstractGenerator implements Generator {
@@ -56,6 +54,11 @@ public class AbstractGenerator implements Generator {
     public List<String> generatePreludeAddition() throws GenerationException {
         return Collections.emptyList();
     }
+
+	@Override
+	public List<VariableDef> generateVars() throws GenerationException {
+		return Collections.emptyList();
+	}
 
 	
 
