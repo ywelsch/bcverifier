@@ -14,9 +14,9 @@ import de.unikl.bcverifier.isl.checking.types.ExprType;
 
 public abstract class BuiltinFunction extends Def {
 
-	private final ExprType returnType;
-	private final List<ExprType> parameterTypes;
-	private final String name;
+	protected final ExprType returnType;
+	protected final List<ExprType> parameterTypes;
+	protected final String name;
 	
 	public BuiltinFunction(String name, ExprType returnType, List<ExprType> parameterTypes) {
 		this.name = name;

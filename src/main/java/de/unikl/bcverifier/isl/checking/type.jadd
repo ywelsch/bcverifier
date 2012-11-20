@@ -44,7 +44,7 @@ aspect exprType {
 
   eq Invariant.attrType() = UnknownType.instance();
   
-  eq GlobVarDef.attrType() = UnknownType.instance();
+  eq GlobVarDef.attrType() = getVar().attrType();
   
   eq Assign.attrType() = UnknownType.instance();
 

@@ -55,8 +55,14 @@ public class BuiltinFunctions {
 		addFunc(new BuiltinFuncEval_place(this));
 		// int stackIndex(version v)
 		addFunc(FUNC_STACKINDEX);
-		// bool related(Bijection b, Object o1, Object o2)
-		addFunc(new BuiltinFuncRelated(twoLibraryModel));
+		// bijection empty()
+		addFunc(new BuiltinFuncEmpty());
+		// bijection add(bijection b, Object o1, Object o2)
+		addFunc(new BuiltinFuncTertiaryBij(BuiltinFuncTertiaryBij.Name.ADD, twoLibraryModel));
+		// bijection remove(bijection b, Object o1, Object o2)
+		addFunc(new BuiltinFuncTertiaryBij(BuiltinFuncTertiaryBij.Name.REMOVE, twoLibraryModel));
+		// bool related(bijection b, Object o1, Object o2)
+		addFunc(new BuiltinFuncTertiaryBij(BuiltinFuncTertiaryBij.Name.RELATED, twoLibraryModel));
 	}
 
 	private void addFunc(BuiltinFunction f) {

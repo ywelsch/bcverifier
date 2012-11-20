@@ -16,6 +16,12 @@ public class JavaType extends ExprType {
 	private String qualifiedName;
 	private TwoLibraryModel env;
 	private ITypeBinding typeBinding;
+	
+	private static final JavaType nullType = new JavaType();
+	
+	public static JavaType nullType() {
+		return nullType;
+	}
 
 	
 	private JavaType(TwoLibraryModel env, Version version, ITypeBinding type) {
@@ -25,6 +31,11 @@ public class JavaType extends ExprType {
 		this.typeBinding = type;
 	}
 	
+	private JavaType() {
+		// TODO Auto-generated constructor stub
+	}
+
+
 	public static ExprType create(ASTNode<?> loc, Version version, String qualifiedName) {
 		if (version == BOTH) {
 			loc.addError("No version specified for type " + qualifiedName + ".");
@@ -64,6 +75,8 @@ public class JavaType extends ExprType {
 		}
 		if (t instanceof JavaType) {
 			JavaType j = (JavaType) t;
+			if (this == nullType)
+				return true;
 			if (j.version != Version.BOTH && j.version != version) {
 				return false;
 			}

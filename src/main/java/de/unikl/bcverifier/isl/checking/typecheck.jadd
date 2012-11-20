@@ -16,4 +16,11 @@ aspect typecheck {
 		TypeHelper.checkPlaceDef(this);
 	}
 	
+	public void GlobVarDef.typecheck() {
+		TypeHelper.checkGlobVarDef(this);
+	}
+	
+	public void Assign.typecheck() {
+		TypeHelper.checkAssign(this);
+	}
 }

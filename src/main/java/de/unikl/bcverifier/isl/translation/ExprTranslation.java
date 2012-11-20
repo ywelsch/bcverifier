@@ -33,6 +33,7 @@ import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.BoolConst;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.ErrorExpr;
+import de.unikl.bcverifier.isl.ast.GlobVarDef;
 import de.unikl.bcverifier.isl.ast.InstanceofOperation;
 import de.unikl.bcverifier.isl.ast.QExpr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
@@ -303,8 +304,10 @@ public class ExprTranslation {
 		} else if (def.attrType() instanceof ExprTypePredefinedPlace) {
 			ExprTypePredefinedPlace predefinedPlace = (ExprTypePredefinedPlace) def.attrType();
 			return translatePredefinedPlaceUse(e, predefinedPlace);
+		} else if (def instanceof GlobVarDef) {
+			return new BPLVariableExpression(e.getName().getName());
 		}
-		throw new Error("Cannot translate variable acces to " + def.getClass().getSimpleName() + 
+		throw new Error("Cannot translate variable access to " + def.getClass().getSimpleName() + 
 				" with type " + def.attrType());
 	}
 

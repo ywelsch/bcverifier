@@ -7,5 +7,5 @@ aspect name {
 	eq LocalInvariant.attrName() = "<localinv>";
 	eq ProgramPoint.attrName() = getName().getName();
 	eq Assign.attrName() = "<assign>";
-	eq GlobVarDef.attrName() = "<vardef>";
+	eq GlobVarDef.attrName() = getVar().getName().getName();
 }

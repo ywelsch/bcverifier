@@ -17,11 +17,13 @@ import org.eclipse.jdt.internal.corext.dom.Bindings;
 
 import com.google.common.collect.Lists;
 
+import de.unikl.bcverifier.isl.ast.Assign;
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.CallProgramPoint;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
+import de.unikl.bcverifier.isl.ast.GlobVarDef;
 import de.unikl.bcverifier.isl.ast.Ident;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.InstanceofOperation;
@@ -227,7 +229,7 @@ public class TypeHelper {
 	}
 
 	public static ExprType attrType(NullConst e) {
-		return JavaType.object(e.attrCompilationUnit().getTwoLibraryModel());
+		return JavaType.nullType();
 	}
 
 	public static ExprType placeDefType(PlaceDef placeDef) {
@@ -249,19 +251,18 @@ public class TypeHelper {
 			}
 		}
 		
-		
 		ExprType pptype = placeDef.getProgramPoint().attrType();
 		if (pptype instanceof ExprTypeProgramPoint) {
 			ExprTypeProgramPoint programPoint = (ExprTypeProgramPoint) pptype;
-			if (!(placeDef.getPlaceModifier() instanceof PlaceModifierLocal)) {
+			/*if (!(placeDef.getPlaceModifier() instanceof PlaceModifierLocal)) {
 				placeDef.addError("Invalid place definition. This should be a 'local place'.");
-			}
+			}*/
 			return new ExprTypeLocalPlace(programPoint);
 		} else if (pptype instanceof ExprTypeCallProgramPoint) {
 			ExprTypeCallProgramPoint programPoint = (ExprTypeCallProgramPoint) pptype;
-			if (!(placeDef.getPlaceModifier() instanceof PlaceModifierPredefined)) {
+			/*if (!(placeDef.getPlaceModifier() instanceof PlaceModifierPredefined)) {
 				placeDef.addError("Invalid place definition. This should be a 'predefined place'.");
-			}
+			}*/
 			return new ExprTypePredefinedPlace(programPoint); 
 		} else {
 			placeDef.getProgramPoint().addError(
@@ -403,6 +404,23 @@ public class TypeHelper {
 		}
 		return result[0];
 	}
+	
+	public static void checkGlobVarDef(GlobVarDef vDef) {
+		ExprType vartype = vDef.getVar().attrType();
+		ExprType exptype = vDef.getInitialValue().attrType();
+		// TODO: restrict scope of initialization expression to previous vars
+		if (!exptype.isSubtypeOf(vartype)) {
+			vDef.addError("Type of initialization expression (" + exptype +  ") must be a subtype of declared type " + vartype + ".");
+		}
+	}
+	
+	public static void checkAssign(Assign a) {
+		ExprType vartype = a.attrType();
+		ExprType exptype = a.getExpr().attrType();
+		if (!exptype.isSubtypeOf(vartype)) {
+			a.addError("Type of assigned expression (" + exptype +  ") must be a subtype of type " + vartype + " of the variable + " + a.attrName() + ".");
+		}
+	}
 
 	public static void checkPlaceDef(PlaceDef placeDef) {
 		TwoLibraryModel tlm = placeDef.attrCompilationUnit()
@@ -437,6 +455,10 @@ public class TypeHelper {
 				}
 			}
 			// TODO check if line is valid
+		}
+		
+		for (Assign a : placeDef.getAssignmentsList()) {
+			a.typecheck();
 		}
 		
 		// check place options
