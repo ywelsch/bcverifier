@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.beust.jcommander.internal.Lists;
+
 
 public class LocalPlaceDefinitions{
 	private Map<Integer, List<Place>> oldMap;
@@ -20,21 +22,31 @@ public class LocalPlaceDefinitions{
         newMapRemaining = new HashMap<Integer, List<Place>>(newMap);
     }
     
-    public List<Place> getPlaceInOld(int line1, int line2){
-        return findPlaceBetween(oldMapRemaining, line1, line2);
+    public List<Place> getPlaceInOld(int line1, int line2, String className){
+        return findPlaceBetween(oldMapRemaining, line1, line2, className);
     }
     
-    public List<Place> getPlaceInNew(int line1, int line2){
-        return findPlaceBetween(newMapRemaining, line1, line2);
+    public List<Place> getPlaceInNew(int line1, int line2, String className){
+        return findPlaceBetween(newMapRemaining, line1, line2, className);
     }
     
-    private static List<Place> findPlaceBetween(Map<Integer,List<Place>> placeMap, int line1, int line2){
+    private static List<Place> findPlaceBetween(Map<Integer,List<Place>> placeMap, int line1, int line2, String className){
         int pairLine;
         for(Entry<Integer, List<Place>> pair : placeMap.entrySet()){
             pairLine = pair.getKey();
             if(line1 < pairLine && pairLine <= line2){
-                placeMap.remove(pair.getKey());
-                return pair.getValue();
+            	List<Place> remaining = Lists.newArrayList();
+            	List<Place> result = Lists.newArrayList();
+            	for (Place p : pair.getValue()) {
+            		if (p.getClassName() == null || p.getClassName().equals(className)) {
+            			result.add(p);
+            		} else {
+            			remaining.add(p);
+            		}
+            	}
+            	placeMap.put(pairLine, remaining);
+                //placeMap.remove(pair.getKey());
+                return result;
             }
         }
         return null;

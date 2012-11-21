@@ -1,5 +1,6 @@
 import de.unikl.bcverifier.isl.translation.*;
 import b2bpl.bpl.ast.BPLExpression;
+import b2bpl.bpl.ast.BPLVariableDeclaration;
 import de.unikl.bcverifier.specification.SpecInvariant;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 
@@ -40,6 +41,18 @@ aspect translate {
   public java.util.List<String> CompilationUnit.generatePreconditions() {
       return Translation.generatePreconditions(this);
   }
+
+  public java.util.List<String> CompilationUnit.generateGlobalAssignments() {
+      return Translation.generateGlobalAssignments(this);
+  }
+
+  public java.util.List<String> CompilationUnit.generateInitialAssignments() {
+      return Translation.generateInitialAssignments(this);
+  }
+
+  public java.util.List<BPLVariableDeclaration> CompilationUnit.generateGlobalVariables() {
+        return Translation.generateGlobalVariables(this);
+    }
 
   syn BPLExpression Expr.translateExprWellDefinedness();
 

@@ -37,7 +37,7 @@ VarDef : Def ::= TypeDef Name:Ident;
 // Statements:
 abstract Statement : Def;
 
-Assign : Statement ::= Name:Ident Expr;
+Assign : Statement ::= Var:VarAccess Expr;
 Invariant : Statement ::= Expr;
 LocalInvariant: Statement ::= Expr;
 PlaceDef: Statement ::= PlaceModifier PlaceOption:Ident* Name:Ident ProgramPoint:ProgramPointExpr [Condition:Expr] [StallCondition:StallCondition] Assignments:Assign* ;

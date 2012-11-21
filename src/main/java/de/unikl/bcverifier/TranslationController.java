@@ -276,15 +276,15 @@ public class TranslationController implements ITranslationConstants {
         return round == 2;
     }
     
-    public List<Place> getLocalPlacesBetween(int line1, int line2){
+    public List<Place> getLocalPlacesBetween(int line1, int line2, String className){
         if(localPlaceDefinitions == null)
             return null;
         
         switch(round){
         case 1:
-            return localPlaceDefinitions.getPlaceInOld(line1, line2);
+            return localPlaceDefinitions.getPlaceInOld(line1, line2, className);
         case 2:
-            return localPlaceDefinitions.getPlaceInNew(line1, line2);
+            return localPlaceDefinitions.getPlaceInNew(line1, line2, className);
         default:
             return null;
         }

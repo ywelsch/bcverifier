@@ -49,7 +49,7 @@ import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.ast.VersionConst;
 import de.unikl.bcverifier.isl.checking.JavaVariableDef;
-import de.unikl.bcverifier.isl.checking.types.BijectionType;
+import de.unikl.bcverifier.isl.checking.types.BinRelationType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
@@ -142,8 +142,8 @@ public class ExprTranslation {
 			BPLType type;
 			if (boundVar.attrType() instanceof JavaType) {
 				type = new BPLTypeName(ITranslationConstants.REF_TYPE); 
-			} else if (boundVar.attrType() instanceof BijectionType) {
-				type = new BPLTypeName(ITranslationConstants.BIJ_TYPE); 
+			} else if (boundVar.attrType() instanceof BinRelationType) {
+				type = new BPLTypeName(ITranslationConstants.BINREL_TYPE); 
 			} else if (boundVar.attrType() instanceof ExprTypeInt) {
 				type = BPLBuiltInType.INT; 
 			} else if (boundVar.attrType() instanceof ExprTypeBool) {
@@ -156,21 +156,7 @@ public class ExprTranslation {
 		}
 		BPLExpression leftExpr = null;
 		for (VarDef boundVar : boundVars) {
-			BPLExpression typeAssumtion;
-			if (boundVar.attrType() instanceof JavaType) {
-				JavaType javaType = (JavaType) boundVar.attrType();
-				typeAssumtion = makeTypeAssumption(boundVar, javaType);
-			} else if (boundVar.attrType() instanceof BijectionType) {
-				BijectionType bijType = (BijectionType) boundVar.attrType();
-				typeAssumtion = makeTypeAssumption(boundVar, bijType);
-			} else if (boundVar.attrType() instanceof ExprTypeInt) {
-				typeAssumtion = new BPLFunctionApplication(
-						ITranslationConstants.IS_IN_RANGE_FUNC, 
-						new BPLVariableExpression(boundVar.attrName()),
-						new BPLVariableExpression(ITranslationConstants.VALUE_TYPE_PREFIX + "int"));
-			} else {
-				continue;
-			}
+			BPLExpression typeAssumtion = createTypAssum(boundVar, false);
 			if (leftExpr == null) {
 				leftExpr = typeAssumtion;
 			} else {
@@ -186,6 +172,25 @@ public class ExprTranslation {
 		}
 		return new BPLQuantifierExpression(getQuantifier(quantifier), variables, expr);
 	}
+
+	public static BPLExpression createTypAssum(VarDef boundVar, boolean hasNull) {
+		BPLExpression typeAssumtion;
+		if (boundVar.attrType() instanceof JavaType) {
+			JavaType javaType = (JavaType) boundVar.attrType();
+			typeAssumtion = makeTypeAssumption(boundVar, javaType, hasNull);
+		} else if (boundVar.attrType() instanceof BinRelationType) {
+			BinRelationType bijType = (BinRelationType) boundVar.attrType();
+			typeAssumtion = makeTypeAssumption(boundVar, bijType);
+		} else if (boundVar.attrType() instanceof ExprTypeInt) {
+			typeAssumtion = new BPLFunctionApplication(
+					ITranslationConstants.IS_IN_RANGE_FUNC, 
+					new BPLVariableExpression(boundVar.attrName()),
+					new BPLVariableExpression(ITranslationConstants.VALUE_TYPE_PREFIX + "int"));
+		} else {
+			typeAssumtion = BPLBoolLiteral.TRUE;
+		}
+		return typeAssumtion;
+	}
 	
 	private static Operator getQuantifier(Quantifier quantifier) {
 		if (quantifier.equals(Quantifier.FORALL)) return FORALL;
@@ -200,25 +205,29 @@ public class ExprTranslation {
 	 * @param bijType
 	 * @return
 	 */
-	private static BPLExpression makeTypeAssumption(VarDef boundVar, JavaType javaType) {
+	private static BPLExpression makeTypeAssumption(VarDef boundVar, JavaType javaType, boolean hasNull) {
 		switch(javaType.getVersion()) {
 			case NEW:
 			case OLD:
-				return makeTypeAssumption(boundVar, javaType, javaType.getVersion());
+				return makeTypeAssumption(boundVar, javaType, javaType.getVersion(), hasNull);
 			case BOTH:
 				return new BPLBinaryLogicalExpression(OR, 
-						makeTypeAssumption(boundVar, javaType, Version.OLD), 
-						makeTypeAssumption(boundVar, javaType, Version.NEW));
+						makeTypeAssumption(boundVar, javaType, Version.OLD, hasNull), 
+						makeTypeAssumption(boundVar, javaType, Version.NEW, hasNull));
 		}
 		throw new Error();
 	}
 	
-	private static BPLBinaryLogicalExpression makeTypeAssumption(VarDef boundVar, JavaType javaType, Version version) {
+	private static BPLBinaryLogicalExpression makeTypeAssumption(VarDef boundVar, JavaType javaType, Version version, boolean hasNull) {
 		Phase phase = boundVar.attrCompilationUnit().getPhase();
+		BPLExpression validRef = new BPLFunctionApplication(ITranslationConstants.OBJ_FUNC,  //$NON-NLS-1$
+				getHeap(version, phase), 
+				new BPLVariableExpression(boundVar.attrName()));
+		if (hasNull) {
+			validRef = new BPLBinaryLogicalExpression(OR, validRef, new BPLEqualityExpression(EQUALS, new BPLVariableExpression(boundVar.attrName()), BPLNullLiteral.NULL)); 
+		}
 		return new BPLBinaryLogicalExpression(AND, 
-				new BPLFunctionApplication(ITranslationConstants.OBJ_FUNC,  //$NON-NLS-1$
-						getHeap(version, phase), 
-						new BPLVariableExpression(boundVar.attrName())), 
+				validRef, 
 				new BPLFunctionApplication(ITranslationConstants.REF_OF_TYPE_FUNC,  //$NON-NLS-1$
 						new BPLVariableExpression(boundVar.attrName()),
 						getHeap(version, phase), 
@@ -231,8 +240,8 @@ public class ExprTranslation {
 		return new BPLVariableExpression(ITranslationConstants.GLOBAL_VAR_PREFIX + typeBinding.getQualifiedName());
 	}
 	
-	private static BPLExpression makeTypeAssumption(VarDef boundVar, BijectionType bijType) {
-		return new BPLFunctionApplication(ITranslationConstants.BIJECTIVE_FUNC, new BPLVariableExpression(boundVar.attrName()));
+	private static BPLExpression makeTypeAssumption(VarDef boundVar, BinRelationType bijType) {
+		return new BPLFunctionApplication(ITranslationConstants.VALUE_RELATION_FUNC, new BPLVariableExpression(ITranslationConstants.HEAP1), new BPLVariableExpression(ITranslationConstants.HEAP2), new BPLVariableExpression(boundVar.attrName()));
 	}
 
 

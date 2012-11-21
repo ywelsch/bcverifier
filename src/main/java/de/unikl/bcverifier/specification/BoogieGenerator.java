@@ -13,6 +13,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.log4j.Logger;
 
+import com.beust.jcommander.internal.Lists;
+
 import b2bpl.bpl.IBPLVisitor;
 import b2bpl.bpl.ast.BPLAssertCommand;
 import b2bpl.bpl.ast.BPLAssumeCommand;
@@ -116,7 +118,7 @@ public class BoogieGenerator extends AbstractGenerator {
                 if (newStallCondition != null && m.group(2).equals("new") && newMeasure != null) {
                 	throw new GenerationException("Places in new implementation that stall do not need a measure");
                 }
-                Place place = new Place(m.group(2).equals("old"), m.group(1), m.group(4), oldStallCondition, oldMeasure, newStallCondition, newMeasure);
+                Place place = new Place(m.group(2).equals("old"), m.group(1), null, true, m.group(4), oldStallCondition, oldMeasure, newStallCondition, newMeasure, Collections.<String>emptyList());
                 currentPlaceList.add(place);
                 Logger.getLogger(BoogieGenerator.class).debug("Parsed place :" + place); 
             } else  {

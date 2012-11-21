@@ -2,10 +2,6 @@
 "bpl/spec1.bsl","--iframes 1"     ,2                ,0                 ,2
 "bpl/spec1.bsl","--iframes 1"     ,2                ,0                 ,3
 "bpl/spec1.bsl","--iframes 1"     ,0                ,0                 ,7
-"bpl/spec2.bsl","--iframes 1"     ,2                ,0                 ,2
-"bpl/spec2.bsl","--iframes 1"     ,2                ,0                 ,3
-"bpl/spec2.bsl","--iframes 1"     ,0                ,0                 ,7
-"bpl/spec3.bsl","--iframes 1"     ,0                ,0                 ,7
 "bpl/spec4.bsl","--iframes 1"     ,0                ,0                 ,7
 "bpl/spec5.bsl","--iframes 1"     ,0                ,0                 ,7
 "bpl/spec.isl" ,"--iframes 1"     ,0                ,0                 ,7

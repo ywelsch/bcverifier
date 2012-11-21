@@ -1432,7 +1432,7 @@ public class MethodTranslator implements ITranslationConstants {
                     // Let the instruction translator know which is the current
                     // instruction handle before doing the actual translation.
                     if(insn.getSourceLine() != -1){
-                        List<Place> localPlaces = tc.getLocalPlacesBetween(insn.getSourceLine()-1, insn.getSourceLine());
+                        List<Place> localPlaces = tc.getLocalPlacesBetween(insn.getSourceLine()-1, insn.getSourceLine(), method.getOwner().getName());
                         if(localPlaces != null){
                             insnTranslator.translateLocalPlaces(localPlaces);
                         }
@@ -2810,56 +2810,63 @@ public class MethodTranslator implements ITranslationConstants {
                 BoogiePlace bp = new BoogiePlace(localPlace.getName(), method, true);
                 tc.addPlace(bp);
                 addAssignment(stack(var(PLACE_VARIABLE)), var(localPlace.getName()), "local place");
-                rawEndBlock(tc.getCheckLabel());
-                
-                startBlock(localPlace.getName());
-                addAssume(var(localPlace.getCondition())); //TODO raw expression here
-                addAssume(isEqual(var(tc.getStallMap()), var("(" + localPlace.getOldStallCondition() + ")"))); //TODO raw expression here
-                addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(localPlace.getName())));
-                addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
-                
-                if(handle != null){
-                    // type informations of the stack
-                    StackFrame stackFrame = handle.getFrame();
-                    JType elemType;
-                    for(int i=0; i<handle.getFrame().getStackSize(); i++){
-                        elemType = stackFrame.peek(i);
-                        if(elemType.isBaseType()){
-                            addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
-                        } else {
-                            addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
-                        }
-                    }
+                for (String s : localPlace.getAssignments()) {
+                	addCommand(new BPLRawCommand(s));
+                }
+                if (localPlace.isSplitvc()) { 
+                	rawEndBlock(tc.getCheckLabel());
 
-                    //type information of the local variables
-                    for(int i=0; i<stackFrame.getLocalCount(); i++){
-                        elemType = stackFrame.getLocal(i);
-                        if (elemType != null) {
-                            if(elemType.isBaseType()){
-                                addAssume(isInRange(stack(var(localVar(i, elemType))), typeRef(elemType)));
-                            } else {
-                                addAssume(isOfType(stack(var(localVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
-                            }
-                        }
-                    }
+                	startBlock(localPlace.getName());
+                	addAssume(var(localPlace.getCondition())); //TODO raw expression here
+                	addAssume(isEqual(var(tc.getStallMap()), var("(" + localPlace.getOldStallCondition() + ")"))); //TODO raw expression here
+                	addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(localPlace.getName())));
+                	addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
+
+                	if(handle != null){
+                		// type informations of the stack
+                		StackFrame stackFrame = handle.getFrame();
+                		JType elemType;
+                		for(int i=0; i<handle.getFrame().getStackSize(); i++){
+                			elemType = stackFrame.peek(i);
+                			if(elemType.isBaseType()){
+                				addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
+                			} else {
+                				addAssume(isOfType(stack(var(stackVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
+                			}
+                		}
+
+                		//type information of the local variables
+                		for(int i=0; i<stackFrame.getLocalCount(); i++){
+                			elemType = stackFrame.getLocal(i);
+                			if (elemType != null) {
+                				if(elemType.isBaseType()){
+                					addAssume(isInRange(stack(var(localVar(i, elemType))), typeRef(elemType)));
+                				} else {
+                					addAssume(isOfType(stack(var(localVar(i, elemType))), var(tc.getHeap()), typeRef(elemType)));
+                				}
+                			}
+                		}
+                	}
+
+                	typeMethodParams();
+
+                	addAssume(nonNull(stack(receiver())));
+
+                	//addAssignment(var(tc.getOldPlaceVar()), stack(var(PLACE_VARIABLE)));
+                	if(!tc.isRound2() && localPlace.getOldMeasure() != null){
+                		addAssignment(var(OLD_MEASURE), var(localPlace.getOldMeasure()));
+                		//                    addAssert(lessEqual(intLiteral(0), var(tc.getOldMeasure())));
+                	}
+                	String placeLabel = tc.prefix(getProcedureName(method) + "_" + localPlace.getName());
+                	tc.addLocalPlace(placeLabel);
+                	endBlock(contLabel, placeStallLabel);
+
+                	startBlock(placeStallLabel);
+                	addAssume(var(tc.getStallMap()));
+                	rawEndBlock(tc.getCheckLabel());
+                } else {
+                	endBlock(contLabel);
                 }
-                
-                typeMethodParams();
-                
-                addAssume(nonNull(stack(receiver())));
-                
-                //addAssignment(var(tc.getOldPlaceVar()), stack(var(PLACE_VARIABLE)));
-                if(!tc.isRound2() && localPlace.getOldMeasure() != null){
-                	addAssignment(var(OLD_MEASURE), var(localPlace.getOldMeasure()));
-//                    addAssert(lessEqual(intLiteral(0), var(tc.getOldMeasure())));
-                }
-                String placeLabel = tc.prefix(getProcedureName(method) + "_" + localPlace.getName());
-                tc.addLocalPlace(placeLabel);
-                endBlock(contLabel, placeStallLabel);
-                
-                startBlock(placeStallLabel);
-                addAssume(var(tc.getStallMap()));
-                rawEndBlock(tc.getCheckLabel());
             }
             
             startBlock(skipLabel);

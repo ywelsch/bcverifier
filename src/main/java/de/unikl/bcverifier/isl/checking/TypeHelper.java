@@ -41,7 +41,7 @@ import de.unikl.bcverifier.isl.ast.UnknownDef;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.ast.VersionConst;
-import de.unikl.bcverifier.isl.checking.types.BijectionType;
+import de.unikl.bcverifier.isl.checking.types.BinRelationType;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeCallProgramPoint;
@@ -65,8 +65,8 @@ public class TypeHelper {
 		String qualifiedName = getQualifiedName(t.getNames());
 		if (version.equals(Version.BOTH) && t.getNameList().getNumChild() == 1) {
 			String typeName = t.getName(0).getName();
-			if (typeName.equals(BijectionType.instance().toString())) {
-				return BijectionType.instance();
+			if (typeName.equals(BinRelationType.instance().toString())) {
+				return BinRelationType.instance();
 			} else if (typeName.equals(ExprTypeInt.instance().toString())) {
 				return ExprTypeInt.instance();
 			} else if (typeName.equals(ExprTypeBool.instance().toString())) {
@@ -415,10 +415,13 @@ public class TypeHelper {
 	}
 	
 	public static void checkAssign(Assign a) {
-		ExprType vartype = a.attrType();
+		ExprType vartype = a.getVar().attrType();
 		ExprType exptype = a.getExpr().attrType();
 		if (!exptype.isSubtypeOf(vartype)) {
 			a.addError("Type of assigned expression (" + exptype +  ") must be a subtype of type " + vartype + " of the variable + " + a.attrName() + ".");
+		}
+		if (!(a.getVar().attrDef() instanceof GlobVarDef)) {
+			a.addError("Only ghost variables can be assigned.");
 		}
 	}
 

@@ -23,28 +23,40 @@ import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
 import b2bpl.bpl.ast.BPLBinaryLogicalExpression;
 import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLBuiltInType;
+import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLEqualityExpression;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLIntLiteral;
+import b2bpl.bpl.ast.BPLNode;
 import b2bpl.bpl.ast.BPLQuantifierExpression;
 import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLType;
+import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLVariable;
+import b2bpl.bpl.ast.BPLVariableDeclaration;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import b2bpl.translation.ITranslationConstants;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
+import de.unikl.bcverifier.isl.ast.Assign;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Expr;
+import de.unikl.bcverifier.isl.ast.GlobVarDef;
 import de.unikl.bcverifier.isl.ast.Invariant;
 import de.unikl.bcverifier.isl.ast.LocalInvariant;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
 import de.unikl.bcverifier.isl.ast.StallCondition;
 import de.unikl.bcverifier.isl.ast.Statement;
+import de.unikl.bcverifier.isl.ast.VarAccess;
+import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.isl.checking.types.BinRelationType;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
+import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
 import de.unikl.bcverifier.specification.SpecInvariant;
@@ -172,8 +184,14 @@ public class Translation {
 				ExprType placePositionType = def.getProgramPoint().attrType();
 				if (placePositionType instanceof ExprTypeProgramPoint) {
 					ExprTypeProgramPoint progPoint = (ExprTypeProgramPoint) placePositionType;
-					Place p = new Place(progPoint.getVersion() == Version.OLD, def.getName().getName(), 
-							exprToString(condition), exprToString(oldStallCond), exprToString(oldMeasure), exprToString(newStallCond), exprToString(newMeasure));
+					List<String> assigns = Lists.newArrayList();
+					for (Assign a : def.getAssignmentss()) {
+						BPLAssignmentCommand asc = new BPLAssignmentCommand(a.getVar().translateExpr(), a.getExpr().translateExpr());
+						assigns.add(cmdToString(asc));
+					}
+					String className = ((ExprTypePlace)def.attrType()).getEnclosingClassType().getQualifiedName();
+					Place p = new Place(progPoint.getVersion() == Version.OLD, def.getName().getName(), className, def.hasPlaceOption(PLACE_OPTION_SPLITVC),
+							exprToString(condition), exprToString(oldStallCond), exprToString(oldMeasure), exprToString(newStallCond), exprToString(newMeasure), assigns);
 					if (progPoint.getVersion() == Version.OLD) {
 						put(oldPlaces, progPoint.getLine(), p);
 					} else {
@@ -205,9 +223,22 @@ public class Translation {
 		pw.flush();
 		return "(" + s.toString() + ")";
 	}
+	
+	private static String cmdToString(BPLNode cmd) {
+		if (cmd == null)
+			return null;
+		Writer s = new StringWriter();
+		PrintWriter pw = new PrintWriter(s);
+		BPLPrinter printer = new BPLPrinter(pw );
+		cmd.accept(printer);
+		pw.flush();
+		return s.toString();
+	}
 
 	public static List<String> generatePreludeAddition(CompilationUnit cu) {
-		return Collections.emptyList();
+		List<String> result = Lists.newArrayList();
+		
+		return result;
 	}
 	
 	public static List<String> generatePreconditions(CompilationUnit cu) {
@@ -228,8 +259,56 @@ public class Translation {
 									, new BPLVariableExpression(placeType.getBoogiePlaceName())) 
 							,isHavoc
 							);
-					result.add(r.toString());
+					result.add(cmdToString(r));
 				}
+			}
+		}
+		return result;
+	}
+
+	public static java.util.List<String> generateGlobalAssignments(CompilationUnit cu) {
+		List<String> result = Lists.newArrayList();
+		for (Statement s : cu.getStatements()) {
+			if (s instanceof Assign) {
+				Assign gvd = (Assign) s;
+				VarAccess vd = gvd.getVar();
+				result.add(cmdToString(new BPLAssignmentCommand(new BPLVariableExpression(vd.getName().getName()), gvd.getExpr().translateExpr())));
+			}
+		}
+		return result;
+	}
+
+	public static java.util.List<String> generateInitialAssignments(CompilationUnit cu) {
+		List<String> result = Lists.newArrayList();
+		for (Statement s : cu.getStatements()) {
+			if (s instanceof GlobVarDef) {
+				GlobVarDef gvd = (GlobVarDef) s;
+				VarDef vd = gvd.getVar();
+				result.add(cmdToString(new BPLAssignmentCommand(new BPLVariableExpression(vd.attrName()), gvd.getInitialValue().translateExpr())));
+			}
+		}
+		return result;
+	}
+
+	public static java.util.List<BPLVariableDeclaration> generateGlobalVariables(CompilationUnit cu) {
+		List<BPLVariableDeclaration> result = Lists.newArrayList();
+		for (Statement s : cu.getStatements()) {
+			if (s instanceof GlobVarDef) {
+				GlobVarDef gvd = (GlobVarDef) s;
+				VarDef vd = gvd.getVar();
+				BPLType type;
+				if (vd.attrType() instanceof JavaType) {
+					type = new BPLTypeName(ITranslationConstants.REF_TYPE); 
+				} else if (vd.attrType() instanceof BinRelationType) {
+					type = new BPLTypeName(ITranslationConstants.BINREL_TYPE); 
+				} else if (vd.attrType() instanceof ExprTypeInt) {
+					type = BPLBuiltInType.INT; 
+				} else if (vd.attrType() instanceof ExprTypeBool) {
+					type = BPLBuiltInType.BOOL; 
+				} else {
+					throw new Error("Type not supported yet.");
+				}
+				result.add(new BPLVariableDeclaration(new BPLVariable(vd.attrName(), type, ExprTranslation.createTypAssum(vd, true))));
 			}
 		}
 		return result;

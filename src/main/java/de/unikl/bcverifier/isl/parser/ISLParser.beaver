@@ -125,7 +125,7 @@ statement =
 
 assign =
 	ASSIGN id.i EQ expr.e
-		{: return new Assign(i, e); :}	
+		{: return new Assign(new VarAccess(i), e); :}	
 ;
 
 placedef =	

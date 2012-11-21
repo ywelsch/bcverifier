@@ -19,6 +19,7 @@ import static b2bpl.translation.CodeGenerator.emptyStrackFrame;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldType;
 import static b2bpl.translation.CodeGenerator.isCallable;
+import static b2bpl.translation.CodeGenerator.emptyrel;
 import static b2bpl.translation.CodeGenerator.libraryField;
 import static b2bpl.translation.CodeGenerator.numParams;
 import static b2bpl.translation.CodeGenerator.forall;
@@ -61,6 +62,7 @@ import static b2bpl.translation.CodeGenerator.notEqual;
 import static b2bpl.translation.CodeGenerator.nullLiteral;
 import static b2bpl.translation.CodeGenerator.obj;
 import static b2bpl.translation.CodeGenerator.objectCoupling;
+import static b2bpl.translation.CodeGenerator.valueRelation;
 import static b2bpl.translation.CodeGenerator.oneClassDown;
 import static b2bpl.translation.CodeGenerator.placeDefinedInType;
 import static b2bpl.translation.CodeGenerator.placeDefinedInMethod;
@@ -425,6 +427,10 @@ public class Translator implements ITranslationConstants {
         addDeclaration(new BPLConstantDeclaration(constants));
     }
 
+    private void addFunction(String name, BPLType outType) {
+        addFunction(name, new BPLType[] { }, outType);
+    }
+    
     private void addFunction(String name, BPLType inType, BPLType outType) {
         addFunction(name, new BPLType[] { inType }, outType);
     }
@@ -601,7 +607,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable fieldBoolVar = new BPLVariable(f, new BPLTypeName(FIELD_TYPE, BPLBuiltInType.BOOL));
             BPLVariable heap1Var = new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE));
             BPLVariable heap2Var = new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE));
-            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BIJ_TYPE));
+            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BINREL_TYPE));
             final String r1 = "r1";
             BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
             final String r2 = "r2";
@@ -664,7 +670,7 @@ public class Translator implements ITranslationConstants {
 
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE), logicalAnd(wellformedHeap(var(HEAP1)), isEqual(libImpl(var(HEAP1)), var(IMPL1))))));
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE), logicalAnd(wellformedHeap(var(HEAP2)), isEqual(libImpl(var(HEAP2)), var(IMPL2))))));
-            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName(BIJ_TYPE), wellformedCoupling(var(HEAP1), var(HEAP2), var(related)))));
+            addDeclaration(new BPLVariableDeclaration(new BPLVariable(related, new BPLTypeName(BINREL_TYPE), wellformedCoupling(var(HEAP1), var(HEAP2), var(related)))));
 
             
             addComment("Modified heap, coupling, relation (not original SscBoogie)");
@@ -684,7 +690,7 @@ public class Translator implements ITranslationConstants {
                                     ))
                     ));
 
-            addFunction(WELLFORMED_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
+            addFunction(WELLFORMED_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BINREL_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
                     isEquiv(wellformedCoupling(var(HEAP1), var(HEAP2), var(related)),
@@ -698,15 +704,21 @@ public class Translator implements ITranslationConstants {
                                     ))
                     ));
 
-            addFunction(OBJECT_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
+            addFunction(OBJECT_COUPLING_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BINREL_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     heap1Var, heap2Var, relatedVar,
                     isEquiv(objectCoupling(var(HEAP1), var(HEAP2), var(related)),
                     		forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(nonNull(var(r1)), map(var(HEAP1), var(r1), var(ALLOC_FIELD)), nonNull(var(r2)), map(var(HEAP2), var(r2), var(ALLOC_FIELD))))))
                     ));
 
+            addFunction(VALUE_RELATION_FUNC, new BPLTypeName(HEAP_TYPE), new BPLTypeName(HEAP_TYPE), new BPLTypeName(BINREL_TYPE), BPLBuiltInType.BOOL);
+            addAxiom(forall(
+                    heap1Var, heap2Var, relatedVar,
+                    isEquiv(valueRelation(var(HEAP1), var(HEAP2), var(related)),
+                    		forall(r1Var, r2Var, implies(new BPLArrayExpression(var(related), var(r1), var(r2)), logicalAnd(logicalOr(isNull(var(r1)), obj(var(HEAP1), var(r1))), logicalOr(isNull(var(r2)), obj(var(HEAP2), var(r2)))))))
+                    ));
 
-            addFunction(BIJECTIVE_FUNC, new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
+            addFunction(BIJECTIVE_FUNC, new BPLTypeName(BINREL_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     relatedVar, r1Var, r2Var, r3Var, r4Var,
                     isEquiv(CodeGenerator.bijective(var(related)),
@@ -1252,7 +1264,7 @@ public class Translator implements ITranslationConstants {
             BPLVariable vAlphaVar = new BPLVariable(vAlpha, new BPLTypeName("alpha"));
             BPLVariable heap1Var = new BPLVariable(HEAP1, new BPLTypeName(HEAP_TYPE));
             BPLVariable heap2Var = new BPLVariable(HEAP2, new BPLTypeName(HEAP_TYPE));
-            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BIJ_TYPE));
+            BPLVariable relatedVar = new BPLVariable(related, new BPLTypeName(BINREL_TYPE));
             final String r1 = "r1";
             BPLVariable r1Var = new BPLVariable(r1, new BPLTypeName(REF_TYPE));
             final String r2 = "r2";
@@ -1355,7 +1367,7 @@ public class Translator implements ITranslationConstants {
             
             addFunction(IS_CLASS_TYPE_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), BPLBuiltInType.BOOL);
             
-            addDeclaration(new BPLTypeAlias(BIJ_TYPE, new BPLArrayType(new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL)));
+            addDeclaration(new BPLTypeAlias(BINREL_TYPE, new BPLArrayType(new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), BPLBuiltInType.BOOL)));
 
 
             //            final String updateProcedureName = "Update";
@@ -1371,7 +1383,7 @@ public class Translator implements ITranslationConstants {
             //                            }
             //                            ))));
 
-            addFunction(REL_NULL_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), new BPLTypeName(BIJ_TYPE), BPLBuiltInType.BOOL);
+            addFunction(REL_NULL_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(REF_TYPE), new BPLTypeName(BINREL_TYPE), BPLBuiltInType.BOOL);
             addAxiom(forall(
                     r1Var, r2Var, relatedVar,
                     isEquiv(relNull(var(r1), var(r2), var(related)),
@@ -1437,6 +1449,10 @@ public class Translator implements ITranslationConstants {
                                     )
                             )
                     )));
+            
+            addFunction(EMPTY_REL_FUNC, new BPLTypeName(BINREL_TYPE));
+            addAxiom(forall(r1Var, r2Var, logicalNot(new BPLArrayExpression(emptyrel(), var(r1), var(r2)))));
+            addAxiom(bijective(emptyrel()));
             
             addComment("Syntactic sugar for writing coupling invariant");
             addFunction(OBJ_OF_TYPE_FUNC, new BPLTypeName(REF_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);

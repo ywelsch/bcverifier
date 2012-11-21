@@ -8,7 +8,7 @@ import b2bpl.bpl.ast.BPLExpression;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.List;
-import de.unikl.bcverifier.isl.checking.types.BijectionType;
+import de.unikl.bcverifier.isl.checking.types.BinRelationType;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
@@ -22,7 +22,7 @@ final class BuiltinFuncTertiaryBij extends BuiltinFunction {
 	}
 
 	public BuiltinFuncTertiaryBij(Name name, TwoLibraryModel twoLibraryModel) {
-		super(name.toString().toLowerCase(), name.equals(Name.RELATED) ? ExprTypeBool.instance() : BijectionType.instance(), new ExprType[] { BijectionType.instance(), JavaType.object(twoLibraryModel), JavaType.object(twoLibraryModel) });
+		super(name.toString().toLowerCase(), name.equals(Name.RELATED) ? ExprTypeBool.instance() : BinRelationType.instance(), new ExprType[] { BinRelationType.instance(), JavaType.object(twoLibraryModel), JavaType.object(twoLibraryModel) });
 	}
 
 	@Override
@@ -30,7 +30,7 @@ final class BuiltinFuncTertiaryBij extends BuiltinFunction {
 		if (name.equals(Name.RELATED.toString().toLowerCase()))
 			return new BPLArrayExpression(arguments.getChild(0).translateExpr(), arguments.getChild(1).translateExpr(), arguments.getChild(2).translateExpr());
 		if (name.equals(Name.ADD.toString().toLowerCase()) || name.equals(Name.REMOVE.toString().toLowerCase()))
-			return new BPLArrayExpression(arguments.getChild(0).translateExpr(), new BPLArrayAssignment(new BPLExpression[]{arguments.getChild(1).translateExpr(), arguments.getChild(2).translateExpr()}, name.equals(Name.ADD) ? BPLBoolLiteral.TRUE : BPLBoolLiteral.FALSE));
+			return new BPLArrayExpression(arguments.getChild(0).translateExpr(), new BPLArrayAssignment(new BPLExpression[]{arguments.getChild(1).translateExpr(), arguments.getChild(2).translateExpr()}, name.equals(Name.ADD.toString().toLowerCase()) ? BPLBoolLiteral.TRUE : BPLBoolLiteral.FALSE));
 		throw new RuntimeException("Case not covered");
 	}
 	

@@ -1,5 +1,7 @@
 package de.unikl.bcverifier.specification;
 
+import java.util.List;
+
 public class Place {
     private String name;
     private String condition;
@@ -8,15 +10,21 @@ public class Place {
     private String newStallCondition;
     private String newMeasure;
     private boolean old;
+    private boolean splitvc;
+    private List<String> assignments;
+    private String className;
     
-    public Place(boolean old, String name, String condition, String oldStallCondition, String oldMeasure, String newStallCondition, String newMeasure){
-        this.old = old;
+    public Place(boolean old, String name, String className, boolean splitvc, String condition, String oldStallCondition, String oldMeasure, String newStallCondition, String newMeasure, List<String> assignments){
+    	this.old = old;
     	this.name = name;
         this.condition = condition;
+        this.className = className;
         this.setOldStallCondition(oldStallCondition);
         this.setOldMeasure(oldMeasure);
         this.setNewStallCondition(newStallCondition);
         this.setNewMeasure(newMeasure);
+        this.setAssignments(assignments);
+        this.setSplitvc(splitvc);
     }
     
     public String getName() {
@@ -95,5 +103,29 @@ public class Place {
 
 	public void setOld(boolean old) {
 		this.old = old;
+	}
+
+	public boolean isSplitvc() {
+		return splitvc;
+	}
+
+	public void setSplitvc(boolean splitvc) {
+		this.splitvc = splitvc;
+	}
+
+	public List<String> getAssignments() {
+		return assignments;
+	}
+
+	public void setAssignments(List<String> assignments) {
+		this.assignments = assignments;
+	}
+
+	public String getClassName() {
+		return className;
+	}
+
+	public void setClassName(String className) {
+		this.className = className;
 	}
 }

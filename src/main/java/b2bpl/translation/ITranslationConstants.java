@@ -39,6 +39,8 @@ public interface ITranslationConstants {
   
   String OBJECT_COUPLING_FUNC = "ObjectCoupling";
   
+  String VALUE_RELATION_FUNC = "ValueRelation";
+  
   String BIJECTIVE_FUNC = "Bijective";
   
   String SYNTHETIC_FIELD_FUNC = "SyntheticField";
@@ -138,7 +140,7 @@ public interface ITranslationConstants {
   
   String HEAP_TYPE =         "Heap";
   
-  String BIJ_TYPE = "Bij";
+  String BINREL_TYPE = "BinRel";
 
 //  String LOCATION_TYPE =     "Location";
 
@@ -377,6 +379,8 @@ public interface ITranslationConstants {
   String OBJ_FUNC = "Obj";
   
   String OBJ_OF_TYPE_FUNC = "ObjOfType";
+  
+  String EMPTY_REL_FUNC = "EmptyRelation";
   
   String IS_CALLABLE_FUNC = "isCallable";
 

@@ -267,7 +267,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 					objectConstructorName, new BPLTypeName(METHOD_TYPE))));
 
 			addCheckingBlocks(invAssertions, invAssumes, localInvAssertions,
-					localInvAssumes, methodBlocks);
+					localInvAssumes, methodBlocks, this.specGen.generateGlobalAssignments(), this.specGen.generateInitialAssignments());
 
 			addNoopBlock(methodBlocks);
 
@@ -298,6 +298,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			addPreconditionBlocks(invAssumes, localInvAssumes, methodBlocks);
 
 			addLocalVariables(localVariables);
+			localVariables.addAll(this.specGen.generateGlobalVariables());
 
 			addVariableConstants(programDecls, methodBlocks);
 
@@ -1239,7 +1240,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			ArrayList<BPLCommand> invAssumes,
 			ArrayList<BPLCommand> localInvAssertions,
 			ArrayList<BPLCommand> localInvAssumes,
-			List<BPLBasicBlock> methodBlocks) {
+			List<BPLBasicBlock> methodBlocks, List<String> globalAssignments, List<String> initialAssignments) {
 		// ///////////////////////////////////
 		// checking blocks (boundary return, boundary call and local places)
 		// ///////////////////////////////////
@@ -1266,6 +1267,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 								new BPLIntLiteral(1)),
 						isLocalPlace(stack1(var(PLACE_VARIABLE))),
 						isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
+		for (String globalAssign : globalAssignments) {
+			checkingCommand.add(new BPLRawCommand(globalAssign));
+		}
 		methodBlocks.add(new BPLBasicBlock(tc.getCheckLabel(), checkingCommand
 				.toArray(new BPLCommand[checkingCommand.size()]),
 				new BPLGotoCommand(CHECK_BOUNDARY_RETURN_LABEL,
@@ -1507,7 +1511,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 		// check for progress while stalled
 		for (Place place : tc.getLocalPlaceDefinitions().oldPlaces()) {
-			if (place.getNewMeasure() != null) { 
+			if (place.isSplitvc() && place.getNewMeasure() != null) { 
 				checkingCommand.add(new BPLAssumeCommand(ifThenElse(
 						logicalAnd(var(STALL1), isEqual(var(OLD_PLACE1), var(place.getName()))),
 						isEqual(var(MEASURE), var("(" + place.getNewMeasure() + ")")),
@@ -1530,20 +1534,24 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		checkingCommand.add(new BPLHavocCommand(var(STALL1), var(STALL2)));
 		
 		for (Place place : tc.getLocalPlaceDefinitions().oldPlaces()) {
-			checkingCommand.add(new BPLAssumeCommand(implies(
-					logicalAnd(
-							isEqual(stack1(var(PLACE_VARIABLE)), var(place.getName())),
-							var("(" + place.getCondition() + ")")),
-					isEqual(var(STALL1), var("(" + place.getNewStallCondition() + ")"))
-					)));
+			if (place.isSplitvc()) {
+				checkingCommand.add(new BPLAssumeCommand(implies(
+						logicalAnd(
+								isEqual(stack1(var(PLACE_VARIABLE)), var(place.getName())),
+								var("(" + place.getCondition() + ")")),
+								isEqual(var(STALL1), var("(" + place.getNewStallCondition() + ")"))
+						)));
+			}
 		}
 		for (Place place : tc.getLocalPlaceDefinitions().newPlaces()) {
-			checkingCommand.add(new BPLAssumeCommand(implies(
-					logicalAnd(
-							isEqual(stack2(var(PLACE_VARIABLE)), var(place.getName())),
-							var("(" + place.getCondition() + ")")),
-					isEqual(var(STALL2), var("(" + place.getNewStallCondition() + ")"))
-					)));
+			if (place.isSplitvc()) {
+				checkingCommand.add(new BPLAssumeCommand(implies(
+						logicalAnd(
+								isEqual(stack2(var(PLACE_VARIABLE)), var(place.getName())),
+								var("(" + place.getCondition() + ")")),
+								isEqual(var(STALL2), var("(" + place.getNewStallCondition() + ")"))
+						)));
+			}
 		}
 		
 		checkingCommand.add(new BPLAssertCommand(logicalNot(logicalAnd(var(STALL1), var(STALL2)))));
@@ -1580,6 +1588,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 								logicalNot(heap2(var(rVar.getName()),
 										var(EXPOSED_FIELD))))))));
 
+		for (String initialAssign: initialAssignments) {
+			checkingCommand.add(new BPLRawCommand(initialAssign));
+		}
 		// assert inv
 		checkingCommand.addAll(invAssertions);
 

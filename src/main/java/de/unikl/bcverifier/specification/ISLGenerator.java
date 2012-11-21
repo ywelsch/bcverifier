@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import b2bpl.bpl.BPLPrinter;
@@ -13,6 +14,7 @@ import b2bpl.bpl.ast.BPLAssertCommand;
 import b2bpl.bpl.ast.BPLAssumeCommand;
 import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLExpression;
+import b2bpl.bpl.ast.BPLVariableDeclaration;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import beaver.Parser.Exception;
 import de.unikl.bcverifier.Configuration;
@@ -106,5 +108,20 @@ public class ISLGenerator extends AbstractGenerator {
 	public List<String> generatePreconditions() throws GenerationException {
 		init();
 		return cu.generatePreconditions();
+	}
+	
+	@Override
+	public List<String> generateGlobalAssignments() throws GenerationException {
+		return cu.generateGlobalAssignments();
+	}
+	
+	@Override
+	public List<BPLVariableDeclaration> generateGlobalVariables() throws GenerationException {
+		return cu.generateGlobalVariables();
+	}
+	
+	@Override
+	public List<String> generateInitialAssignments() throws GenerationException {
+		return cu.generateInitialAssignments();
 	}
 }

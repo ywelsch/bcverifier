@@ -856,6 +856,10 @@ public final class CodeGenerator implements ITranslationConstants {
         return new BPLFunctionApplication(OBJECT_COUPLING_FUNC, exp1, exp2, exp3);
     }
     
+    public static BPLExpression valueRelation(BPLExpression exp1, BPLExpression exp2, BPLExpression exp3){
+        return new BPLFunctionApplication(VALUE_RELATION_FUNC, exp1, exp2, exp3);
+    }
+    
     public static BPLExpression bijective(BPLExpression exp1){
         return new BPLFunctionApplication(BIJECTIVE_FUNC, exp1);
     }
@@ -1051,6 +1055,10 @@ public final class CodeGenerator implements ITranslationConstants {
     
     public static BPLExpression obj(BPLExpression heap, BPLExpression ref){
         return new BPLFunctionApplication(OBJ_FUNC, heap, ref);
+    }
+    
+    public static BPLExpression emptyrel(){
+        return new BPLFunctionApplication(EMPTY_REL_FUNC);
     }
     
     public static BPLExpression memberOf(BPLExpression impl, BPLExpression meth, BPLExpression c1, BPLExpression c2){

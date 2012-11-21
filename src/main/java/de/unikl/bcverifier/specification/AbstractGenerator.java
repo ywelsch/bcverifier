@@ -8,6 +8,8 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import b2bpl.bpl.ast.BPLVariableDeclaration;
+
 import de.unikl.bcverifier.Configuration;
 
 public class AbstractGenerator implements Generator {
@@ -60,6 +62,18 @@ public class AbstractGenerator implements Generator {
 		return Collections.emptyList();
 	}
 
-	
+	@Override
+	public List<String> generateGlobalAssignments() throws GenerationException {
+		return Collections.emptyList();
+	}
 
+	@Override
+	public List<String> generateInitialAssignments() throws GenerationException {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public List<BPLVariableDeclaration> generateGlobalVariables() throws GenerationException {
+		return Collections.emptyList();
+	}
 }
