@@ -304,11 +304,8 @@ public class ExprTranslation {
 			return new BPLVariableExpression(e.getName().getName());
 		} else if (def instanceof JavaVariableDef) {
 			return translateJavaVariableAccess(e, (JavaVariableDef) def);
-		} else if (def.attrType() instanceof ExprTypePlace && ((ExprTypePlace)def.attrType()).isLocalPlace()) {
-			return translateLocalPlaceUse(e, (ExprTypePlace)def.attrType());				
-		} else if (def.attrType() instanceof ExprTypePlace && !((ExprTypePlace)def.attrType()).isLocalPlace()) {
-			ExprTypePlace predefinedPlace = (ExprTypePlace) def.attrType();
-			return translatePredefinedPlaceUse(e, predefinedPlace);
+		} else if (def.attrType() instanceof ExprTypePlace) {
+			return translatePlaceUse(e, (ExprTypePlace)def.attrType());				
 		} else if (def instanceof GlobVarDef) {
 			return new BPLVariableExpression(e.getName().getName());
 		}
@@ -316,13 +313,13 @@ public class ExprTranslation {
 				" with type " + def.attrType());
 	}
 
-	private static BPLExpression translatePredefinedPlaceUse(VarAccess e, ExprTypePlace predefinedPlace) {
-		String placeName = predefinedPlace.getBoogiePlaceName(e.attrCompilationUnit().getTwoLibraryModel());
-		return new BPLVariableExpression(placeName);
-	}
-
-	private static BPLExpression translateLocalPlaceUse(VarAccess e, ExprTypePlace localPlace) {
-		return new BPLVariableExpression(e.getName().getName());
+	private static BPLExpression translatePlaceUse(VarAccess e, ExprTypePlace place) {
+		if (place.isCallPlace()) {
+			String placeName = place.getBoogiePlaceName(e.attrCompilationUnit().getTwoLibraryModel());
+			return new BPLVariableExpression(placeName);
+		} else {
+			return new BPLVariableExpression(e.getName().getName());
+		}
 	}
 
 	private static BPLExpression translateJavaVariableAccess(VarAccess e,

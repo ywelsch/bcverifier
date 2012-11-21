@@ -37,10 +37,10 @@ final class BuiltinFuncTertiaryBij extends BuiltinFunction {
 	public ExprType exactType(FuncCall call) {
 		ExprType t1 = call.getArgument(1).attrType();
 		ExprType t2 = call.getArgument(2).attrType();
-		if ((t1 instanceof JavaType) && !((JavaType)t1).isOld()) {
+		if ((t1 instanceof JavaType) && t1 != JavaType.nullType() && !((JavaType)t1).isOld()) {
 			call.addError("Second parameter to function " + name + " must be of a type of the old implementation.");
 		}
-		if ((t2 instanceof JavaType) && !((JavaType)t2).isNew()) {
+		if ((t2 instanceof JavaType) && t2 != JavaType.nullType() && !((JavaType)t2).isNew()) {
 			call.addError("Third parameter to function " + name + " must be of a type of the old implementation.");
 		}
 		return super.exactType(call);
