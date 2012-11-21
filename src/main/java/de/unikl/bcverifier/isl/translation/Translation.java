@@ -54,8 +54,7 @@ import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeAtLineProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
@@ -182,8 +181,8 @@ public class Translation {
 				}
 				
 				ExprType placePositionType = def.getProgramPoint().attrType();
-				if (placePositionType instanceof ExprTypeProgramPoint) {
-					ExprTypeProgramPoint progPoint = (ExprTypeProgramPoint) placePositionType;
+				if (placePositionType instanceof ExprTypeAtLineProgramPoint) {
+					ExprTypeAtLineProgramPoint progPoint = (ExprTypeAtLineProgramPoint) placePositionType;
 					List<String> assigns = Lists.newArrayList();
 					for (Assign a : def.getAssignmentss()) {
 						BPLAssignmentCommand asc = new BPLAssignmentCommand(a.getVar().translateExpr(), a.getExpr().translateExpr());
@@ -246,17 +245,16 @@ public class Translation {
 		for (Statement s : cu.getStatements()) {
 			if (s instanceof PlaceDef) {
 				PlaceDef def = (PlaceDef) s;
-				if (!(def.attrType() instanceof ExprTypePredefinedPlace)) {
-					continue;
-				}
-				ExprTypePredefinedPlace placeType = (ExprTypePredefinedPlace) def.attrType();
+				ExprTypePlace placeType = (ExprTypePlace) def.attrType();
+				if (placeType.isLocalPlace())
+					continue; // splitvc for local places is statically resolved during code generation
 				BPLExpression isHavoc;
 				if (def.hasPlaceOption(PLACE_OPTION_SPLITVC)) {
 					isHavoc = BPLBoolLiteral.FALSE;
 					BPLAssignmentCommand r = new BPLAssignmentCommand(
 							new BPLArrayExpression(
 									new BPLVariableExpression(ITranslationConstants.USE_HAVOC)
-									, new BPLVariableExpression(placeType.getBoogiePlaceName())) 
+									, new BPLVariableExpression(placeType.getBoogiePlaceName(cu.getTwoLibraryModel()))) 
 							,isHavoc
 							);
 					result.add(cmdToString(r));

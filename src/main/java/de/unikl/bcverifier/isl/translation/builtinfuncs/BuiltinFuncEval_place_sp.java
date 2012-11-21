@@ -7,9 +7,7 @@ import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeAny;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.translation.ExprWellDefinedness;
 import de.unikl.bcverifier.isl.translation.TranslationHelper;
 
@@ -39,8 +37,8 @@ final class BuiltinFuncEval_place_sp extends BuiltinFunction {
 	@Override
 	public ExprType exactType(FuncCall call) {
 		ExprTypePlace place = (ExprTypePlace) call.getArgument(0).attrType();
-		if (!(place instanceof ExprTypePredefinedPlace)) {
-			call.addError("Function 'stack' can only be used with predefined places.");
+		if (place.isLocalPlace()) {
+			call.addError("Function 'stack' with integer argument can only be used with non-local places.");
 		}
 		return call.getArgument(2).attrType();
 	}

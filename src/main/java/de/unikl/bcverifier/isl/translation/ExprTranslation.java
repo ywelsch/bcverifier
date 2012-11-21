@@ -5,8 +5,6 @@ import static b2bpl.translation.CodeGenerator.var;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.IntType;
-
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
 import b2bpl.bpl.ast.BPLBinaryLogicalExpression;
@@ -52,8 +50,7 @@ import de.unikl.bcverifier.isl.checking.JavaVariableDef;
 import de.unikl.bcverifier.isl.checking.types.BinRelationType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
-import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.parser.Quantifier;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
@@ -307,11 +304,10 @@ public class ExprTranslation {
 			return new BPLVariableExpression(e.getName().getName());
 		} else if (def instanceof JavaVariableDef) {
 			return translateJavaVariableAccess(e, (JavaVariableDef) def);
-		} else if (def.attrType() instanceof ExprTypeLocalPlace) {
-			ExprTypeLocalPlace localPlace = (ExprTypeLocalPlace) def.attrType();
-			return translateLocalPlaceUse(e, localPlace);				
-		} else if (def.attrType() instanceof ExprTypePredefinedPlace) {
-			ExprTypePredefinedPlace predefinedPlace = (ExprTypePredefinedPlace) def.attrType();
+		} else if (def.attrType() instanceof ExprTypePlace && ((ExprTypePlace)def.attrType()).isLocalPlace()) {
+			return translateLocalPlaceUse(e, (ExprTypePlace)def.attrType());				
+		} else if (def.attrType() instanceof ExprTypePlace && !((ExprTypePlace)def.attrType()).isLocalPlace()) {
+			ExprTypePlace predefinedPlace = (ExprTypePlace) def.attrType();
 			return translatePredefinedPlaceUse(e, predefinedPlace);
 		} else if (def instanceof GlobVarDef) {
 			return new BPLVariableExpression(e.getName().getName());
@@ -320,12 +316,12 @@ public class ExprTranslation {
 				" with type " + def.attrType());
 	}
 
-	private static BPLExpression translatePredefinedPlaceUse(VarAccess e, ExprTypePredefinedPlace predefinedPlace) {
-		String placeName = predefinedPlace.getBoogiePlaceName();
+	private static BPLExpression translatePredefinedPlaceUse(VarAccess e, ExprTypePlace predefinedPlace) {
+		String placeName = predefinedPlace.getBoogiePlaceName(e.attrCompilationUnit().getTwoLibraryModel());
 		return new BPLVariableExpression(placeName);
 	}
 
-	private static BPLExpression translateLocalPlaceUse(VarAccess e, ExprTypeLocalPlace localPlace) {
+	private static BPLExpression translateLocalPlaceUse(VarAccess e, ExprTypePlace localPlace) {
 		return new BPLVariableExpression(e.getName().getName());
 	}
 

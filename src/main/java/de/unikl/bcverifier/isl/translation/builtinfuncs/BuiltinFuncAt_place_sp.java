@@ -12,9 +12,7 @@ import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
 import de.unikl.bcverifier.isl.translation.ExprWellDefinedness;
 import de.unikl.bcverifier.isl.translation.TranslationHelper;
 /**
@@ -57,8 +55,8 @@ final class BuiltinFuncAt_place_sp extends BuiltinFunction {
 	@Override
 	public ExprType exactType(FuncCall call) {
 		ExprTypePlace place = (ExprTypePlace) call.getArgument(0).attrType();
-		if (!(place instanceof ExprTypePredefinedPlace)) {
-			call.addError("Function 'at' can only be used with predefined places.");
+		if (place.isLocalPlace()) {
+			call.addError("Function 'at' with integer argument can only be used with non-local places.");
 		}
 		return super.exactType(call);
 	}

@@ -2,18 +2,22 @@ package de.unikl.bcverifier.isl.checking.types;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class ExprTypePlace extends ExprType {
 
-	private static final ExprTypePlace instance = new ExprTypePlace();
+	private static final ExprTypePlace instance = new ExprTypePlace(false, null);
 	
+	private final ExprTypeProgramPoint pptype;
+	private final boolean isLocal;
 	
-	@Override
-	public boolean isSubtypeOf(ExprType t) {
-		return t instanceof ExprTypePlace;
+	public ExprTypePlace(boolean isLocal, ExprTypeProgramPoint pptype) {
+		this.isLocal = isLocal;
+		this.pptype = pptype;
 	}
 
 	public static ExprTypePlace instance() {
@@ -21,11 +25,18 @@ public class ExprTypePlace extends ExprType {
 	}
 
 	public ASTNode getASTNode() {
-		throw new Error("not implemented");
+		if (pptype instanceof ExprTypeCallProgramPoint) {
+			ExprTypeCallProgramPoint ppt = (ExprTypeCallProgramPoint)pptype;
+			return ppt.getInv();
+		} else if (pptype instanceof ExprTypeAtLineProgramPoint) {
+			return ((ExprTypeAtLineProgramPoint) pptype).getStatement();
+		} else {
+			return null;
+		}
 	}
 
 	public Version getVersion() {
-		throw new Error("not implemented");
+		return pptype.getVersion();
 	}
 
 	public ITypeBinding getEnclosingClassType() {
@@ -41,7 +52,38 @@ public class ExprTypePlace extends ExprType {
 	}
 
 	public int getLineNr() {
-		throw new Error("not implemented");
+		if (pptype instanceof ExprTypeAtLineProgramPoint) {
+			return TwoLibraryModel.getLineNr(((ExprTypeAtLineProgramPoint) pptype).getStatement());
+		}
+		return pptype.getLine();
+	}
+	
+	@Override
+	public boolean isSubtypeOf(ExprType t) {
+		if (t instanceof ExprTypeAny) {
+			return true;
+		}
+		if (t == instance) {
+			return true;
+		}
+		if (t instanceof ExprTypePlace) {
+			ExprTypePlace o = (ExprTypePlace) t;
+			return isLocal == o.isLocal; 
+		}
+		return false;
 	}
 
+	/**
+	 * returns the name of this place as used in the generated boogie file
+	 * (e.g. lib1_C.m#int_notifyMe_0) 
+	 * @param model 
+	 */
+	public String getBoogiePlaceName(TwoLibraryModel model) {
+		String methodName = ((MethodInvocation)getASTNode()).getName().getFullyQualifiedName();
+		return model.getSrc(getVersion()).getBoogiePlaceName(getEnclosingClassType(), getLineNr(), methodName);
+	}
+	
+	public boolean isLocalPlace() {
+		return isLocal;
+	}
 }

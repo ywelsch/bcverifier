@@ -46,9 +46,8 @@ import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeCallProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeLocalPlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.checking.types.ExprTypePredefinedPlace;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeAtLineProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeVersion;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
@@ -233,12 +232,21 @@ public class TypeHelper {
 	}
 
 	public static ExprType placeDefType(PlaceDef placeDef) {
+		ExprTypeProgramPoint pptype = (ExprTypeProgramPoint)placeDef.getProgramPoint().attrType();
 		if (placeDef.isPredefinedPlace()) {
 			if (placeDef.hasCondition()) {
-				placeDef.addError("Predefined places must not have a condition.");
+				placeDef.addError("Observable places must not have a condition.");
 			}
 			if (placeDef.hasStallCondition()) {
-				placeDef.addError("Predefined places must not have a stall condition.");
+				placeDef.addError("Observable places must not have a stall condition.");
+			}
+			if (pptype instanceof ExprTypeAtLineProgramPoint) {
+				placeDef.addError("Observable places can not be defined within the library implementation");
+			}
+		}
+		if (placeDef.isLocalPlace()) {
+			if (pptype instanceof ExprTypeCallProgramPoint && placeDef.hasPlaceOption("splitvc")) {
+				placeDef.addError("splitvc support for local places defined at a call statement is not available yet");
 			}
 		}
 		if (placeDef.hasCondition()) {
@@ -250,25 +258,26 @@ public class TypeHelper {
 				checkIfSubtype(placeDef.getStallCondition().getMeasure(), ExprTypeInt.instance());
 			}
 		}
-		
-		ExprType pptype = placeDef.getProgramPoint().attrType();
-		if (pptype instanceof ExprTypeProgramPoint) {
-			ExprTypeProgramPoint programPoint = (ExprTypeProgramPoint) pptype;
+		return new ExprTypePlace(placeDef.isLocalPlace(), pptype);
+		/*
+		if (placeDef.isLocalPlace()) {
+			//ExprTypeProgramPoint programPoint = (ExprTypeProgramPoint) pptype;
 			/*if (!(placeDef.getPlaceModifier() instanceof PlaceModifierLocal)) {
 				placeDef.addError("Invalid place definition. This should be a 'local place'.");
 			}*/
-			return new ExprTypeLocalPlace(programPoint);
-		} else if (pptype instanceof ExprTypeCallProgramPoint) {
-			ExprTypeCallProgramPoint programPoint = (ExprTypeCallProgramPoint) pptype;
+			
+		//} else {
+			//ExprTypeCallProgramPoint programPoint = (ExprTypeCallProgramPoint) pptype;
 			/*if (!(placeDef.getPlaceModifier() instanceof PlaceModifierPredefined)) {
 				placeDef.addError("Invalid place definition. This should be a 'predefined place'.");
 			}*/
-			return new ExprTypePredefinedPlace(programPoint); 
-		} else {
+			//return new ExprTypePredefinedPlace(pptype); 
+		//}
+		/*else {
 			placeDef.getProgramPoint().addError(
 					"Expected program point but found " + pptype);
 			return UnknownType.instance();
-		}
+		}*/
 
 	}
 
@@ -291,8 +300,8 @@ public class TypeHelper {
 
 	public static Collection<Def> lookup(PlaceDef placeDef, String name) {
 		ExprType progPoint = placeDef.getProgramPoint().attrType();
-		if (progPoint instanceof ExprTypeProgramPoint) {
-			ExprTypeLocalPlace placeType = new ExprTypeLocalPlace((ExprTypeProgramPoint) progPoint);
+		if (progPoint instanceof ExprTypeAtLineProgramPoint) {
+			ExprTypePlace placeType = new ExprTypePlace(placeDef.isLocalPlace(), (ExprTypeAtLineProgramPoint) progPoint);
 			TwoLibraryModel model = placeDef.attrCompilationUnit().getTwoLibraryModel();
 	
 			Def r = lookupJava(model, placeType, name, new StackpointerExpr(placeType.getVersion(), false), placeDef);
@@ -429,11 +438,10 @@ public class TypeHelper {
 		TwoLibraryModel tlm = placeDef.attrCompilationUnit()
 				.getTwoLibraryModel();
 		ExprType type = placeDef.attrType();
-		if (type instanceof ExprTypeLocalPlace) {
-			ExprTypeLocalPlace placeType = (ExprTypeLocalPlace) type;
+		if (type instanceof ExprTypePlace) {
+			ExprTypePlace placeType = (ExprTypePlace) type;
 			Version version = placeType.getVersion();
-			int line = placeType.getLineNr();
-			if (placeType.getStatement() == null) {
+			if (placeType.getASTNode() == null) {
 				placeDef.addError("Place " + placeDef.attrName()
 						+ " has no statement.");
 				return;
@@ -489,7 +497,7 @@ public class TypeHelper {
 			return UnknownType.instance();
 		}
 		// TODO check if there is exactly one statement in the line ...
-		return new ExprTypeProgramPoint(jt.getVersion(), p.getProgramLineNr(),
+		return new ExprTypeAtLineProgramPoint(jt.getVersion(), p.getProgramLineNr(),
 				s);
 	}
 	

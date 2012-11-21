@@ -1,6 +1,5 @@
 package de.unikl.bcverifier.isl.translation.builtinfuncs;
 
-import static b2bpl.translation.CodeGenerator.var;
 import b2bpl.bpl.ast.BPLArrayAssignment;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLBoolLiteral;

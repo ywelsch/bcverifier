@@ -1,32 +1,16 @@
 package de.unikl.bcverifier.isl.checking.types;
 
-import org.eclipse.jdt.core.dom.Statement;
-
 import de.unikl.bcverifier.isl.ast.Version;
 
-public class ExprTypeProgramPoint extends ExprType {
-
-
-	private Version version;
-	private Statement statement;
-	private int line;
-
-	public ExprTypeProgramPoint(Version version, int line, Statement s) {
+public abstract class ExprTypeProgramPoint extends ExprType {
+	protected final Version version; 
+	protected final int line; 
+	
+	protected ExprTypeProgramPoint(Version version, int line) {
 		this.version = version;
 		this.line = line;
-		this.statement = s;
 	}
-
-	@Override
-	public boolean isSubtypeOf(ExprType t) {
-		if (t instanceof ExprTypeProgramPoint) {
-			ExprTypeProgramPoint other = (ExprTypeProgramPoint) t;
-			// TODO
-			return true;
-		}
-		return false;
-	}
-
+	
 	public Version getVersion() {
 		return version;
 	}
@@ -35,10 +19,4 @@ public class ExprTypeProgramPoint extends ExprType {
 		return line;
 	}
 
-	public Statement getStatement() {
-		return statement;
-	}
-
-	
-	
 }

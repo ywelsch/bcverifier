@@ -2791,6 +2791,7 @@ public class MethodTranslator implements ITranslationConstants {
             final String SKIP_POSTFIX = "_skip";
             final String CHECK_POSTFIX = "_check";
             final String STALL_POSTFIX = "_stall";
+            final String NOT_STALL_POSTFIX = "_notstall";
             String contLabel = blockLabel + CONT_POSTFIX;
             String skipLabel = blockLabel + SKIP_POSTFIX;
             List<String> contLabels = new ArrayList<String>();
@@ -2800,9 +2801,10 @@ public class MethodTranslator implements ITranslationConstants {
             }
             endBlock(contLabels.toArray(new String[contLabels.size()]));
             
-            String placeStallLabel;
+            
             for(Place localPlace : localPlaces){
-                placeStallLabel = localPlace.getName() + STALL_POSTFIX;
+            	String placeStallLabel = localPlace.getName() + STALL_POSTFIX;
+            	String placeNotStallLabel = localPlace.getName() + NOT_STALL_POSTFIX;
                 
                 startBlock(localPlace.getName() + CHECK_POSTFIX);
                 Logger.getLogger(InstructionTranslator.class).debug("adding local place "+localPlace.getName());
@@ -2859,11 +2861,15 @@ public class MethodTranslator implements ITranslationConstants {
                 	}
                 	String placeLabel = tc.prefix(getProcedureName(method) + "_" + localPlace.getName());
                 	tc.addLocalPlace(placeLabel);
-                	endBlock(contLabel, placeStallLabel);
+                	endBlock(placeNotStallLabel, placeStallLabel);
 
                 	startBlock(placeStallLabel);
                 	addAssume(var(tc.getStallMap()));
                 	rawEndBlock(tc.getCheckLabel());
+                	
+                	startBlock(placeNotStallLabel);
+                	addAssume(logicalNot(var(tc.getStallMap())));
+                	endBlock(contLabel);
                 } else {
                 	endBlock(contLabel);
                 }
@@ -2876,7 +2882,6 @@ public class MethodTranslator implements ITranslationConstants {
             endBlock(contLabel);
             
             startBlock(contLabel);
-            addAssume(logicalNot(var(tc.getStallMap())));
         }
 
         //@ requires insn != null;
