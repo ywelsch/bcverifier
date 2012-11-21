@@ -55,8 +55,8 @@ final class BuiltinFuncAt_place_sp extends BuiltinFunction {
 	@Override
 	public ExprType exactType(FuncCall call) {
 		ExprTypePlace place = (ExprTypePlace) call.getArgument(0).attrType();
-		if (place.isLocalPlace()) {
-			call.addError("Function 'at' with integer argument can only be used with non-local places.");
+		if (place.isCallPlace()) {
+			call.addError("Function 'at' with integer argument can only be used with places that are defined using the call statement.");
 		}
 		return super.exactType(call);
 	}

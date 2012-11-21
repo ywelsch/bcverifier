@@ -37,8 +37,8 @@ final class BuiltinFuncEval_place_sp extends BuiltinFunction {
 	@Override
 	public ExprType exactType(FuncCall call) {
 		ExprTypePlace place = (ExprTypePlace) call.getArgument(0).attrType();
-		if (place.isLocalPlace()) {
-			call.addError("Function 'stack' with integer argument can only be used with non-local places.");
+		if (place.isCallPlace()) {
+			call.addError("Function 'eval' with integer argument can only be used with places that are defined with the call statement.");
 		}
 		return call.getArgument(2).attrType();
 	}

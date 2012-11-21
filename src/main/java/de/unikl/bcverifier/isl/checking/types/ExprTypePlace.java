@@ -86,4 +86,8 @@ public class ExprTypePlace extends ExprType {
 	public boolean isLocalPlace() {
 		return isLocal;
 	}
+	
+	public boolean isCallPlace() {
+		return pptype instanceof ExprTypeCallProgramPoint;
+	}
 }
