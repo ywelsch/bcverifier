@@ -8,7 +8,8 @@ invariant forall new OBool o :: createdByLibrary(o.g) && !exposed(o.g);
 invariant forall old Bool o1, new Bool o2 :: o1 ~ o2 ==> o1.f == o2.f;
 invariant forall old OBool o1, new OBool o2 :: o1 ~ o2 ==> o1.g.f != o2.g.f;
 
-var bijection bij = empty();
+var binrelation bij = empty();
+invariant bijective(bij);
 var old Bool x1 = null;
 var new Bool x2 = null;
 local place p1 = line 6 of old OBool assign x1 = this.g;
