@@ -77,7 +77,7 @@ public class ExampleLoader {
 				new String[]{ "cbalt", "Callback example (alt.2)", "3", "spec2.isl" },
 				new String[]{ "obool", "OBool example", "5", "spec.isl" },
 				new String[]{ "obool", "OBool example (alt.1)", "5", "spec2.isl" },
-				new String[]{ "obool", "OBool example (alt.2)", "5", "spec3.isl" },
+				new String[]{ "obool", "OBool example (alt.2)", "5", "spec4.isl" },
 				new String[]{ "obool2", "OBool example (alt.3)", "5", "spec3.isl" },
 				new String[]{ "subtypes", "Subtypes example", "2", "spec.isl" },
 				new String[]{ "subtypes3", "Subtypes example (alt.1)", "4", "spec.isl" },

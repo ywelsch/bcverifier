@@ -18,7 +18,7 @@ invariant (forall old List l1, new List l2 :: l1 ~ l2 && l1.fst != null && l2.sn
 
 
 
-invariant exists Bijection bij :: 
+invariant exists binrelation bij :: 
 // related(bij, null, null) &&
 // (forall old java.lang.Object o1, new java.lang.Object o2 :: related(bij, o1, o2) ==> o1 instanceof old Node && o2 instanceof new Node) &&
  (forall old List l1, new List l2 :: l1 ~ l2 ==> (l1.fst == null && l2.snt.next == null) || (l1.fst != null && l2.snt.next != null ==> related(bij, l1.fst, l2.snt.next))) &&
