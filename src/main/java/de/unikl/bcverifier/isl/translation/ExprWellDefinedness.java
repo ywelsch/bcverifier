@@ -26,6 +26,7 @@ import de.unikl.bcverifier.isl.ast.QExpr;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VersionConst;
+import de.unikl.bcverifier.isl.parser.Quantifier;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 
 public class ExprWellDefinedness {
@@ -132,7 +133,7 @@ public class ExprWellDefinedness {
 		// forall x. A(x)
 		// >>> forall x. wd(A(x))
 		return ExprTranslation.createQExpr(
-				e.getQuantifier(),
+				Quantifier.FORALL,
 				e.getBoundVarList(), 
 				e.getExpr().translateExprWellDefinedness());
 	}
