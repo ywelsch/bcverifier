@@ -23,6 +23,24 @@ local invariant forall old Node n :: n.next != null ==> createdByLibrary(n.next)
 invariant forall new Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
 local invariant forall new Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
 
+// aliasing
+      invariant forall new Node n1, new Node n2 :: n1.next == n2.next && n1.next != null ==> n1 == n2;
+local invariant forall new Node n1, new Node n2 :: n1.next == n2.next && n1.next != null ==> n1 == n2; 
+      invariant forall old Node n1, old Node n2 :: n1.next == n2.next && n1.next != null ==> n1 == n2;
+local invariant forall old Node n1, old Node n2 :: n1.next == n2.next && n1.next != null ==> n1 == n2; 
+
+      invariant forall new List l1, new List l2 :: l1.snt == l2.snt && l1.snt != null ==> l1 == l2;
+local invariant forall new List l1, new List l2 :: l1.snt == l2.snt && l1.snt != null ==> l1 == l2;
+      invariant forall old List l1, old List l2 :: l1.fst == l2.fst && l1.fst != null ==> l1 == l2;
+local invariant forall old List l1, old List l2 :: l1.fst == l2.fst && l1.fst != null ==> l1 == l2;
+
+// the sentinel is not in bij with any other node:
+      invariant forall old Node n1, new List l2 :: !related(bij, n1, l2.snt);
+local invariant forall old Node n1, new List l2 :: !related(bij, n1, l2.snt);
+
+// when a node points to x2, then is is a sentinel node of some list
+      invariant forall new Node n :: x2 != null && n.next == x2 ==> (exists new List l :: l.snt == n);
+local invariant forall new Node n :: x2 != null && n.next == x2 ==> (exists new List l :: l.snt == n);   
 
 var binrelation bij = add(empty(), null, null);
 invariant bijective(bij);
