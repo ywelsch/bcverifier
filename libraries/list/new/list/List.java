@@ -35,4 +35,14 @@ public class List {
       return null;
     }
   }
+  /*
+  public void notifyAllObs() {
+	  Node n = snt.next;
+	  while (n != null) {
+		  if (n.obs != null) {
+			  n.obs.notifyMe();
+		  }
+		  n = n.next;
+	  }
+  }*/
 }
