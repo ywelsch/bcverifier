@@ -9,7 +9,7 @@ https://softech.cs.uni-kl.de/hg/public/bcverifier
 Dependencies
 ------------
 
-- Java 1.6 runtime
+- Java 1.6+ runtime
 - [Boogie](http://boogie.codeplex.com/) and its dependencies:
   - [Microsoft .NET](http://www.microsoft.com/net) or [Mono runtime](http://www.mono-project.com/)
   - [Z3](http://z3.codeplex.com/)
@@ -28,8 +28,8 @@ Main gradle goals:
 
 - jettyRunWar: Runs web frontend locally
 - run: Runs command line interface frontend
-- installApp: Installs the application into a specified directory
-- distZip: Creates a full distribution ZIP archive including runtime libraries and OS specific scripts
+- installApp: Installs the application into build/install subdirectory
+- distZip: Creates a full distribution ZIP archive including runtime libraries and OS specific scripts in build/distributions subdirectory
 - assemble: Assembles all the archives in the project (jar and war), like build but no tests
 - uploadWar: Deploys web frontend to website
 

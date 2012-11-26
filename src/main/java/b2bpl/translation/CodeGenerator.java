@@ -366,6 +366,8 @@ public final class CodeGenerator implements ITranslationConstants {
     // @ ensures \result != null;
     public static BPLExpression isOfType(BPLExpression object, BPLExpression heap,
             BPLExpression type) {
+    	if (type.equals(nullLiteral()))
+    		return isEqual(object, nullLiteral());
         return new BPLFunctionApplication(IS_OF_TYPE_FUNC, object, heap, type);
     }
 

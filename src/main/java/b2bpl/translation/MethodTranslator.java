@@ -3311,7 +3311,7 @@ public class MethodTranslator implements ITranslationConstants {
                 } else if(invokedMethod.isConstructor()) {
                     //the invoked method is a constructor of an internal type, but not a superconstructor call
                     if(!isSuperConstructor){
-                        first = first - 1; //the stack index is one off if we have a constructor
+                        //first = first - 1; //the stack index is one off if we have a constructor
                     }
                     
                     
@@ -3509,6 +3509,9 @@ public class MethodTranslator implements ITranslationConstants {
 //                    blocks.add(block);
 //                }
                 
+                if (invokedMethod.isConstructor()) {
+          		  	first = first - 1;
+          	  	}
                 
                 
                 
@@ -3550,7 +3553,7 @@ public class MethodTranslator implements ITranslationConstants {
               
               addAssume(isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1)));
               if(hasReturnValue){
-                  addAssignment(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
+            	  addAssignment(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(stackVar(first, retType))), stack(var(RESULT_PARAM+typeAbbrev(type(retType)))));
               }
               addAssignment(spmap(), sub(spmap(), new BPLIntLiteral(1)));
 

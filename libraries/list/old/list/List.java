@@ -3,22 +3,16 @@ package list;
 public class List {
   private Node fst;
 
-  public Object getFirst() {
-	  if (fst == null) return null;
-	  return fst.ob;
+  public void add(Observer ob) {
+    Node newNode = new Node();
+    newNode.ob = ob;
+    newNode.next = fst;
+    fst = newNode;
   }
 
-  public void add(Object ob) {
-	  Node newNode = new Node();
-	  newNode.ob = ob;
-	  newNode.next = fst;
-	  fst = newNode;
-  }
-  
-  // returns i-th object, or null, otherwise
-  public Object get(int i) {
+  public Observer get(int i) {
     int c = 0;
-    Node n = this.fst;
+    Node n = fst;
     while(c < i) {
       if (n != null) {
         n = n.next;
@@ -36,12 +30,12 @@ public class List {
   }
   /*
   public void notifyAllObs() {
-	  Node n = fst;
-	  while (n != null) {
-		  if (n.obs != null) {
-			  n.obs.notifyMe();
-		  }
-		  n = n.next;
-	  }
+    Node n = fst;
+    while (n != null) {
+      if (n.obs != null) {
+        n.obs.notifyMe();
+      }
+      n = n.next;
+    }
   }*/
 }

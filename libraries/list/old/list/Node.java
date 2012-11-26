@@ -1,6 +1,6 @@
 package list;
 
 class Node {
-  public Object ob;
+  public Observer ob;
   public Node next;
 }

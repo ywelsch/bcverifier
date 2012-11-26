@@ -1,6 +1,10 @@
 package list;
 
 class Node {
-  public Object ob;
-  public Node next;
+  Node(Observer ob, Node next) {
+    this.ob = ob;
+    this.next = next;
+  }
+  Observer ob;
+  Node next;
 }

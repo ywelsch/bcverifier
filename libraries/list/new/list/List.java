@@ -1,31 +1,19 @@
 package list;
 
 public class List {
-  private Node snt = new Node();
-  
-  public Object getFirst() {
-	  if (snt.next == null) return null;
-	  return snt.next.ob;
+  private Node snt = new Node(null, null);
+
+  public void add(Observer ob) {
+    snt.next = new Node(ob, snt.next);
   }
 
-  public void add(Object ob) {
-	  Node newNode = new Node();
-	  newNode.ob = ob;
-	  newNode.next = snt.next;
-	  snt.next = newNode;
-  }
-  
-  // returns i-th object, or null, otherwise
-  public Object get(int i) {
-    int c = 0;
-    Node n = this.snt;
-    n = n.next;
-    while(c < i) {
-      if (n != null) {
-        n = n.next;
-        c++;
-      } else {
+  public Observer get(int i) {
+    Node n = snt.next;
+    for (int c = 0; c < i; c++) {
+      if (n == null) {
         break;
+      } else {
+        n = n.next;
       }
     }
 
@@ -37,12 +25,12 @@ public class List {
   }
   /*
   public void notifyAllObs() {
-	  Node n = snt.next;
-	  while (n != null) {
-		  if (n.obs != null) {
-			  n.obs.notifyMe();
-		  }
-		  n = n.next;
-	  }
+    Node n = snt.next;
+    while (n != null) {
+      if (n.obs != null) {
+        n.obs.notifyMe();
+      }
+      n = n.next;
+    }
   }*/
 }
