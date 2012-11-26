@@ -28,7 +28,7 @@ local invariant forall new Node n :: n.next != null ==> createdByLibrary(n.next)
 local invariant forall old Node n1, new List l2 :: !related(bij, n1, l2.snt);
 
 // when a node points to x2, then is is a sentinel node of some list
-local invariant forall new Node n :: x2 != null && n.next == x2 ==> (exists new List l :: l.snt == n);
+// local invariant forall new Node n :: x2 != null && n.next == x2 ==> (exists new List l :: l.snt == n);
 
 var binrelation bij = add(empty(), null, null);
 invariant bijective(bij);
@@ -40,22 +40,7 @@ var new Node x2 = null;
 invariant x2 == null;
 local invariant x2 == null;
 
-local place p1 = line 10 of old List assign x1 = newNode;
-local place p2 = line 6 of new Node assign x2 = this;
 
-local place pl1 = line 17 of old List when c < i splitvc;
-local place pl2 = line 13 of new List when c < i splitvc;
-
-local invariant at(pl1) <==> at(pl2);
-local invariant at(pl1) && at(pl2) ==> related(bij, eval(pl1, n), eval(pl2, n));
-local invariant at(pl1) && at(pl2) ==> eval(pl1, c) == eval(pl2, c);
-local invariant at(pl1) && at(pl2) ==> eval(pl1, i) == eval(pl2, i);
-
-
-local place pe1 = line 25 of old List splitvc;
-local place pe2 = line 20 of new List splitvc;
-
-local invariant at(pe1) && at(pe2) ==> related(bij, eval(pe1, n), eval(pe2, n));
 
 assign bij = if x1 != null && x2 != null then add(bij, x1, x2) else bij;
 assign x1 = null;
@@ -77,3 +62,41 @@ invariant forall old Node n1, new Node n2 :: related(bij, n1.next, n2.next) && n
 local invariant forall old Node n1, new Node n2 :: related(bij, n1.next, n2.next) && n1.next != null && n2.next != null ==> related(bij, n1, n2);
 invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> related(bij, n1.next, n2.next);
 local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> related(bij, n1.next, n2.next);
+
+
+invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> n1.ob != null && n2.ob != null;
+local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> n1.ob != null && n2.ob != null;
+
+
+invariant forall old Node n :: createdByLibrary(n) && !exposed(n);
+local invariant forall old Node n :: createdByLibrary(n) && !exposed(n);
+invariant forall new Node n :: createdByLibrary(n) && !exposed(n);
+local invariant forall new Node n :: createdByLibrary(n) && !exposed(n);
+
+
+
+
+
+
+
+
+
+
+
+local place p1 = line 11 of old List assign x1 = newNode;
+local place p2 = line 8 of new Node assign x2 = this;
+
+local place pl1 = line 19 of old List when c < i && n != null splitvc;
+local place pl2 = line 15 of new List when c < i && n != null splitvc;
+local invariant at(pl1) <==> at(pl2);
+local invariant at(pl1) && at(pl2) ==> related(bij, eval(pl1, n), eval(pl2, n));
+local invariant at(pl1) && at(pl2) && eval(pl1, n) != null && eval(pl2, n) != null && related(bij, eval(pl1, n), eval(pl2, n)) ==> related(bij, eval(pl1, n.next), eval(pl2, n.next));
+local invariant at(pl1) && at(pl2) ==> eval(pl1, c) == eval(pl2, c);
+local invariant at(pl1) && at(pl2) ==> eval(pl1, i) == eval(pl2, i);
+
+/*
+local place pe1 = line 35 of old List when n != null splitvc;
+local place pe2 = line 25 of new Node splitvc;
+local invariant at(pe1) && at(pe2) ==> related(bij, eval(pe1, n), eval(pe2, this));
+*/
+

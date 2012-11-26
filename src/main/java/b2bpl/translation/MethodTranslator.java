@@ -3310,9 +3310,7 @@ public class MethodTranslator implements ITranslationConstants {
                     rawEndBlock(tc.getCheckLabel());
                 } else if(invokedMethod.isConstructor()) {
                     //the invoked method is a constructor of an internal type, but not a superconstructor call
-                    if(!isSuperConstructor){
-                        //first = first - 1; //the stack index is one off if we have a constructor
-                    }
+                    
                     
                     
                     addAssignment(spmap(), add(spmap(), new BPLIntLiteral(1)), "create new stack frame");
@@ -3509,8 +3507,8 @@ public class MethodTranslator implements ITranslationConstants {
 //                    blocks.add(block);
 //                }
                 
-                if (invokedMethod.isConstructor()) {
-          		  	first = first - 1;
+                if (invokedMethod.isConstructor() && !isSuperConstructor) {
+                	first = first - 1;
           	  	}
                 
                 
@@ -3582,10 +3580,13 @@ public class MethodTranslator implements ITranslationConstants {
               
               startBlock(contLabel);
               
+              addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
+              addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(thisPlace)));
+              
               // type informations of the stack
-              StackFrame stackFrame = handle.getFrame();
+              StackFrame stackFrame = handle.getNext().getFrame();
               JType elemType;
-              for(int i=0; i<handle.getFrame().getStackSize(); i++){
+              for(int i=0; i<stackFrame.getStackSize(); i++){
                   elemType = stackFrame.peek(i);
                   if(elemType.isBaseType()){
                       addAssume(isInRange(stack(var(stackVar(i, elemType))), typeRef(elemType)));
@@ -3611,8 +3612,7 @@ public class MethodTranslator implements ITranslationConstants {
               
               addAssume(nonNull(stack(receiver())));
               
-              addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
-              addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(thisPlace)));
+              
                 
                 
                 

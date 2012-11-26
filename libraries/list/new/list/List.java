@@ -4,33 +4,24 @@ public class List {
   private Node snt = new Node(null, null);
 
   public void add(Observer ob) {
-    snt.next = new Node(ob, snt.next);
+    if (ob == null) return;
+    snt.setNext(new Node(ob, snt.getNext()));
   }
 
   public Observer get(int i) {
-    Node n = snt.next;
+    Node n = snt.getNext();
     for (int c = 0; c < i; c++) {
-      if (n == null) {
-        break;
-      } else {
-        n = n.next;
-      }
+      if (n == null) return null;
+      n = n.getNext();
     }
-
-    if (n != null) {
-      return n.ob;
-    } else {
-      return null;
-    }
+    if (n == null) return null;
+    return n.getObs();
   }
-  /*
+/*
   public void notifyAllObs() {
-    Node n = snt.next;
-    while (n != null) {
-      if (n.obs != null) {
-        n.obs.notifyMe();
-      }
-      n = n.next;
+    Node n = snt.getNext();
+    if (n != null) {
+      n.notifyAllObs();
     }
   }*/
 }

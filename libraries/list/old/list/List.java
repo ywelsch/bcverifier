@@ -4,6 +4,7 @@ public class List {
   private Node fst;
 
   public void add(Observer ob) {
+    if (ob == null) return;
     Node newNode = new Node();
     newNode.ob = ob;
     newNode.next = fst;
@@ -21,21 +22,19 @@ public class List {
         break;
       }
     }
-
     if (n != null) {
       return n.ob;
     } else {
       return null;
     }
   }
-  /*
+/*
   public void notifyAllObs() {
     Node n = fst;
     while (n != null) {
-      if (n.obs != null) {
-        n.obs.notifyMe();
-      }
+      n.ob.notifyObs();
       n = n.next;
     }
+    return; // dummy statement
   }*/
 }
