@@ -157,8 +157,9 @@ war {
 
 war.dependsOn doc
 
-task uploadWar {
+task uploadWar1 {
   description = 'Deploy war to remote Tomcat server on welsch.lu.'
+  dependsOn war
   doLast {
     ant.taskdef(name: 'sshexec', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.SSHExec', classpath: configurations.sshAntTask.asPath)
     ant.taskdef(name: 'scp', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.Scp', classpath: configurations.sshAntTask.asPath)
@@ -168,10 +169,10 @@ task uploadWar {
     ant.sshexec(host: 'welsch.lu', username: 'yoz', port: '54321', keyfile: '${user.home}/.ssh/id_rsa', command: '/bin/bash -l /home/yoz/bcverifier/tomcat/bin/catalina.sh start', verbose: 'true')
   }
 }
-uploadWar.dependsOn war
 
-task byronDeploy {
+task uploadWar2 {
   description = 'Deploy war to remote Tomcat server on Byron.'
+  dependsOn war
   doLast {
     ant.taskdef(name: 'sshexec', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.SSHExec', classpath: configurations.sshAntTask.asPath)
     ant.taskdef(name: 'scp', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.Scp', classpath: configurations.sshAntTask.asPath)
@@ -181,7 +182,6 @@ task byronDeploy {
     ant.sshexec(host: 'byron', username: '${user.name}', keyfile: '${user.home}/.ssh/id_rsa', command: '/usr/bin/sudo /etc/init.d/tomcat6 start', verbose: 'true')
   }
 }
-byronDeploy.dependsOn war
 
 def getHGRevision = {
   def res = ""
@@ -283,19 +283,24 @@ generateSources.dependsOn runJFlex
 
 compileJava.dependsOn generateSources
 
-task runTest(type: JavaExec) {
+task runSingleTest(type: JavaExec) {
   main = "de.unikl.bcverifier.SingleTestRunner"
   classpath = project.sourceSets.main.runtimeClasspath
   if (project.hasProperty("test")){
     args test
   }
 }
-runTest.dependsOn classes
+runSingleTest.dependsOn classes
 
 task removeGenFolder(type: Delete) {
     delete islGenDir
 }
 
+task removeGeneratedLibraryFiles(type: Delete) {
+	delete fileTree(dir: "libraries", includes: ['**/*.class', '**/*.bpl'])
+}
+
 clean.dependsOn removeGenFolder
+clean.dependsOn removeGeneratedLibraryFiles
 assemble.dependsOn jar
 tasks.eclipse.dependsOn cleanEclipse
