@@ -245,8 +245,8 @@ public class TypeHelper {
 			}
 		}
 		if (placeDef.isLocalPlace()) {
-			if (pptype instanceof ExprTypeCallProgramPoint && placeDef.hasPlaceOption("splitvc")) {
-				placeDef.addError("splitvc support for local places defined at a call statement is not available yet");
+			if (pptype instanceof ExprTypeCallProgramPoint && !placeDef.hasPlaceOption(Translation.PLACE_OPTION_NOSYNC)) {
+				placeDef.addError("sync support for local places defined at a call statement is not available yet");
 			}
 		}
 		if (placeDef.hasCondition()) {

@@ -33,17 +33,19 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-define('ace/mode/objectivec', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text', 'ace/tokenizer', 'ace/mode/objectivec_highlight_rules'], function(require, exports, module) {
+define('ace/mode/objectivec', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text', 'ace/tokenizer', 'ace/mode/objectivec_highlight_rules', 'ace/mode/folding/cstyle'], function(require, exports, module) {
 
 
 var oop = require("../lib/oop");
 var TextMode = require("./text").Mode;
 var Tokenizer = require("../tokenizer").Tokenizer;
 var ObjectiveCHighlightRules = require("./objectivec_highlight_rules").ObjectiveCHighlightRules;
+var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 
 var Mode = function() {
     var highlighter = new ObjectiveCHighlightRules();
-    
+    this.foldingRules = new CStyleFoldMode();
+
     this.$tokenizer = new Tokenizer(highlighter.getRules());
 };
 oop.inherits(Mode, TextMode);
@@ -599,4 +601,49 @@ var c_cppHighlightRules = function() {
 oop.inherits(c_cppHighlightRules, TextHighlightRules);
 
 exports.c_cppHighlightRules = c_cppHighlightRules;
+});
+
+define('ace/mode/folding/cstyle', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/range', 'ace/mode/folding/fold_mode'], function(require, exports, module) {
+
+
+var oop = require("../../lib/oop");
+var Range = require("../../range").Range;
+var BaseFoldMode = require("./fold_mode").FoldMode;
+
+var FoldMode = exports.FoldMode = function() {};
+oop.inherits(FoldMode, BaseFoldMode);
+
+(function() {
+
+    this.foldingStartMarker = /(\{|\[)[^\}\]]*$|^\s*(\/\*)/;
+    this.foldingStopMarker = /^[^\[\{]*(\}|\])|^[\s\*]*(\*\/)/;
+
+    this.getFoldWidgetRange = function(session, foldStyle, row) {
+        var line = session.getLine(row);
+        var match = line.match(this.foldingStartMarker);
+        if (match) {
+            var i = match.index;
+
+            if (match[1])
+                return this.openingBracketBlock(session, match[1], row, i);
+
+            return session.getCommentFoldRange(row, i + match[0].length, 1);
+        }
+
+        if (foldStyle !== "markbeginend")
+            return;
+
+        var match = line.match(this.foldingStopMarker);
+        if (match) {
+            var i = match.index + match[0].length;
+
+            if (match[1])
+                return this.closingBracketBlock(session, match[1], row, i);
+
+            return session.getCommentFoldRange(row, i, -1);
+        }
+    };
+
+}).call(FoldMode.prototype);
+
 });

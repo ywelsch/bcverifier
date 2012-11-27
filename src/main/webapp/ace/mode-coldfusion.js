@@ -1460,7 +1460,7 @@ oop.inherits(FoldMode, BaseFoldMode);
 
 });
 
-define('ace/mode/css', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text', 'ace/tokenizer', 'ace/mode/css_highlight_rules', 'ace/mode/matching_brace_outdent', 'ace/worker/worker_client', 'ace/mode/folding/cstyle'], function(require, exports, module) {
+define('ace/mode/css', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text', 'ace/tokenizer', 'ace/mode/css_highlight_rules', 'ace/mode/matching_brace_outdent', 'ace/worker/worker_client', 'ace/mode/behaviour/cstyle', 'ace/mode/folding/cstyle'], function(require, exports, module) {
 
 
 var oop = require("../lib/oop");
@@ -1469,11 +1469,13 @@ var Tokenizer = require("../tokenizer").Tokenizer;
 var CssHighlightRules = require("./css_highlight_rules").CssHighlightRules;
 var MatchingBraceOutdent = require("./matching_brace_outdent").MatchingBraceOutdent;
 var WorkerClient = require("../worker/worker_client").WorkerClient;
+var CstyleBehaviour = require("./behaviour/cstyle").CstyleBehaviour;
 var CStyleFoldMode = require("./folding/cstyle").FoldMode;
 
 var Mode = function() {
     this.$tokenizer = new Tokenizer(new CssHighlightRules().getRules(), "i");
     this.$outdent = new MatchingBraceOutdent();
+    this.$behaviour = new CstyleBehaviour();
     this.foldingRules = new CStyleFoldMode();
 };
 oop.inherits(Mode, TextMode);
@@ -1568,8 +1570,8 @@ var CssHighlightRules = function() {
             token : ["constant.numeric", "keyword"],
             regex : "(" + numRe + ")(ch|cm|deg|em|ex|fr|gd|grad|Hz|in|kHz|mm|ms|pc|pt|px|rad|rem|s|turn|vh|vm|vw|%)"
         }, {
-            token : ["constant.numeric"],
-            regex : "([0-9]+)"
+            token : "constant.numeric",
+            regex : numRe
         }, {
             token : "constant.numeric",  // hex6 color
             regex : "#[a-f0-9]{6}"

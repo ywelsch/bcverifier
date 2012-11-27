@@ -19,7 +19,6 @@ define('ace/mode/golang', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/
         
         this.toggleCommentLines = function(state, doc, startRow, endRow) {
             var outdent = true;
-            var outentedRows = [];
             var re = /^(\s*)\/\//;
 
             for (var i=startRow; i<= endRow; i++) {

@@ -953,7 +953,7 @@ var ISLHighlightRules = function() {
 
     var keywords = lang.arrayToMap(
         (
-            "call|else|exists|forall|if|instanceof|in|line|local|measure|new|old|of|stall|splitvc|then|when|with"
+            "call|else|exists|forall|if|instanceof|in|line|local|measure|new|nosplit|nosync|old|of|stall|then|when|with"
         ).split("|")
     );
 
@@ -962,11 +962,11 @@ var ISLHighlightRules = function() {
     );
 
     var builtinTypes = lang.arrayToMap(
-        ("int|bool|bijection|place|invariant").split("|")
+        ("int|bool|binrelation|place|invariant").split("|")
     );
 
     var builtinFunctions = lang.arrayToMap(
-        ("createdByLibrary|exposed|eval|stackIndex|at|related").split("|")
+        ("add|bijective|createdByLibrary|empty|exposed|eval|stackIndex|at|related|remove").split("|")
     );
 
     this.$rules = {

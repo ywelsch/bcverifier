@@ -3,8 +3,8 @@ local place afterLoop = line 12 of old C
 local place endLoop = line 18 of new C;
 local place afterRec = line 10 of new C;
 
-place callSet1 = call set in line 10 of old C nosplit;
-place callSet2 = call set in line 16 of new C nosplit;
+place callSet1 = call set in line 10 of old C;
+place callSet2 = call set in line 16 of new C;
 local place beforeLoop2 = call loop in line 9 of new C;
 
 //lists are related:

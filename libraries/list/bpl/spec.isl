@@ -72,8 +72,8 @@ local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> n1.o
 
 
 
-local place p1 = line 10 of old Observable assign x1 = newNode;
-local place p2 = line 7 of new Node assign x2 = this;
+local place p1 = line 10 of old Observable assign x1 = newNode nosync;
+local place p2 = line 7 of new Node assign x2 = this nosync;
 
 local place pl1 = line 18 of old Observable when c < i && n != null;
 local place pl2 = line 15 of new Observable when c < i && n != null;
