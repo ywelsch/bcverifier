@@ -1511,7 +1511,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 		// check for progress while stalled
 		for (Place place : tc.getLocalPlaceDefinitions().oldPlaces()) {
-			if (place.isSplitvc() && place.getNewMeasure() != null) { 
+			if (!place.isNosync() && place.getNewMeasure() != null) { 
 				checkingCommand.add(new BPLAssumeCommand(ifThenElse(
 						logicalAnd(var(STALL1), isEqual(var(OLD_PLACE1), var(place.getName()))),
 						isEqual(var(MEASURE), var("(" + place.getNewMeasure() + ")")),
@@ -1534,7 +1534,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		checkingCommand.add(new BPLHavocCommand(var(STALL1), var(STALL2)));
 		
 		for (Place place : tc.getLocalPlaceDefinitions().oldPlaces()) {
-			if (place.isSplitvc()) {
+			if (!place.isNosync()) {
 				checkingCommand.add(new BPLAssumeCommand(implies(
 						logicalAnd(
 								isEqual(stack1(var(PLACE_VARIABLE)), var(place.getName())),
@@ -1544,7 +1544,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			}
 		}
 		for (Place place : tc.getLocalPlaceDefinitions().newPlaces()) {
-			if (place.isSplitvc()) {
+			if (!place.isNosync()) {
 				checkingCommand.add(new BPLAssumeCommand(implies(
 						logicalAnd(
 								isEqual(stack2(var(PLACE_VARIABLE)), var(place.getName())),

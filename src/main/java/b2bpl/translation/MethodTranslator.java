@@ -2816,7 +2816,7 @@ public class MethodTranslator implements ITranslationConstants {
                 for (String s : localPlace.getAssignments()) {
                 	addCommand(new BPLRawCommand(s));
                 }
-                if (localPlace.isSplitvc()) { 
+                if (!localPlace.isNosync()) { 
                 	rawEndBlock(tc.getCheckLabel());
 
                 	startBlock(localPlace.getName());

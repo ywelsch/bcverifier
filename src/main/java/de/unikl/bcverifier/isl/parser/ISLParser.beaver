@@ -129,7 +129,7 @@ assign =
 ;
 
 placedef =	
-	placemodifier.m PLACE id.i EQ placeposition.pos placecondition.cond stallcondition.stallcond placeoptions.opts assign.a* SEMI
+	placemodifier.m PLACE id.i EQ placeposition.pos placecondition.cond stallcondition.stallcond assign.a* placeoptions.opts SEMI
 		{: return new PlaceDef(m, opts, i, pos, cond , stallcond, list(a)); :}
 ;
 

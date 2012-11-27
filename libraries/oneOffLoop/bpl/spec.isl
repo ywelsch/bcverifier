@@ -1,5 +1,5 @@
-local place inLoop1 = line 5 of old C when i > 0 splitvc;
-local place inLoop2 = line 6 of new C splitvc;
+local place inLoop1 = line 5 of old C when i > 0;
+local place inLoop2 = line 6 of new C;
 
 local invariant at(inLoop1) && at(inLoop2) ==>
      eval(inLoop1, n) == eval(inLoop2, n)

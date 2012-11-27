@@ -63,7 +63,8 @@ public class Translation {
 
 	// varname used for quantifying over all iframes
 	public static final String IFRAME_VAR = "iframe";
-	public static final String PLACE_OPTION_SPLITVC = "splitvc";
+	public static final String PLACE_OPTION_NOSPLIT = "nosplit";
+	public static final String PLACE_OPTION_NOSYNC = "nosync";
 
 	public static java.util.List<SpecInvariant> generateInvariants(CompilationUnit cu) {
 		List<SpecInvariant> result = new ArrayList<SpecInvariant>();
@@ -187,7 +188,7 @@ public class Translation {
 						assigns.add(cmdToString(asc));
 					}
 					String className = ((ExprTypePlace)def.attrType()).getEnclosingClassType().getQualifiedName();
-					Place p = new Place(progPoint.getVersion() == Version.OLD, def.getName().getName(), className, def.hasPlaceOption(PLACE_OPTION_SPLITVC),
+					Place p = new Place(progPoint.getVersion() == Version.OLD, def.getName().getName(), className, def.hasPlaceOption(PLACE_OPTION_NOSPLIT), def.hasPlaceOption(PLACE_OPTION_NOSYNC),
 							exprToString(condition), exprToString(oldStallCond), exprToString(oldMeasure), exprToString(newStallCond), exprToString(newMeasure), assigns);
 					if (progPoint.getVersion() == Version.OLD) {
 						put(oldPlaces, progPoint.getLine(), p);
@@ -247,7 +248,7 @@ public class Translation {
 				if (placeType.isLocalPlace())
 					continue; // splitvc for local places is statically resolved during code generation
 				BPLExpression isHavoc;
-				if (def.hasPlaceOption(PLACE_OPTION_SPLITVC)) {
+				if (!def.hasPlaceOption(PLACE_OPTION_NOSPLIT)) {
 					isHavoc = BPLBoolLiteral.FALSE;
 					BPLAssignmentCommand r = new BPLAssignmentCommand(
 							new BPLArrayExpression(

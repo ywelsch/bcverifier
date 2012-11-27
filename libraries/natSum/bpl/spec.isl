@@ -1,8 +1,8 @@
 local place newBeforeReturn = line 7 of new C
-    stall when at(oldInLoop) splitvc;
+    stall when at(oldInLoop);
 
-local place oldInLoop = line 5 of old C splitvc;
-local place oldBeforeReturn = line 7 of old C splitvc;
+local place oldInLoop = line 5 of old C;
+local place oldBeforeReturn = line 7 of old C;
 
 local invariant at(oldBeforeReturn) || at(oldInLoop) <==> at(newBeforeReturn);
 

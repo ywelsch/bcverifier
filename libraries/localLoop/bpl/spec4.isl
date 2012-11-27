@@ -1,5 +1,5 @@
-local place inLoop1 = line 7 of old C splitvc;
-local place inLoop2 = line 8 of new C splitvc;
+local place inLoop1 = line 7 of old C;
+local place inLoop2 = line 8 of new C;
 
 // both libraries are in the loop at the same time.
   local invariant at(inLoop1) <==> at(inLoop2);

@@ -466,6 +466,16 @@ public class TypeHelper {
 				}
 			}
 			// TODO check if line is valid
+			
+			if (placeDef.isLocalPlace() && placeDef.hasPlaceOption(Translation.PLACE_OPTION_NOSPLIT)) {
+				placeDef.addError("The " + Translation.PLACE_OPTION_NOSPLIT + " option is not supported for local places.");
+			}
+			if (placeDef.isPredefinedPlace() && placeDef.hasPlaceOption(Translation.PLACE_OPTION_NOSYNC)) {
+				placeDef.addError("The " + Translation.PLACE_OPTION_NOSYNC + " option is not supported for local places.");
+			}
+			if (placeDef.hasStallCondition() && placeDef.hasPlaceOption(Translation.PLACE_OPTION_NOSYNC)) {
+				placeDef.addError("The " + Translation.PLACE_OPTION_NOSYNC + " option is not supported for places with stall condition.");
+			}
 		}
 		
 		for (Assign a : placeDef.getAssignmentsList()) {
@@ -474,7 +484,7 @@ public class TypeHelper {
 		
 		// check place options
 		for (Ident i : placeDef.getPlaceOptions()) {
-			if (!i.getName().equals(Translation.PLACE_OPTION_SPLITVC)) {
+			if (!i.getName().equals(Translation.PLACE_OPTION_NOSPLIT) && !i.getName().equals(Translation.PLACE_OPTION_NOSYNC)) {
 				i.addError("Unsupported place option: " + i.getName());
 			}
 		}

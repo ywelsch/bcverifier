@@ -10,21 +10,23 @@ public class Place {
     private String newStallCondition;
     private String newMeasure;
     private boolean old;
-    private boolean splitvc;
+    private boolean nosplit;
+    private boolean nosync;
     private List<String> assignments;
     private String className;
     
-    public Place(boolean old, String name, String className, boolean splitvc, String condition, String oldStallCondition, String oldMeasure, String newStallCondition, String newMeasure, List<String> assignments){
+    public Place(boolean old, String name, String className, boolean nosplit, boolean nosync, String condition, String oldStallCondition, String oldMeasure, String newStallCondition, String newMeasure, List<String> assignments){
     	this.old = old;
     	this.name = name;
         this.condition = condition;
         this.className = className;
+        this.nosplit = nosplit;
+        this.nosync = nosync;
         this.setOldStallCondition(oldStallCondition);
         this.setOldMeasure(oldMeasure);
         this.setNewStallCondition(newStallCondition);
         this.setNewMeasure(newMeasure);
         this.setAssignments(assignments);
-        this.setSplitvc(splitvc);
     }
     
     public String getName() {
@@ -105,14 +107,6 @@ public class Place {
 		this.old = old;
 	}
 
-	public boolean isSplitvc() {
-		return splitvc;
-	}
-
-	public void setSplitvc(boolean splitvc) {
-		this.splitvc = splitvc;
-	}
-
 	public List<String> getAssignments() {
 		return assignments;
 	}
@@ -127,5 +121,21 @@ public class Place {
 
 	public void setClassName(String className) {
 		this.className = className;
+	}
+
+	public boolean isNosplit() {
+		return nosplit;
+	}
+
+	public void setNosplit(boolean nosplit) {
+		this.nosplit = nosplit;
+	}
+
+	public boolean isNosync() {
+		return nosync;
+	}
+
+	public void setNosync(boolean nosync) {
+		this.nosync = nosync;
 	}
 }

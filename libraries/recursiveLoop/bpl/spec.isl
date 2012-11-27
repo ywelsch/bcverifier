@@ -1,10 +1,10 @@
 local place afterLoop = line 12 of old C
-  stall when at(endLoop) with measure stackIndex(new) splitvc;
-local place endLoop = line 18 of new C splitvc;
-local place afterRec = line 10 of new C splitvc;
+  stall when at(endLoop) with measure stackIndex(new);
+local place endLoop = line 18 of new C;
+local place afterRec = line 10 of new C;
 
-place callSet1 = call set in line 10 of old C splitvc;
-place callSet2 = call set in line 16 of new C splitvc;
+place callSet1 = call set in line 10 of old C nosplit;
+place callSet2 = call set in line 16 of new C nosplit;
 local place beforeLoop2 = call loop in line 9 of new C;
 
 //lists are related:

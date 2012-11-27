@@ -75,18 +75,18 @@ local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> n1.o
 local place p1 = line 10 of old Observable assign x1 = newNode;
 local place p2 = line 7 of new Node assign x2 = this;
 
-local place pl1 = line 18 of old Observable when c < i && n != null splitvc;
-local place pl2 = line 15 of new Observable when c < i && n != null splitvc;
+local place pl1 = line 18 of old Observable when c < i && n != null;
+local place pl2 = line 15 of new Observable when c < i && n != null;
 local invariant at(pl1) <==> at(pl2);
 local invariant at(pl1) && at(pl2) ==> related(bij, eval(pl1, n), eval(pl2, n));
 local invariant at(pl1) && at(pl2) && eval(pl1, n) != null && eval(pl2, n) != null && related(bij, eval(pl1, n), eval(pl2, n)) ==> related(bij, eval(pl1, n.next), eval(pl2, n.next));
 local invariant at(pl1) && at(pl2) ==> eval(pl1, c) == eval(pl2, c);
 local invariant at(pl1) && at(pl2) ==> eval(pl1, i) == eval(pl2, i);
 
-local place pcall = call notifyRec in line 24 of new Observable;
+local place pcall = call notifyRec in line 24 of new Observable nosync;
 
-local place pe1 = line 34 of old Observable when n != null splitvc;
-local place pe2 = line 19 of new Node when stackIndex(new) > 0 && at(pcall, 0) splitvc;
+local place pe1 = line 34 of old Observable when n != null;
+local place pe2 = line 19 of new Node when stackIndex(new) > 0 && at(pcall, 0);
 local invariant at(pe1) <==> at(pe2);
 local invariant at(pe1) && at(pe2) ==> related(bij, eval(pe1, n), eval(pe2, this));
 local invariant at(pe1) && at(pe2) ==> eval(pe1, n) != null && eval(pe2, this) != null;
@@ -94,14 +94,14 @@ local invariant at(pe1) && at(pe2) && eval(pe1, n) != null && eval(pe2, this) !=
 local invariant at(pe1) && at(pe2) && eval(pe1, n) != null && eval(pe2, this) != null ==> (eval(pe1, n.next) == null <==> eval(pe2, this.next) == null);
 local invariant at(pe1) && at(pe2) && eval(pe1, n) != null && eval(pe2, this) != null ==> eval(pe1, n.ob) != null && eval(pe2, this.ob) != null && eval(pe1, n.ob) ~ eval(pe2, this.ob);
 
-local place pep1 = line 35 of old Observable when n != null splitvc;
-local place pep2 = line 20 of new Node when stackIndex(new) > 0 && at(pcall, 0) splitvc;
+local place pep1 = line 35 of old Observable when n != null;
+local place pep2 = line 20 of new Node when stackIndex(new) > 0 && at(pcall, 0);
 local invariant at(pep1) <==> at(pep2);
 local invariant at(pep1) && at(pep2) ==> related(bij, eval(pep1, n), eval(pep2, this));
 local invariant at(pep1) && at(pep2) ==> eval(pep1, n) != null && eval(pep2, this) != null;
 local invariant at(pep1) && at(pep2) && eval(pep1, n) != null && eval(pep2, this) != null ==> related(bij, eval(pep1, n.next), eval(pep2, this.next));
 local invariant at(pep1) && at(pep2) && eval(pep1, n) != null && eval(pep2, this) != null ==> (eval(pep1, n.next) == null <==> eval(pep2, this.next) == null);
 
-local place pf1 = line 37 of old Observable stall when at(pf2) && stackIndex(new) > 1 with measure stackIndex(new) splitvc;
-local place pf2 = line 23 of new Node when stackIndex(new) > 0 && at(pcall, 0) splitvc;
+local place pf1 = line 37 of old Observable stall when at(pf2) && stackIndex(new) > 1 with measure stackIndex(new);
+local place pf2 = line 23 of new Node when stackIndex(new) > 0 && at(pcall, 0);
 local invariant at(pf1) <==> at(pf2);

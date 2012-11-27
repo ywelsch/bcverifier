@@ -118,7 +118,7 @@ public class BoogieGenerator extends AbstractGenerator {
                 if (newStallCondition != null && m.group(2).equals("new") && newMeasure != null) {
                 	throw new GenerationException("Places in new implementation that stall do not need a measure");
                 }
-                Place place = new Place(m.group(2).equals("old"), m.group(1), null, true, m.group(4), oldStallCondition, oldMeasure, newStallCondition, newMeasure, Collections.<String>emptyList());
+                Place place = new Place(m.group(2).equals("old"), m.group(1), null, true, false, m.group(4), oldStallCondition, oldMeasure, newStallCondition, newMeasure, Collections.<String>emptyList());
                 currentPlaceList.add(place);
                 Logger.getLogger(BoogieGenerator.class).debug("Parsed place :" + place); 
             } else  {
