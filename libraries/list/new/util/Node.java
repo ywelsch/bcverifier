@@ -1,5 +1,4 @@
-package list;
-
+package util;
 class Node {
   private Observer ob;
   private Node next;
@@ -9,22 +8,18 @@ class Node {
     this.next = next;
   }
 
-  Node getNext() {
-    return next;
-  }
+  Node getNext() { return next; }
 
   void setNext(Node next) {
-    this.next = next;
-  }
+    this.next = next; }
 
-  Observer getObs() {
-    return ob;
-  }
+  Observer getObs() { return ob; }
 
-  void notifyAllObs() {
+  void notifyRec() {
     ob.notifyObs();
     if (next != null) {
-      next.notifyAllObs();
+      next.notifyRec();
     }
+    return; // dummy statement
   }
 }

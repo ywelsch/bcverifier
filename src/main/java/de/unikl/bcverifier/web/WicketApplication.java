@@ -4,6 +4,7 @@ import org.apache.wicket.Session;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.request.Request;
 import org.apache.wicket.request.Response;
+import org.apache.wicket.util.time.Duration;
 
 import de.unikl.bcverifier.boogie.BoogieRunner;
 
@@ -30,6 +31,7 @@ public class WicketApplication extends WebApplication
 	public void init()
 	{
 		super.init();
+        getRequestCycleSettings().setTimeout(Duration.minutes(5)); 
 		String boogiePath = (String) getServletContext().getInitParameter("boogieCommand");
 		if (boogiePath != null) {
 			BoogieRunner.setBoogieCommand(boogiePath);

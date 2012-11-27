@@ -1,6 +1,5 @@
-package list;
-
-public class List {
+package util;
+public class Observable {
   private Node fst;
 
   public void add(Observer ob) {
@@ -28,7 +27,7 @@ public class List {
       return null;
     }
   }
-/*
+
   public void notifyAllObs() {
     Node n = fst;
     while (n != null) {
@@ -36,5 +35,5 @@ public class List {
       n = n.next;
     }
     return; // dummy statement
-  }*/
+  }
 }

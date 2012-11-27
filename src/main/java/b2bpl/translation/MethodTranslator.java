@@ -10,6 +10,7 @@ import static b2bpl.translation.CodeGenerator.bitXor;
 import static b2bpl.translation.CodeGenerator.bool2int;
 import static b2bpl.translation.CodeGenerator.cast;
 import static b2bpl.translation.CodeGenerator.classRepr;
+import static b2bpl.translation.CodeGenerator.ctxtType;
 import static b2bpl.translation.CodeGenerator.emptyInteractionFrame;
 import static b2bpl.translation.CodeGenerator.exists;
 import static b2bpl.translation.CodeGenerator.fieldAccess;
@@ -3302,7 +3303,7 @@ public class MethodTranslator implements ITranslationConstants {
                     addAssume(exists(tVar, 
                             logicalAnd(
                                     memberOf(var(tc.getImpl()), var(GLOBAL_VAR_PREFIX+invokedMethodName), var(t), typ(stack(receiver()), var(tc.getHeap()))),
-                                    logicalNot(libType(var(tc.getImpl()), var(t)))
+                                    ctxtType(var(t))
                                     )
                             ));
                     addAssume(isCallable(var(tc.getImpl()), typeRef(method.getOwner()), var(GLOBAL_VAR_PREFIX+invokedMethodName)), "rule out private methods");

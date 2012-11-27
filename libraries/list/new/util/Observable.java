@@ -1,11 +1,12 @@
-package list;
-
-public class List {
-  private Node snt = new Node(null, null);
+package util;
+public class Observable {
+  private Node snt =
+        new Node(null, null);
 
   public void add(Observer ob) {
     if (ob == null) return;
-    snt.setNext(new Node(ob, snt.getNext()));
+    snt.setNext(new Node(ob,
+                snt.getNext()));
   }
 
   public Observer get(int i) {
@@ -17,11 +18,9 @@ public class List {
     if (n == null) return null;
     return n.getObs();
   }
-/*
+
   public void notifyAllObs() {
     Node n = snt.getNext();
-    if (n != null) {
-      n.notifyAllObs();
-    }
-  }*/
+    if (n != null) n.notifyRec();
+  }
 }
