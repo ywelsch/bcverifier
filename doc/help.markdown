@@ -5,21 +5,19 @@ A library implementation is **backward compatible** with an older implementation
 **BCVerifier** is a tool that automatically checks backward compatibility between two Java library implementations.
 
 Verifying backward compatibility consists of ensuring that there is a special simulation relation between programs that use the old library implementation and programs that use the new library implementation.
-The verification process relies on a **coupling invariant** that describes this relation. 
-The coupling invariant has to be provided by the user of the tool. 
-The BCVerifier tool then checks that the relation induced by the coupling invariant is a proper simulation for the provided library implementations. 
+The verification process relies on a **coupling invariant** that describes this relation.
+The coupling invariant has to be provided by the user of the tool.
+The BCVerifier tool then checks that the relation induced by the coupling invariant is a proper simulation for the provided library implementations.
 
 Documentation
 -------------
 
-- [[Formal Model]] describes the reasoning and verification approach.
-- [[Invariant Specification Language]] describes the language used to specify coupling invariants.
-- [[Tool]] describes the architecture and output of the BCVerifier tool.
+Being updated to current tool version (will be made available my Mid-December).
 
 Limitations
 -----------
 
-- *Definition-completeness*: The tool assumes that all types referred to by the library are also defined in the library. Furthermore, the tool is unaware of the standard JDK library (except that there is a class Object which is at the root of the type hierarchy). 
+- *Definition-completeness*: The tool assumes that all types referred to by the library are also defined in the library. Furthermore, the tool is unaware of the standard JDK library (except that there is a class Object which is at the root of the type hierarchy).
 
 - *Sealed packages*: The tool assumes that clients cannot define new types in existing packages of the libraries. This allows for stronger encapsulation guarantees. In particular, non-public types are not visible to clients, which allows for more interesting changes in new library implementations.
 
