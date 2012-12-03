@@ -1,30 +1,33 @@
 // Unfortunately, many invariants have to be repeated as local invariants.
 // Future versions of the specification language should account for this.
 
-// Data properties per library
-invariant forall new Observable l :: l.snt != null;
-local invariant forall new Observable l :: l.snt != null;
-invariant forall old Observable l, old Node n :: l.fst != null || n.next != null ==> l.fst != n.next;
-local invariant forall old Observable l, old Node n :: l.fst != null || n.next != null ==> l.fst != n.next;
-invariant forall new Observable l1, new Observable l2 :: l1 != l2 ==> l1.snt != l2.snt;
-local invariant forall new Observable l1, new Observable l2 :: l1 != l2 ==> l1.snt != l2.snt;
-invariant forall new Node n1, new Node n2 :: n1 != n2 && (n1.next != null || n2.next != null) ==> n1.next != n2.next;
-local invariant forall new Node n1, new Node n2 :: n1 != n2 && (n1.next != null || n2.next != null) ==> n1.next != n2.next;
-
+// Data properties for old library implementation
 invariant forall old Observable l :: l.fst != null ==> createdByLibrary(l.fst) && !exposed(l.fst);
-local invariant forall old Observable l :: l.fst != null ==> createdByLibrary(l.fst) && !exposed(l.fst);
-invariant forall new Observable l :: createdByLibrary(l.snt) && !exposed(l.snt);
-local invariant forall new Observable l :: createdByLibrary(l.snt) && !exposed(l.snt);
-invariant forall old Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
-local invariant forall old Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
-invariant forall new Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
-local invariant forall new Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
-
 invariant forall old Node n :: createdByLibrary(n) && !exposed(n);
-local invariant forall old Node n :: createdByLibrary(n) && !exposed(n);
-invariant forall new Node n :: createdByLibrary(n) && !exposed(n);
-local invariant forall new Node n :: createdByLibrary(n) && !exposed(n);
+invariant forall old Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
+invariant forall old Observable l, old Node n :: l.fst != null || n.next != null ==> l.fst != n.next;
 
+// repeat for local invariants
+local invariant forall old Observable l :: l.fst != null ==> createdByLibrary(l.fst) && !exposed(l.fst);
+local invariant forall old Node n :: createdByLibrary(n) && !exposed(n);
+local invariant forall old Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
+local invariant forall old Observable l, old Node n :: l.fst != null || n.next != null ==> l.fst != n.next;
+
+// Data properties for new library implementation
+invariant forall new Observable l :: l.snt != null;
+invariant forall new Observable l1, new Observable l2 :: l1 != l2 ==> l1.snt != l2.snt;
+invariant forall new Observable l :: createdByLibrary(l.snt) && !exposed(l.snt);
+invariant forall new Node n :: createdByLibrary(n) && !exposed(n);
+invariant forall new Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
+invariant forall new Node n1, new Node n2 :: n1 != n2 && (n1.next != null || n2.next != null) ==> n1.next != n2.next;
+
+// repeat for local invariants
+local invariant forall new Observable l :: l.snt != null;
+local invariant forall new Observable l1, new Observable l2 :: l1 != l2 ==> l1.snt != l2.snt;
+local invariant forall new Observable l :: createdByLibrary(l.snt) && !exposed(l.snt);
+local invariant forall new Node n :: createdByLibrary(n) && !exposed(n);
+local invariant forall new Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
+local invariant forall new Node n1, new Node n2 :: n1 != n2 && (n1.next != null || n2.next != null) ==> n1.next != n2.next;
 
 // Data relation between libraries
 var binrelation bij = add(empty(), null, null);
