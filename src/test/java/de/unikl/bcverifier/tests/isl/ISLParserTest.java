@@ -41,8 +41,8 @@ public class ISLParserTest {
 				"local place callNotifyMe1 = call notifyMe in line 8 of old C;"
 				);
 		testTypeCheckError("Invalid place definition",
-				new File("./libraries/iframeDestroy/old"), 
-				new File("./libraries/iframeDestroy/new"), cu);
+				new File("./examples/iframeDestroy/old"), 
+				new File("./examples/iframeDestroy/new"), cu);
 	}
 	
 	@Test
@@ -51,8 +51,8 @@ public class ISLParserTest {
 				"predefined place callNotifyMe1 = line 8 of old C;"
 				);
 		testTypeCheckError("Invalid place definition",
-				new File("./libraries/iframeDestroy/old"), 
-				new File("./libraries/iframeDestroy/new"), cu);
+				new File("./examples/iframeDestroy/old"), 
+				new File("./examples/iframeDestroy/new"), cu);
 	}
 	
 	@Test
@@ -61,18 +61,18 @@ public class ISLParserTest {
 				"predefined place (splitvc) callNotifyMe1 = call notifyMe in line 8 of old C;"
 				);
 		testTypeCheckOk(
-				new File("./libraries/iframeDestroy/old"), 
-				new File("./libraries/iframeDestroy/new"), cu);
+				new File("./examples/iframeDestroy/old"), 
+				new File("./examples/iframeDestroy/new"), cu);
 		translateAndPrint(cu);
 	}
 	
 	
 	@Test
 	public void iframeDestroy() throws IOException, Exception, CompileException {
-		CompilationUnit cu = testParseOk(Files.toString(new File("./libraries/iframeDestroy/bpl/spec.isl"), Charsets.UTF_8));
+		CompilationUnit cu = testParseOk(Files.toString(new File("./examples/iframeDestroy/bpl/spec.isl"), Charsets.UTF_8));
 		testTypeCheckOk(
-				new File("./libraries/iframeDestroy/old"), 
-				new File("./libraries/iframeDestroy/new"), cu);
+				new File("./examples/iframeDestroy/old"), 
+				new File("./examples/iframeDestroy/new"), cu);
 		System.out.println("cb output:");
 		translateAndPrint(cu);
 	}
@@ -84,8 +84,8 @@ public class ISLParserTest {
 					"o1 ~ o2 ==>",
 						"if o2.f then o1.c ~ o2.c1 else o1.c ~ o2.c2;");
 		testTypeCheckOk(
-				new File("./libraries/cell/old"), 
-				new File("./libraries/cell/new"), cu);
+				new File("./examples/cell/old"), 
+				new File("./examples/cell/new"), cu);
 		System.out.println("cell output:");
 		translateAndPrint(cu);
 	}
@@ -94,18 +94,18 @@ public class ISLParserTest {
 	public void cb() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk("invariant forall old A a :: a.g % 2 == 0;");
 		testTypeCheckOk(
-				new File("./libraries/cb/old"), 
-				new File("./libraries/cb/new"), cu);
+				new File("./examples/cb/old"), 
+				new File("./examples/cb/new"), cu);
 		System.out.println("cb output:");
 		translateAndPrint(cu);
 	}
 	
 	@Test
 	public void localLoop() throws IOException, Exception, CompileException {
-		CompilationUnit cu = testParseOk(Files.toString(new File("./libraries/localLoop/bpl/spec4.isl"), Charsets.UTF_8));
+		CompilationUnit cu = testParseOk(Files.toString(new File("./examples/localLoop/bpl/spec4.isl"), Charsets.UTF_8));
 		testTypeCheckOk(
-				new File("./libraries/localLoop/old"), 
-				new File("./libraries/localLoop/new"), cu);
+				new File("./examples/localLoop/old"), 
+				new File("./examples/localLoop/new"), cu);
 		System.out.println("cb output:");
 		translateAndPrint(cu);
 	}
@@ -124,8 +124,8 @@ public class ISLParserTest {
 			"		&& stack(inLoop1, i) == stack(inLoop2, i);"
 			);
 		testTypeCheckError("No statement found",
-				new File("./libraries/localLoop/old"), 
-				new File("./libraries/localLoop/new"), cu);
+				new File("./examples/localLoop/old"), 
+				new File("./examples/localLoop/new"), cu);
 	}
 	
 	@Test
@@ -142,8 +142,8 @@ public class ISLParserTest {
 			"		&& stack(inLoop1, i) == stack(inLoop2, i);"
 			);
 		testTypeCheckError("Function 'at' must not be used in local place definitions.",
-				new File("./libraries/localLoop/old"), 
-				new File("./libraries/localLoop/new"), cu);
+				new File("./examples/localLoop/old"), 
+				new File("./examples/localLoop/new"), cu);
 	}
 
 	@Test
@@ -162,8 +162,8 @@ public class ISLParserTest {
 				"invariant forall new OBool o1, new OBool o2 :: o1 != o2 ==> o1.g != o2.g;"
 				);
 		testTypeCheckOk(
-				new File("./libraries/obool/old"), 
-				new File("./libraries/obool/new"), cu);
+				new File("./examples/obool/old"), 
+				new File("./examples/obool/new"), cu);
 		System.out.println("obool output:");
 		translateAndPrint(cu);
 	}
@@ -183,8 +183,8 @@ public class ISLParserTest {
 				"invariant forall old OBool o1, new OBool o2 :: o1 ~ o2 ==> o1.g.f != o2.g.f;"
 				);
 		testTypeCheckOk(
-				new File("./libraries/obool/old"), 
-				new File("./libraries/obool/new"), cu);
+				new File("./examples/obool/old"), 
+				new File("./examples/obool/new"), cu);
 		System.out.println("obool2 output:");
 		translateAndPrint(cu);
 	}

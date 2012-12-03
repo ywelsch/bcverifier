@@ -5,7 +5,7 @@ local place afterRec = line 10 of new C;
 
 place callSet1 = call set in line 10 of old C;
 place callSet2 = call set in line 16 of new C;
-local place beforeLoop2 = call loop in line 9 of new C;
+local place beforeLoop2 = call loop in line 9 of new C nosync;
 
 //lists are related:
 invariant forall old C o1, new C o2 :: o1 ~ o2 ==> o1.list ~ o2.list;

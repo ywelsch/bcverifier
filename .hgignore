@@ -1,9 +1,9 @@
 
 syntax: glob
-libraries/**/*.class
+examples/**/*.class
 syntax: glob
-libraries/**/output*.bpl
-libraries/**/boogie_output.txt
+examples/**/output*.bpl
+examples/**/boogie_output.txt
 syntax: glob
 doc/*.aux
 syntax: glob

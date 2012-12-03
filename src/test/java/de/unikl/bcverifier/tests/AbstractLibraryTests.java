@@ -20,7 +20,7 @@ import de.unikl.bcverifier.helpers.CheckRunner;
 import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
 
 public class AbstractLibraryTests {
-	File libpath = new File("libraries");
+	File libpath = new File("examples");
 	File truespec = new File(libpath, "true/bpl/spec.isl");
 	
 	@BeforeClass

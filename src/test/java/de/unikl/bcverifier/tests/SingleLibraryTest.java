@@ -20,7 +20,7 @@ import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 
 public class SingleLibraryTest {
-	File dir = new File("libraries/cell");
+	File dir = new File("examples/cell");
 	
 	@BeforeClass
 	public static void oneTimeSetup() {

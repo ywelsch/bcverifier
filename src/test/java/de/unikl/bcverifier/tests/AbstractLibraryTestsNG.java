@@ -13,13 +13,14 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
+import static org.testng.Assert.assertFalse;
 
 import de.unikl.bcverifier.helpers.BCCheckDefinition;
 import de.unikl.bcverifier.helpers.CheckRunner;
 import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
 
 public class AbstractLibraryTestsNG {
-	File libpath = new File("libraries");
+	File libpath = new File("examples");
 	File truespec = new File(libpath, "true/bpl/spec.isl");
 	
 	@BeforeClass
@@ -43,7 +44,7 @@ public class AbstractLibraryTestsNG {
 	}
 	
 	@DataProvider(name = "boogieFiles", parallel = true)
-	Object[][] boogieFilesToCheck() throws CheckRunException {
+	Object[][] boogieFilesToCheck() {
 	    String libraryToCheck = System.getProperty("library");
 	    if(libraryToCheck!=null){
 	        Logger.getLogger(AbstractLibraryTestsNG.class).info("Generating Boogie files for library "+libraryToCheck+".");
@@ -52,7 +53,11 @@ public class AbstractLibraryTestsNG {
 	        File bplDir;
 	        for(BCCheckDefinition test : libTestCases){
 	            bplDir = new File(test.getLibDir(), "bpl");
-	            CheckRunner.generate(test, bplDir);
+	            try {
+                	CheckRunner.generate(test, bplDir);
+                } catch (CheckRunException e) {
+                	assertFalse(true, e.getMessage());
+                }
 	            testSets.add(new Object[]{test, new File(bplDir, "output"+test.getCheckIndex()+".bpl")});
 	        }
 	        Logger.getLogger(AbstractLibraryTestsNG.class).info("Finished generating Boogie files.");
@@ -70,7 +75,11 @@ public class AbstractLibraryTestsNG {
                 for(BCCheckDefinition test : libTestCases){
                     tmpLibPath = new File(outputdir, path);
                     tmpLibPath.mkdirs();
-                    CheckRunner.generate(test, tmpLibPath);
+                    try {
+                    	CheckRunner.generate(test, tmpLibPath);
+                    } catch (CheckRunException e) {
+                    	assertFalse(true, e.getMessage());
+                    }
                     testSets.add(new Object[]{test, new File(tmpLibPath, "output"+test.getCheckIndex()+".bpl")});
                 }
             }
