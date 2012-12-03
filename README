@@ -18,6 +18,8 @@ Versions tested:
 - Boogie, released on Oct 22, 2012 (version 2.2.30705.1126)
 - Z3 version 4.1.2
 
+To adapt the ISL syntax highlighting for the web frontend, the code is [here](http://boogietools.codeplex.com/).
+
 Build System
 ------------
 

@@ -953,7 +953,7 @@ var ISLHighlightRules = function() {
 
     var keywords = lang.arrayToMap(
         (
-            "call|else|exists|forall|if|instanceof|in|line|local|measure|new|nosplit|nosync|old|of|stall|then|when|with"
+            "assign|call|else|exists|forall|if|instanceof|in|line|local|measure|new|nosplit|nosync|old|of|stall|then|var|when|with"
         ).split("|")
     );
 

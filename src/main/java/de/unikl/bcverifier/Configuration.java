@@ -221,6 +221,7 @@ public class Configuration implements Serializable {
 	}
 	public void setWebDefaults() {
 		checkSourceCompatibility = true;
+		iframes = 1;
 		proverTimelimit = 120;
 	}
 	public int getProverTimelimit() {
