@@ -52,7 +52,7 @@ public class Configuration implements Serializable {
     @Parameter(names = {"--splices", "--iframes"}, description = "Number of stack splices to consider on stack (0 is unlimited)") @WebGUI
 	private int iframes = 0;
     @Parameter(names = {"-t", "--timelimit"}, description = "Time limit in seconds to run prover (0 is unlimited)") @WebGUI
-	private int proverTimelimit = 0;
+	private int proverTimelimit = 60 * 60; // 1 Hour
 	
 	
     @Parameter(names = {"-s", "-i" , "--specification"}, description = "Path to the file containing the specification", required = true, validateWith = Configuration.FileValidator.class)

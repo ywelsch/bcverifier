@@ -5,13 +5,11 @@
 invariant forall old Observable l :: l.fst != null ==> createdByLibrary(l.fst) && !exposed(l.fst);
 invariant forall old Node n :: createdByLibrary(n) && !exposed(n);
 invariant forall old Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
-invariant forall old Observable l, old Node n :: l.fst != null || n.next != null ==> l.fst != n.next;
 
 // repeat for local invariants
 local invariant forall old Observable l :: l.fst != null ==> createdByLibrary(l.fst) && !exposed(l.fst);
 local invariant forall old Node n :: createdByLibrary(n) && !exposed(n);
 local invariant forall old Node n :: n.next != null ==> createdByLibrary(n.next) && !exposed(n.next);
-local invariant forall old Observable l, old Node n :: l.fst != null || n.next != null ==> l.fst != n.next;
 
 // Data properties for new library implementation
 invariant forall new Observable l :: l.snt != null;
@@ -42,22 +40,12 @@ assign x2 = null;
 
 invariant forall old Observable l1, new Observable l2 :: l1 ~ l2 ==> related(bij, l1.fst, l2.snt.next);
 invariant forall old Node n1, new Observable l2 :: !related(bij, n1, l2.snt);
-invariant forall old Observable l1, new Observable l2 :: related(bij, l1.fst, l2.snt.next) && l1.fst != null && l2.snt.next != null ==> l1 ~ l2;
-invariant forall old java.lang.Object o1, new java.lang.Object o2 :: related(bij, o1, o2) ==> o1 instanceof old Node && o2 instanceof new Node;
-invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> createdByLibrary(n1) && !exposed(n1) && createdByLibrary(n2) && !exposed(n2);
-invariant forall old Node n1, new Node n2 :: related(bij, n1.next, n2.next) && n1.next != null && n2.next != null ==> related(bij, n1, n2);
-invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> related(bij, n1.next, n2.next) && n1.ob ~ n2.ob;
-invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> n1.ob != null && n2.ob != null;
+invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> related(bij, n1.next, n2.next) && n1.ob ~ n2.ob && n1.ob != null && n2.ob != null;
 
 // repeat for local invariants
 local invariant forall old Observable l1, new Observable l2 :: l1 ~ l2 ==> related(bij, l1.fst, l2.snt.next);
 local invariant forall old Node n1, new Observable l2 :: !related(bij, n1, l2.snt);
-local invariant forall old Observable l1, new Observable l2 :: related(bij, l1.fst, l2.snt.next) && l1.fst != null && l2.snt.next != null ==> l1 ~ l2;
-local invariant forall old java.lang.Object o1, new java.lang.Object o2 :: related(bij, o1, o2) ==> o1 instanceof old Node && o2 instanceof new Node;
-local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> createdByLibrary(n1) && !exposed(n1) && createdByLibrary(n2) && !exposed(n2);
-local invariant forall old Node n1, new Node n2 :: related(bij, n1.next, n2.next) && n1.next != null && n2.next != null ==> related(bij, n1, n2);
-local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> related(bij, n1.next, n2.next) && n1.ob ~ n2.ob;
-local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> n1.ob != null && n2.ob != null;
+local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> related(bij, n1.next, n2.next) && n1.ob ~ n2.ob && n1.ob != null && n2.ob != null;
 
 // add method
 local place p1 = line 10 of old Observable assign x1 = newNode nosync;
