@@ -1,10 +1,10 @@
 "specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
-"bpl/spec1.bsl","--iframes 1"     ,2                ,0                 ,2
-"bpl/spec1.bsl","--iframes 1"     ,2                ,0                 ,3
-"bpl/spec1.bsl","--iframes 1"     ,0                ,0                 ,7
-"bpl/spec4.bsl","--iframes 1"     ,0                ,0                 ,7
-"bpl/spec5.bsl","--iframes 1"     ,0                ,0                 ,7
-"bpl/spec.isl" ,"--iframes 1"     ,0                ,0                 ,7
-"bpl/spec2.isl","--iframes 1"     ,0                ,0                 ,7
-"bpl/spec3.isl","--iframes 1"     ,1                ,0                 ,7
-"bpl/spec4.isl","--iframes 1"     ,0                ,0                 ,7
+"bpl/spec1.bsl",""     ,2                ,0                 ,2
+"bpl/spec1.bsl",""     ,2                ,0                 ,3
+"bpl/spec1.bsl",""     ,0                ,0                 ,7
+"bpl/spec4.bsl",""     ,0                ,0                 ,7
+"bpl/spec5.bsl",""     ,0                ,0                 ,7
+"bpl/spec.isl" ,""     ,0                ,0                 ,7
+"bpl/spec2.isl",""     ,0                ,0                 ,7
+"bpl/spec3.isl",""     ,1                ,0                 ,7
+"bpl/spec4.isl",""     ,0                ,0                 ,7

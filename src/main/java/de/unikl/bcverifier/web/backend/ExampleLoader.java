@@ -18,9 +18,7 @@ public class ExampleLoader {
 	private Example loadExample(String dir, String description, String unrollCount, String invFileName) {
 		ClassLoader loader = HomePage.class.getClassLoader();
 		try {
-		    //System.out.println(loader.getResource(dir));
-			//System.out.println(loader.getResource(dir).toURI());
-			FileSystemManager fsManager = VFS.getManager();
+		    FileSystemManager fsManager = VFS.getManager();
 			FileObject topDir = fsManager.resolveFile(loader.getResource(dir).toURI().toString());
 			FileObject oldDir = topDir.getChild("old");
 			FileObject newDir = topDir.getChild("new");
@@ -75,10 +73,10 @@ public class ExampleLoader {
 				new String[]{ "cb", "Callback example", "3", "spec.isl" },
 				new String[]{ "cbalt", "Callback example (alt.1)", "3", "spec.isl" },
 				new String[]{ "cbalt", "Callback example (alt.2)", "3", "spec2.isl" },
-				new String[]{ "obool", "OBool example", "5", "spec.isl" },
-				new String[]{ "obool", "OBool example (alt.1)", "5", "spec2.isl" },
-				new String[]{ "obool", "OBool example (alt.2)", "5", "spec4.isl" },
-				new String[]{ "obool2", "OBool example (alt.3)", "5", "spec3.isl" },
+				new String[]{ "obool", "OBool example", "7", "spec.isl" },
+				new String[]{ "obool", "OBool example (alt.1)", "7", "spec2.isl" },
+				new String[]{ "obool", "OBool example (alt.2)", "7", "spec4.isl" },
+				new String[]{ "obool2", "OBool example (alt.3)", "7", "spec3.isl" },
 				new String[]{ "subtypes", "Subtypes example", "2", "spec.isl" },
 				new String[]{ "subtypes3", "Subtypes example (alt.1)", "4", "spec.isl" },
 				new String[]{ "oneOffLoop", "OneOffLoop example", "2", "spec.isl" },

@@ -41,7 +41,7 @@ public class Configuration implements Serializable {
 	private boolean wellformednessChecks;
 	@Parameter(names = {"-S", "--smoketest"}, description = "Perform smoke test during verification")
     private boolean smoke = false;
-	@Parameter(names = {"-L", "--loopUnroll"}, description = "Cap for sound loop unrolling") @WebGUI
+	@Parameter(names = {"-L", "--loopUnroll"}, description = "Cap for sound program unrolling") @WebGUI
 	private int loopUnrollCap = 5;
 	@Parameter(names = {"-N", "--nullchecks"}, description = "Disable null checks to field accesses and method calls as well as !=0 checks to division/modulo") @WebGUI
 	private boolean disableNullChecks = false;
@@ -50,7 +50,7 @@ public class Configuration implements Serializable {
 	@Parameter(names = {"-k", "--sourcecompatibility"}, description = "Check source compatibility") @WebGUI
     private boolean checkSourceCompatibility = false;
     @Parameter(names = {"--iframes"}, description = "Number of interaction frames to consider (0 is unlimited)") @WebGUI
-	private int iframes = 2;
+	private int iframes = 0;
     @Parameter(names = {"-t", "--timelimit"}, description = "Time limit in seconds to run prover (0 is unlimited)") @WebGUI
 	private int proverTimelimit = 0;
 	
@@ -65,8 +65,6 @@ public class Configuration implements Serializable {
     @Parameter(names = {"-l", "--libs"}, description = "Path to the libraries to compare", arity = 2, required = true, validateWith = Configuration.DirectoryValidator.class)
     private List<File> dirs = new ArrayList<File>();
 	private String versionString;
-	@Parameter(names = {"-sfi", "--singleformulainvariant"}, description = "Invariant is packaged as a single Boogie formula")
-    private boolean singleFormulaInvariant = false;
     
     public static class DirectoryValidator implements IParameterValidator {
 		public void validate(String name, String value) throws ParameterException {
@@ -215,12 +213,6 @@ public class Configuration implements Serializable {
     	}
 		return versionString;
 	}
-	public boolean isSingleFormulaInvariant() {
-		return singleFormulaInvariant;
-	}
-	public void setSingleFormulaInvariant(boolean singleFormulaInvariant) {
-		this.singleFormulaInvariant = singleFormulaInvariant;
-	}
 	public void setCheckSourceCompatibility(boolean check) {
 		this.checkSourceCompatibility = check;
 	}
@@ -228,10 +220,8 @@ public class Configuration implements Serializable {
 		return checkSourceCompatibility;
 	}
 	public void setWebDefaults() {
-		singleFormulaInvariant = true;
 		checkSourceCompatibility = true;
-		iframes = 1;
-		proverTimelimit = 30;
+		proverTimelimit = 120;
 	}
 	public int getProverTimelimit() {
 		return proverTimelimit;
