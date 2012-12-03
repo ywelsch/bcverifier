@@ -49,7 +49,7 @@ public class Configuration implements Serializable {
     private VerifyAction action = VerifyAction.VERIFY;
 	@Parameter(names = {"-k", "--sourcecompatibility"}, description = "Check source compatibility") @WebGUI
     private boolean checkSourceCompatibility = false;
-    @Parameter(names = {"--iframes"}, description = "Number of interaction frames to consider (0 is unlimited)") @WebGUI
+    @Parameter(names = {"--splices", "--iframes"}, description = "Number of stack splices to consider on stack (0 is unlimited)") @WebGUI
 	private int iframes = 0;
     @Parameter(names = {"-t", "--timelimit"}, description = "Time limit in seconds to run prover (0 is unlimited)") @WebGUI
 	private int proverTimelimit = 0;

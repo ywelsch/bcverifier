@@ -1,7 +1,7 @@
 "specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
 "bpl/spec1.bsl",""     ,2                ,0                 ,2
 "bpl/spec1.bsl",""     ,2                ,0                 ,3
-"bpl/spec1.bsl",""     ,0                ,0                 ,7
+"bpl/spec1.bsl","--iframes 1"     ,0                ,0                 ,7
 "bpl/spec4.bsl",""     ,0                ,0                 ,7
 "bpl/spec5.bsl",""     ,0                ,0                 ,7
 "bpl/spec.isl" ,""     ,0                ,0                 ,7
