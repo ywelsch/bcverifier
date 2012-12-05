@@ -1,8 +1,7 @@
-import org.pegdown.PegDownProcessor
-
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'jetty'
+apply plugin: 'war'
 apply plugin: 'application'
 
 version = '0.0.1-SNAPSHOT'
@@ -80,7 +79,7 @@ task doc {
   doLast {
     new File(destDocDir).mkdirs();
     inputs.files.each{ source ->
-         def mp = new PegDownProcessor(docOptions)
+         def mp = new org.pegdown.PegDownProcessor(docOptions)
        def relrenamed = new File(srcDocDir).toURI().relativize(source.toURI()).getPath().replaceFirst('(markdown|mdown)$', 'html')
        def target = new File(new File(destDocDir), relrenamed)
        target.getParentFile().mkdirs();
@@ -117,7 +116,7 @@ task docReadme {
   outputs.dir(destDocDir)
   doLast {
     new File(destDocDir).mkdirs();
-    def mp = new PegDownProcessor(docOptions)
+    def mp = new org.pegdown.PegDownProcessor(docOptions)
       def target = new File(destDocDir, 'readme.html')
       target.text = mp.markdownToHtml(readme.text);
   }
@@ -288,6 +287,13 @@ task runSingleTest(type: JavaExec) {
   }
 }
 runSingleTest.dependsOn classes
+
+[jettyRun, jettyRunWar].each { jetty ->
+	jetty.connectors = configure(jetty.class.classLoader.loadClass('org.mortbay.jetty.nio.SelectChannelConnector').newInstance()) {
+		port = httpPort
+		maxIdleTime = 300000 // 5 minutes
+	}
+}
 
 task removeGenFolder(type: Delete) {
     delete islGenDir
