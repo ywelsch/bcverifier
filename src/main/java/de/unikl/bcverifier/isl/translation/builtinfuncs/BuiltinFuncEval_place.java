@@ -30,7 +30,9 @@ final public class BuiltinFuncEval_place extends BuiltinFunction {
 
 	@Override
 	public BPLExpression translateWelldefinedness(boolean isGlobalInvariant, List<Expr> arguments) {
-		BPLExpression[] exprs = { this.builtinFunctions.FUNC_AT_place.translateWelldefinedness(isGlobalInvariant, arguments), this.builtinFunctions.FUNC_AT_place.translateCall(isGlobalInvariant, arguments) };
+		Expr p = arguments.getChild(0);
+		ExprTypePlace placeType = (ExprTypePlace) p.attrType();
+		BPLExpression[] exprs = { this.builtinFunctions.FUNC_AT_place.translateWelldefinedness(!placeType.isLocalPlace(), arguments), this.builtinFunctions.FUNC_AT_place.translateCall(!placeType.isLocalPlace(), arguments) };
 		return TranslationHelper.conjunction(exprs);
 	}
 

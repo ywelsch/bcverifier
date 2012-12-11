@@ -304,7 +304,7 @@ public class TypeHelper {
 			ExprTypePlace placeType = new ExprTypePlace(placeDef.isLocalPlace(), (ExprTypeAtLineProgramPoint) progPoint);
 			TwoLibraryModel model = placeDef.attrCompilationUnit().getTwoLibraryModel();
 	
-			Def r = lookupJava(model, placeType, name, new StackpointerExpr(placeType.getVersion(), false), placeDef);
+			Def r = lookupJava(model, placeType, name, new StackpointerExpr(placeType.getVersion(), !placeType.isLocalPlace()), placeDef);
 			if (r != null) {
 				return Collections.singletonList(r);
 			}
@@ -340,7 +340,7 @@ public class TypeHelper {
 						&& funcCall.getArgument(1) == expr) {
 					// stack(place, expr)
 					ExprTypePlace placeType = (ExprTypePlace) funcCall.getArgument(0).attrType();
-					Expr stackPointerExpr = new StackpointerExpr(placeType.getVersion(), funcCall.attrIsInGlobalInvariant());
+					Expr stackPointerExpr = new StackpointerExpr(placeType.getVersion(), !placeType.isLocalPlace());
 					
 					TwoLibraryModel model = expr.attrCompilationUnit().getTwoLibraryModel();
 

@@ -8,6 +8,6 @@ public class Cell<T> {
     if(f) c1 = o; else c2 = o;
   }
   public T get(){
-    return f ? c1 : c2;
+    if(f) return c1; else return c2;
   }
 }

@@ -267,7 +267,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 					objectConstructorName, new BPLTypeName(METHOD_TYPE))));
 
 			addCheckingBlocks(invAssertions, invAssumes, localInvAssertions,
-					localInvAssumes, methodBlocks, this.specGen.generateGlobalAssignments(), this.specGen.generateInitialAssignments());
+					localInvAssumes, methodBlocks, this.specGen.generateGlobalAssignments(), this.specGen.generateInitialAssignments(), this.specGen.generateGlobalVariables());
 
 			addNoopBlock(methodBlocks);
 
@@ -1240,7 +1240,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			ArrayList<BPLCommand> invAssumes,
 			ArrayList<BPLCommand> localInvAssertions,
 			ArrayList<BPLCommand> localInvAssumes,
-			List<BPLBasicBlock> methodBlocks, List<String> globalAssignments, List<String> initialAssignments) {
+			List<BPLBasicBlock> methodBlocks, List<String> globalAssignments, List<String> initialAssignments, List<BPLVariableDeclaration> globalVars) {
 		// ///////////////////////////////////
 		// checking blocks (boundary return, boundary call and local places)
 		// ///////////////////////////////////
@@ -1434,6 +1434,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				.add(new BPLAssignmentCommand(var(OLD_HEAP2), var(HEAP2)));
 
 		checkingCommand.add(new BPLHavocCommand(var(HEAP1), var(HEAP2)));
+		BPLVariableExpression[] bplve = new BPLVariableExpression[globalVars.size()];
+		for (int i = 0; i < globalVars.size(); i++) {
+			BPLVariableDeclaration var = globalVars.get(i);
+			if (var.getVariables().length != 1) {
+				throw new RuntimeException("Variable declarations from spec must be singleton");
+			}
+			bplve[i] = var(var.getVariables()[0].getName());
+		}
+		checkingCommand.add(new BPLHavocCommand(bplve));
 
 		// the exposed and createdByCtxt flags have to be preserved for the
 		// invariant to be applicable

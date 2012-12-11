@@ -35,10 +35,10 @@ final class BuiltinFuncAt_place extends BuiltinFunction {
 		Expr p = arguments.getChild(0);
 		ExprTypePlace placeType = (ExprTypePlace) p.attrType();
 		BPLExpression stackPointer;
-		stackPointer = BuiltinFunctions.FUNC_STACKINDEX.translateCall(isGlobalInvariant, new List<Expr>().add(new VersionConst(placeType.getVersion())));
+		stackPointer = BuiltinFunctions.FUNC_STACKINDEX.translateCall(!placeType.isLocalPlace(), new List<Expr>().add(new VersionConst(placeType.getVersion())));
 		// stack1[ip1][stackPointer][place] == p
 		return new BPLEqualityExpression(BPLEqualityExpression.Operator.EQUALS, 
-				BuiltinFunctions.stackProperty(isGlobalInvariant, placeType.getVersion(), p.attrCompilationUnit().getPhase(), stackPointer, new BPLVariableExpression("place"))
+				BuiltinFunctions.stackProperty(!placeType.isLocalPlace(), placeType.getVersion(), p.attrCompilationUnit().getPhase(), stackPointer, new BPLVariableExpression("place"))
 				, p.translateExpr()
 				);
 	}

@@ -77,10 +77,7 @@ public class Translation {
 				
 				// forall interaction frames
 				// TODO only do this when ifram var is used.
-				welldefinedness = forallInteractionFrames(welldefinedness);
-				invExpr = forallInteractionFrames(invExpr);
-				
-				result.add(new SpecInvariant(invExpr, welldefinedness, comment));
+				result.add(new SpecInvariant(forallInteractionFrames(invExpr), forallInteractionFrames(welldefinedness), comment));
 			}
 		}
 		return result;
@@ -134,7 +131,7 @@ public class Translation {
 				BPLExpression welldefinedness = inv.getExpr().translateExprWellDefinedness();
 				BPLExpression invExpr = inv.getExpr().translateExpr();
 				String comment = inv.getExpr().print();
-				result.add(new SpecInvariant(invExpr, welldefinedness, comment));
+				result.add(new SpecInvariant(forallInteractionFrames(invExpr), forallInteractionFrames(welldefinedness), comment));
 			}
 		}
 		return result;

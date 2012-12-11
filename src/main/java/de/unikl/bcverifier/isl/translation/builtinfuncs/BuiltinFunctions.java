@@ -79,7 +79,7 @@ public class BuiltinFunctions {
 				new BPLVariableExpression(property));
 	}
 	
-	public static BPLExpression stackProperty(boolean isGlobalInv, Version version, Phase phase,
+	public static BPLExpression stackProperty(boolean isNonLocalPlace, Version version, Phase phase,
 			BPLExpression stackPointer,
 			BPLExpression property) {
 		// stack1[ip][stackPointer][property]
@@ -98,7 +98,7 @@ public class BuiltinFunctions {
 				stack = new BPLVariableExpression(ITranslationConstants.OLD_STACK2);
 			ip = new BPLVariableExpression(ITranslationConstants.IP2_VAR);
 		}
-		if (isGlobalInv) {
+		if (isNonLocalPlace) {
 			ip = new BPLVariableExpression("iframe");
 		}
 		// ((stack[ip])[sp])[property]

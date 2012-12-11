@@ -49,6 +49,8 @@ local invariant at(pn1) == at(pn2) && at(qn1) == at(qn2) && at(pe1) == at(pe2);
 local place pcall = call notifyRec in line 24 of new Observable nosync;
 local place pn1 = line 34 of old Observable when n != null;
 local place pn2 = line 19 of new Node when stackIndex(new) > 0 && at(pcall, 0);
+place pc1 = call notifyObs in line 34 of old Observable nosplit;
+place pc2 = call notifyObs in line 19 of new Node nosplit;
 local place qn1 = line 37 of old Observable
   stall when stackIndex(new) > 1 with measure stackIndex(new);
 local place qn2 = line 23 of new Node when stackIndex(new) > 0 && at(pcall, 0);
@@ -60,6 +62,8 @@ local invariant at(pn1) && at(pn2) ==>
   (eval(pn1, n.next) == null <==> eval(pn2, this.next) == null) &&
   eval(pn1, n.ob) != null && eval(pn2, this.ob) != null &&
   eval(pn1, n.ob) ~ eval(pn2, this.ob);
+invariant at(pc1) && at(pc2) ==> related(bij, eval(pc1, n), eval(pc2, this));
+/* repeat invariant as local invariant */ local invariant at(pc1) && at(pc2) ==> related(bij, eval(pc1, n), eval(pc2, this));
 // Additional place to help the verifier deduce the control flow
 local place pe1 = line 35 of old Observable when n != null;
 local place pe2 = line 20 of new Node when stackIndex(new) > 0 && at(pcall, 0);

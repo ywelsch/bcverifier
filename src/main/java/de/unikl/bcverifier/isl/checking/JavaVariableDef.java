@@ -52,6 +52,11 @@ public class JavaVariableDef extends Def {
 	public Version getVersion() {
 		return version;
 	}
+	
+	public ExprTypePlace getPlaceType() {
+		return placeType;
+	}
+
 
 	/**
 	 * get the register name for this local variable 
