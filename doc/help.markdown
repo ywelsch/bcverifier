@@ -12,7 +12,8 @@ The BCVerifier tool then checks that the relation induced by the coupling invari
 Documentation
 -------------
 
-Being updated to current tool version (will be made available my Mid-December).
+- [Draft paper describing the approach and tool](assets/bcverifier.pdf)
+- [README file for the tool](readme.html)
 
 Limitations
 -----------

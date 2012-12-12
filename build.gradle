@@ -100,6 +100,7 @@ task copyDocAssets(type:Copy) {
     include '**/*.js'
     include '**/*.css'
     include '**/*.png'
+	include '**/*.pdf'
   }
   from ('src/main/webapp/') {
     include '**/*.woff'
