@@ -1545,20 +1545,32 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		
 		for (Place place : tc.getLocalPlaceDefinitions().oldPlaces()) {
 			if (!place.isNosync()) {
+				BPLAssertCommand assertConditionWD = new BPLAssertCommand(
+						implies(
+								isEqual(stack1(var(PLACE_VARIABLE)), var(place.getName())),
+								place.getConditionWelldefinedness()));
+				assertConditionWD.addComment("Check place condition well definedness");
+				checkingCommand.add(assertConditionWD);
 				checkingCommand.add(new BPLAssumeCommand(implies(
 						logicalAnd(
 								isEqual(stack1(var(PLACE_VARIABLE)), var(place.getName())),
-								var("(" + place.getCondition() + ")")),
+								place.getCondition()),
 								isEqual(var(STALL1), var("(" + place.getNewStallCondition() + ")"))
 						)));
 			}
 		}
 		for (Place place : tc.getLocalPlaceDefinitions().newPlaces()) {
 			if (!place.isNosync()) {
+				BPLAssertCommand assertConditionWD = new BPLAssertCommand(
+						implies(
+								isEqual(stack2(var(PLACE_VARIABLE)), var(place.getName())),
+								place.getConditionWelldefinedness()));
+				assertConditionWD.addComment("Check place condition well definedness");
+				checkingCommand.add(assertConditionWD);
 				checkingCommand.add(new BPLAssumeCommand(implies(
 						logicalAnd(
 								isEqual(stack2(var(PLACE_VARIABLE)), var(place.getName())),
-								var("(" + place.getCondition() + ")")),
+								place.getCondition()),
 								isEqual(var(STALL2), var("(" + place.getNewStallCondition() + ")"))
 						)));
 			}

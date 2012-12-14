@@ -2141,6 +2141,17 @@ public class MethodTranslator implements ITranslationConstants {
     private void addAssert(BPLExpression expression) {
         addCommand(new BPLAssertCommand(expression));
     }
+    
+    /**
+     * Adds an assertion for the given {@code expression} to the currently active
+     * BoogiePL block.
+     * 
+     * @param expression The assertion's expression.
+     * @requires expression != null;
+     */
+    private void addAssert(BPLExpression expression, String comment) {
+    	addCommentedCommand(new BPLAssertCommand(expression), comment);
+    }
 
     /**
      * Adds an assumption for the given {@code expression} to the currently active
@@ -2809,7 +2820,8 @@ public class MethodTranslator implements ITranslationConstants {
                 
                 startBlock(localPlace.getName() + CHECK_POSTFIX);
                 Logger.getLogger(InstructionTranslator.class).debug("adding local place "+localPlace.getName());
-                addAssume(var(localPlace.getCondition())); //TODO raw expression here
+                addAssert(localPlace.getConditionWelldefinedness(), "Check place condition well definedness");
+                addAssume(localPlace.getCondition()); //TODO raw expression here
                 BoogiePlace bp = new BoogiePlace(localPlace.getName(), method, true);
                 tc.addPlace(bp);
                 addAssignment(stack(var(PLACE_VARIABLE)), var(localPlace.getName()), "local place");
@@ -2820,7 +2832,8 @@ public class MethodTranslator implements ITranslationConstants {
                 	rawEndBlock(tc.getCheckLabel());
 
                 	startBlock(localPlace.getName());
-                	addAssume(var(localPlace.getCondition())); //TODO raw expression here
+                	addAssert(localPlace.getConditionWelldefinedness(), "Check place condition well definedness");
+                	addAssume(localPlace.getCondition()); //TODO raw expression here
                 	addAssume(isEqual(var(tc.getStallMap()), var("(" + localPlace.getOldStallCondition() + ")"))); //TODO raw expression here
                 	addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(localPlace.getName())));
                 	addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
@@ -2878,7 +2891,8 @@ public class MethodTranslator implements ITranslationConstants {
             
             startBlock(skipLabel);
             for(Place place : localPlaces){
-                addAssume(logicalNot(var(place.getCondition()))); //TODO raw expression here
+            	addAssert(place.getConditionWelldefinedness(), "Check place condition well definedness");
+                addAssume(logicalNot(place.getCondition())); //TODO raw expression here
             }
             endBlock(contLabel);
             

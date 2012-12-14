@@ -18,7 +18,9 @@ import com.beust.jcommander.internal.Lists;
 import b2bpl.bpl.IBPLVisitor;
 import b2bpl.bpl.ast.BPLAssertCommand;
 import b2bpl.bpl.ast.BPLAssumeCommand;
+import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLCommand;
+import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLLiteral;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import b2bpl.translation.ITranslationConstants;
@@ -118,7 +120,10 @@ public class BoogieGenerator extends AbstractGenerator {
                 if (newStallCondition != null && m.group(2).equals("new") && newMeasure != null) {
                 	throw new GenerationException("Places in new implementation that stall do not need a measure");
                 }
-                Place place = new Place(m.group(2).equals("old"), m.group(1), null, true, false, m.group(4), oldStallCondition, oldMeasure, newStallCondition, newMeasure, Collections.<String>emptyList());
+                // (boolean old, String name, String className, boolean nosplit, boolean nosync, BPLExpression conditionWelldefinedness, BPLExpression condition, String oldStallCondition, String oldMeasure, String newStallCondition, String newMeasure, List<String> assignments){
+                BPLExpression placeConditionWD = BPLBoolLiteral.TRUE;
+                BPLExpression placeCondition = new BPLVariableExpression(m.group(4));
+				Place place = new Place(m.group(2).equals("old"), m.group(1), null, true, false, placeConditionWD, placeCondition, oldStallCondition, oldMeasure, newStallCondition, newMeasure, Collections.<String>emptyList());
                 currentPlaceList.add(place);
                 Logger.getLogger(BoogieGenerator.class).debug("Parsed place :" + place); 
             } else  {

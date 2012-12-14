@@ -145,10 +145,13 @@ public class Translation {
 			if (s instanceof PlaceDef) {
 				PlaceDef def = (PlaceDef) s;
 				BPLExpression condition;
+				BPLExpression conditionWD;
 				if (def.hasCondition()) {
 					condition = def.getCondition().translateExpr();
+					conditionWD = def.getCondition().translateExprWellDefinedness();
 				} else {
 					condition = BPLBoolLiteral.TRUE;
+					conditionWD = BPLBoolLiteral.TRUE;
 				}
 				Expr stallCond = null;
 				Expr measure = null;
@@ -186,7 +189,7 @@ public class Translation {
 					}
 					String className = ((ExprTypePlace)def.attrType()).getEnclosingClassType().getQualifiedName();
 					Place p = new Place(progPoint.getVersion() == Version.OLD, def.getName().getName(), className, def.hasPlaceOption(PLACE_OPTION_NOSPLIT), def.hasPlaceOption(PLACE_OPTION_NOSYNC),
-							exprToString(condition), exprToString(oldStallCond), exprToString(oldMeasure), exprToString(newStallCond), exprToString(newMeasure), assigns);
+							conditionWD, condition, exprToString(oldStallCond), exprToString(oldMeasure), exprToString(newStallCond), exprToString(newMeasure), assigns);
 					if (progPoint.getVersion() == Version.OLD) {
 						put(oldPlaces, progPoint.getLine(), p);
 					} else {

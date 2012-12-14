@@ -2,9 +2,12 @@ package de.unikl.bcverifier.specification;
 
 import java.util.List;
 
+import b2bpl.bpl.ast.BPLExpression;
+
 public class Place {
     private String name;
-    private String condition;
+    private BPLExpression conditionWelldefinedness;
+    private BPLExpression condition;
     private String oldStallCondition;
     private String oldMeasure;
     private String newStallCondition;
@@ -15,9 +18,10 @@ public class Place {
     private List<String> assignments;
     private String className;
     
-    public Place(boolean old, String name, String className, boolean nosplit, boolean nosync, String condition, String oldStallCondition, String oldMeasure, String newStallCondition, String newMeasure, List<String> assignments){
+    public Place(boolean old, String name, String className, boolean nosplit, boolean nosync, BPLExpression conditionWelldefinedness, BPLExpression condition, String oldStallCondition, String oldMeasure, String newStallCondition, String newMeasure, List<String> assignments){
     	this.old = old;
     	this.name = name;
+    	this.conditionWelldefinedness = conditionWelldefinedness;
         this.condition = condition;
         this.className = className;
         this.nosplit = nosplit;
@@ -35,10 +39,10 @@ public class Place {
     public void setName(String name) {
         this.name = name;
     }
-    public String getCondition() {
+    public BPLExpression getCondition() {
         return condition;
     }
-    public void setCondition(String condition) {
+    public void setCondition(BPLExpression condition) {
         this.condition = condition;
     }
 
@@ -137,5 +141,13 @@ public class Place {
 
 	public void setNosync(boolean nosync) {
 		this.nosync = nosync;
+	}
+
+	public BPLExpression getConditionWelldefinedness() {
+		return conditionWelldefinedness;
+	}
+
+	public void setConditionWelldefinedness(BPLExpression conditionWelldefinedness) {
+		this.conditionWelldefinedness = conditionWelldefinedness;
 	}
 }
