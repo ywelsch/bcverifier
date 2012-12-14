@@ -1499,7 +1499,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 		// invariant
 		checkingCommand.addAll(invAssumes);
-		checkingCommand.addAll(localInvAssumes);
 
 		methodBlocks
 				.add(new BPLBasicBlock(CHECK_BOUNDARY_CALL_LABEL,
