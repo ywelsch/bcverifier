@@ -31,7 +31,7 @@ import de.unikl.bcverifier.isl.parser.ISLCompiler;
 import de.unikl.bcverifier.isl.parser.ParserError;
 import de.unikl.bcverifier.librarymodel.LibrarySource;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
-import de.unikl.bcverifier.specification.SpecInvariant;
+import de.unikl.bcverifier.specification.SpecExpr;
 
 public class ISLParserTest {
 
@@ -231,11 +231,11 @@ public class ISLParserTest {
 		PrintWriter pw = new PrintWriter(System.out);
 		
 		pw.println("Invariants: ");
-		for (SpecInvariant inv : cu.generateInvariants()) {
+		for (SpecExpr inv : cu.generateInvariants()) {
 			print(pw, inv);
 		}
 		pw.println("Local Invariants: ");
-		for (SpecInvariant inv : cu.generateLocalInvariants()) {
+		for (SpecExpr inv : cu.generateLocalInvariants()) {
 			print(pw, inv);
 		}
 		pw.println("Prelude Additions: ");
@@ -249,14 +249,14 @@ public class ISLParserTest {
 		pw.flush();
 	}
 
-	private void print(PrintWriter pw, SpecInvariant inv) {
+	private void print(PrintWriter pw, SpecExpr inv) {
 		BPLPrinter printer = new BPLPrinter(pw);
 		pw.println("// " + inv.getComment());
 		pw.println("// welldefinedness:");
 		inv.getWelldefinednessExpr().accept(printer);
 		pw.println();
 		pw.println("// translated:");
-		inv.getInvExpr().accept(printer);
+		inv.getExpr().accept(printer);
 		pw.flush();
 		pw.println();
 	}

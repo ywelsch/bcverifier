@@ -33,12 +33,12 @@ public class AbstractGenerator implements Generator {
     }
     
     @Override
-	public List<SpecInvariant> generateInvariant() throws GenerationException {
+	public List<SpecExpr> generateInvariant() throws GenerationException {
     	return Collections.emptyList();
 	}
 	
     @Override
-    public List<SpecInvariant> generateLocalInvariant() throws GenerationException {
+    public List<SpecExpr> generateLocalInvariant() throws GenerationException {
         return Collections.emptyList();
     }
     

@@ -110,10 +110,10 @@ public class BoogieGenerator extends AbstractGenerator {
                         newMap.put(lineNumber, currentPlaceList);
                     }
                 }
-                String newStallCondition = m.group(6);
-                String oldStallCondition = makeOld(m.group(6));
-                String newMeasure = m.group(8);
-                String oldMeasure = makeOld(m.group(8));
+                SpecExpr newStallCondition = SpecExpr.withString(m.group(6));
+                SpecExpr oldStallCondition = SpecExpr.withString(makeOld(m.group(6)));
+                SpecExpr newMeasure = SpecExpr.withString(m.group(8));
+                SpecExpr oldMeasure = SpecExpr.withString(makeOld(m.group(8)));
                 if (newStallCondition != null && m.group(2).equals("old") && newMeasure == null) {
                 	throw new GenerationException("Places in old implementation that stall must have a measure");
                 }
@@ -121,9 +121,8 @@ public class BoogieGenerator extends AbstractGenerator {
                 	throw new GenerationException("Places in new implementation that stall do not need a measure");
                 }
                 // (boolean old, String name, String className, boolean nosplit, boolean nosync, BPLExpression conditionWelldefinedness, BPLExpression condition, String oldStallCondition, String oldMeasure, String newStallCondition, String newMeasure, List<String> assignments){
-                BPLExpression placeConditionWD = BPLBoolLiteral.TRUE;
-                BPLExpression placeCondition = new BPLVariableExpression(m.group(4));
-				Place place = new Place(m.group(2).equals("old"), m.group(1), null, true, false, placeConditionWD, placeCondition, oldStallCondition, oldMeasure, newStallCondition, newMeasure, Collections.<String>emptyList());
+				SpecExpr condition = SpecExpr.withString(m.group(4));
+				Place place = new Place(m.group(2).equals("old"), m.group(1), null, true, false, condition, oldStallCondition, oldMeasure, newStallCondition, newMeasure, Collections.<SpecAssignment>emptyList());
                 currentPlaceList.add(place);
                 Logger.getLogger(BoogieGenerator.class).debug("Parsed place :" + place); 
             } else  {
@@ -219,19 +218,19 @@ public class BoogieGenerator extends AbstractGenerator {
     }
     
     @Override
-	public List<SpecInvariant> generateInvariant() throws GenerationException {
-    	List<SpecInvariant> result = new ArrayList<SpecInvariant>();
+	public List<SpecExpr> generateInvariant() throws GenerationException {
+    	List<SpecExpr> result = new ArrayList<SpecExpr>();
 		for (String inv : invariants) {
-			result.add(new SpecInvariant(new BPLVariableExpression(inv), null));
+			result.add(new SpecExpr(new BPLVariableExpression(inv), null));
 		}
 		return result;
 	}
     
     @Override
-    public List<SpecInvariant> generateLocalInvariant() {
-        List<SpecInvariant> result = new ArrayList<SpecInvariant>();
+    public List<SpecExpr> generateLocalInvariant() {
+        List<SpecExpr> result = new ArrayList<SpecExpr>();
 		for (String inv : localInvariants) {
-			result.add(new SpecInvariant(new BPLVariableExpression(inv), null));
+			result.add(new SpecExpr(new BPLVariableExpression(inv), null));
 		}
 		return result;
     }
