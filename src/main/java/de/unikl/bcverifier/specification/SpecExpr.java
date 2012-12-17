@@ -23,6 +23,9 @@ public class SpecExpr {
 	}
 	
 	public static SpecExpr withString(String expr) {
+		if (expr == null) {
+			return null;
+		}
 		return new SpecExpr(new BPLVariableExpression(expr), BPLBoolLiteral.TRUE);
 	}
 	
