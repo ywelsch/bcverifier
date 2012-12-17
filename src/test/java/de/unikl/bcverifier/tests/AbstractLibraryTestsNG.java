@@ -78,7 +78,7 @@ public class AbstractLibraryTestsNG {
                     try {
                     	CheckRunner.generate(test, tmpLibPath);
                     } catch (CheckRunException e) {
-                    	assertFalse(true, e.getMessage());
+                    	test.setException(e);
                     }
                     testSets.add(new Object[]{test, new File(tmpLibPath, "output"+test.getCheckIndex()+".bpl")});
                 }

@@ -13,6 +13,8 @@ import org.apache.log4j.Logger;
 import com.Ostermiller.util.CSVParser;
 import com.Ostermiller.util.LabeledCSVParser;
 
+import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
+
 public class BCCheckDefinition {
     private File libDir;
     private File specification;
@@ -21,6 +23,7 @@ public class BCCheckDefinition {
     private int expectedDeadCodePoints;
     private int loopUnrollCap;
     private int checkIndex;
+	private CheckRunException exception = null;
 
     public int getCheckIndex() {
         return checkIndex;
@@ -107,4 +110,12 @@ public class BCCheckDefinition {
         builder.append(loopUnrollCap);
         return builder.toString();
     }
+
+	public void setException(CheckRunException e) {
+		this.exception = e;
+	}
+	
+	public CheckRunException getException() {
+		return exception;
+	}
 }
