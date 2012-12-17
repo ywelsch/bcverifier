@@ -2818,13 +2818,20 @@ public class MethodTranslator implements ITranslationConstants {
             	String placeStallLabel = localPlace.getName() + STALL_POSTFIX;
             	String placeNotStallLabel = localPlace.getName() + NOT_STALL_POSTFIX;
                 
+            	// create the check-block for localPlace
                 startBlock(localPlace.getName() + CHECK_POSTFIX);
                 Logger.getLogger(InstructionTranslator.class).debug("adding local place "+localPlace.getName());
-                addAssert(localPlace.getConditionWelldefinedness(), "Check place condition well definedness");
-                addAssume(localPlace.getCondition()); //TODO raw expression here
+                
+                // assign place variable
                 BoogiePlace bp = new BoogiePlace(localPlace.getName(), method, true);
                 tc.addPlace(bp);
                 addAssignment(stack(var(PLACE_VARIABLE)), var(localPlace.getName()), "local place");
+                
+                // assume place "when" condition
+                addAssert(localPlace.getConditionWelldefinedness(), "Check place condition well definedness");
+                addAssume(localPlace.getCondition()); //TODO raw expression here
+                
+                // do assignments for place
                 for (String s : localPlace.getAssignments()) {
                 	addCommand(new BPLRawCommand(s));
                 }
@@ -2832,7 +2839,6 @@ public class MethodTranslator implements ITranslationConstants {
                 	rawEndBlock(tc.getCheckLabel());
 
                 	startBlock(localPlace.getName());
-                	addAssert(localPlace.getConditionWelldefinedness(), "Check place condition well definedness");
                 	addAssume(localPlace.getCondition()); //TODO raw expression here
                 	addAssume(isEqual(var(tc.getStallMap()), var("(" + localPlace.getOldStallCondition() + ")"))); //TODO raw expression here
                 	addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(localPlace.getName())));
@@ -2891,7 +2897,6 @@ public class MethodTranslator implements ITranslationConstants {
             
             startBlock(skipLabel);
             for(Place place : localPlaces){
-            	addAssert(place.getConditionWelldefinedness(), "Check place condition well definedness");
                 addAssume(logicalNot(place.getCondition())); //TODO raw expression here
             }
             endBlock(contLabel);
