@@ -4,24 +4,17 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
 import b2bpl.bpl.BPLPrinter;
-import b2bpl.bpl.EmptyBPLVisitor;
-import b2bpl.bpl.IBPLVisitor;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLAssignmentCommand;
 import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
 import b2bpl.bpl.ast.BPLBinaryLogicalExpression;
 import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLBuiltInType;
-import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLEqualityExpression;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLIntLiteral;
@@ -34,6 +27,10 @@ import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableDeclaration;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import b2bpl.translation.ITranslationConstants;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
 import de.unikl.bcverifier.isl.ast.Assign;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
@@ -49,14 +46,15 @@ import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.BinRelationType;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeAtLineProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeAtLineProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
-import de.unikl.bcverifier.specification.SpecInvariant;
+import de.unikl.bcverifier.specification.SpecAssignment;
+import de.unikl.bcverifier.specification.SpecExpr;
 
 public class Translation {
 	
@@ -66,8 +64,8 @@ public class Translation {
 	public static final String PLACE_OPTION_NOSPLIT = "nosplit";
 	public static final String PLACE_OPTION_NOSYNC = "nosync";
 
-	public static java.util.List<SpecInvariant> generateInvariants(CompilationUnit cu) {
-		List<SpecInvariant> result = new ArrayList<SpecInvariant>();
+	public static java.util.List<SpecExpr> generateInvariants(CompilationUnit cu) {
+		List<SpecExpr> result = new ArrayList<SpecExpr>();
 		for (Statement s : cu.getStatements()) {
 			if (s instanceof Invariant) {
 				Invariant inv = (Invariant) s;
@@ -77,7 +75,7 @@ public class Translation {
 				
 				// forall interaction frames
 				// TODO only do this when ifram var is used.
-				result.add(new SpecInvariant(forallInteractionFrames(invExpr), forallInteractionFrames(welldefinedness), comment));
+				result.add(new SpecExpr(forallInteractionFrames(invExpr), forallInteractionFrames(welldefinedness), comment));
 			}
 		}
 		return result;
@@ -123,15 +121,15 @@ public class Translation {
 				);
 	}
 
-	public static java.util.List<SpecInvariant> generateLocalInvariants(CompilationUnit cu) {
-		List<SpecInvariant> result = new ArrayList<SpecInvariant>();
+	public static java.util.List<SpecExpr> generateLocalInvariants(CompilationUnit cu) {
+		List<SpecExpr> result = new ArrayList<SpecExpr>();
 		for (Statement s : cu.getStatements()) {
 			if (s instanceof LocalInvariant) {
 				LocalInvariant inv = (LocalInvariant) s;
 				BPLExpression welldefinedness = inv.getExpr().translateExprWellDefinedness();
 				BPLExpression invExpr = inv.getExpr().translateExpr();
 				String comment = inv.getExpr().print();
-				result.add(new SpecInvariant(forallInteractionFrames(invExpr), forallInteractionFrames(welldefinedness), comment));
+				result.add(new SpecExpr(forallInteractionFrames(invExpr), forallInteractionFrames(welldefinedness), comment));
 			}
 		}
 		return result;
@@ -144,11 +142,11 @@ public class Translation {
 		for (Statement s : cu.getStatements()) {
 			if (s instanceof PlaceDef) {
 				PlaceDef def = (PlaceDef) s;
-				BPLExpression condition;
+				SpecExpr condition;
 				if (def.hasCondition()) {
-					condition = def.getCondition().translateExpr();
+					condition = SpecExpr.fromExpr(def.getCondition());
 				} else {
-					condition = BPLBoolLiteral.TRUE;
+					condition = new SpecExpr(BPLBoolLiteral.TRUE, BPLBoolLiteral.TRUE);
 				}
 				Expr stallCond = null;
 				Expr measure = null;
@@ -159,34 +157,35 @@ public class Translation {
 						measure = stall.getMeasure();
 					}
 				}
-				BPLExpression oldStallCond = null;
-				BPLExpression newStallCond = null;
+				SpecExpr oldStallCond = null;
+				SpecExpr newStallCond = null;
 				if (stallCond != null) {
 					def.attrCompilationUnit().setPhase(Phase.PRE);
-					oldStallCond = stallCond.translateExpr();
+					oldStallCond = SpecExpr.fromExpr(stallCond);
 					def.attrCompilationUnit().setPhase(Phase.POST);
-					newStallCond = stallCond.translateExpr();
+					newStallCond = SpecExpr.fromExpr(stallCond);
 				}
-				BPLExpression oldMeasure = null;
-				BPLExpression newMeasure = null;
+				SpecExpr oldMeasure = null;
+				SpecExpr newMeasure = null;
 				if (measure != null) {
 					def.attrCompilationUnit().setPhase(Phase.PRE);
-					oldMeasure = measure.translateExpr();
+					oldMeasure = SpecExpr.fromExpr(measure);
 					def.attrCompilationUnit().setPhase(Phase.POST);
-					newMeasure = measure.translateExpr();
+					newMeasure = SpecExpr.fromExpr(measure);
 				}
 				
 				ExprType placePositionType = def.getProgramPoint().attrType();
 				if (placePositionType instanceof ExprTypeAtLineProgramPoint) {
 					ExprTypeAtLineProgramPoint progPoint = (ExprTypeAtLineProgramPoint) placePositionType;
-					List<String> assigns = Lists.newArrayList();
+					List<SpecAssignment> assigns = Lists.newArrayList();
 					for (Assign a : def.getAssignmentss()) {
-						BPLAssignmentCommand asc = new BPLAssignmentCommand(a.getVar().translateExpr(), a.getExpr().translateExpr());
-						assigns.add(cmdToString(asc));
+						SpecAssignment asc = new SpecAssignment(a.getVar().translateExpr(), a.getExpr().translateExpr(), a.getExpr().translateExprWellDefinedness(), 
+									a.getVar().print() + " := " + a.getExpr().print());
+						assigns.add(asc);
 					}
 					String className = ((ExprTypePlace)def.attrType()).getEnclosingClassType().getQualifiedName();
 					Place p = new Place(progPoint.getVersion() == Version.OLD, def.getName().getName(), className, def.hasPlaceOption(PLACE_OPTION_NOSPLIT), def.hasPlaceOption(PLACE_OPTION_NOSYNC),
-							exprToString(condition), exprToString(oldStallCond), exprToString(oldMeasure), exprToString(newStallCond), exprToString(newMeasure), assigns);
+							condition, oldStallCond, oldMeasure, newStallCond, newMeasure, assigns);
 					if (progPoint.getVersion() == Version.OLD) {
 						put(oldPlaces, progPoint.getLine(), p);
 					} else {

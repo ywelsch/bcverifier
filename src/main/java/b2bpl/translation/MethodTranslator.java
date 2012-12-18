@@ -186,6 +186,8 @@ import b2bpl.translation.helpers.ModifiedHeapLocation;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.TranslationController.BoogiePlace;
 import de.unikl.bcverifier.specification.Place;
+import de.unikl.bcverifier.specification.SpecAssignment;
+import de.unikl.bcverifier.specification.SpecExpr;
 
 
 /**
@@ -2141,6 +2143,17 @@ public class MethodTranslator implements ITranslationConstants {
     private void addAssert(BPLExpression expression) {
         addCommand(new BPLAssertCommand(expression));
     }
+    
+    /**
+     * Adds an assertion for the given {@code expression} to the currently active
+     * BoogiePL block.
+     * 
+     * @param expression The assertion's expression.
+     * @requires expression != null;
+     */
+    private void addAssert(BPLExpression expression, String comment) {
+    	addCommentedCommand(new BPLAssertCommand(expression), comment);
+    }
 
     /**
      * Adds an assumption for the given {@code expression} to the currently active
@@ -2807,21 +2820,34 @@ public class MethodTranslator implements ITranslationConstants {
             	String placeStallLabel = localPlace.getName() + STALL_POSTFIX;
             	String placeNotStallLabel = localPlace.getName() + NOT_STALL_POSTFIX;
                 
+            	// create the check-block for localPlace
                 startBlock(localPlace.getName() + CHECK_POSTFIX);
                 Logger.getLogger(InstructionTranslator.class).debug("adding local place "+localPlace.getName());
-                addAssume(var(localPlace.getCondition())); //TODO raw expression here
+                
+                // assign place variable
                 BoogiePlace bp = new BoogiePlace(localPlace.getName(), method, true);
                 tc.addPlace(bp);
                 addAssignment(stack(var(PLACE_VARIABLE)), var(localPlace.getName()), "local place");
-                for (String s : localPlace.getAssignments()) {
-                	addCommand(new BPLRawCommand(s));
+                
+                // assume place "when" condition
+                addAssert(localPlace.getCondition().getWelldefinednessExpr(), "Check place condition " + localPlace.getCondition().getComment());
+                addAssume(localPlace.getCondition().getExpr()); //TODO raw expression here
+                
+                // do assignments for place
+                for (SpecAssignment s : localPlace.getAssignments()) {
+                	addAssert(s.getWelldefinednessExpr(), "Do assignment " + s.getComment());
+                	addCommand(s.getAssignCommand());
                 }
                 if (!localPlace.isNosync()) { 
                 	rawEndBlock(tc.getCheckLabel());
 
                 	startBlock(localPlace.getName());
-                	addAssume(var(localPlace.getCondition())); //TODO raw expression here
-                	addAssume(isEqual(var(tc.getStallMap()), var("(" + localPlace.getOldStallCondition() + ")"))); //TODO raw expression here
+                	addAssume(localPlace.getCondition().getExpr()); //TODO raw expression here
+                	
+                	SpecExpr oldStallCondition = localPlace.getOldStallCondition();
+					addAssert(oldStallCondition.getWelldefinednessExpr(), 
+							"Check old stall condition: " + oldStallCondition.getComment());
+                	addAssume(isEqual(var(tc.getStallMap()), oldStallCondition.getExpr())); //TODO raw expression here
                 	addAssume(isEqual(stack(var(PLACE_VARIABLE)), var(localPlace.getName())));
                 	addAssume(isEqual(stack(var(METH_FIELD)), var(GLOBAL_VAR_PREFIX + getMethodName(method))));
 
@@ -2856,8 +2882,11 @@ public class MethodTranslator implements ITranslationConstants {
                 	addAssume(nonNull(stack(receiver())));
 
                 	//addAssignment(var(tc.getOldPlaceVar()), stack(var(PLACE_VARIABLE)));
-                	if(!tc.isRound2() && localPlace.getOldMeasure() != null){
-                		addAssignment(var(OLD_MEASURE), var(localPlace.getOldMeasure()));
+                	SpecExpr oldMeasure = localPlace.getOldMeasure();
+					if(!tc.isRound2() && oldMeasure != null){
+                		addAssert(oldMeasure.getWelldefinednessExpr(), 
+                				"Save old measure " + oldMeasure.getComment());
+                		addAssignment(var(OLD_MEASURE), oldMeasure.getExpr());
                 		//                    addAssert(lessEqual(intLiteral(0), var(tc.getOldMeasure())));
                 	}
                 	String placeLabel = tc.prefix(getProcedureName(method) + "_" + localPlace.getName());
@@ -2878,7 +2907,7 @@ public class MethodTranslator implements ITranslationConstants {
             
             startBlock(skipLabel);
             for(Place place : localPlaces){
-                addAssume(logicalNot(var(place.getCondition()))); //TODO raw expression here
+                addAssume(logicalNot(place.getCondition().getExpr())); //TODO raw expression here
             }
             endBlock(contLabel);
             

@@ -136,7 +136,7 @@ import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.specification.Generator;
 import de.unikl.bcverifier.specification.GeneratorFactory;
-import de.unikl.bcverifier.specification.SpecInvariant;
+import de.unikl.bcverifier.specification.SpecExpr;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
 
@@ -479,7 +479,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			ArrayList<BPLCommand> localInvAssumes) throws GenerationException {
 		BPLCommand cmd;
 
-		for (SpecInvariant inv : specGen.generateInvariant()) {
+		for (SpecExpr inv : specGen.generateInvariant()) {
 			if (inv.getWelldefinednessExpr() != null) {
 				cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
 				cmd.addComment(inv.getComment());
@@ -487,15 +487,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				invAssumes.add(cmd);
 				invAssertions.add(cmd);
 			}
-			cmd = new BPLAssertCommand(inv.getInvExpr());
+			cmd = new BPLAssertCommand(inv.getExpr());
 			cmd.addComment("invariant");
 			invAssertions.add(cmd);
-			cmd = new BPLAssumeCommand(inv.getInvExpr());
+			cmd = new BPLAssumeCommand(inv.getExpr());
 			cmd.addComment("invariant");
 			invAssumes.add(cmd);
 		}
 
-		for (SpecInvariant inv : specGen.generateLocalInvariant()) {
+		for (SpecExpr inv : specGen.generateLocalInvariant()) {
 			if (inv.getWelldefinednessExpr() != null) {
 				cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
 				cmd.addComment(inv.getComment());
@@ -503,10 +503,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				localInvAssumes.add(cmd);
 				localInvAssertions.add(cmd);
 			}
-			cmd = new BPLAssertCommand(inv.getInvExpr());
+			cmd = new BPLAssertCommand(inv.getExpr());
 			cmd.addComment("local invariant");
 			localInvAssertions.add(cmd);
-			cmd = new BPLAssumeCommand(inv.getInvExpr());
+			cmd = new BPLAssumeCommand(inv.getExpr());
 			cmd.addComment("local invariant");
 			localInvAssumes.add(cmd);
 		}
@@ -1499,7 +1499,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 		// invariant
 		checkingCommand.addAll(invAssumes);
-		checkingCommand.addAll(localInvAssumes);
 
 		methodBlocks
 				.add(new BPLBasicBlock(CHECK_BOUNDARY_CALL_LABEL,
@@ -1522,10 +1521,18 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 		// check for progress while stalled
 		for (Place place : tc.getLocalPlaceDefinitions().oldPlaces()) {
-			if (!place.isNosync() && place.getNewMeasure() != null) { 
+			SpecExpr newMeasure = place.getNewMeasure();
+			if (!place.isNosync() && newMeasure != null) { 
+				BPLCommand cmd = new BPLAssertCommand(
+						implies(logicalAnd(var(STALL1), isEqual(var(OLD_PLACE1), var(place.getName()))), 
+								newMeasure.getWelldefinednessExpr()
+								)
+						);
+				cmd.addComment("Check progress for measure: " + newMeasure.getComment());
+				checkingCommand.add(cmd);
 				checkingCommand.add(new BPLAssumeCommand(ifThenElse(
 						logicalAnd(var(STALL1), isEqual(var(OLD_PLACE1), var(place.getName()))),
-						isEqual(var(MEASURE), var("(" + place.getNewMeasure() + ")")),
+						isEqual(var(MEASURE), newMeasure.getExpr()),
 						BPLBoolLiteral.TRUE
 						)));
 				checkingCommand.add(new BPLAssertCommand(ifThenElse(
@@ -1546,21 +1553,38 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		
 		for (Place place : tc.getLocalPlaceDefinitions().oldPlaces()) {
 			if (!place.isNosync()) {
+				
+				SpecExpr newStallCondition = place.getNewStallCondition();
+				checkingCommand.add(new BPLAssertCommand(
+						implies(
+								logicalAnd(
+										isEqual(stack1(var(PLACE_VARIABLE)), var(place.getName())),
+										place.getCondition().getExpr()),
+										newStallCondition.getWelldefinednessExpr())
+								));				
 				checkingCommand.add(new BPLAssumeCommand(implies(
 						logicalAnd(
 								isEqual(stack1(var(PLACE_VARIABLE)), var(place.getName())),
-								var("(" + place.getCondition() + ")")),
-								isEqual(var(STALL1), var("(" + place.getNewStallCondition() + ")"))
-						)));
+								place.getCondition().getExpr()),
+								isEqual(var(STALL1), newStallCondition.getExpr()))
+						));
 			}
 		}
 		for (Place place : tc.getLocalPlaceDefinitions().newPlaces()) {
 			if (!place.isNosync()) {
+				SpecExpr newStallCondition = place.getNewStallCondition();
+				checkingCommand.add(new BPLAssertCommand(
+						implies(
+								logicalAnd(
+										isEqual(stack2(var(PLACE_VARIABLE)), var(place.getName())),
+										place.getCondition().getExpr()),
+										newStallCondition.getWelldefinednessExpr())
+								));
 				checkingCommand.add(new BPLAssumeCommand(implies(
 						logicalAnd(
 								isEqual(stack2(var(PLACE_VARIABLE)), var(place.getName())),
-								var("(" + place.getCondition() + ")")),
-								isEqual(var(STALL2), var("(" + place.getNewStallCondition() + ")"))
+								place.getCondition().getExpr()),
+								isEqual(var(STALL2), newStallCondition.getExpr())
 						)));
 			}
 		}

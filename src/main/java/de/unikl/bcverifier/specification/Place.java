@@ -2,44 +2,50 @@ package de.unikl.bcverifier.specification;
 
 import java.util.List;
 
+import b2bpl.bpl.ast.BPLBoolLiteral;
+
 public class Place {
-    private String name;
-    private String condition;
-    private String oldStallCondition;
-    private String oldMeasure;
-    private String newStallCondition;
-    private String newMeasure;
-    private boolean old;
-    private boolean nosplit;
-    private boolean nosync;
-    private List<String> assignments;
-    private String className;
+    private final String name;
+    private final SpecExpr condition;
+    private final SpecExpr oldStallCondition;
+    private final SpecExpr oldMeasure;
+    private final SpecExpr newStallCondition;
+    private final SpecExpr newMeasure;
+    private final boolean old;
+    private final boolean nosplit;
+    private final boolean nosync;
+    private final List<SpecAssignment> assignments;
+    private final String className;
     
-    public Place(boolean old, String name, String className, boolean nosplit, boolean nosync, String condition, String oldStallCondition, String oldMeasure, String newStallCondition, String newMeasure, List<String> assignments){
+    public Place(boolean old, String name, String className, boolean nosplit, boolean nosync, SpecExpr condition, SpecExpr oldStallCondition, SpecExpr oldMeasure, SpecExpr newStallCondition, SpecExpr newMeasure, List<SpecAssignment> assignments){
     	this.old = old;
     	this.name = name;
         this.condition = condition;
         this.className = className;
         this.nosplit = nosplit;
         this.nosync = nosync;
-        this.setOldStallCondition(oldStallCondition);
-        this.setOldMeasure(oldMeasure);
-        this.setNewStallCondition(newStallCondition);
-        this.setNewMeasure(newMeasure);
-        this.setAssignments(assignments);
+        
+        if (oldStallCondition == null) {
+			oldStallCondition = new SpecExpr(BPLBoolLiteral.FALSE, BPLBoolLiteral.TRUE);
+		}
+        if (newStallCondition == null) {
+			newStallCondition = new SpecExpr(BPLBoolLiteral.FALSE, BPLBoolLiteral.TRUE);
+		}
+        
+        this.oldStallCondition = oldStallCondition;
+        this.oldMeasure = oldMeasure;
+        this.newStallCondition = newStallCondition;
+        this.newMeasure = newMeasure;
+        this.assignments = assignments;
+        
     }
     
     public String getName() {
         return name;
     }
-    public void setName(String name) {
-        this.name = name;
-    }
-    public String getCondition() {
+
+    public SpecExpr getCondition() {
         return condition;
-    }
-    public void setCondition(String condition) {
-        this.condition = condition;
     }
 
     @Override
@@ -61,81 +67,40 @@ public class Place {
         return builder.toString(); 
     }
 
-	public String getOldMeasure() {
+	public SpecExpr getOldMeasure() {
 		return oldMeasure;
 	}
 
-	public void setOldMeasure(String oldMeasure) {
-		this.oldMeasure = oldMeasure;
-	}
-
-	public String getOldStallCondition() {
+	public SpecExpr getOldStallCondition() {
 		return oldStallCondition;
 	}
 
-	public void setOldStallCondition(String oldStallCondition) {
-		if (oldStallCondition == null) {
-			oldStallCondition = "false";
-		}
-		this.oldStallCondition = oldStallCondition;
-	}
-
-	public String getNewStallCondition() {
+	public SpecExpr getNewStallCondition() {
 		return newStallCondition;
 	}
 
-	public void setNewStallCondition(String newStallCondition) {
-		if (newStallCondition == null) {
-			newStallCondition = "false";
-		}
-		this.newStallCondition = newStallCondition;
-	}
-
-	public String getNewMeasure() {
+	public SpecExpr getNewMeasure() {
 		return newMeasure;
-	}
-
-	public void setNewMeasure(String newMeasure) {
-		this.newMeasure = newMeasure;
 	}
 
 	public boolean isOld() {
 		return old;
 	}
 
-	public void setOld(boolean old) {
-		this.old = old;
-	}
-
-	public List<String> getAssignments() {
+	public List<SpecAssignment> getAssignments() {
 		return assignments;
-	}
-
-	public void setAssignments(List<String> assignments) {
-		this.assignments = assignments;
 	}
 
 	public String getClassName() {
 		return className;
 	}
 
-	public void setClassName(String className) {
-		this.className = className;
-	}
-
 	public boolean isNosplit() {
 		return nosplit;
-	}
-
-	public void setNosplit(boolean nosplit) {
-		this.nosplit = nosplit;
 	}
 
 	public boolean isNosync() {
 		return nosync;
 	}
 
-	public void setNosync(boolean nosync) {
-		this.nosync = nosync;
-	}
 }

@@ -6,8 +6,8 @@ import b2bpl.bpl.ast.BPLVariableDeclaration;
 
 
 public interface Generator {
-    public List<SpecInvariant> generateInvariant() throws GenerationException;
-    public List<SpecInvariant> generateLocalInvariant() throws GenerationException;
+    public List<SpecExpr> generateInvariant() throws GenerationException;
+    public List<SpecExpr> generateLocalInvariant() throws GenerationException;
     public List<String> generatePreconditions() throws GenerationException;
     public LocalPlaceDefinitions generateLocalPlaces() throws GenerationException;
     public List<String> generatePreludeAddition() throws GenerationException;

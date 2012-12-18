@@ -81,13 +81,13 @@ public class ISLGenerator extends AbstractGenerator {
 
 	
     @Override
-	public List<SpecInvariant> generateInvariant() throws GenerationException {
+	public List<SpecExpr> generateInvariant() throws GenerationException {
     	init();
     	return cu.generateInvariants();
 	}
 
 	@Override
-	public List<SpecInvariant> generateLocalInvariant()	throws GenerationException {
+	public List<SpecExpr> generateLocalInvariant()	throws GenerationException {
 		init();
 		return cu.generateLocalInvariants();
 	}

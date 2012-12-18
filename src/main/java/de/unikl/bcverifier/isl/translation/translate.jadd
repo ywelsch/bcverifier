@@ -1,7 +1,7 @@
 import de.unikl.bcverifier.isl.translation.*;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLVariableDeclaration;
-import de.unikl.bcverifier.specification.SpecInvariant;
+import de.unikl.bcverifier.specification.SpecExpr;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 
 aspect translate {
@@ -22,11 +22,11 @@ aspect translate {
   eq MemberAccess.translateExpr() = ExprTranslation.translate(this);
   eq VarAccess.translateExpr() = ExprTranslation.translate(this);
 
-  public java.util.List<SpecInvariant> CompilationUnit.generateInvariants() {
+  public java.util.List<SpecExpr> CompilationUnit.generateInvariants() {
     return Translation.generateInvariants(this);
   }
 
-  public java.util.List<SpecInvariant> CompilationUnit.generateLocalInvariants() {
+  public java.util.List<SpecExpr> CompilationUnit.generateLocalInvariants() {
     return Translation.generateLocalInvariants(this);
   }
 

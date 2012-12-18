@@ -14,12 +14,25 @@ import de.unikl.bcverifier.exceptionhandling.ErrorTraceParser;
 import de.unikl.bcverifier.exceptionhandling.ErrorTraceParser.TraceParseException;
 import de.unikl.bcverifier.exceptionhandling.ErrorTracePrinter;
 import de.unikl.bcverifier.helpers.BCCheckDefinition;
+import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
 
 public class LibraryTestsNG extends AbstractLibraryTestsNG {
 	
 	@Test(dataProvider = "boogieFiles")
 	public void verifyBoogieFiles(BCCheckDefinition test, File boogieFile) throws BoogieRunException{
-	    BoogieRunner runner = new BoogieRunner();
+	    if (test.getException() != null) {
+	    	// handle exceptions which occured in the data provider
+	    	CheckRunException e = test.getException();
+	    	String msg = e.getMessage();
+	    	if (e.getCause() != null) {
+	    		msg +=  "\n\n" + e.getCause().getMessage();
+	    	}
+	    	assertTrue(false, msg);
+	    	return;
+	    }
+	    	
+		
+		BoogieRunner runner = new BoogieRunner();
 	    runner.setVerify(true);
 	    runner.setLoopUnroll(test.getLoopUnrollCap());
 	    runner.runBoogie(boogieFile);
