@@ -20,13 +20,20 @@ int docOptions = org.pegdown.Extensions.AUTOLINKS | org.pegdown.Extensions.WIKIL
 
 configurations {
     sshAntTask
+	beaverTask
+	jflexTask
+	jastaddTask
 }
 
 repositories {
-  mavenCentral()
+    mavenCentral()
     maven {
         url "https://repository.apache.org/content/repositories/snapshots/"
     }
+	ivy {
+		artifactPattern "http://jastadd.org/releases/[module]/[revision]/[artifact].jar"
+		artifactPattern "http://download.eclipse.org/eclipse/updates/3.8/R-3.8.1-201209141540/plugins/[artifact]_[revision].jar"
+	}
 }
 
 buildscript {
@@ -43,7 +50,6 @@ buildscript {
 
 dependencies {
     compile group: 'commons-io', name: 'commons-io', version: '2.2'
-    //compile group: 'org.eclipse.jdt.core.compiler', name: 'ecj', version: '3.7.2'
     compile group: 'org.apache.commons', name: 'commons-vfs2', version: '2.0'
     compile group: 'org.apache.wicket', name: 'wicket-core', version: '6.3.0'
     compile group: 'org.apache.wicket', name: 'wicket-extensions', version: '6.3.0'
@@ -54,21 +60,32 @@ dependencies {
     compile group: 'asm', name: 'asm-analysis', version: '3.3.1'
     compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.6.2'
     compile group: 'log4j', name: 'log4j', version: '1.2.16'
+	compile group: 'net.sf.beaver', name: 'beaver-rt', version: '0.9.10'
+	beaverTask group: 'net.sf.beaver', name: 'beaver-ant', version: '0.9.10'
+	jflexTask group: 'de.jflex', name: 'jflex', version: '1.4.3'
     testCompile group: 'junit', name: 'junit', version: '4.10'
     testCompile group: 'pl.pragmatists', name: 'JUnitParams', version: '0.4.0'
-    testCompile 'org.testng:testng:6.7'
+    testCompile group: 'org.testng', name: 'testng', version: '6.7'
     compile group: 'com.beust', name: 'jcommander', version: '1.25'
-    compile files("$projectDir/lib/ostermillerutils-1.08.02.jar")
-    compile files("$projectDir/lib/beaver-rt.jar")
-  compile fileTree("$projectDir/lib").include('org.eclipse.*.jar')
     compile group: 'com.google.guava', name: 'guava-io', version: 'r03'
-  compile group: 'com.google.guava', name: 'guava-collections', version: 'r03'
+    compile group: 'com.google.guava', name: 'guava-collections', version: 'r03'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.1'
-  sshAntTask group: 'org.apache.ant', name: 'ant-jsch', version: '1.8.4'
+    sshAntTask group: 'org.apache.ant', name: 'ant-jsch', version: '1.8.4'
+	jastaddTask group: 'jastadd2', name: 'jastadd2', version: 'R20121112'
+	compile group: 'org.ostermiller', name: 'utils', version: '1.07.00'
+	compile name: 'org.eclipse.core.contenttype', version: '3.4.200.v20120523-2004'
+	compile name: 'org.eclipse.core.jobs', version: '3.5.200.v20120521-2346'
+	compile name: 'org.eclipse.core.resources', version: '3.8.1.v20120802-154922'
+	compile name: 'org.eclipse.core.runtime', version: '3.8.0.v20120521-2346'
+	compile name: 'org.eclipse.equinox.common', version: '3.6.100.v20120522-1841'
+	compile name: 'org.eclipse.equinox.preferences', version: '3.5.0.v20120522-1841'
+	compile name: 'org.eclipse.jdt.core', version: '3.8.2.v20120814-155456'
+	compile name: 'org.eclipse.jdt.ui', version: '3.8.1.v20120814-144251'
+	compile name: 'org.eclipse.osgi', version: '3.8.1.v20120830-144521'
 }
 
 test {
-    useTestNG()
+  useTestNG()
   options.suites("build/resources/test/testng.xml")
 }
 
@@ -119,7 +136,7 @@ task docReadme {
     new File(destDocDir).mkdirs();
     def mp = new org.pegdown.PegDownProcessor(docOptions)
       def target = new File(destDocDir, 'readme.html')
-      target.text = mp.markdownToHtml(readme.text);
+      target.text = new File(srcDocDir + "/assets/template.html").text.replace("{{{content}}}", mp.markdownToHtml(readme.text));
   }
 }
 
@@ -238,7 +255,7 @@ task runJastAdd {
     inputs.files{fileTree(dir: "$projectDir/src/main/java", includes: ['**/*.ast', '**/*.jrag', '**/*.jadd'])}
     outputs.dir(astGenDir)
     doLast {
-        ant.taskdef name: 'jastadd', classname: 'jastadd.JastAddTask', classpath: "$projectDir/lib/jastadd2.jar"
+        ant.taskdef name: 'jastadd', classname: 'jastadd.JastAddTask', classpath: configurations.jastaddTask.asPath
         new File(islGenDir).mkdirs()
         ant.jastadd(package: astPackage, rewrite: 'true', beaver: 'true', novisitcheck: 'true', outdir: islGenDir, debug: 'true') {
             fileset(dir: "$projectDir/src/main/java") {
@@ -255,7 +272,7 @@ task runBeaver {
     inputs.file(beaverFile)
     outputs.files("$parserGenDir/ISLParser.java", "$parserGenDir/ISLParser.stat")
     doLast {
-        ant.taskdef name: 'beaver', classname: 'beaver.comp.run.AntTask', classpath: "$projectDir/lib/beaver.jar"
+        ant.taskdef name: 'beaver', classname: 'beaver.comp.run.AntTask', classpath: configurations.beaverTask.asPath
         new File(parserGenDir).mkdirs()
         ant.beaver(file: beaverFile, destdir: parserGenDir, terminalNames: 'yes', compress: 'no', useSwitch: 'yes', reportActions: 'yes')
     }
@@ -266,8 +283,7 @@ task runJFlex {
     inputs.file(flexFile)
     outputs.file("$parserGenDir/ISLScanner.java")
     doLast {
-        ant.taskdef name: 'jflex', classname: 'JFlex.anttask.JFlexTask', classpath: "$projectDir/lib/JFlex.jar"
-
+        ant.taskdef name: 'jflex', classname: 'JFlex.anttask.JFlexTask', classpath: configurations.jflexTask.asPath
         ant.jflex(file: flexFile, outdir: parserGenDir)
     }
 }
