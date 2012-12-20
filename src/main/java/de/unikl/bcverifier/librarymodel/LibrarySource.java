@@ -48,6 +48,9 @@ public class LibrarySource {
 	 * resolves well known types like java.lang.Object 
 	 */
 	private ITypeBinding resolveWellKnownType(String typeName) {
+		if (typeName.equals("Object")) {
+			typeName = "java.lang.Object";
+		}
 		for (CompilationUnit cu : units) {
 			AST b = cu.getAST();
 			ITypeBinding javaLangObject = b.resolveWellKnownType(typeName);
