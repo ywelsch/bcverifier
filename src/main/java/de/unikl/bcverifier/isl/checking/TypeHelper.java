@@ -202,10 +202,13 @@ public class TypeHelper {
 			e.addError(def.attrName() + " is not a function.");
 		} else {
 			BuiltinFunction f = (BuiltinFunction) def;
+			boolean hasErrors = false;
 			if (e.getNumArgument() > f.getParameterTypes().size()) {
 				e.addError("Too many arguments.");
+				hasErrors = true;
 			} else if (e.getNumArgument() < f.getParameterTypes().size()) {
 				e.addError("Missing arguments.");
+				hasErrors = true;
 			} else {
 				for (int i = 0; i < e.getNumArgument(); i++) {
 					ExprType argType = e.getArgument(i).attrType();
@@ -214,10 +217,13 @@ public class TypeHelper {
 						e.getArgument(i).addError(
 								"found " + argType + " but expected "
 										+ expectedType);
+						hasErrors = true;
 					}
 				}
 			}
-			return f.exactType(e);
+			if (!hasErrors) {
+				return f.exactType(e);
+			}
 		}
 		return def.attrType();
 	}
