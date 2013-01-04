@@ -5,7 +5,7 @@ local place afterRec = line 10 of new C;
 
 place callSet1 = call set in line 10 of old C;
 place callSet2 = call set in line 16 of new C;
-local place beforeLoop2 = call loop in line 9 of new C nosync;
+place beforeLoop2 = call loop in line 9 of new C;
 
 //lists are related:
 invariant forall old C o1, new C o2 :: o1 ~ o2 ==> o1.list ~ o2.list;
@@ -21,6 +21,9 @@ invariant at(callSet1) && at(callSet2) ==> stackIndex(new) == 1 + eval(callSet1,
 
 // 'this' is the same as in the lowest stack frame
 invariant at(callSet2) ==> at(beforeLoop2, 0) && eval(callSet2, this) == eval(beforeLoop2, 0, this);
+local invariant at(callSet2) ==> at(beforeLoop2, 0) && eval(callSet2, this) == eval(beforeLoop2, 0, this);
+
+
 
 
 local invariant at(afterLoop) <==> (at(endLoop) || at(afterRec));
