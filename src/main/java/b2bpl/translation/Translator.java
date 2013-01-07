@@ -675,7 +675,9 @@ public class Translator implements ITranslationConstants {
             
             addComment("Modified heap, coupling, relation (not original SscBoogie)");
             addFunction(WELLFORMED_HEAP_FUNC, new BPLTypeName(HEAP_TYPE), BPLBuiltInType.BOOL);
-            addAxiom(forall(
+            String lib = "lib";
+			BPLVariable libVar = new BPLVariable(lib, new BPLTypeName(LIBRARY_IMPL_TYPE));
+			addAxiom(forall(
                     heapVar,
                     isEquiv(wellformedHeap(var(heap)),
                             logicalAnd(
@@ -686,7 +688,8 @@ public class Translator implements ITranslationConstants {
                                     forall(refVar, fieldRefVar, isOfType(new BPLArrayExpression(var(heap), var(r), var(f)), var(heap), fieldType(libImpl(var(heap)), var(f)))),
                                     forall(refVar, fieldIntVar, isInRange(new BPLArrayExpression(var(heap), var(r), var(f)), fieldType(libImpl(var(heap)), var(f)))),
                                     forall(refVar, logicalNot(isMemberlessType(libImpl(var(heap)), typ(var(r), var(heap))))),
-                                    forall(refVar, logicalOr(libType(libImpl(var(heap)), new BPLArrayExpression(var(heap), var(r), var(dynType))), ctxtType(new BPLArrayExpression(var(heap), var(r), var(dynType)))))
+                                    forall(refVar, logicalOr(libType(libImpl(var(heap)), new BPLArrayExpression(var(heap), var(r), var(dynType))), ctxtType(new BPLArrayExpression(var(heap), var(r), var(dynType))))),
+                                    forall(refVar, fieldRefVar, libVar, implies(logicalAnd(obj(var(heap), var(r)), libraryField(var(lib), var(f))), logicalOr(isEqual(new BPLArrayExpression(var(heap), var(r), var(f)), nullLiteral()), obj(var(heap), new BPLArrayExpression(var(heap), var(r), var(f))))))
                                     ))
                     ));
 
