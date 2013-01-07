@@ -1,15 +1,11 @@
 // Data properties for old library implementation
-invariant forall old Observable l :: l.fst != null ==> createdByLibrary(l.fst);
-invariant forall old Node n :: createdByLibrary(n) &&
-  (n.next != null ==> createdByLibrary(n.next));
+invariant forall old Node n :: createdByLibrary(n);
 
 // Data properties for new library implementation
 invariant forall new Observable l :: l.snt != null;
 invariant forall new Observable l1, new Observable l2 :: l1 != l2 ==>
   l1.snt != l2.snt;
-invariant forall new Observable l :: createdByLibrary(l.snt);
-invariant forall new Node n :: createdByLibrary(n) &&
-  (n.next != null ==> createdByLibrary(n.next));
+invariant forall new Node n :: createdByLibrary(n);
 
 // Data relation between libraries
 var binrelation bij = add(empty(), null, null);
@@ -25,10 +21,12 @@ invariant forall old Observable l1, new Observable l2 :: l1 ~ l2 ==>
   related(bij, l1.fst, l2.snt.next);
 invariant forall old Node n1, new Observable l2 :: !related(bij, n1, l2.snt);
 invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==>
-  related(bij, n1.next, n2.next) && n1.ob ~ n2.ob &&
-  n1.ob != null && n2.ob != null;
+  related(bij, n1.next, n2.next); 
+invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==>
+  n1.ob != null && n2.ob != null && n1.ob ~ n2.ob;
 
-/* repeat invariants as local invariants (all in one line) */ local invariant forall old Observable l :: l.fst != null ==> createdByLibrary(l.fst); local invariant forall old Node n :: createdByLibrary(n) && (n.next != null ==> createdByLibrary(n.next)); local invariant forall new Observable l :: l.snt != null; local invariant forall new Observable l1, new Observable l2 :: l1 != l2 ==> l1.snt != l2.snt; local invariant forall new Observable l :: createdByLibrary(l.snt); local invariant forall new Node n :: createdByLibrary(n) && (n.next != null ==> createdByLibrary(n.next)); local invariant bijective(bij) && related(bij, null, null) && x1 == null && x2 == null; local invariant forall old Observable l1, new Observable l2 :: l1 ~ l2 ==> related(bij, l1.fst, l2.snt.next); local invariant forall old Node n1, new Observable l2 :: !related(bij, n1, l2.snt); local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> related(bij, n1.next, n2.next) && n1.ob ~ n2.ob && n1.ob != null && n2.ob != null;
+
+/* repeat invariants as local invariants (all in one line) */ local invariant forall old Node n :: createdByLibrary(n); local invariant forall new Observable l :: l.snt != null; local invariant forall new Observable l1, new Observable l2 :: l1 != l2 ==> l1.snt != l2.snt; local invariant forall new Node n :: createdByLibrary(n); local invariant bijective(bij) && related(bij, null, null) && x1 == null && x2 == null; local invariant forall old Observable l1, new Observable l2 :: l1 ~ l2 ==> related(bij, l1.fst, l2.snt.next); local invariant forall old Node n1, new Observable l2 :: !related(bij, n1, l2.snt); local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> related(bij, n1.next, n2.next); local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> n1.ob != null && n2.ob != null && n1.ob ~ n2.ob;
 
 // add method
 local place p1 = line 10 of old Observable assign x1 = newNode nosync;
