@@ -27,6 +27,7 @@ Build System
 ------------
 
 [Gradle](http://gradle.org/)
+
 For Eclipse integration, use [STS with gradle support](http://static.springsource.org/sts/docs/latest/reference/html/gradle/installation.html)
 
 Main gradle goals:
@@ -37,6 +38,10 @@ Main gradle goals:
 - assemble: Assembles all the archives in the project (jar and war), like build but no tests
 - test: Runs the test suite
 - uploadWar1/2: Deploys web frontend to website
+
+Developer note:
+
+The code to adapt the ISL syntax highlighting for the web frontend is [here](http://boogietools.codeplex.com/).
 
 Website
 -------

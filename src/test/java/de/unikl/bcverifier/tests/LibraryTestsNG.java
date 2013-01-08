@@ -35,6 +35,7 @@ public class LibraryTestsNG extends AbstractLibraryTestsNG {
 		BoogieRunner runner = new BoogieRunner();
 	    runner.setVerify(true);
 	    runner.setLoopUnroll(test.getLoopUnrollCap());
+	    runner.setTimelimit(30 * 60); // 30 minutes
 	    runner.runBoogie(boogieFile);
 	    if(test.getExpectedErrors()>0){
 	        if(runner.getLastReturn() || runner.getLastErrorCount() != test.getExpectedErrors()){ //not expected
