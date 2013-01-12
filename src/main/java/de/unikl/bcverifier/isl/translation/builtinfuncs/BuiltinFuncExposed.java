@@ -8,7 +8,7 @@ import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
-import de.unikl.bcverifier.isl.checking.types.JavaType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 /**
@@ -20,7 +20,7 @@ import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 final class BuiltinFuncExposed extends BuiltinFunction {
 
 	public BuiltinFuncExposed(TwoLibraryModel twoLibraryModel) {
-		super("exposed", ExprTypeBool.instance(), new ExprType[] { JavaType.object(twoLibraryModel) });
+		super("exposed", ExprTypeBool.instance(), new ExprType[] { ExprTypeJavaType.object(twoLibraryModel) });
 	}
 
 	@Override

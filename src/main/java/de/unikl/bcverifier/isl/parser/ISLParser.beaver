@@ -72,6 +72,7 @@ import de.unikl.bcverifier.isl.ast.*;
 ;
 
 // operator precedences, highest first
+//%right NEW, OLD;
 %left DOT;
 %right NOT;
 %left RELATED, INSTANCEOF; 
@@ -192,6 +193,10 @@ expr =
     	{: return new VersionConst(Version.OLD); :}
     | NEW 
     	{: return new VersionConst(Version.NEW); :}
+    | OLD id.i 
+    	{: return new ExprTypeRef(Version.OLD, i); :}
+    | NEW id.i
+    	{: return new ExprTypeRef(Version.NEW, i); :}
     | id.i
     	{: return new VarAccess(i); :}
     | id.f LPAREN parameterlist.p RPAREN
@@ -200,7 +205,7 @@ expr =
     	{: return new MemberAccess(left, right); :}
     | expr.left RELATED expr.right
     	{: return new BinaryOperation(BinaryOperator.RELATED, left, right); :}
-    | expr.left INSTANCEOF typedef.right
+    | expr.left INSTANCEOF expr.right
     	{: return new InstanceofOperation(left, right); :}	
     | expr.left IMPLIES expr.right
     	{: return new BinaryOperation(BinaryOperator.IMPLIES, left, right); :}

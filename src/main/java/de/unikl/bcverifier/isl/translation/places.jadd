@@ -9,8 +9,8 @@ aspect translate {
 	
 	eq LineNrProgramPoint.attrVersion() {
 		ExprType t = getTypeDef().attrType();
-    	if (t instanceof JavaType) {
-			JavaType javaType = (JavaType) t;
+    	if (t instanceof ExprTypeJavaType) {
+			ExprTypeJavaType javaType = (ExprTypeJavaType) t;
     		return javaType.getVersion();
     	}
     	throw new Error("could not get version");
@@ -18,8 +18,8 @@ aspect translate {
 	
 	eq CallProgramPoint.attrVersion() {
 		ExprType t = getTypeDef().attrType();
-    	if (t instanceof JavaType) {
-			JavaType javaType = (JavaType) t;
+    	if (t instanceof ExprTypeJavaType) {
+			ExprTypeJavaType javaType = (ExprTypeJavaType) t;
     		return javaType.getVersion();
     	}
     	throw new Error("could not get version");

@@ -15,6 +15,7 @@ aspect translate {
   eq IntConst.translateExpr() = ExprTranslation.translate(this);
   eq NullConst.translateExpr() = ExprTranslation.translate(this);
   eq VersionConst.translateExpr() = ExprTranslation.translate(this);
+  eq ExprTypeRef.translateExpr() = ExprTranslation.translate(this);
   eq ErrorExpr.translateExpr() = ExprTranslation.translate(this);
   eq QExpr.translateExpr() = ExprTranslation.translate(this);
   eq FuncCall.translateExpr() = ExprTranslation.translate(this);
@@ -63,6 +64,7 @@ aspect translate {
   eq IntConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
   eq NullConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
   eq VersionConst.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
+  eq ExprTypeRef.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
   eq ErrorExpr.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
   eq QExpr.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);
   eq FuncCall.translateExprWellDefinedness() = ExprWellDefinedness.translate(this);

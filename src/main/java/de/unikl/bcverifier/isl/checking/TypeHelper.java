@@ -6,22 +6,27 @@ import java.util.Collections;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
-import org.eclipse.jdt.internal.corext.dom.Bindings;
+
+import b2bpl.bytecode.JClassType;
 
 import com.google.common.collect.Lists;
 
 import de.unikl.bcverifier.isl.ast.Assign;
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.CallProgramPoint;
+import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
+import de.unikl.bcverifier.isl.ast.ExprTypeRef;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.GlobVarDef;
 import de.unikl.bcverifier.isl.ast.Ident;
@@ -33,8 +38,6 @@ import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NamedTypeDef;
 import de.unikl.bcverifier.isl.ast.NullConst;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
-import de.unikl.bcverifier.isl.ast.PlaceModifierLocal;
-import de.unikl.bcverifier.isl.ast.PlaceModifierPredefined;
 import de.unikl.bcverifier.isl.ast.ProgramPoint;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.UnknownDef;
@@ -43,15 +46,18 @@ import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.ast.VersionConst;
 import de.unikl.bcverifier.isl.checking.types.BinRelationType;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeAtLineProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeCallProgramPoint;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeHasMembers;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaPackageRef;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaTypeRef;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.checking.types.ExprTypeAtLineProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeUnknown;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeVersion;
-import de.unikl.bcverifier.isl.checking.types.JavaType;
-import de.unikl.bcverifier.isl.checking.types.UnknownType;
 import de.unikl.bcverifier.isl.translation.Translation;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFuncEval_place;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
@@ -72,7 +78,7 @@ public class TypeHelper {
 				return ExprTypeBool.instance();
 			}
 		}
-		return JavaType.create(t, version, qualifiedName);
+		return ExprTypeJavaType.create(t, version, qualifiedName);
 	}
 
 	private static String getQualifiedName(List<Ident> names) {
@@ -102,8 +108,8 @@ public class TypeHelper {
 			checkIfSubtype(right, ExprTypeBool.instance());
 			return ExprTypeBool.instance();
 		case RELATED:
-			checkIfSubtype(left, JavaType.getJavaLangObject(env, Version.OLD));
-			checkIfSubtype(right, JavaType.getJavaLangObject(env, Version.NEW));
+			checkIfSubtype(left, ExprTypeJavaType.getJavaLangObject(env, Version.OLD));
+			checkIfSubtype(right, ExprTypeJavaType.getJavaLangObject(env, Version.NEW));
 			return ExprTypeBool.instance();
 		case UNEQUALS:
 		case EQUALS:
@@ -130,7 +136,7 @@ public class TypeHelper {
 			return ExprTypeBool.instance();
 		}
 		bo.addError("Operator not implemented: " + bo.getOperator());
-		return UnknownType.instance();
+		return ExprTypeUnknown.instance();
 	}
 
 	private static void checkIfSubtype(Expr e, ExprType expected) {
@@ -142,20 +148,18 @@ public class TypeHelper {
 
 	public static ExprType attrType(MemberAccess e) {
 		ExprType leftType = e.getLeft().attrType();
-		if (leftType instanceof JavaType) {
-			JavaType javaType = (JavaType) leftType;
-			IVariableBinding field = e.attrField();
-			if (field != null) {
-				return JavaType.create(e.getRight(), javaType.getVersion(),
-						field.getType());
-			} else {
-				e.addError("Could not find field " + e.getRight().getName()
-						+ " in class " + leftType);
-			}
+		String name = e.getRight().getName();
+		if (leftType instanceof ExprTypeHasMembers) {
+			ExprTypeHasMembers leftType2 = (ExprTypeHasMembers) leftType;
+			return leftType2.typeOfMemberAccess(e, name);
 		}
 		e.addError("Left hand side of member acces is of type " + leftType
 				+ " (expected Java type).");
-		return UnknownType.instance();
+		return ExprTypeUnknown.instance();
+	}
+
+	public static boolean isStatic(IVariableBinding field) {
+		return (field.getModifiers() & Modifier.STATIC) > 0;
 	}
 
 	public static ExprType attrType(IfThenElse e) {
@@ -172,14 +176,13 @@ public class TypeHelper {
 
 	public static IVariableBinding attrField(MemberAccess e) {
 		ExprType leftType = e.getLeft().attrType();
-		if (leftType instanceof JavaType) {
-			JavaType javaType = (JavaType) leftType;
-			String fieldName = e.getRight().getName();
-			ITypeBinding typeBinding = javaType.getTypeBinding();
-			IVariableBinding field = Bindings.findFieldInType(typeBinding,
-					fieldName);
-			// TODO search fields in super classes?
-			return field;
+		String fieldName = e.getRight().getName();
+		if (leftType instanceof ExprTypeHasMembers) {
+			ExprTypeHasMembers leftT = (ExprTypeHasMembers) leftType;
+			IBinding typeBinding = leftT.findMember(fieldName);
+			if (typeBinding instanceof IVariableBinding) {
+				return (IVariableBinding) typeBinding;
+			}
 		}
 		return null;
 	}
@@ -234,7 +237,7 @@ public class TypeHelper {
 	}
 
 	public static ExprType attrType(NullConst e) {
-		return JavaType.nullType();
+		return ExprTypeJavaType.nullType();
 	}
 
 	public static ExprType placeDefType(PlaceDef placeDef) {
@@ -498,11 +501,11 @@ public class TypeHelper {
 
 	public static ExprType attrType(LineNrProgramPoint p) {
 		ExprType type = p.getTypeDef().attrType();
-		if (!(type instanceof JavaType)) {
+		if (!(type instanceof ExprTypeJavaType)) {
 			p.getTypeDef().addError("Program point must refer to a Java type.");
-			return UnknownType.instance();
+			return ExprTypeUnknown.instance();
 		}
-		JavaType jt = (JavaType) type;
+		ExprTypeJavaType jt = (ExprTypeJavaType) type;
 		final TwoLibraryModel model = p.attrCompilationUnit()
 				.getTwoLibraryModel();
 		ASTNode node = model.getSrc(jt.getVersion()).findDeclaringNode(jt.getTypeBinding());
@@ -510,7 +513,7 @@ public class TypeHelper {
 		Statement s = getStatementInLine(model, node, p.getProgramLineNr());
 		if (s == null) {
 			p.addError("No statement found in line " + p.getProgramLineNr() +".");
-			return UnknownType.instance();
+			return ExprTypeUnknown.instance();
 		}
 		// TODO check if there is exactly one statement in the line ...
 		return new ExprTypeAtLineProgramPoint(jt.getVersion(), p.getProgramLineNr(),
@@ -519,11 +522,11 @@ public class TypeHelper {
 	
 	public static ExprType attrType(CallProgramPoint p) {
 		ExprType type = p.getTypeDef().attrType();
-		if (!(type instanceof JavaType)) {
+		if (!(type instanceof ExprTypeJavaType)) {
 			p.getTypeDef().addError("Program point must refer to a Java type.");
-			return UnknownType.instance();
+			return ExprTypeUnknown.instance();
 		}
-		JavaType jt = (JavaType) type;
+		ExprTypeJavaType jt = (ExprTypeJavaType) type;
 		final TwoLibraryModel model = p.attrCompilationUnit()
 				.getTwoLibraryModel();
 		ASTNode node = model.getSrc(jt.getVersion()).findDeclaringNode(jt.getTypeBinding());
@@ -531,7 +534,7 @@ public class TypeHelper {
 		MethodInvocation inv = getMethodInvocationInLine(p.getFunctionName().getName(), model, node, p.getProgramLineNr());
 		if (inv == null) {
 			p.addError("No method call found in this line.");
-			return UnknownType.instance();
+			return ExprTypeUnknown.instance();
 		}
 		
 		return new ExprTypeCallProgramPoint(model, jt.getVersion(), p.getProgramLineNr(), inv);
@@ -640,10 +643,15 @@ public class TypeHelper {
 
 	public static ExprType attrType(InstanceofOperation op) {
 		ExprType left = op.getLeft().attrType();
-		if (!(left instanceof JavaType) || !(op.getRight().attrType() instanceof JavaType)) {
-			op.addError("instanceof only works on Java types.");
+		ExprType right = op.getRight().attrType();
+		if (!(left instanceof ExprTypeJavaType)) {
+			op.addError("instanceof expects a java type on the left hand side but found " + left);
+		} else if (!(right instanceof ExprTypeJavaTypeRef)) {			
+			op.addError("instanceof expects a reference to a java type on the right hand side but found " + left);
+		} else if (!(right instanceof ExprTypeJavaTypeRef)) {
+			op.addError("right side of instanceof operation must refer to a Java type");
 		} else {
-			if (!((JavaType)left).getVersion().equals(((JavaType)op.getRight().attrType()).getVersion())) {
+			if (!((ExprTypeJavaType)left).getVersion().equals(((ExprTypeJavaTypeRef)right).getVersion())) {
 				op.addError("instanceof must compare type of same library implementation");
 			}
 		}
@@ -651,7 +659,23 @@ public class TypeHelper {
 	}
 
 	public static ExprType attrType(VersionConst c) {
-		return ExprTypeVersion.get(c.getVal());
+		CompilationUnit cu = c.attrCompilationUnit();
+		TwoLibraryModel env = null;
+		if (cu != null) {
+			env = cu.getTwoLibraryModel();
+		}
+		return ExprTypeVersion.get(env, c.getVal());
+	}
+
+	public static ExprType attrType(ExprTypeRef e) {
+		TwoLibraryModel env = e.attrCompilationUnit().getTwoLibraryModel();
+		String name = e.getRight().getName();
+		Version version = e.getVersion();
+		ITypeBinding jt = env.getSrc(version).resolveType(name);
+		if (jt != null) {
+			return ExprTypeJavaTypeRef.create(env, version, jt);
+		}
+		return ExprTypeJavaPackageRef.create(env, version, name);
 	}
 	
 

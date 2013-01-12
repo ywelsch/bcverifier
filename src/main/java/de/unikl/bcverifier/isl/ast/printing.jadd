@@ -9,7 +9,7 @@ aspect printing {
   eq VarAccess.printTo(Appendable r) = PrintingHelper.print(r, this);
 
   eq MemberAccess.printTo(Appendable r) = PrintingHelper.print(r, this);
-
+  
   eq FuncCall.printTo(Appendable r) = PrintingHelper.print(r, this);
 
   eq BinaryOperation.printTo(Appendable r) = PrintingHelper.print(r, this);
@@ -27,6 +27,8 @@ aspect printing {
   eq NullConst.printTo(Appendable r) = PrintingHelper.print(r, this);
   
   eq VersionConst.printTo(Appendable r) = PrintingHelper.print(r, this);
+
+  eq ExprTypeRef.printTo(Appendable r) = PrintingHelper.print(r, this); 
 
   eq InstanceofOperation.printTo(Appendable r) = PrintingHelper.print(r, this);
 

@@ -1,14 +1,14 @@
 package de.unikl.bcverifier.isl.checking.types;
 
-public class UnknownType extends ExprType {
+public class ExprTypeUnknown extends ExprType {
 
-	private static ExprType instance = new UnknownType();
+	private static ExprType instance = new ExprTypeUnknown();
 
 	public static ExprType instance() {
 		return instance;
 	}
 	
-	private UnknownType() {}
+	private ExprTypeUnknown() {}
 
 	public boolean isSubtypeOf(ExprType t) {
 		return false;

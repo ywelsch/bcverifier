@@ -1,16 +1,21 @@
 package de.unikl.bcverifier.isl.checking.types;
 
+import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+
+import de.unikl.bcverifier.isl.ast.ASTNode;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class ExprTypeVersion extends ExprType {
 
 	private Version version;
+	private TwoLibraryModel env;
 
-	private static ExprTypeVersion v_old = new ExprTypeVersion(Version.OLD);
-	private static ExprTypeVersion v_new = new ExprTypeVersion(Version.NEW);
-	private static ExprTypeVersion v_instance = new ExprTypeVersion(null);
+	private static ExprTypeVersion v_instance = new ExprTypeVersion(null, null);
 	
-	public ExprTypeVersion(Version version) {
+	private ExprTypeVersion(TwoLibraryModel env, Version version) {
+		this.env = env;
 		this.version = version;
 	}
 
@@ -23,21 +28,12 @@ public class ExprTypeVersion extends ExprType {
 		return version;
 	}
 
-	public static ExprTypeVersion get(Version v) {
-		switch (v) {
-		case BOTH:
-			return v_instance;
-		case NEW:
-			return v_new;
-		case OLD:
-			return v_old;
-		default:
-			throw new Error();
-		}
+	public static ExprTypeVersion get(TwoLibraryModel env, Version v) {
+		return new ExprTypeVersion(env, v);
 	}
 	
 	public static ExprTypeVersion instance() {
 		return v_instance;
 	}
-	
+
 }

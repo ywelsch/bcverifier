@@ -1,4 +1,4 @@
 aspect compilationUnit {
-	syn lazy CompilationUnit ASTNode.attrCompilationUnit() = parent.attrCompilationUnit();
+	syn lazy CompilationUnit ASTNode.attrCompilationUnit() = parent != null ? parent.attrCompilationUnit() : null;
 	eq CompilationUnit.attrCompilationUnit() = this;
 }

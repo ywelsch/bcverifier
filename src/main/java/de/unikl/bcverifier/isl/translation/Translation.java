@@ -50,7 +50,7 @@ import de.unikl.bcverifier.isl.checking.types.ExprTypeAtLineProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.checking.types.JavaType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
 import de.unikl.bcverifier.specification.SpecAssignment;
@@ -290,7 +290,7 @@ public class Translation {
 				GlobVarDef gvd = (GlobVarDef) s;
 				VarDef vd = gvd.getVar();
 				BPLType type;
-				if (vd.attrType() instanceof JavaType) {
+				if (vd.attrType() instanceof ExprTypeJavaType) {
 					type = new BPLTypeName(ITranslationConstants.REF_TYPE); 
 				} else if (vd.attrType() instanceof BinRelationType) {
 					type = new BPLTypeName(ITranslationConstants.BINREL_TYPE); 

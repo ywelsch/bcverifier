@@ -4,34 +4,31 @@ import static de.unikl.bcverifier.isl.ast.Version.BOTH;
 import static de.unikl.bcverifier.isl.ast.Version.NEW;
 import static de.unikl.bcverifier.isl.ast.Version.OLD;
 
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.internal.corext.dom.Bindings;
 
 import de.unikl.bcverifier.isl.ast.ASTNode;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.isl.checking.TypeHelper;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
-public class JavaType extends ExprType {
+public class ExprTypeJavaTypeRef extends ExprType implements ExprTypeHasMembers {
 
 	private Version version;
 	private String qualifiedName;
 	private TwoLibraryModel env;
 	private ITypeBinding typeBinding;
 	
-	private static final JavaType nullType = new JavaType();
-	
-	public static JavaType nullType() {
-		return nullType;
-	}
-
-	
-	private JavaType(TwoLibraryModel env, Version version, ITypeBinding type) {
+	private ExprTypeJavaTypeRef(TwoLibraryModel env, Version version, ITypeBinding type) {
 		this.env = env;
 		this.version = version;
 		this.qualifiedName = type.getQualifiedName();
 		this.typeBinding = type;
 	}
 	
-	private JavaType() {
+	private ExprTypeJavaTypeRef() {
 		// TODO Auto-generated constructor stub
 	}
 
@@ -39,20 +36,20 @@ public class JavaType extends ExprType {
 	public static ExprType create(ASTNode<?> loc, Version version, String qualifiedName) {
 		if (version == BOTH) {
 			loc.addError("No version specified for type " + qualifiedName + ".");
-			return UnknownType.instance();
+			return ExprTypeUnknown.instance();
 		}
 		TwoLibraryModel env = loc.attrCompilationUnit().getTwoLibraryModel();
 		ITypeBinding c = env.getSrc(version).resolveType(qualifiedName);
 		if (c == null) {
 			loc.addError(loc, "Could not find class " + qualifiedName + " in " + version);
-			return UnknownType.instance();
+			return ExprTypeUnknown.instance();
 		}
-		return JavaType.create(env, version, c);
+		return ExprTypeJavaTypeRef.create(env, version, c);
 	}
 	
 	
 	public static ExprType create(ASTNode<?> loc, Version version, ITypeBinding type) {
-		return JavaType.create(loc.attrCompilationUnit().getTwoLibraryModel(), version, type);
+		return ExprTypeJavaTypeRef.create(loc.attrCompilationUnit().getTwoLibraryModel(), version, type);
 	}
 	
 	public static ExprType create(TwoLibraryModel env, Version version, ITypeBinding type) {
@@ -64,7 +61,7 @@ public class JavaType extends ExprType {
 				return ExprTypeInt.instance();
 			}
 		}
-		return new JavaType(env, version, type);
+		return new ExprTypeJavaTypeRef(env, version, type);
 	}
 	
 	
@@ -73,10 +70,8 @@ public class JavaType extends ExprType {
 		if (t instanceof ExprTypeAny) {
 			return true;
 		}
-		if (t instanceof JavaType) {
-			JavaType j = (JavaType) t;
-			if (this == nullType)
-				return true;
+		if (t instanceof ExprTypeJavaTypeRef) {
+			ExprTypeJavaTypeRef j = (ExprTypeJavaTypeRef) t;
 			if (j.version != Version.BOTH && j.version != version) {
 				return false;
 			}
@@ -106,15 +101,34 @@ public class JavaType extends ExprType {
 
 	public static ExprType object(TwoLibraryModel env) {
 		ITypeBinding t = env.getSrc1().resolveType(Object.class.getName());
-		return new JavaType(null, Version.BOTH, t);
+		return new ExprTypeJavaTypeRef(null, Version.BOTH, t);
 	}
 
 	public static ExprType getJavaLangObject(TwoLibraryModel env, Version version) {
 		ITypeBinding t = env.getSrc(version).resolveType(Object.class.getName());
-		return new JavaType(env, version, t);
+		return new ExprTypeJavaTypeRef(env, version, t);
 	}
 
 	public ITypeBinding getTypeBinding() {
 		return typeBinding;
+	}
+	
+	@Override
+	public IBinding findMember(String name) {
+		return Bindings.findFieldInType(typeBinding, name);
+	}
+	
+	@Override
+	public ExprType typeOfMemberAccess(ASTNode<?> location, String name) {
+		IBinding binding = findMember(name);
+		if (binding instanceof IVariableBinding) {
+			IVariableBinding varBinding = (IVariableBinding) binding;
+			if (!TypeHelper.isStatic(varBinding)){
+				location.addError("Cannot access nonstatic field " + name + " statically.");
+			}
+			return ExprTypeJavaType.create(env, version, varBinding.getType());
+		}
+		location.addError("Field " + name + " could not be found in " + this);
+		return ExprTypeUnknown.instance();
 	}
 }

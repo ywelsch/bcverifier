@@ -47,9 +47,9 @@ public class PrintingHelper {
 	public static Void print(Appendable r, IfThenElse e) {
 		print(r, "if ");
 		e.getCond().printTo(r);
-		print(r, "then ");
+		print(r, " then ");
 		e.getThenExpr().printTo(r);
-		print(r, "else ");
+		print(r, " else ");
 		e.getElseExpr().printTo(r);
 		return null;
 	}
@@ -126,10 +126,22 @@ public class PrintingHelper {
 
 	public static Void print(Appendable r, VersionConst versionConst) {
 		switch (versionConst.getVal()) {
-		case NEW: print(r, "new");
-		case OLD: print(r, "old");
-		case BOTH: print(r, "both");
+		case NEW: print(r, "new"); break;
+		case OLD: print(r, "old"); break;
+		case BOTH: print(r, "both"); break;
 		}
+		return null;
+	}
+
+
+
+	public static Void print(Appendable r, ExprTypeRef e) {
+		switch (e.getVersion()) {
+		case NEW: print(r, "new "); break;
+		case OLD: print(r, "old "); break;
+		case BOTH: print(r, "both "); break;
+		}
+		print(r, e.getRight().getName());
 		return null;
 	}
 

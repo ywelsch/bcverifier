@@ -12,7 +12,7 @@ import com.google.common.collect.Multimap;
 
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Version;
-import de.unikl.bcverifier.isl.checking.types.JavaType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
 import de.unikl.bcverifier.isl.translation.ExprTranslation;
 import de.unikl.bcverifier.isl.translation.Phase;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
@@ -72,7 +72,7 @@ public class BuiltinFunctions {
 	}
 	
 	static BPLExpression heapProperty(Expr obj, String property) {
-		JavaType t = (JavaType) obj.attrType();
+		ExprTypeJavaType t = (ExprTypeJavaType) obj.attrType();
 		return new BPLArrayExpression(
 				ExprTranslation.getHeap(t.getVersion(), obj.attrCompilationUnit().getPhase()), 
 				obj.translateExpr(), 
