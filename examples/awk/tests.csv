@@ -1,2 +1,3 @@
 "specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
 "bpl/spec1.bsl",""    ,0                ,2                 ,5
+"bpl/spec_fail.bsl",""    ,1                ,2                 ,5
