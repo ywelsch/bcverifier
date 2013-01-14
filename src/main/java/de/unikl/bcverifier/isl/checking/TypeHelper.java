@@ -333,8 +333,8 @@ public class TypeHelper {
 			FuncCall funcCall = (FuncCall) expr.getParent().getParent();
 			if (funcCall.getFuncName().getName().equals(BuiltinFuncEval_place.name)) { 
 				if (funcCall.getNumArgument() == 3
-						&& funcCall.getArgument(0).attrType() instanceof ExprTypePlace
-						&& funcCall.getArgument(2) == expr) { 
+						&& funcCall.getArgument(2) == expr
+						&& funcCall.getArgument(0).attrType() instanceof ExprTypePlace) { 
 					// stack(place, sp, expr)
 					ExprTypePlace placeType = (ExprTypePlace) funcCall.getArgument(0).attrType();
 					Expr stackPointerExpr = funcCall.getArgument(1);
@@ -345,8 +345,8 @@ public class TypeHelper {
 						return Collections.singletonList(r);
 					}
 				} else if (funcCall.getNumArgument() == 2
-						&& funcCall.getArgument(0).attrType() instanceof ExprTypePlace
-						&& funcCall.getArgument(1) == expr) {
+						&& funcCall.getArgument(1) == expr
+						&& funcCall.getArgument(0).attrType() instanceof ExprTypePlace) {
 					// stack(place, expr)
 					ExprTypePlace placeType = (ExprTypePlace) funcCall.getArgument(0).attrType();
 					Expr stackPointerExpr = new StackpointerExpr(placeType.getVersion(), !placeType.isLocalPlace());
