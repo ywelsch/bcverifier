@@ -241,7 +241,11 @@ public class TypeHelper {
 	}
 
 	public static ExprType placeDefType(PlaceDef placeDef) {
-		ExprTypeProgramPoint pptype = (ExprTypeProgramPoint)placeDef.getProgramPoint().attrType();
+		ExprType pptype1 = placeDef.getProgramPoint().attrType();
+		if (!(pptype1 instanceof ExprTypeProgramPoint)) {
+			return ExprTypeUnknown.instance();
+		}
+		ExprTypeProgramPoint pptype = (ExprTypeProgramPoint)pptype1;
 		if (placeDef.isPredefinedPlace()) {
 			if (placeDef.hasCondition()) {
 				placeDef.addError("Observable places must not have a condition.");
