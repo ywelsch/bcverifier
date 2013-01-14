@@ -3,8 +3,10 @@
 <suite name="LibraryTests" verbose="1" data-provider-thread-count="@threadcount@">
   <test name="Libraries" >
     <classes>
-    	<class name="de.unikl.bcverifier.tests.isl.ISLParserTest" />
        <class name="de.unikl.bcverifier.tests.LibraryTestsNG" />
     </classes>
   </test>
+  <suite-files>
+  	<suite-file path="./testng_isltests.xml" />
+  </suite-files>
 </suite>
