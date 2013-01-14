@@ -8,6 +8,8 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 
+import com.google.common.base.Preconditions;
+
 import b2bpl.Project;
 import b2bpl.bytecode.B2BPLMessages;
 import b2bpl.bytecode.BCField;
@@ -93,6 +95,8 @@ public class SemanticAnalyzer {
   private TypeLoader typeLoader;
 
   public SemanticAnalyzer(Project project, ITroubleReporter troubleReporter) {
+	  Preconditions.checkNotNull(project);
+	  Preconditions.checkNotNull(troubleReporter);
     this.project = project;
     this.troubleReporter = troubleReporter;
     this.typeLoader = project.getTypeLoader();
