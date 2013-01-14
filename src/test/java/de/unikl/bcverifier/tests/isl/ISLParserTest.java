@@ -39,7 +39,7 @@ import de.unikl.bcverifier.specification.SpecExpr;
 public class ISLParserTest {
 
 	@Test
-	public void localPlaceAtCall1() throws IOException, Exception, CompileException {
+	synchronized public void localPlaceAtCall1() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 				"local place callNotifyMe1 = call notifyMe in line 8 of old C;"
 				);
@@ -49,7 +49,7 @@ public class ISLParserTest {
 	}
 	
 	@Test
-	public void localPlaceAtCall_nosync() throws IOException, Exception, CompileException {
+	synchronized public void localPlaceAtCall_nosync() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 				"local place callNotifyMe1 = call notifyMe in line 8 of old C nosync;"
 				);
@@ -59,7 +59,7 @@ public class ISLParserTest {
 	}
 	
 	@Test
-	public void err_placecheck2() throws IOException, Exception, CompileException {
+	synchronized public void err_placecheck2() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 				"place callNotifyMe1 = line 8 of old C;"
 				);
@@ -69,7 +69,7 @@ public class ISLParserTest {
 	}
 	
 	@Test
-	public void predefinedplace_nosplit() throws IOException, Exception, CompileException {
+	synchronized public void predefinedplace_nosplit() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 				"place callNotifyMe1 = call notifyMe in line 8 of old C nosplit;"
 				);
@@ -81,7 +81,7 @@ public class ISLParserTest {
 	
 	
 	@Test
-	public void iframeDestroy() throws IOException, Exception, CompileException {
+	synchronized public void iframeDestroy() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(Files.toString(new File("./examples/iframeDestroy/bpl/spec.isl"), Charsets.UTF_8));
 		testTypeCheckOk(
 				new File("./examples/iframeDestroy/old"), 
@@ -91,7 +91,7 @@ public class ISLParserTest {
 	}
 	
 	@Test
-	public void cell() throws IOException, Exception, CompileException {
+	synchronized public void cell() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 				"invariant forall old Cell o1, new Cell o2 ::",
 					"o1 ~ o2 ==>",
@@ -104,7 +104,7 @@ public class ISLParserTest {
 	}
 	
 	@Test
-	public void cb() throws IOException, Exception, CompileException {
+	synchronized public void cb() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk("invariant forall old A a :: a.g % 2 == 0;");
 		testTypeCheckOk(
 				new File("./examples/cb/old"), 
@@ -114,7 +114,7 @@ public class ISLParserTest {
 	}
 	
 	@Test
-	public void localLoop() throws IOException, Exception, CompileException {
+	synchronized public void localLoop() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(Files.toString(new File("./examples/localLoop/bpl/spec4.isl"), Charsets.UTF_8));
 		testTypeCheckOk(
 				new File("./examples/localLoop/old"), 
@@ -124,7 +124,7 @@ public class ISLParserTest {
 	}
 	
 	@Test
-	public void localLoop_err1() throws IOException, Exception, CompileException {
+	synchronized public void localLoop_err1() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 			"local place inLoop1 = line 14 of old C;",
 			"local place inLoop2 = line 8 of new C;",
@@ -143,7 +143,7 @@ public class ISLParserTest {
 	
 
 	@Test
-	public void obool() throws IOException, Exception, CompileException {
+	synchronized public void obool() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 				"invariant forall old Bool o1, new Bool o2 :: o1 ~ o2 ==> o1.f == o2.f;",
 				"invariant forall old OBool o1, new OBool o2 :: o1 ~ o2 ==> o1.g.f != o2.g.f;",
@@ -161,6 +161,32 @@ public class ISLParserTest {
 				new File("./examples/obool/old"), 
 				new File("./examples/obool/new"), cu);
 		System.out.println("obool output:");
+		translateAndPrint(cu);
+	}
+	
+	@Test
+	synchronized public void testVars() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+		"var binrelation bij = add(empty(), null, null);",
+		"var old Node x1 = null;",
+		"var new util.Node x2 = null;",
+		"var int i = 42;",
+		"var boolean b = true;"		
+				);
+		testTypeCheckOk(
+				new File("./examples/list/old"), 
+				new File("./examples/list/new"), cu);
+		translateAndPrint(cu);
+	}
+	
+	@Test
+	synchronized public void testVars_typeNotFound() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+		"var new does.not.Exist x = null;"
+				);
+		testTypeCheckError("Could not find class does.not.Exist",
+				new File("./examples/list/old"), 
+				new File("./examples/list/new"), cu);
 		translateAndPrint(cu);
 	}
 	
