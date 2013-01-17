@@ -215,10 +215,7 @@ public class ISLParserTest {
 	}
 	
 	protected void testTypeCheckOk(File oldLib, File newLib, CompilationUnit cu) throws CompileException {
-		TwoLibraryModel twoLibraryModel = new TwoLibraryModel(oldLib, newLib);
-		cu.setTwoLibraryModel(twoLibraryModel);
-		cu.setBuiltinFunctions(new BuiltinFunctions(twoLibraryModel ));
-		cu.typecheck();
+		doCheck(oldLib, newLib, cu);
 		for (TypeError err : cu.getErrors()) {
 			System.err.println(err);
 			Assert.fail("" + err);
@@ -226,10 +223,7 @@ public class ISLParserTest {
 	}
 	
 	protected void testTypeCheckError(String expected, File oldLib, File newLib, CompilationUnit cu) throws CompileException {
-		TwoLibraryModel twoLibraryModel = new TwoLibraryModel(oldLib, newLib);
-		cu.setTwoLibraryModel(twoLibraryModel);
-		cu.setBuiltinFunctions(new BuiltinFunctions(twoLibraryModel ));
-		cu.typecheck();
+		doCheck(oldLib, newLib, cu);
 		StringBuilder errors = new StringBuilder();
 		for (TypeError err : cu.getErrors()) {
 			errors.append("\n" + err.toString());
@@ -237,6 +231,16 @@ public class ISLParserTest {
 		if (!errors.toString().contains(expected)) {
 			Assert.assertEquals(errors.toString(), expected);
 		}
+	}
+
+	private void doCheck(File oldLib, File newLib, CompilationUnit cu)
+			throws CompileException {
+		LibraryCompiler.compile(oldLib);
+		LibraryCompiler.compile(newLib);
+		TwoLibraryModel twoLibraryModel = new TwoLibraryModel(oldLib, newLib);
+		cu.setTwoLibraryModel(twoLibraryModel);
+		cu.setBuiltinFunctions(new BuiltinFunctions(twoLibraryModel ));
+		cu.typecheck();
 	}
 	
 	protected void translateAndPrint(CompilationUnit cu) {

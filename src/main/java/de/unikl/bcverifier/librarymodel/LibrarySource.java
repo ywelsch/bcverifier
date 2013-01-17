@@ -113,7 +113,18 @@ public class LibrarySource {
 	}
 	
 	public JClassType getClassType(String qualifiedName) {
-		return classTypes.get(qualifiedName);
+		JClassType result = classTypes.get(qualifiedName);
+		if (result == null) {
+			StringBuilder message = new StringBuilder("Could not load ClassType ");
+			message.append(qualifiedName);
+			message.append("\nAvailable names are: ");
+			for (String name : classTypes.keySet()) {
+				message.append(name + ", ");
+			}
+			
+			throw new RuntimeException(message.toString());
+		}
+		return result;
 	}
 
 	public JClassType getClassType(ITypeBinding tb) {
