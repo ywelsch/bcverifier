@@ -4,6 +4,7 @@
   <test name="ISL Test" >
     <classes>
     	<class name="de.unikl.bcverifier.tests.isl.ISLParserTest" />
+    	<class name="de.unikl.bcverifier.tests.isl.ISLTypecheckTests" />
     </classes>
   </test>
 </suite>

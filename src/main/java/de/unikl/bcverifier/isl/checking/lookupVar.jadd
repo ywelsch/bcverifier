@@ -6,9 +6,9 @@ aspect lookup {
 	syn Collection<Def> ASTNode.lookup(String name) = getParent().lookup(name); 
 	
 	
-	eq Expr.lookup(String name) = TypeHelper.lookup(this, name);
+	eq Expr.lookup(String name) = Lookup.lookup(this, name);
 	
-	eq PlaceDef.lookup(String name) = TypeHelper.lookup(this, name);
+	eq PlaceDef.lookup(String name) = Lookup.lookup(this, name);
 	
 	eq CompilationUnit.lookup(String name) {
 		ArrayList<Def> result = Lists.<Def>newArrayList(getBuiltinFunctions().get(name));
@@ -21,6 +21,6 @@ aspect lookup {
 	}
 
 	
-	syn lazy Def VarAccess.attrDef() = TypeHelper.getVarDef(this);
-	syn lazy Def FuncCall.attrDef() = TypeHelper.getFuncDef(this);
+	syn lazy Def VarAccess.attrDef() = AttrDef.getVarDef(this);
+	syn lazy Def FuncCall.attrDef() = AttrDef.getFuncDef(this);
 }

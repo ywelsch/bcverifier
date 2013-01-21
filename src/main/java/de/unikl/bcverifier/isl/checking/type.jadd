@@ -8,19 +8,19 @@ aspect exprType {
 
   eq QExpr.attrType() = ExprTypeBool.instance();
 
-  eq VarAccess.attrType() = TypeHelper.attrType(this);
+  eq VarAccess.attrType() = CalculateExprType.attrType(this);
 
-  eq MemberAccess.attrType() = TypeHelper.attrType(this);
+  eq MemberAccess.attrType() = CalculateExprType.attrType(this);
   
-  eq FuncCall.attrType() = TypeHelper.attrType(this);
+  eq FuncCall.attrType() = CalculateExprType.attrType(this);
 
-  eq BinaryOperation.attrType() = TypeHelper.attrType(this);
+  eq BinaryOperation.attrType() = CalculateExprType.attrType(this);
 
-  eq InstanceofOperation.attrType() = TypeHelper.attrType(this);
+  eq InstanceofOperation.attrType() = CalculateExprType.attrType(this);
 
-  eq UnaryOperation.attrType() = TypeHelper.attrType(this);
+  eq UnaryOperation.attrType() = CalculateExprType.attrType(this);
 
-  eq IfThenElse.attrType() = TypeHelper.attrType(this);
+  eq IfThenElse.attrType() = CalculateExprType.attrType(this);
 
   eq ErrorExpr.attrType() = ExprTypeBool.instance();
 
@@ -28,17 +28,17 @@ aspect exprType {
 
   eq IntConst.attrType() = ExprTypeInt.instance();
 
-  eq NullConst.attrType() = TypeHelper.attrType(this);
+  eq NullConst.attrType() = CalculateExprType.attrType(this);
   
-  eq VersionConst.attrType() = TypeHelper.attrType(this);
+  eq VersionConst.attrType() = CalculateExprType.attrType(this);
   
-  eq ExprTypeRef.attrType() = TypeHelper.attrType(this);
+  eq ExprTypeRef.attrType() = CalculateExprType.attrType(this);
 
   syn ExprType ProgramPointExpr.attrType() circular [ExprTypeUnknown.instance()];
 
-  eq LineNrProgramPoint.attrType() = TypeHelper.attrType(this);
+  eq LineNrProgramPoint.attrType() = CalculateExprType.attrType(this);
 
-  eq CallProgramPoint.attrType() = TypeHelper.attrType(this);
+  eq CallProgramPoint.attrType() = CalculateExprType.attrType(this);
 
   syn lazy ExprType Def.attrType();
 
@@ -52,15 +52,15 @@ aspect exprType {
 
   eq LocalInvariant.attrType() = ExprTypeUnknown.instance();
 
-  eq PlaceDef.attrType() = TypeHelper.placeDefType(this);
+  eq PlaceDef.attrType() = CalculateDefType.placeDefType(this);
 
   eq VarDef.attrType() = getTypeDef().attrType();
 
 
   syn lazy ExprType TypeDef.attrType();
 
-  eq NamedTypeDef.attrType() = TypeHelper.attrType(this);
+  eq NamedTypeDef.attrType() = CalculateDefType.attrType(this);
 
-  eq ProgramPoint.attrType() = TypeHelper.attrType(this);
+  eq ProgramPoint.attrType() = CalculateDefType.attrType(this);
 
 }

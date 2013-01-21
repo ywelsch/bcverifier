@@ -13,14 +13,14 @@ aspect typecheck {
 	}
 	
 	public void PlaceDef.typecheck() {
-		TypeHelper.checkPlaceDef(this);
+		TypecheckStatement.checkPlaceDef(this);
 	}
 	
 	public void GlobVarDef.typecheck() {
-		TypeHelper.checkGlobVarDef(this);
+		TypecheckStatement.checkGlobVarDef(this);
 	}
 	
 	public void Assign.typecheck() {
-		TypeHelper.checkAssign(this);
+		TypecheckStatement.checkAssign(this);
 	}
 }
