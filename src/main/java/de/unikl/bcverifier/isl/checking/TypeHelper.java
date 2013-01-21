@@ -116,6 +116,14 @@ public class TypeHelper {
 			if (!left.attrType().getClass().equals(right.attrType().getClass())) {
 				bo.addError("Cannot compare types " + left.attrType() + " and "
 						+ right.attrType());
+			} else {
+				if (left.attrType() instanceof ExprTypeJavaType) {
+					ExprTypeJavaType lt = (ExprTypeJavaType) left.attrType();
+					ExprTypeJavaType rt = (ExprTypeJavaType) right.attrType();
+					if (lt.getVersion() != rt.getVersion()) {
+						bo.addError("Cannot compare objects from different library versions.");
+					}
+				}
 			}
 			return ExprTypeBool.instance();
 
