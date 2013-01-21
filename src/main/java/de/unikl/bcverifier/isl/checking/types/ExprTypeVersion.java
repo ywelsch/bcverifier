@@ -1,9 +1,5 @@
 package de.unikl.bcverifier.isl.checking.types;
 
-import org.eclipse.jdt.core.dom.IBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
-
-import de.unikl.bcverifier.isl.ast.ASTNode;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 

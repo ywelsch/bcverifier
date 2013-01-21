@@ -1,7 +1,6 @@
 package de.unikl.bcverifier.isl.checking;
 
 import java.io.IOException;
-import java.util.Collections;
 
 import b2bpl.bpl.ast.BPLExpression;
 import de.unikl.bcverifier.isl.ast.Expr;

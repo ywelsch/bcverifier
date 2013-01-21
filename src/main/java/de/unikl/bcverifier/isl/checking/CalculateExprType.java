@@ -1,5 +1,7 @@
 package de.unikl.bcverifier.isl.checking;
 
+import static de.unikl.bcverifier.isl.checking.TypeHelper.checkIfSubtype;
+
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -17,14 +19,11 @@ import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.InstanceofOperation;
 import de.unikl.bcverifier.isl.ast.LineNrProgramPoint;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
-import de.unikl.bcverifier.isl.ast.NamedTypeDef;
 import de.unikl.bcverifier.isl.ast.NullConst;
-import de.unikl.bcverifier.isl.ast.ProgramPoint;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.ast.VersionConst;
-import de.unikl.bcverifier.isl.checking.types.BinRelationType;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeAtLineProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
@@ -38,8 +37,6 @@ import de.unikl.bcverifier.isl.checking.types.ExprTypeUnknown;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeVersion;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
-
-import static de.unikl.bcverifier.isl.checking.TypeHelper.checkIfSubtype;
 
 public class CalculateExprType {
 

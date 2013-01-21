@@ -9,7 +9,6 @@ import java.util.List;
 import beaver.Parser;
 import beaver.Parser.Exception;
 import beaver.Symbol;
-
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 
 public class ISLCompiler {

@@ -1,5 +1,6 @@
 package de.unikl.bcverifier.isl.checking;
 
+import static de.unikl.bcverifier.isl.checking.TypeHelper.checkIfSubtype;
 import de.unikl.bcverifier.isl.ast.NamedTypeDef;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
 import de.unikl.bcverifier.isl.ast.ProgramPoint;
@@ -15,8 +16,6 @@ import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeUnknown;
 import de.unikl.bcverifier.isl.translation.Translation;
-
-import static de.unikl.bcverifier.isl.checking.TypeHelper.checkIfSubtype;
 
 public class CalculateDefType {
 

@@ -3,11 +3,10 @@ package de.unikl.bcverifier.isl.checking;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 
 import de.unikl.bcverifier.isl.ast.ASTNode;
-import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
-import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 /**

@@ -58,7 +58,9 @@ public class TypeHelper {
 	public static <T extends de.unikl.bcverifier.isl.ast.ASTNode<?>> T getParentOfType(de.unikl.bcverifier.isl.ast.ASTNode<?> n, Class<T> type) {
 		while (n != null) {
 			if (type.isAssignableFrom(n.getClass())) {
-				return (T) n;
+				@SuppressWarnings("unchecked")
+				T result = (T) n;
+				return result;
 			}
 			n = n.getParent();
 		}
