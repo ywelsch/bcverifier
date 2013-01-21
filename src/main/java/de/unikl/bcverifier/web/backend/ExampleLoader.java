@@ -81,6 +81,7 @@ public class ExampleLoader {
 				new String[]{ "subtypes3", "Subtypes example (alt.1)", "4", "spec.isl" },
 				new String[]{ "oneOffLoop", "OneOffLoop example", "2", "spec.isl" },
 				new String[]{ "oneOffLoop", "OneOffLoop example (alt.1)", "2", "spec2.isl" },
+				new String[]{ "cubes", "Cubes example", "2", "spec.isl" },
 				new String[]{ "diverge", "Divergence example", "2", "spec.isl" },
 				new String[]{ "diverge2", "Divergence example (alt)", "2", "spec.isl" },
 				new String[]{ "measure", "Termination example", "2", "spec.isl" },

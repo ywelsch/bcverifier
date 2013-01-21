@@ -4,7 +4,7 @@ public class C {
     int t = 0;
     while(i < n){
       i++;
-            t += i;
+      t += i;
     }
     return t * t;
   }
