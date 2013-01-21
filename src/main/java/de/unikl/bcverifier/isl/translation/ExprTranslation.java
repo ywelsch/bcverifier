@@ -27,20 +27,22 @@ import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableExpression;
 import b2bpl.translation.CodeGenerator;
 import b2bpl.translation.ITranslationConstants;
+import de.unikl.bcverifier.isl.ast.ASTNode;
 import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.BoolConst;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.ErrorExpr;
-import de.unikl.bcverifier.isl.ast.GlobVarDef;
-import de.unikl.bcverifier.isl.ast.InstanceofOperation;
-import de.unikl.bcverifier.isl.ast.QExpr;
+import de.unikl.bcverifier.isl.ast.ExprTypeRef;
 import de.unikl.bcverifier.isl.ast.FuncCall;
+import de.unikl.bcverifier.isl.ast.GlobVarDef;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
+import de.unikl.bcverifier.isl.ast.InstanceofOperation;
 import de.unikl.bcverifier.isl.ast.IntConst;
 import de.unikl.bcverifier.isl.ast.LineNrProgramPoint;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NullConst;
+import de.unikl.bcverifier.isl.ast.QExpr;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VarDef;
@@ -49,9 +51,11 @@ import de.unikl.bcverifier.isl.ast.VersionConst;
 import de.unikl.bcverifier.isl.checking.JavaVariableDef;
 import de.unikl.bcverifier.isl.checking.types.BinRelationType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeHasMembers;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaTypeRef;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.checking.types.JavaType;
 import de.unikl.bcverifier.isl.parser.Quantifier;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
@@ -137,7 +141,7 @@ public class ExprTranslation {
 		int i = 0;
 		for (VarDef boundVar : boundVars) {
 			BPLType type;
-			if (boundVar.attrType() instanceof JavaType) {
+			if (boundVar.attrType() instanceof ExprTypeJavaType) {
 				type = new BPLTypeName(ITranslationConstants.REF_TYPE); 
 			} else if (boundVar.attrType() instanceof BinRelationType) {
 				type = new BPLTypeName(ITranslationConstants.BINREL_TYPE); 
@@ -172,8 +176,8 @@ public class ExprTranslation {
 
 	public static BPLExpression createTypAssum(VarDef boundVar, boolean hasNull) {
 		BPLExpression typeAssumtion;
-		if (boundVar.attrType() instanceof JavaType) {
-			JavaType javaType = (JavaType) boundVar.attrType();
+		if (boundVar.attrType() instanceof ExprTypeJavaType) {
+			ExprTypeJavaType javaType = (ExprTypeJavaType) boundVar.attrType();
 			typeAssumtion = makeTypeAssumption(boundVar, javaType, hasNull);
 		} else if (boundVar.attrType() instanceof BinRelationType) {
 			BinRelationType bijType = (BinRelationType) boundVar.attrType();
@@ -202,7 +206,7 @@ public class ExprTranslation {
 	 * @param bijType
 	 * @return
 	 */
-	private static BPLExpression makeTypeAssumption(VarDef boundVar, JavaType javaType, boolean hasNull) {
+	private static BPLExpression makeTypeAssumption(VarDef boundVar, ExprTypeJavaType javaType, boolean hasNull) {
 		switch(javaType.getVersion()) {
 			case NEW:
 			case OLD:
@@ -215,7 +219,7 @@ public class ExprTranslation {
 		throw new Error();
 	}
 	
-	private static BPLBinaryLogicalExpression makeTypeAssumption(VarDef boundVar, JavaType javaType, Version version, boolean hasNull) {
+	private static BPLBinaryLogicalExpression makeTypeAssumption(VarDef boundVar, ExprTypeJavaType javaType, Version version, boolean hasNull) {
 		Phase phase = boundVar.attrCompilationUnit().getPhase();
 		BPLExpression validRef = new BPLFunctionApplication(ITranslationConstants.OBJ_FUNC,  //$NON-NLS-1$
 				getHeap(version, phase), 
@@ -271,26 +275,35 @@ public class ExprTranslation {
 	}
 
 	public static BPLExpression translate(MemberAccess e) {
-		if (e.getLeft().attrType() instanceof JavaType) {
-			JavaType leftType = (JavaType) e.getLeft().attrType();
-			
+		if (e.getLeft().attrType() instanceof ExprTypeJavaType) {
+			// dynamic field access
+			ExprTypeJavaType leftType = (ExprTypeJavaType) e.getLeft().attrType();
 			IVariableBinding field = e.attrField();
-			if (field == null) {
-				throw new Error();
-			}
-			
-			BPLExpression expr = new BPLArrayExpression(
-					getHeap(leftType.getVersion(), e.attrCompilationUnit().getPhase()), 
-					e.getLeft().translateExpr(),
-					getBoogieFieldName(leftType.getTypeBinding(), e.getRight().getName()));
-			
-			if (field.getType().getQualifiedName().equals("boolean")) {
-				// boolean fields must be converted explicitly
-				expr = new BPLFunctionApplication(ITranslationConstants.INT2BOOL_FUNC, expr);
-			}
-			return expr;
+			BPLExpression leftExpr = e.getLeft().translateExpr();
+			return translateFieldAccess(e, leftType, field, leftExpr);
+		} else if (e.getLeft().attrType() instanceof ExprTypeJavaTypeRef) {
+			// static field access
+			ExprTypeJavaTypeRef leftType = (ExprTypeJavaTypeRef) e.getLeft().attrType();
+			IVariableBinding field = e.attrField();
+			BPLExpression leftExpr = BPLNullLiteral.NULL;
+			return translateFieldAccess(e, leftType, field, leftExpr);
 		}
 		throw new Error();
+	}
+
+	private static BPLExpression translateFieldAccess(ASTNode<?> e,
+			ExprTypeHasMembers leftType, IVariableBinding field,
+			BPLExpression leftExpr) {
+		BPLExpression expr = new BPLArrayExpression(
+				getHeap(leftType.getVersion(), e.attrCompilationUnit().getPhase()), 
+				leftExpr,
+				getBoogieFieldName(field.getDeclaringClass(), field.getName()));
+		
+		if (field.getType().getQualifiedName().equals("boolean")) {
+			// boolean fields must be converted explicitly
+			expr = new BPLFunctionApplication(ITranslationConstants.INT2BOOL_FUNC, expr);
+		}
+		return expr;
 	}
 
 	private static BPLVariableExpression getBoogieFieldName(
@@ -358,7 +371,7 @@ public class ExprTranslation {
 	}
 
 	public static BPLExpression translate(InstanceofOperation op) {
-		JavaType jt = (JavaType) op.getRight().attrType();
+		ExprTypeJavaTypeRef jt = (ExprTypeJavaTypeRef) op.getRight().attrType();
 		return new BPLFunctionApplication(ITranslationConstants.IS_INSTANCE_OF_FUNC, 
 				op.getLeft().translateExpr(), 
 				getHeap(jt.getVersion(), op.attrCompilationUnit().getPhase()), 
@@ -367,6 +380,10 @@ public class ExprTranslation {
 
 	public static BPLExpression translate(VersionConst versionConst) {
 		throw new Error("Cannot translate VersionConst expressions");
+	}
+
+	public static BPLExpression translate(ExprTypeRef exprTypeRef) {
+		throw new Error("Cannot translate typeRef expressions");
 	}
 
 

@@ -16,6 +16,9 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FileASTRequestor;
 
 import b2bpl.Project;
+import b2bpl.bytecode.ITroubleReporter;
+import b2bpl.bytecode.JClassType;
+import b2bpl.bytecode.TroubleMessage;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.librarymodel.LibrarySource;
 
@@ -57,7 +60,15 @@ public class LibraryCompiler {
 		LibrarySource source = new LibrarySource(version);
 		source.setUnits(req.getScannedUnits());
 		Project project = Project.fromCommandLine(Library.listLibraryClassFiles(libraryPath), new PrintWriter(System.out));
-		source.setClassTypes(Library.setProjectAndLoadTypes(project, null));
+		ITroubleReporter troubleReporter = new ITroubleReporter() {
+			@Override
+			public void reportTrouble(TroubleMessage message) {
+				throw new RuntimeException(message.getPosition().getMethod().getQualifiedName() 
+						+ "  " +  message.getDescriptionString());
+			}
+		};
+		JClassType[] classTypes = Library.setProjectAndLoadTypes(project, troubleReporter);
+		source.setClassTypes(classTypes);
 		return source;
 	}
 	

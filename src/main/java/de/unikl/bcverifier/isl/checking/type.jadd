@@ -4,14 +4,14 @@ import de.unikl.bcverifier.isl.checking.TypeHelper;
 
 aspect exprType {
 
-  syn ExprType Expr.attrType() circular [UnknownType.instance()];
+  syn ExprType Expr.attrType();
 
   eq QExpr.attrType() = ExprTypeBool.instance();
 
   eq VarAccess.attrType() = TypeHelper.attrType(this);
 
   eq MemberAccess.attrType() = TypeHelper.attrType(this);
-
+  
   eq FuncCall.attrType() = TypeHelper.attrType(this);
 
   eq BinaryOperation.attrType() = TypeHelper.attrType(this);
@@ -31,8 +31,10 @@ aspect exprType {
   eq NullConst.attrType() = TypeHelper.attrType(this);
   
   eq VersionConst.attrType() = TypeHelper.attrType(this);
+  
+  eq ExprTypeRef.attrType() = TypeHelper.attrType(this);
 
-  syn ExprType ProgramPointExpr.attrType() circular [UnknownType.instance()];
+  syn ExprType ProgramPointExpr.attrType() circular [ExprTypeUnknown.instance()];
 
   eq LineNrProgramPoint.attrType() = TypeHelper.attrType(this);
 
@@ -40,15 +42,15 @@ aspect exprType {
 
   syn lazy ExprType Def.attrType();
 
-  eq UnknownDef.attrType() = UnknownType.instance();
+  eq UnknownDef.attrType() = ExprTypeUnknown.instance();
 
-  eq Invariant.attrType() = UnknownType.instance();
+  eq Invariant.attrType() = ExprTypeUnknown.instance();
   
   eq GlobVarDef.attrType() = getVar().attrType();
   
-  eq Assign.attrType() = UnknownType.instance();
+  eq Assign.attrType() = ExprTypeUnknown.instance();
 
-  eq LocalInvariant.attrType() = UnknownType.instance();
+  eq LocalInvariant.attrType() = ExprTypeUnknown.instance();
 
   eq PlaceDef.attrType() = TypeHelper.placeDefType(this);
 

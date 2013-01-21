@@ -7,7 +7,7 @@ import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.checking.types.JavaType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 /**
@@ -39,7 +39,7 @@ public class JavaThis extends JavaVariableDef {
 
 	@Override
 	public ExprType attrType() {
-		return JavaType.create(loc, placeType.getVersion(), nearestClass);
+		return ExprTypeJavaType.create(loc, placeType.getVersion(), nearestClass);
 	}
 	
 	@Override

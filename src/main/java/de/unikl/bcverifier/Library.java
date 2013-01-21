@@ -89,6 +89,7 @@ import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLCommand;
 import b2bpl.bpl.ast.BPLConstantDeclaration;
 import b2bpl.bpl.ast.BPLDeclaration;
+import b2bpl.bpl.ast.BPLEqualityExpression;
 import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bpl.ast.BPLFunctionApplication;
 import b2bpl.bpl.ast.BPLGotoCommand;
@@ -110,6 +111,7 @@ import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLVariable;
 import b2bpl.bpl.ast.BPLVariableDeclaration;
 import b2bpl.bpl.ast.BPLVariableExpression;
+import b2bpl.bpl.ast.BPLEqualityExpression.Operator;
 import b2bpl.bytecode.BCField;
 import b2bpl.bytecode.BCMethod;
 import b2bpl.bytecode.ITroubleReporter;
@@ -1626,6 +1628,40 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		for (String initialAssign: initialAssignments) {
 			checkingCommand.add(new BPLRawCommand(initialAssign));
 		}
+		
+		checkingCommand.add(new BPLAssumeCommand(
+				logicalAnd(
+						forall(new BPLVariable("f", new BPLTypeName(
+								FIELD_TYPE, BPLBuiltInType.INT)),
+								logicalAnd(
+										implies(libraryField(
+												var(IMPL1), var("f")),
+												isEqual(heap1(
+														BPLNullLiteral.NULL,
+														var("f")),
+														new BPLIntLiteral(
+																0))),
+										implies(libraryField(
+												var(IMPL2), var("f")),
+												isEqual(heap2(
+														BPLNullLiteral.NULL,
+														var("f")),
+														new BPLIntLiteral(
+																0))))),
+						forall(new BPLVariable("f", new BPLTypeName(
+								FIELD_TYPE, new BPLTypeName(REF_TYPE))),
+								logicalAnd(
+										implies(libraryField(
+												var(IMPL1), var("f")),
+												isNull(heap1(
+														BPLNullLiteral.NULL,
+														var("f")))),
+										implies(libraryField(
+												var(IMPL2), var("f")),
+												isNull(heap2(
+														BPLNullLiteral.NULL,
+														var("f")))))))));
+		
 		// assert inv
 		checkingCommand.addAll(invAssertions);
 

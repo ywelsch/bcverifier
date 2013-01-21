@@ -84,6 +84,7 @@ import b2bpl.bpl.ast.BPLImplementation;
 import b2bpl.bpl.ast.BPLImplementationBody;
 import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLModifiesClause;
+import b2bpl.bpl.ast.BPLNullLiteral;
 import b2bpl.bpl.ast.BPLProcedure;
 import b2bpl.bpl.ast.BPLRawCommand;
 import b2bpl.bpl.ast.BPLRequiresClause;
@@ -3071,7 +3072,7 @@ public class MethodTranslator implements ITranslationConstants {
 
             BPLExpression rhs = var(stackVar(stackRhs, field.getType()));
             //      BPLExpression update = fieldUpdate(context, tc.getHeap(), null, field, rhs);
-            BPLExpression heapLocation = new BPLArrayExpression(var(tc.getHeap()), new BPLFunctionApplication("ClassRepr", typeRef(field.getType())), var(GLOBAL_VAR_PREFIX+field.getQualifiedName())); //TODO check static fields are accessed correctly
+            BPLExpression heapLocation = new BPLArrayExpression(var(tc.getHeap()), BPLNullLiteral.NULL, var(GLOBAL_VAR_PREFIX+field.getQualifiedName())); //TODO check static fields are accessed correctly
             addAssignment(heapLocation, stack(rhs));
         }
 

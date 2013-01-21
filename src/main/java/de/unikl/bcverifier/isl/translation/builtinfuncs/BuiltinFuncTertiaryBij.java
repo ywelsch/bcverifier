@@ -10,7 +10,7 @@ import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.checking.types.BinRelationType;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
-import de.unikl.bcverifier.isl.checking.types.JavaType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 final class BuiltinFuncTertiaryBij extends BuiltinFunction {
@@ -21,7 +21,7 @@ final class BuiltinFuncTertiaryBij extends BuiltinFunction {
 	}
 
 	public BuiltinFuncTertiaryBij(Name name, TwoLibraryModel twoLibraryModel) {
-		super(name.toString().toLowerCase(), name.equals(Name.RELATED) ? ExprTypeBool.instance() : BinRelationType.instance(), new ExprType[] { BinRelationType.instance(), JavaType.object(twoLibraryModel), JavaType.object(twoLibraryModel) });
+		super(name.toString().toLowerCase(), name.equals(Name.RELATED) ? ExprTypeBool.instance() : BinRelationType.instance(), new ExprType[] { BinRelationType.instance(), ExprTypeJavaType.object(twoLibraryModel), ExprTypeJavaType.object(twoLibraryModel) });
 	}
 
 	@Override
@@ -37,10 +37,10 @@ final class BuiltinFuncTertiaryBij extends BuiltinFunction {
 	public ExprType exactType(FuncCall call) {
 		ExprType t1 = call.getArgument(1).attrType();
 		ExprType t2 = call.getArgument(2).attrType();
-		if ((t1 instanceof JavaType) && t1 != JavaType.nullType() && !((JavaType)t1).isOld()) {
+		if ((t1 instanceof ExprTypeJavaType) && t1 != ExprTypeJavaType.nullType() && !((ExprTypeJavaType)t1).isOld()) {
 			call.addError("Second parameter to function " + name + " must be of a type of the old implementation.");
 		}
-		if ((t2 instanceof JavaType) && t2 != JavaType.nullType() && !((JavaType)t2).isNew()) {
+		if ((t2 instanceof ExprTypeJavaType) && t2 != ExprTypeJavaType.nullType() && !((ExprTypeJavaType)t2).isNew()) {
 			call.addError("Third parameter to function " + name + " must be of a type of the old implementation.");
 		}
 		return super.exactType(call);

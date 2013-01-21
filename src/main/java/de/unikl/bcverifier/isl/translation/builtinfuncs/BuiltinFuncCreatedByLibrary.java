@@ -12,7 +12,7 @@ import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
-import de.unikl.bcverifier.isl.checking.types.JavaType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 /**
@@ -25,7 +25,7 @@ final class BuiltinFuncCreatedByLibrary extends BuiltinFunction {
 
 	BuiltinFuncCreatedByLibrary(TwoLibraryModel twoLibraryModel) {
 		super("createdByLibrary", ExprTypeBool.instance(),
-				new ExprType[] { JavaType.object(twoLibraryModel) });
+				new ExprType[] { ExprTypeJavaType.object(twoLibraryModel) });
 	}
 
 	@Override

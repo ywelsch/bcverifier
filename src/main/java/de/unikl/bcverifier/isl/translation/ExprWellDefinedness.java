@@ -15,6 +15,7 @@ import de.unikl.bcverifier.isl.ast.BoolConst;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.ErrorExpr;
 import de.unikl.bcverifier.isl.ast.Expr;
+import de.unikl.bcverifier.isl.ast.ExprTypeRef;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.InstanceofOperation;
@@ -26,6 +27,7 @@ import de.unikl.bcverifier.isl.ast.QExpr;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
 import de.unikl.bcverifier.isl.ast.VersionConst;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
 import de.unikl.bcverifier.isl.parser.Quantifier;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunction;
 
@@ -77,14 +79,17 @@ public class ExprWellDefinedness {
 
 
 	public static BPLExpression translate(MemberAccess e) {
-		// e.f
-		// >>> df(e) && tr(e) != null
-		BPLExpression[] exprs = { e.getLeft().translateExprWellDefinedness(), new BPLEqualityExpression(
-				BPLEqualityExpression.Operator.NOT_EQUALS, 
-				e.getLeft().translateExpr(),
-				BPLNullLiteral.NULL
-				) };
-		return TranslationHelper.conjunction(exprs);
+		if (e.getLeft().attrType() instanceof ExprTypeJavaType) {
+			// e.f
+			// >>> df(e) && tr(e) != null
+			BPLExpression[] exprs = { e.getLeft().translateExprWellDefinedness(), new BPLEqualityExpression(
+					BPLEqualityExpression.Operator.NOT_EQUALS, 
+					e.getLeft().translateExpr(),
+					BPLNullLiteral.NULL
+					) };
+			return TranslationHelper.conjunction(exprs);
+		}
+		return BPLBoolLiteral.TRUE;
 	}
 
 	public static BPLExpression translate(ErrorExpr errorExpr) {
@@ -148,5 +153,9 @@ public class ExprWellDefinedness {
 
 	public static BPLExpression translate(VersionConst versionConst) {
 		return BPLBoolLiteral.TRUE;
+	}
+
+	public static BPLExpression translate(ExprTypeRef exprTypeRef) {
+		throw new Error("Cannot translate typeRef expressions.");
 	}
 }

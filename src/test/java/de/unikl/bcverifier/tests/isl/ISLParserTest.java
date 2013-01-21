@@ -1,6 +1,12 @@
 package de.unikl.bcverifier.tests.isl;
 
-import static org.junit.Assert.*;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
+
+import java.io.File;
+
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,8 +15,6 @@ import java.util.List;
 
 
 import org.apache.wicket.util.string.Strings;
-import org.junit.Assert;
-import org.junit.Test;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -25,7 +29,6 @@ import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Invariant;
 import de.unikl.bcverifier.isl.ast.Statement;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
-import de.unikl.bcverifier.isl.checking.LibEnvironment;
 import de.unikl.bcverifier.isl.checking.TypeError;
 import de.unikl.bcverifier.isl.parser.ISLCompiler;
 import de.unikl.bcverifier.isl.parser.ParserError;
@@ -36,11 +39,21 @@ import de.unikl.bcverifier.specification.SpecExpr;
 public class ISLParserTest {
 
 	@Test
-	public void err_placecheck() throws IOException, Exception, CompileException {
+	public void localPlaceAtCall1() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 				"local place callNotifyMe1 = call notifyMe in line 8 of old C;"
 				);
-		testTypeCheckError("Invalid place definition",
+		testTypeCheckError("sync support for local places",
+				new File("./examples/iframeDestroy/old"), 
+				new File("./examples/iframeDestroy/new"), cu);
+	}
+	
+	@Test
+	public void localPlaceAtCall_nosync() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+				"local place callNotifyMe1 = call notifyMe in line 8 of old C nosync;"
+				);
+		testTypeCheckOk(
 				new File("./examples/iframeDestroy/old"), 
 				new File("./examples/iframeDestroy/new"), cu);
 	}
@@ -48,17 +61,17 @@ public class ISLParserTest {
 	@Test
 	public void err_placecheck2() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
-				"predefined place callNotifyMe1 = line 8 of old C;"
+				"place callNotifyMe1 = line 8 of old C;"
 				);
-		testTypeCheckError("Invalid place definition",
+		testTypeCheckError("Observable places can not be defined within the library implementation",
 				new File("./examples/iframeDestroy/old"), 
 				new File("./examples/iframeDestroy/new"), cu);
 	}
 	
 	@Test
-	public void predefinedplace_splitvc() throws IOException, Exception, CompileException {
+	public void predefinedplace_nosplit() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
-				"predefined place (splitvc) callNotifyMe1 = call notifyMe in line 8 of old C;"
+				"place callNotifyMe1 = call notifyMe in line 8 of old C nosplit;"
 				);
 		testTypeCheckOk(
 				new File("./examples/iframeDestroy/old"), 
@@ -128,23 +141,6 @@ public class ISLParserTest {
 				new File("./examples/localLoop/new"), cu);
 	}
 	
-	@Test
-	public void localLoop_err2() throws IOException, Exception, CompileException {
-		CompilationUnit cu = testParseOk(
-			"local place inLoop1 = line 7 of old C when at(inLoop2);",
-			"local place inLoop2 = line 8 of new C;",
-			"// both libraries are in the loop at the same time.	", 
-			"	local invariant at(inLoop1) <==> at(inLoop2);",
-			"//the values of the variables are the same",
-			"	local invariant at(inLoop1) && at(inLoop2) ==> ",
-			"		   stack(inLoop1, n) == stack(inLoop2, n)",
-			"		&& stack(inLoop1, x) == stack(inLoop2, x)",
-			"		&& stack(inLoop1, i) == stack(inLoop2, i);"
-			);
-		testTypeCheckError("Function 'at' must not be used in local place definitions.",
-				new File("./examples/localLoop/old"), 
-				new File("./examples/localLoop/new"), cu);
-	}
 
 	@Test
 	public void obool() throws IOException, Exception, CompileException {
@@ -152,8 +148,8 @@ public class ISLParserTest {
 				"invariant forall old Bool o1, new Bool o2 :: o1 ~ o2 ==> o1.f == o2.f;",
 				"invariant forall old OBool o1, new OBool o2 :: o1 ~ o2 ==> o1.g.f != o2.g.f;",
 				// internal:
-				"invariant forall old OBool o :: !createdByCtxt(o.g) && !exposed(o.g);",
-				"invariant forall new OBool o :: !createdByCtxt(o.g) && !exposed(o.g);",
+				"invariant forall old OBool o :: createdByLibrary(o.g) && !exposed(o.g);",
+				"invariant forall new OBool o :: createdByLibrary(o.g) && !exposed(o.g);",
 				// nonnull:
 				"invariant forall old OBool o :: o.g != null;",
 				"invariant forall new OBool o :: o.g != null;",
@@ -169,24 +165,41 @@ public class ISLParserTest {
 	}
 	
 	@Test
-	public void obool2() throws IOException, Exception, CompileException {
+	public void testVars() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
-				// internal:
-				"invariant forall old OBool o :: !createdByCtxt(o.g) && !exposed(o.g);",
-				"invariant forall new OBool o :: !createdByCtxt(o.g) && !exposed(o.g);",
-				// nonnull:
-				"invariant forall old OBool o :: o.g != null;",
-				"invariant forall new OBool o :: o.g != null;",
-				// unique
-				"invariant exists Bijection relbij :: forall old OBool o1, new OBool o2 :: o1 ~ o2 ==> o1.g instanceof old Bool && o2.g instanceof new Bool && related(relbij, o1.g, o2.g);",
-				"invariant forall old Bool o1, new Bool o2 :: o1 ~ o2 ==> o1.f == o2.f;",
-				"invariant forall old OBool o1, new OBool o2 :: o1 ~ o2 ==> o1.g.f != o2.g.f;"
+		"var binrelation bij = add(empty(), null, null);",
+		"var old Node x1 = null;",
+		"var new util.Node x2 = null;",
+		"var int i = 42;",
+		"var boolean b = true;"		
 				);
 		testTypeCheckOk(
-				new File("./examples/obool/old"), 
-				new File("./examples/obool/new"), cu);
-		System.out.println("obool2 output:");
+				new File("./examples/list/old"), 
+				new File("./examples/list/new"), cu);
 		translateAndPrint(cu);
+	}
+	
+	@Test
+	public void testVars_typeNotFound() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+		"var new does.not.Exist x = null;"
+				);
+		testTypeCheckError("Could not find class does.not.Exist",
+				new File("./examples/list/old"), 
+				new File("./examples/list/new"), cu);
+		translateAndPrint(cu);
+	}
+	
+	@Test
+	public void testInvalidComparison2() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+		"var old Node n1 = null;",
+		"var int n2 = 0;",
+		"invariant n1 == n2;"
+				);
+		testTypeCheckError("Cannot compare types",
+				new File("./examples/list/old"), 
+				new File("./examples/list/new"), cu);
 	}
 	
 	
@@ -195,36 +208,39 @@ public class ISLParserTest {
 		Object res = parser.parse();
 		for (ParserError err : parser.getErrors()) {
 			System.err.println(err);
-			assertTrue("" + err, false);
+			Assert.fail(err.toString());
 		}
-		assertNotNull(res);
+		Assert.assertNotNull(res);
 		return (CompilationUnit) res;
 	}
 	
 	protected void testTypeCheckOk(File oldLib, File newLib, CompilationUnit cu) throws CompileException {
-		TwoLibraryModel twoLibraryModel = new TwoLibraryModel(oldLib, newLib);
-		cu.setTwoLibraryModel(twoLibraryModel);
-		cu.setBuiltinFunctions(new BuiltinFunctions(twoLibraryModel ));
-		cu.typecheck();
+		doCheck(oldLib, newLib, cu);
 		for (TypeError err : cu.getErrors()) {
 			System.err.println(err);
-			assertTrue("" + err, false);
+			Assert.fail("" + err);
 		}
 	}
 	
 	protected void testTypeCheckError(String expected, File oldLib, File newLib, CompilationUnit cu) throws CompileException {
+		doCheck(oldLib, newLib, cu);
+		StringBuilder errors = new StringBuilder();
+		for (TypeError err : cu.getErrors()) {
+			errors.append("\n" + err.toString());
+		}
+		if (!errors.toString().contains(expected)) {
+			Assert.assertEquals(errors.toString(), expected);
+		}
+	}
+
+	private void doCheck(File oldLib, File newLib, CompilationUnit cu)
+			throws CompileException {
+		LibraryCompiler.compile(oldLib);
+		LibraryCompiler.compile(newLib);
 		TwoLibraryModel twoLibraryModel = new TwoLibraryModel(oldLib, newLib);
 		cu.setTwoLibraryModel(twoLibraryModel);
 		cu.setBuiltinFunctions(new BuiltinFunctions(twoLibraryModel ));
 		cu.typecheck();
-		boolean errFound = false;
-		for (TypeError err : cu.getErrors()) {
-			System.err.println(err);
-			if (err.toString().contains(expected)) {
-				errFound = true;
-			}
-		}
-		assertTrue(errFound);
 	}
 	
 	protected void translateAndPrint(CompilationUnit cu) {

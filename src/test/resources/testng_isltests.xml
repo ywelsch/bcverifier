@@ -1,0 +1,9 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+  
+<suite name="ISL Tests" verbose="1" data-provider-thread-count="1">
+  <test name="ISL Test" >
+    <classes>
+    	<class name="de.unikl.bcverifier.tests.isl.ISLParserTest" />
+    </classes>
+  </test>
+</suite>

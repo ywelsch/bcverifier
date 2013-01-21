@@ -14,8 +14,7 @@ FuncCall : Expr ::= FuncName:Ident Argument:Expr*;
 
 BinaryOperation : Expr ::= <Operator:de.unikl.bcverifier.isl.parser.BinaryOperator> Left:Expr Right:Expr;
 UnaryOperation : Expr ::= <Operator:de.unikl.bcverifier.isl.parser.UnaryOperator> Expr;
-InstanceofOperation : Expr ::=
-Left:Expr Right:TypeDef;
+InstanceofOperation : Expr ::= Left:Expr Right:Expr;
 
 IfThenElse : Expr ::= Cond:Expr ThenExpr:Expr ElseExpr:Expr;
 
@@ -25,6 +24,7 @@ ErrorExpr : Expr ::= <Message>;
 BoolConst : Expr ::= <Val:boolean>;
 IntConst : Expr ::= <Val>;
 VersionConst : Expr ::= <Val:de.unikl.bcverifier.isl.ast.Version>;
+ExprTypeRef : Expr ::= <Version:de.unikl.bcverifier.isl.ast.Version> Right:Ident;
 NullConst : Expr ::=;
 
 

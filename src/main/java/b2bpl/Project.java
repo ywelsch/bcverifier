@@ -150,6 +150,9 @@ public class Project {
 
   private TypeLoader typeLoader = null;
 
+  // constructor is private, use 'fromCommandLine' to create a new Project
+  private Project() {}
+  
   /**
    * Creates a new project which is configured according to the set of command
    * line arguments ({@code args}) provided.

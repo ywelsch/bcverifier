@@ -13,7 +13,7 @@ import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.checking.types.JavaType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 /**
@@ -42,7 +42,7 @@ public class JavaVariableDef extends Def {
 
 	@Override
 	public ExprType attrType() {
-		return JavaType.create(model, version, binding.getType());
+		return ExprTypeJavaType.create(model, version, binding.getType());
 	}
 	
 	public IVariableBinding getBinding() {
