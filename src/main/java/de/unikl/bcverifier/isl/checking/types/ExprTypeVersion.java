@@ -6,12 +6,10 @@ import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 public class ExprTypeVersion extends ExprType {
 
 	private Version version;
-	private TwoLibraryModel env;
 
-	private static ExprTypeVersion v_instance = new ExprTypeVersion(null, null);
+	private static ExprTypeVersion v_instance = new ExprTypeVersion(null);
 	
-	private ExprTypeVersion(TwoLibraryModel env, Version version) {
-		this.env = env;
+	private ExprTypeVersion(Version version) {
 		this.version = version;
 	}
 
@@ -24,8 +22,8 @@ public class ExprTypeVersion extends ExprType {
 		return version;
 	}
 
-	public static ExprTypeVersion get(TwoLibraryModel env, Version v) {
-		return new ExprTypeVersion(env, v);
+	public static ExprTypeVersion get(Version v) {
+		return new ExprTypeVersion(v);
 	}
 	
 	public static ExprTypeVersion instance() {

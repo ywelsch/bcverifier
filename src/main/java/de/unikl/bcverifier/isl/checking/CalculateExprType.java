@@ -104,7 +104,7 @@ public class CalculateExprType {
 			ExprTypeHasMembers leftType2 = (ExprTypeHasMembers) leftType;
 			return leftType2.typeOfMemberAccess(e, name);
 		}
-		e.addError("Left hand side of member acces is of type " + leftType
+		e.addError("Left hand side of member access is of type " + leftType
 				+ " (expected Java type).");
 		return ExprTypeUnknown.instance();
 	}
@@ -182,8 +182,6 @@ public class CalculateExprType {
 			op.addError("instanceof expects a java type on the left hand side but found " + left);
 		} else if (!(right instanceof ExprTypeJavaTypeRef)) {			
 			op.addError("instanceof expects a reference to a java type on the right hand side but found " + left);
-		} else if (!(right instanceof ExprTypeJavaTypeRef)) {
-			op.addError("right side of instanceof operation must refer to a Java type");
 		} else {
 			if (!((ExprTypeJavaType)left).getVersion().equals(((ExprTypeJavaTypeRef)right).getVersion())) {
 				op.addError("instanceof must compare type of same library implementation");
@@ -193,12 +191,7 @@ public class CalculateExprType {
 	}
 	
 	public static ExprType attrType(VersionConst c) {
-		CompilationUnit cu = c.attrCompilationUnit();
-		TwoLibraryModel env = null;
-		if (cu != null) {
-			env = cu.getTwoLibraryModel();
-		}
-		return ExprTypeVersion.get(env, c.getVal());
+		return ExprTypeVersion.get(c.getVal());
 	}
 
 	public static ExprType attrType(ExprTypeRef e) {
@@ -226,6 +219,11 @@ public class CalculateExprType {
 				.getTwoLibraryModel();
 		ASTNode node = model.getSrc(jt.getVersion()).findDeclaringNode(jt.getTypeBinding());
 
+		if (node == null) {
+			p.addError("Type " + type + " is not part of the given library.");
+			return ExprTypeUnknown.instance();
+		}
+		
 		Statement s = getStatementInLine(model, node, p.getProgramLineNr());
 		if (s == null) {
 			p.addError("No statement found in line " + p.getProgramLineNr() +".");
@@ -247,6 +245,11 @@ public class CalculateExprType {
 				.getTwoLibraryModel();
 		ASTNode node = model.getSrc(jt.getVersion()).findDeclaringNode(jt.getTypeBinding());
 
+		if (node == null) {
+			p.addError("Type " + type + " is not part of the given library.");
+			return ExprTypeUnknown.instance();
+		}
+		
 		MethodInvocation inv = getMethodInvocationInLine(p.getFunctionName().getName(), model, node, p.getProgramLineNr());
 		if (inv == null) {
 			p.addError("No method call found in this line.");

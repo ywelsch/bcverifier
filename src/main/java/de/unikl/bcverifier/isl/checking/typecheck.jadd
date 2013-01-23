@@ -6,6 +6,11 @@ aspect typecheck {
 		}
 	}
 	
+	public void CompilationUnit.typecheck() {
+		super.typecheck();
+		TypeHelper.checkCompilationUnit(this);
+	}
+	
 	public void Expr.typecheck() {
 		super.typecheck();
 		// calculate the type
@@ -13,14 +18,27 @@ aspect typecheck {
 	}
 	
 	public void PlaceDef.typecheck() {
+		super.typecheck();
 		TypecheckStatement.checkPlaceDef(this);
 	}
 	
 	public void GlobVarDef.typecheck() {
+		super.typecheck();
 		TypecheckStatement.checkGlobVarDef(this);
 	}
 	
 	public void Assign.typecheck() {
+		super.typecheck();
 		TypecheckStatement.checkAssign(this);
+	}
+	
+	public void LocalInvariant.typecheck() {
+		super.typecheck();
+		TypecheckStatement.checkLocalInvariant(this);
+	}
+	
+	public void Invariant.typecheck() {
+		super.typecheck();
+		TypecheckStatement.checkInvariant(this);
 	}
 }

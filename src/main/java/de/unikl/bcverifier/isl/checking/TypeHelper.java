@@ -1,9 +1,15 @@
 package de.unikl.bcverifier.isl.checking;
 
+import java.util.Set;
+
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.Modifier;
 
+import com.google.common.collect.Sets;
+
+import de.unikl.bcverifier.isl.ast.CompilationUnit;
+import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Ident;
 import de.unikl.bcverifier.isl.ast.List;
@@ -65,6 +71,25 @@ public class TypeHelper {
 			n = n.getParent();
 		}
 		return null;
+	}
+
+
+	public static void checkCompilationUnit(CompilationUnit cu) {
+		checkForDuplicateNames(cu);
+	}
+
+	/**
+	 * checks that each definition has a unique name
+	 */
+	private static void checkForDuplicateNames(CompilationUnit cu) {
+		Set<String> names = Sets.newHashSet();
+		for (Def d : cu.attrDefinedVars()) {
+			String name = d.attrName();
+			boolean notExists = names.add(name);
+			if (!notExists && !name.startsWith("<")) {
+				d.addError("An element with name " + name + " is already defined.");
+			}
+		}
 	}
 
 
