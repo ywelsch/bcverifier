@@ -171,8 +171,11 @@ public class CalculateExprType {
 	public static ExprType attrType(VarAccess e) {
 		Def def = e.attrDef();
 		if (def instanceof GlobVarDef) {
-			if (TypeHelper.getParentOfType(e, GlobVarDef.class) == def
-					|| def.getStart() > e.getStart()) {
+			GlobVarDef parentDef = TypeHelper.getParentOfType(e, GlobVarDef.class);
+			
+			if (parentDef != null
+					&& ( parentDef == def
+					  || def.getStart() > e.getStart())) {
 				e.addError("Variable " + e.getName().getName() + " is used before it is defined.");
 			}
 		}
