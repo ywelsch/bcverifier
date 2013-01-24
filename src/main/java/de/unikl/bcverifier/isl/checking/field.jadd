@@ -1,5 +1,5 @@
 import org.eclipse.jdt.core.dom.IVariableBinding;
 
 aspect field {
-	syn IVariableBinding MemberAccess.attrField() = TypeHelper.attrField(this);
+	syn lazy IVariableBinding MemberAccess.attrField() = TypeHelper.attrField(this);
 }

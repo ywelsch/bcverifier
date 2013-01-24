@@ -4,7 +4,7 @@ import de.unikl.bcverifier.isl.checking.TypeHelper;
 
 aspect exprType {
 
-  syn ExprType Expr.attrType();
+  syn lazy ExprType Expr.attrType();
 
   eq QExpr.attrType() = ExprTypeBool.instance();
 
@@ -34,7 +34,7 @@ aspect exprType {
   
   eq ExprTypeRef.attrType() = CalculateExprType.attrType(this);
 
-  syn ExprType ProgramPointExpr.attrType() circular [ExprTypeUnknown.instance()];
+  syn lazy ExprType ProgramPointExpr.attrType();
 
   eq LineNrProgramPoint.attrType() = CalculateExprType.attrType(this);
 

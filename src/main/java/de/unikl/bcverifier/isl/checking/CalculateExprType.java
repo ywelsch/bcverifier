@@ -15,6 +15,7 @@ import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.ExprTypeRef;
 import de.unikl.bcverifier.isl.ast.FuncCall;
+import de.unikl.bcverifier.isl.ast.GlobVarDef;
 import de.unikl.bcverifier.isl.ast.IfThenElse;
 import de.unikl.bcverifier.isl.ast.InstanceofOperation;
 import de.unikl.bcverifier.isl.ast.LineNrProgramPoint;
@@ -22,6 +23,7 @@ import de.unikl.bcverifier.isl.ast.MemberAccess;
 import de.unikl.bcverifier.isl.ast.NullConst;
 import de.unikl.bcverifier.isl.ast.UnaryOperation;
 import de.unikl.bcverifier.isl.ast.VarAccess;
+import de.unikl.bcverifier.isl.ast.VarDef;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.ast.VersionConst;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
@@ -168,6 +170,12 @@ public class CalculateExprType {
 
 	public static ExprType attrType(VarAccess e) {
 		Def def = e.attrDef();
+		if (def instanceof GlobVarDef) {
+			if (TypeHelper.getParentOfType(e, GlobVarDef.class) == def
+					|| def.getStart() > e.getStart()) {
+				e.addError("Variable " + e.getName().getName() + " is used before it is defined.");
+			}
+		}
 		return def.attrType();
 	}
 

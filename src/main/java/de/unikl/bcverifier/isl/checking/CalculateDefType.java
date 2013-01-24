@@ -26,33 +26,7 @@ public class CalculateDefType {
 			return ExprTypeUnknown.instance();
 		}
 		ExprTypeProgramPoint pptype = (ExprTypeProgramPoint)pptype1;
-		if (placeDef.isPredefinedPlace()) {
-			if (placeDef.hasCondition()) {
-				placeDef.addError("Observable places must not have a condition.");
-			}
-			if (placeDef.hasStallCondition()) {
-				placeDef.addError("Observable places must not have a stall condition.");
-			}
-			if (pptype instanceof ExprTypeAtLineProgramPoint) {
-				placeDef.addError("Observable places can not be defined within the library implementation");
-			}
-		}
-		if (placeDef.isLocalPlace()) {
-			if (pptype instanceof ExprTypeCallProgramPoint && !placeDef.hasPlaceOption(Translation.PLACE_OPTION_NOSYNC)) {
-				placeDef.addError("sync support for local places defined at a call statement is not available yet");
-			}
-		}
-		if (placeDef.hasCondition()) {
-			checkIfSubtype(placeDef.getCondition(), ExprTypeBool.instance());
-		}
-		if (placeDef.hasStallCondition()) {
-			checkIfSubtype(placeDef.getStallCondition().getCondition(), ExprTypeBool.instance());
-			if (placeDef.getStallCondition().hasMeasure()) {
-				checkIfSubtype(placeDef.getStallCondition().getMeasure(), ExprTypeInt.instance());
-			}
-		}
 		return new ExprTypePlace(placeDef.isLocalPlace(), pptype);
-
 	}
 	
 	public static ExprType attrType(NamedTypeDef t) {

@@ -262,4 +262,35 @@ public class ISLTypecheckTests extends ISLTest {
 				new File("./examples/list/old"), 
 				new File("./examples/list/new"), cu);
 	}
+	
+	@Test
+	public void selfRef() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+				"local place p = line 24 of old Observable when at(p);"
+				);
+		testTypeCheckOk( 
+				new File("./examples/list/old"), 
+				new File("./examples/list/new"), cu);
+	}
+	
+	@Test
+	public void selfRef2() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+				"var int x = x + 1;"
+				);
+		testTypeCheckError("x is used before it is defined", 
+				new File("./examples/list/old"), 
+				new File("./examples/list/new"), cu);
+	}
+	
+	@Test
+	public void useUninitialized() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+				"var int x = y + 1;",
+				"var int y = 1;"
+				);
+		testTypeCheckError("y is used before it is defined", 
+				new File("./examples/list/old"), 
+				new File("./examples/list/new"), cu);
+	}
 }

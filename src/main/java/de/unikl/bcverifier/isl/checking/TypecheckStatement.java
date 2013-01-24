@@ -1,5 +1,7 @@
 package de.unikl.bcverifier.isl.checking;
 
+import static de.unikl.bcverifier.isl.checking.TypeHelper.checkIfSubtype;
+
 import org.eclipse.jdt.core.dom.ITypeBinding;
 
 import de.unikl.bcverifier.isl.ast.Assign;
@@ -10,8 +12,12 @@ import de.unikl.bcverifier.isl.ast.LocalInvariant;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeAtLineProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeCallProgramPoint;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
+import de.unikl.bcverifier.isl.checking.types.ExprTypeProgramPoint;
 import de.unikl.bcverifier.isl.translation.Translation;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
@@ -80,6 +86,8 @@ public class TypecheckStatement {
 			if (placeDef.hasStallCondition() && placeDef.hasPlaceOption(Translation.PLACE_OPTION_NOSYNC)) {
 				placeDef.addError("The " + Translation.PLACE_OPTION_NOSYNC + " option is not supported for places with stall condition.");
 			}
+			
+			
 		}
 		
 		for (Assign a : placeDef.getAssignmentsList()) {
@@ -92,6 +100,37 @@ public class TypecheckStatement {
 				i.addError("Unsupported place option: " + i.getName());
 			}
 		}
+		
+		if (placeDef.getProgramPoint().attrType() instanceof ExprTypeProgramPoint) {
+			ExprTypeProgramPoint pptype = (ExprTypeProgramPoint)placeDef.getProgramPoint().attrType();
+			
+			if (placeDef.isPredefinedPlace()) {
+				if (placeDef.hasCondition()) {
+					placeDef.addError("Observable places must not have a condition.");
+				}
+				if (placeDef.hasStallCondition()) {
+					placeDef.addError("Observable places must not have a stall condition.");
+				}
+				if (pptype instanceof ExprTypeAtLineProgramPoint) {
+					placeDef.addError("Observable places can not be defined within the library implementation");
+				}
+			}
+			if (placeDef.isLocalPlace()) {
+				if (pptype instanceof ExprTypeCallProgramPoint && !placeDef.hasPlaceOption(Translation.PLACE_OPTION_NOSYNC)) {
+					placeDef.addError("sync support for local places defined at a call statement is not available yet");
+				}
+			}
+			if (placeDef.hasCondition()) {
+				checkIfSubtype(placeDef.getCondition(), ExprTypeBool.instance());
+			}
+			if (placeDef.hasStallCondition()) {
+				checkIfSubtype(placeDef.getStallCondition().getCondition(), ExprTypeBool.instance());
+				if (placeDef.getStallCondition().hasMeasure()) {
+					checkIfSubtype(placeDef.getStallCondition().getMeasure(), ExprTypeInt.instance());
+				}
+			}
+		}
+		
 	}
 
 	public static void checkInvariant(Invariant inv) {

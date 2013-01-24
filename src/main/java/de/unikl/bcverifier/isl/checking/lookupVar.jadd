@@ -3,7 +3,7 @@ import com.google.common.collect.Lists;
 
 aspect lookup {
 	
-	syn Collection<Def> ASTNode.lookup(String name) = getParent().lookup(name); 
+	syn lazy Collection<Def> ASTNode.lookup(String name) = getParent().lookup(name); 
 	
 	
 	eq Expr.lookup(String name) = Lookup.lookup(this, name);
