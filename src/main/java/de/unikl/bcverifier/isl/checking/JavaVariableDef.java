@@ -2,10 +2,13 @@ package de.unikl.bcverifier.isl.checking;
 
 import org.eclipse.jdt.core.dom.IVariableBinding;
 
+import b2bpl.bpl.ast.BPLArrayExpression;
+import b2bpl.bpl.ast.BPLExpression;
 import b2bpl.bytecode.BCMethod;
 import b2bpl.bytecode.InstructionHandle;
 import b2bpl.bytecode.JClassType;
 import b2bpl.bytecode.LocalVariableInfo;
+import de.unikl.bcverifier.isl.ast.BinaryOperation;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Version;
@@ -21,18 +24,20 @@ import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
  */
 public class JavaVariableDef extends Def {
 
-	private IVariableBinding binding;
-	private Version version;
-	private TwoLibraryModel model;
-	private Expr stackPointerExpr;
-	private ExprTypePlace placeType;
+	private final IVariableBinding binding;
+	private final Version version;
+	private final TwoLibraryModel model;
+	private final BPLExpression stackPointerExpr;
+	private final ExprTypePlace placeType;
+	private final BPLExpression stackSliceExpr;
 
-	public JavaVariableDef(TwoLibraryModel model, ExprTypePlace placeType, Expr stackPointerExpr, IVariableBinding binding) {
+	public JavaVariableDef(TwoLibraryModel model, ExprTypePlace placeType, BPLExpression stackSliceExpr, BPLExpression stackFrameExpr, IVariableBinding binding) {
 		this.model = model;
 		this.version = placeType.getVersion();
 		this.placeType = placeType;
 		this.binding = binding;
-		this.stackPointerExpr = stackPointerExpr;
+		this.stackPointerExpr = stackFrameExpr;
+		this.stackSliceExpr = stackSliceExpr;
 	}
 
 	@Override
@@ -86,8 +91,12 @@ public class JavaVariableDef extends Def {
 		throw new RuntimeException("Var " + attrName() + " not found in line " + placeType.getLineNr());
 	}
 
-	public Expr getStackPointerExpr() {
+	public BPLExpression getStackPointerExpr() {
 		return stackPointerExpr;
+	}
+
+	public BPLExpression getStackSliceExpr() {
+		return stackSliceExpr;
 	}
 
 }

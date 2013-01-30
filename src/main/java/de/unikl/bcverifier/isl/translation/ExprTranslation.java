@@ -338,8 +338,9 @@ public class ExprTranslation {
 	private static BPLExpression translateJavaVariableAccess(VarAccess e,
 			JavaVariableDef jv) {
 		BPLExpression expr = BuiltinFunctions.stackProperty(
-				!jv.getPlaceType().isLocalPlace(), jv.getVersion(), e.attrCompilationUnit().getPhase(),
-				jv.getStackPointerExpr().translateExpr(), 
+				jv.getVersion(), e.attrCompilationUnit().getPhase(),
+				jv.getStackSliceExpr(), 
+				jv.getStackPointerExpr(), 
 				new BPLVariableExpression(jv.getRegisterName()));
 		if (e.attrType().isSubtypeOf(ExprTypeBool.instance())) {
 			// boolean vars must be converted explicitly

@@ -59,8 +59,6 @@ import de.unikl.bcverifier.specification.SpecExpr;
 public class Translation {
 	
 
-	// varname used for quantifying over all iframes
-	public static final String IFRAME_VAR = "iframe";
 	public static final String PLACE_OPTION_NOSPLIT = "nosplit";
 	public static final String PLACE_OPTION_NOSYNC = "nosync";
 
@@ -75,50 +73,10 @@ public class Translation {
 				
 				// forall interaction frames
 				// TODO only do this when ifram var is used.
-				result.add(new SpecExpr(forallInteractionFrames(invExpr), forallInteractionFrames(welldefinedness), comment));
+				result.add(new SpecExpr(invExpr, welldefinedness, comment));
 			}
 		}
 		return result;
-	}
-
-	private static BPLExpression forallInteractionFrames(BPLExpression expr) {
-		
-		Map<String, BPLVariable> tofind = Maps.newHashMap();
-		tofind.put(IFRAME_VAR, null);
-		UsedVariableFinder variableFinder = new UsedVariableFinder(tofind);
-		expr.accept(variableFinder);
-		if (variableFinder.getUsedVariables().size() == 0) {
-			// variable iframe not used in expression
-			return expr;
-		}
-		BPLExpression[] exprs = { new BPLRelationalExpression(
-				BPLRelationalExpression.Operator.LESS_EQUAL,
-				new BPLIntLiteral(0),
-				new BPLVariableExpression(IFRAME_VAR)
-				), new BPLRelationalExpression(
-				BPLRelationalExpression.Operator.LESS_EQUAL,
-				new BPLVariableExpression(IFRAME_VAR),
-				new BPLVariableExpression(ITranslationConstants.IP1_VAR)
-				), new BPLEqualityExpression(
-				BPLEqualityExpression.Operator.EQUALS,
-				new BPLBinaryArithmeticExpression(
-						BPLBinaryArithmeticExpression.Operator.REMAINDER_INT,
-						new BPLVariableExpression(IFRAME_VAR),
-						new BPLIntLiteral(2)
-						),
-				new BPLIntLiteral(1)
-				) };
-		
-		expr = new BPLBinaryLogicalExpression(
-				BPLBinaryLogicalExpression.Operator.IMPLIES, 
-				TranslationHelper.conjunction(exprs), 
-				expr); 
-		
-		return new BPLQuantifierExpression(
-				BPLQuantifierExpression.Operator.FORALL,
-				new BPLVariable[] { new BPLVariable(IFRAME_VAR, BPLBuiltInType.INT) },
-				expr
-				);
 	}
 
 	public static java.util.List<SpecExpr> generateLocalInvariants(CompilationUnit cu) {
@@ -129,7 +87,7 @@ public class Translation {
 				BPLExpression welldefinedness = inv.getExpr().translateExprWellDefinedness();
 				BPLExpression invExpr = inv.getExpr().translateExpr();
 				String comment = inv.getExpr().print();
-				result.add(new SpecExpr(forallInteractionFrames(invExpr), forallInteractionFrames(welldefinedness), comment));
+				result.add(new SpecExpr(invExpr, welldefinedness, comment));
 			}
 		}
 		return result;

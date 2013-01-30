@@ -11,14 +11,21 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
+import b2bpl.bpl.ast.BPLArrayExpression;
+import b2bpl.bpl.ast.BPLExpression;
+
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.FuncCall;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
+import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeAtLineProgramPoint;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFuncEval_place;
+import de.unikl.bcverifier.isl.translation.Phase;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFuncEval1;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFuncTopSlice2;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class Lookup {
@@ -28,8 +35,14 @@ public class Lookup {
 		if (progPoint instanceof ExprTypeAtLineProgramPoint) {
 			ExprTypePlace placeType = new ExprTypePlace(placeDef.isLocalPlace(), (ExprTypeAtLineProgramPoint) progPoint);
 			TwoLibraryModel model = placeDef.attrCompilationUnit().getTwoLibraryModel();
-	
-			Def r = lookupJava(model, placeType, name, new StackpointerExpr(placeType.getVersion(), !placeType.isLocalPlace()), placeDef);
+			
+			
+			Version version = placeType.getVersion();
+			Phase phase = placeDef.attrCompilationUnit().getPhase();
+			
+			BPLExpression stackSliceExpr = BuiltinFuncTopSlice2.getIpVar(version);
+			BPLExpression stackFrameExpr = BuiltinFunctions.getCurrentSpTopSlice(version, phase);
+			Def r = lookupJava(model, placeType, name, stackSliceExpr, stackFrameExpr, placeDef);
 			if (r != null) {
 				return Collections.singletonList(r);
 			}
@@ -47,16 +60,34 @@ public class Lookup {
 		// special lookup rule for stack function
 		if (expr.getParent().getParent() instanceof FuncCall) {
 			FuncCall funcCall = (FuncCall) expr.getParent().getParent();
-			if (funcCall.getFuncName().getName().equals(BuiltinFuncEval_place.name)) { 
-				if (funcCall.getNumArgument() == 3
-						&& funcCall.getArgument(2) == expr
+			if (funcCall.getFuncName().getName().equals(BuiltinFuncEval1.name)) { 
+				if (funcCall.getNumArgument() == 4
+						&& funcCall.getArgument(3) == expr
 						&& funcCall.getArgument(0).attrType() instanceof ExprTypePlace) { 
-					// stack(place, sp, expr)
+					// stack(place, splice, frame, expr)
 					ExprTypePlace placeType = (ExprTypePlace) funcCall.getArgument(0).attrType();
-					Expr stackPointerExpr = funcCall.getArgument(1);
+					BPLExpression stackSliceExpr = funcCall.getArgument(1).translateExpr();
+					BPLExpression stackPointerExpr = funcCall.getArgument(2).translateExpr();
 					TwoLibraryModel model = expr.attrCompilationUnit().getTwoLibraryModel();
 
-					Def r = lookupJava(model, placeType, name, stackPointerExpr, expr);
+					Def r = lookupJava(model, placeType, name, stackSliceExpr, stackPointerExpr, expr);
+					if (r != null) {
+						return Collections.singletonList(r);
+					}
+				} else if (funcCall.getNumArgument() == 3
+						&& funcCall.getArgument(2) == expr
+						&& funcCall.getArgument(0).attrType() instanceof ExprTypePlace) {
+					// stack(place, splice, expr)
+					ExprTypePlace placeType = (ExprTypePlace) funcCall.getArgument(0).attrType();
+					
+					Version version = placeType.getVersion();
+					Phase phase = expr.attrCompilationUnit().getPhase();
+					
+					BPLExpression stackSliceExpr = funcCall.getArgument(1).translateExpr();
+					BPLExpression stackPointerExpr = BuiltinFunctions.getCurrentSp(placeType.getVersion(), phase, stackSliceExpr);
+					TwoLibraryModel model = expr.attrCompilationUnit().getTwoLibraryModel();
+
+					Def r = lookupJava(model, placeType, name, stackSliceExpr, stackPointerExpr, expr);
 					if (r != null) {
 						return Collections.singletonList(r);
 					}
@@ -65,11 +96,16 @@ public class Lookup {
 						&& funcCall.getArgument(0).attrType() instanceof ExprTypePlace) {
 					// stack(place, expr)
 					ExprTypePlace placeType = (ExprTypePlace) funcCall.getArgument(0).attrType();
-					Expr stackPointerExpr = new StackpointerExpr(placeType.getVersion(), !placeType.isLocalPlace());
+					
+					Version version = placeType.getVersion();
+					Phase phase = expr.attrCompilationUnit().getPhase();
+					
+					BPLExpression stackSliceExpr = BuiltinFuncTopSlice2.getIpVar(version);
+					BPLExpression stackFrameExpr = BuiltinFunctions.getCurrentSpTopSlice(version, phase);
 					
 					TwoLibraryModel model = expr.attrCompilationUnit().getTwoLibraryModel();
 
-					Def r = lookupJava(model, placeType, name, stackPointerExpr, expr);
+					Def r = lookupJava(model, placeType, name, stackSliceExpr, stackFrameExpr, expr);
 					if (r != null) {
 						return Collections.singletonList(r);
 					}
@@ -81,19 +117,19 @@ public class Lookup {
 	}
 
 	private static Def lookupJava(TwoLibraryModel model, ExprTypePlace placeType,
-			String name, Expr stackPointerExpr, de.unikl.bcverifier.isl.ast.ASTNode<?> loc) {
+			String name, BPLExpression stackSliceExpr, BPLExpression stackFrameExpr, de.unikl.bcverifier.isl.ast.ASTNode<?> loc) {
 		ASTNode s = placeType.getASTNode();
 
 		if (name.equals("this")) {
 			ITypeBinding nearestClass = findNearestClass(s);
-			return new JavaThis(model, placeType, stackPointerExpr, nearestClass, loc);
+			return new JavaThis(model, placeType, stackSliceExpr, stackFrameExpr, nearestClass, loc);
 		}
 		
 		IVariableBinding binding = lookupJavaVar(s, name);
 		if (binding == null) {
 			return null;
 		}
-		return new JavaVariableDef(model, placeType, stackPointerExpr, binding);
+		return new JavaVariableDef(model, placeType, stackSliceExpr, stackFrameExpr, binding);
 	}
 	
 

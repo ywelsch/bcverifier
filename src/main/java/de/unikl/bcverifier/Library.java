@@ -84,6 +84,7 @@ import b2bpl.bpl.ast.BPLAssignmentCommand;
 import b2bpl.bpl.ast.BPLAssumeCommand;
 import b2bpl.bpl.ast.BPLAxiom;
 import b2bpl.bpl.ast.BPLBasicBlock;
+import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
 import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLBuiltInType;
 import b2bpl.bpl.ast.BPLCommand;
@@ -115,6 +116,7 @@ import b2bpl.bpl.ast.BPLEqualityExpression.Operator;
 import b2bpl.bytecode.BCField;
 import b2bpl.bytecode.BCMethod;
 import b2bpl.bytecode.ITroubleReporter;
+import b2bpl.bytecode.JBaseType;
 import b2bpl.bytecode.JClassType;
 import b2bpl.bytecode.JType;
 import b2bpl.bytecode.TroubleDescription;
@@ -484,32 +486,30 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		for (SpecExpr inv : specGen.generateInvariant()) {
 			if (inv.getWelldefinednessExpr() != null) {
 				cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
-				cmd.addComment(inv.getComment());
-				cmd.addComment("check welldefinedness:");
+				cmd.addComment("check welldefinedness of: " + inv.getComment());
 				invAssumes.add(cmd);
 				invAssertions.add(cmd);
 			}
 			cmd = new BPLAssertCommand(inv.getExpr());
-			cmd.addComment("invariant");
+			cmd.addComment("invariant " + inv.getComment());
 			invAssertions.add(cmd);
 			cmd = new BPLAssumeCommand(inv.getExpr());
-			cmd.addComment("invariant");
+			cmd.addComment("invariant " + inv.getComment());
 			invAssumes.add(cmd);
 		}
 
 		for (SpecExpr inv : specGen.generateLocalInvariant()) {
 			if (inv.getWelldefinednessExpr() != null) {
 				cmd = new BPLAssertCommand(inv.getWelldefinednessExpr());
-				cmd.addComment(inv.getComment());
-				cmd.addComment("check welldefinedness:");
+				cmd.addComment("check welldefinedness of: " + inv.getComment());
 				localInvAssumes.add(cmd);
 				localInvAssertions.add(cmd);
 			}
 			cmd = new BPLAssertCommand(inv.getExpr());
-			cmd.addComment("local invariant");
+			cmd.addComment("local invariant " + inv.getComment());
 			localInvAssertions.add(cmd);
 			cmd = new BPLAssumeCommand(inv.getExpr());
-			cmd.addComment("local invariant");
+			cmd.addComment("local invariant " + inv.getComment());
 			localInvAssumes.add(cmd);
 		}
 	}
@@ -531,6 +531,17 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
 		procAssumes.add(new BPLAssumeCommand(
 				isEqual(var(IP1_VAR), var(IP2_VAR))));
+		
+		// assume isInRange(ip1+1, $int)
+		procAssumes.add(new BPLAssumeCommand(
+				new BPLFunctionApplication(IS_IN_RANGE_FUNC,
+						new BPLBinaryArithmeticExpression(
+								BPLBinaryArithmeticExpression.Operator.PLUS,
+								var(IP1_VAR),
+								new BPLIntLiteral(1)),
+						var(VALUE_TYPE_PREFIX + JBaseType.INT.getName())
+						)
+				));
 
 		String address = "address";
 		BPLVariable addressVar = new BPLVariable(address, new BPLTypeName(

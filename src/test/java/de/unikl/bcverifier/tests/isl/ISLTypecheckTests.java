@@ -81,7 +81,7 @@ public class ISLTypecheckTests extends ISLTest {
 	public void tooManyArgs() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(
 				"local place pcall = call notifyRec in line 24 of new Observable nosync;",
-				"invariant eval(pcall, 1, 2, 3);"
+				"invariant eval(pcall, 1, 2, 3, 4);"
 				);
 		testTypeCheckError("Too many arguments", 
 				new File("./examples/list/old"), 

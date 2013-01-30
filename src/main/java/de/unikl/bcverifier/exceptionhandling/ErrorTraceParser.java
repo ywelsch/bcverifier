@@ -122,7 +122,7 @@ public class ErrorTraceParser {
                     throw new TraceParseException("Exception reading Boogie file:", ex);
                 }
                 failedAsssertionLine = Integer.parseInt(matcher.group(2));
-                failedAssertion = boogieFileLines.get(failedAsssertionLine-1);
+                failedAssertion = getFailedAssertion(failedAsssertionLine);
                 state = State.FIND_LIBRARY_ACTION;
                 thisExceptionLines.add(line);
                 break;
@@ -346,6 +346,21 @@ public class ErrorTraceParser {
                 break;
         }
     }
+
+    /** fetches the given line and also all preceding comments */
+	private String getFailedAssertion(int line) {
+		line--;
+		String result = boogieFileLines.get(line);
+		while (line > 0) {
+			line--;
+			String l = boogieFileLines.get(line);
+			if (!l.matches("^\\s*//.*")) {
+				break;
+			}
+			result = l + "\n" + result;
+		}
+		return result;
+	}
     
     private boolean lookForAssertionBegin(String line) {
         Matcher matcher;
@@ -362,7 +377,7 @@ public class ErrorTraceParser {
         thisExceptionLines = new ArrayList<String>();
         boogieFile = matcher.group(1);
         failedAsssertionLine = Integer.parseInt(matcher.group(2));
-        failedAssertion = boogieFileLines.get(failedAsssertionLine-1);
+        failedAssertion = getFailedAssertion(failedAsssertionLine);
         state = State.FIND_LIBRARY_ACTION;
         return true;
     }
