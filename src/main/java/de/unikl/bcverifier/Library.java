@@ -529,19 +529,11 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 		final String i = "i";
 		BPLVariable iVar = new BPLVariable(i, BPLBuiltInType.INT);
+		
 		procAssumes.add(new BPLAssumeCommand(
 				isEqual(var(IP1_VAR), var(IP2_VAR))));
 		
-		// assume isInRange(ip1+1, $int)
-		procAssumes.add(new BPLAssumeCommand(
-				new BPLFunctionApplication(IS_IN_RANGE_FUNC,
-						new BPLBinaryArithmeticExpression(
-								BPLBinaryArithmeticExpression.Operator.PLUS,
-								var(IP1_VAR),
-								new BPLIntLiteral(1)),
-						var(VALUE_TYPE_PREFIX + JBaseType.INT.getName())
-						)
-				));
+		procAssumes.add(assumeInIntRange(var(IP1_VAR)));
 
 		String address = "address";
 		BPLVariable addressVar = new BPLVariable(address, new BPLTypeName(
@@ -1056,6 +1048,15 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
 	}
 
+	public static BPLAssumeCommand assumeInIntRange(BPLExpression e) {
+		return new BPLAssumeCommand(
+				new BPLFunctionApplication(IS_IN_RANGE_FUNC,
+						e,
+						var(VALUE_TYPE_PREFIX + JBaseType.INT.getName())
+						)
+				);
+	}
+
 	private void relateParams(List<BPLCommand> procAssumes,
 			boolean exceptConstructor) {
 		BPLCommand assumeCmd;
@@ -1186,6 +1187,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				new BPLIntLiteral(1)));
 		command.addComment("create new interaction frame");
 		procAssumes.add(command);
+		procAssumes.add(assumeInIntRange(var(IP1_VAR)));
 		command = new BPLAssignmentCommand(spmap1(), new BPLIntLiteral(0));
 		command.addComment("create the initial stack frame of the new interaction frame");
 		procAssumes.add(command);
@@ -1203,6 +1205,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				new BPLIntLiteral(1)));
 		command.addComment("create new interaction frame");
 		procAssumes.add(command);
+		procAssumes.add(assumeInIntRange(var(IP2_VAR)));
 		command = new BPLAssignmentCommand(spmap2(), new BPLIntLiteral(0));
 		command.addComment("create the initial stack frame of the new interaction frame");
 		procAssumes.add(command);

@@ -184,6 +184,7 @@ import b2bpl.bytecode.instructions.VAStoreInstruction;
 import b2bpl.bytecode.instructions.VCastInstruction;
 import b2bpl.bytecode.instructions.VConstantInstruction;
 import b2bpl.translation.helpers.ModifiedHeapLocation;
+import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.TranslationController.BoogiePlace;
 import de.unikl.bcverifier.specification.Place;
@@ -3310,6 +3311,7 @@ public class MethodTranslator implements ITranslationConstants {
 //                    addAssert(wellformedStack(var(tc.getStack()), var(tc.getInteractionFramePointer()), var(tc.getStackPointerMap()), var(tc.getHeap())));
                     
                     addAssignment(var(tc.getInteractionFramePointer()), add(var(tc.getInteractionFramePointer()), new BPLIntLiteral(1)), "create new interaction frame");
+                    addCommand(Library.assumeInIntRange(var(tc.getInteractionFramePointer())));
                     addAssignment(spmap(), new BPLIntLiteral(0), "create the initial stack frame of the new interaction frame");
                     
                     // Pass all other method arguments (the first of which refers to the "this" object
