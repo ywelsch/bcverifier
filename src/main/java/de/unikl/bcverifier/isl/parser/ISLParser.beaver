@@ -115,9 +115,9 @@ cu =
 
 statement = 
 	  INVARIANT expr.e SEMI
-		{: return new Invariant(e); :}
+		{: return new Invariant(new List(), e); :}
 	| LOCAL INVARIANT expr.e SEMI
-		{: return new LocalInvariant(e); :}
+		{: return new Invariant(new List().add(new InvariantModifierLocal()), e); :}
 	| placedef.p
 	| VAR vardef.v EQ expr.e SEMI
 		{: return new GlobVarDef(v, e); :}

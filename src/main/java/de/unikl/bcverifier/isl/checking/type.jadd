@@ -50,8 +50,6 @@ aspect exprType {
   
   eq Assign.attrType() = ExprTypeUnknown.instance();
 
-  eq LocalInvariant.attrType() = ExprTypeUnknown.instance();
-
   eq PlaceDef.attrType() = CalculateDefType.placeDefType(this);
 
   eq VarDef.attrType() = getTypeDef().attrType();

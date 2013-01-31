@@ -37,7 +37,8 @@ import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.GlobVarDef;
 import de.unikl.bcverifier.isl.ast.Invariant;
-import de.unikl.bcverifier.isl.ast.LocalInvariant;
+import de.unikl.bcverifier.isl.ast.InvariantModifier;
+import de.unikl.bcverifier.isl.ast.InvariantModifierLocal;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
 import de.unikl.bcverifier.isl.ast.StallCondition;
 import de.unikl.bcverifier.isl.ast.Statement;
@@ -51,6 +52,9 @@ import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFuncLibrarySlice1;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFuncLibrarySlice2;
+import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFuncTopSlice2;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
 import de.unikl.bcverifier.specification.Place;
 import de.unikl.bcverifier.specification.SpecAssignment;
@@ -71,26 +75,35 @@ public class Translation {
 				BPLExpression invExpr = inv.getExpr().translateExpr();
 				String comment = inv.getExpr().print();
 				
-				// forall interaction frames
-				// TODO only do this when ifram var is used.
+				if (isLocalInvariant(inv)) {
+					// for local invariants, add a guard which checks if 
+					// the execution is currently at a local place
+					BPLExpression isAtLocalPlace = BuiltinFuncLibrarySlice2.isLibrarySlice(Version.OLD, 
+							BuiltinFuncTopSlice2.getIpVar(Version.OLD)
+							);
+					welldefinedness = new BPLBinaryLogicalExpression(
+							BPLBinaryLogicalExpression.Operator.IMPLIES, 
+							isAtLocalPlace, 
+							welldefinedness);
+					invExpr = new BPLBinaryLogicalExpression(
+							BPLBinaryLogicalExpression.Operator.IMPLIES, 
+							isAtLocalPlace, 
+							invExpr);
+				}
+				
 				result.add(new SpecExpr(invExpr, welldefinedness, comment));
 			}
 		}
 		return result;
 	}
 
-	public static java.util.List<SpecExpr> generateLocalInvariants(CompilationUnit cu) {
-		List<SpecExpr> result = new ArrayList<SpecExpr>();
-		for (Statement s : cu.getStatements()) {
-			if (s instanceof LocalInvariant) {
-				LocalInvariant inv = (LocalInvariant) s;
-				BPLExpression welldefinedness = inv.getExpr().translateExprWellDefinedness();
-				BPLExpression invExpr = inv.getExpr().translateExpr();
-				String comment = inv.getExpr().print();
-				result.add(new SpecExpr(invExpr, welldefinedness, comment));
+	private static boolean isLocalInvariant(Invariant inv) {
+		for (InvariantModifier mod : inv.getInvariantModifiers()) {
+			if (mod instanceof InvariantModifierLocal) {
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 	public static LocalPlaceDefinitions generatePlaces(CompilationUnit cu) {

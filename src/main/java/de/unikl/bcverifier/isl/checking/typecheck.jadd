@@ -32,11 +32,6 @@ aspect typecheck {
 		TypecheckStatement.checkAssign(this);
 	}
 	
-	public void LocalInvariant.typecheck() {
-		super.typecheck();
-		TypecheckStatement.checkLocalInvariant(this);
-	}
-	
 	public void Invariant.typecheck() {
 		super.typecheck();
 		TypecheckStatement.checkInvariant(this);

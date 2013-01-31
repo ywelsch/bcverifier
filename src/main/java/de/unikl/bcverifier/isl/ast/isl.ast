@@ -38,8 +38,7 @@ VarDef : Def ::= TypeDef Name:Ident;
 abstract Statement : Def;
 
 Assign : Statement ::= Var:VarAccess Expr;
-Invariant : Statement ::= Expr;
-LocalInvariant: Statement ::= Expr;
+Invariant : Statement ::= InvariantModifier* Expr;
 PlaceDef: Statement ::= PlaceModifier PlaceOption:Ident* Name:Ident ProgramPoint:ProgramPointExpr [Condition:Expr] [StallCondition:StallCondition] Assignments:Assign* ;
 ProgramPoint: Statement ::= Name:Ident ProgramPointExpr;
 GlobVarDef : Statement ::= Var:VarDef InitialValue:Expr;
@@ -51,6 +50,8 @@ abstract ProgramPointExpr;
 LineNrProgramPoint: ProgramPointExpr ::= TypeDef <ProgramLineNr:int>;
 CallProgramPoint: LineNrProgramPoint ::= FunctionName:Ident TypeDef <ProgramLineNr:int>;
 
+abstract InvariantModifier;
+InvariantModifierLocal: InvariantModifier ::= ;
 
 abstract PlaceModifier;
 PlaceModifierLocal: PlaceModifier ::= ;

@@ -74,10 +74,6 @@ public class ISLTest {
 		for (SpecExpr inv : cu.generateInvariants()) {
 			print(pw, inv);
 		}
-		pw.println("Local Invariants: ");
-		for (SpecExpr inv : cu.generateLocalInvariants()) {
-			print(pw, inv);
-		}
 		pw.println("Prelude Additions: ");
 		for (String s : cu.generatePreludeAddition()) {
 			pw.println(s);

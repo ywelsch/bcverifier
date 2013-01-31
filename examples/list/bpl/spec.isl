@@ -26,8 +26,6 @@ invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==>
   n1.ob != null && n2.ob != null && n1.ob ~ n2.ob;
 
 
-/* repeat invariants as local invariants (all in one line) */ local invariant forall old Node n :: createdByLibrary(n); local invariant forall new Observable l :: l.snt != null; local invariant forall new Observable l1, new Observable l2 :: l1 != l2 ==> l1.snt != l2.snt; local invariant forall new Node n :: createdByLibrary(n); local invariant bijective(bij) && related(bij, null, null) && x1 == null && x2 == null; local invariant forall old Observable l1, new Observable l2 :: l1 ~ l2 ==> related(bij, l1.fst, l2.snt.next); local invariant forall old Node n1, new Observable l2 :: !related(bij, n1, l2.snt); local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> related(bij, n1.next, n2.next); local invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==> n1.ob != null && n2.ob != null && n1.ob ~ n2.ob;
-
 // add method
 local place p1 = line 10 of old Observable assign x1 = newNode nosync;
 local place p2 = line 7 of new Node assign x2 = this nosync;
@@ -60,8 +58,8 @@ local invariant at(pn1) && at(pn2) ==>
   (eval(pn1, n.next) == null <==> eval(pn2, this.next) == null) &&
   eval(pn1, n.ob) != null && eval(pn2, this.ob) != null &&
   eval(pn1, n.ob) ~ eval(pn2, this.ob);
-      invariant forall int s :: librarySlice(s) && at(pc1, s) && at(pc2, s) ==> related(bij, eval(pc1, s, n), eval(pc2, s, this));
-/* repeat invariant as local invariant */ local invariant forall int s :: librarySlice(s) && at(pc1, s) && at(pc2, s) ==> related(bij, eval(pc1, s, n), eval(pc2, s, this));
+invariant forall int s :: librarySlice(s) && at(pc1, s) && at(pc2, s) ==> 
+	related(bij, eval(pc1, s, n), eval(pc2, s, this));
 // Additional place to help the verifier deduce the control flow
 local place pe1 = line 35 of old Observable when n != null;
 local place pe2 = line 20 of new Node when topFrame(new) > 0 && at(pcall, topSlice(), 0);

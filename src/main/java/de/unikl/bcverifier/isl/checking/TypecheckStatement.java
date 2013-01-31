@@ -8,7 +8,6 @@ import de.unikl.bcverifier.isl.ast.Assign;
 import de.unikl.bcverifier.isl.ast.GlobVarDef;
 import de.unikl.bcverifier.isl.ast.Ident;
 import de.unikl.bcverifier.isl.ast.Invariant;
-import de.unikl.bcverifier.isl.ast.LocalInvariant;
 import de.unikl.bcverifier.isl.ast.PlaceDef;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
@@ -134,10 +133,6 @@ public class TypecheckStatement {
 	}
 
 	public static void checkInvariant(Invariant inv) {
-		TypeHelper.checkIfSubtype(inv.getExpr(), ExprTypeBool.instance());		
-	}
-
-	public static void checkLocalInvariant(LocalInvariant inv) {
 		TypeHelper.checkIfSubtype(inv.getExpr(), ExprTypeBool.instance());		
 	}
 

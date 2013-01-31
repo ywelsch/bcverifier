@@ -9,8 +9,6 @@ place beforeLoop2 = call loop in line 9 of new C;
 
 //lists are related:
 invariant forall old C o1, new C o2 :: o1 ~ o2 ==> o1.list ~ o2.list;
-//lists are related in local places:
-local invariant forall old C o1, new C o2 :: o1 ~ o2 ==> o1.list ~ o2.list;
 
 invariant forall int s :: librarySlice(s) ==> (at(callSet1, s) <==> at(callSet2, s));
 invariant forall int s :: librarySlice(s) && at(callSet1, s) && at(callSet2, s) ==> eval(callSet1, s, i) == eval(callSet2, s, i);
@@ -20,8 +18,7 @@ invariant forall int s :: librarySlice(s) && at(callSet1, s) && at(callSet2, s) 
 
 
 // 'this' is the same as in the lowest stack frame
-      invariant forall int s :: librarySlice(s) && at(callSet2, s) ==> at(beforeLoop2, s, 0) && eval(callSet2, s, this) == eval(beforeLoop2, s, 0, this);
-local invariant forall int s :: librarySlice(s) && at(callSet2, s) ==> at(beforeLoop2, s, 0) && eval(callSet2, s, this) == eval(beforeLoop2, s, 0, this);
+invariant forall int s :: librarySlice(s) && at(callSet2, s) ==> at(beforeLoop2, s, 0) && eval(callSet2, s, this) == eval(beforeLoop2, s, 0, this);
 
 
 

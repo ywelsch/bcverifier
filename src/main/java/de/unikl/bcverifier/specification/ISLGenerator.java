@@ -87,8 +87,8 @@ public class ISLGenerator extends AbstractGenerator {
 
 	@Override
 	public List<SpecExpr> generateLocalInvariant()	throws GenerationException {
-		init();
-		return cu.generateLocalInvariants();
+		// locan and global invariants are the same:
+		return generateInvariant();
 	}
 	
 	@Override

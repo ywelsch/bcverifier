@@ -12,8 +12,10 @@ import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Def;
 import de.unikl.bcverifier.isl.ast.Expr;
 import de.unikl.bcverifier.isl.ast.Ident;
+import de.unikl.bcverifier.isl.ast.Invariant;
 import de.unikl.bcverifier.isl.ast.List;
 import de.unikl.bcverifier.isl.ast.MemberAccess;
+import de.unikl.bcverifier.isl.ast.Statement;
 import de.unikl.bcverifier.isl.checking.types.ExprType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeHasMembers;
 
@@ -76,7 +78,23 @@ public class TypeHelper {
 
 	public static void checkCompilationUnit(CompilationUnit cu) {
 		checkForDuplicateNames(cu);
+		checkForDuplicateInvariants(cu);
 	}
+
+	private static void checkForDuplicateInvariants(CompilationUnit cu) {
+		Set<String> invExprs = Sets.newHashSet();
+		for (Statement s : cu.getStatements()) {
+			if (s instanceof Invariant) {
+				Invariant invariant = (Invariant) s;
+				String expr = invariant.getExpr().print();
+				boolean notExists = invExprs.add(expr);
+				if (!notExists) {
+					invariant.addError("An identical invariant already exists: " + expr);
+				}
+			}
+		}
+	}
+
 
 	/**
 	 * checks that each definition has a unique name

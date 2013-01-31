@@ -27,10 +27,6 @@ aspect translate {
     return Translation.generateInvariants(this);
   }
 
-  public java.util.List<SpecExpr> CompilationUnit.generateLocalInvariants() {
-    return Translation.generateLocalInvariants(this);
-  }
-
   public LocalPlaceDefinitions CompilationUnit.generatePlaces() {
     return Translation.generatePlaces(this);
   }
