@@ -4,7 +4,7 @@
 "bpl/spec1.bsl","--iframes 1"     ,0                ,0                 ,7
 "bpl/spec4.bsl",""     ,0                ,0                 ,7
 "bpl/spec5.bsl",""     ,0                ,0                 ,7
-"bpl/spec.isl" ,""     ,0                ,0                 ,7
+"bpl/spec.isl" ,"--iframes 1"     ,0                ,0                 ,7
 "bpl/spec2.isl",""     ,0                ,0                 ,7
 "bpl/spec3.isl","--iframes 1"     ,1                ,0                 ,7
 "bpl/spec4.isl",""     ,0                ,0                 ,7
