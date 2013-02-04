@@ -44,6 +44,7 @@ import static b2bpl.translation.CodeGenerator.isOfType;
 import static b2bpl.translation.CodeGenerator.isPublic;
 import static b2bpl.translation.CodeGenerator.isStaticField;
 import static b2bpl.translation.CodeGenerator.isStaticMethod;
+import static b2bpl.translation.CodeGenerator.isFinalMethod;
 import static b2bpl.translation.CodeGenerator.isValueType;
 import static b2bpl.translation.CodeGenerator.less;
 import static b2bpl.translation.CodeGenerator.lessEqual;
@@ -330,6 +331,11 @@ public class Translator implements ITranslationConstants {
                         addAxiom(isStaticMethod(var(tc.getImpl()), typeRef(type), var(methodName)));
                     } else {
                         addAxiom(logicalNot(isStaticMethod(var(tc.getImpl()), typeRef(type), var(methodName))));
+                    }
+                    if (method.isFinal()) {
+                    	addAxiom(isFinalMethod(var(tc.getImpl()), typeRef(type), var(methodName)));
+                    } else {
+                    	addAxiom(logicalNot(isFinalMethod(var(tc.getImpl()), typeRef(type), var(methodName))));
                     }
                     if(method.isPublic()){
                         addAxiom(CodeGenerator.isCallable(var(tc.getImpl()), typeRef(type), var(methodName)));
@@ -1696,6 +1702,8 @@ public class Translator implements ITranslationConstants {
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(ITranslationConstants.USE_HAVOC, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
             
             addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
+            
+            addFunction(IS_FINAL_METHOD_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
             
             addFunction(NUM_PARAMS_FUNC, new BPLTypeName(METHOD_TYPE), BPLBuiltInType.INT);
             
