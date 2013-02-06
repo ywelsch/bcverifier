@@ -187,6 +187,7 @@ import b2bpl.translation.helpers.ModifiedHeapLocation;
 import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.TranslationController;
 import de.unikl.bcverifier.TranslationController.BoogiePlace;
+import de.unikl.bcverifier.exceptionhandling.Traces;
 import de.unikl.bcverifier.specification.Place;
 import de.unikl.bcverifier.specification.SpecAssignment;
 import de.unikl.bcverifier.specification.SpecExpr;
@@ -298,6 +299,8 @@ public class MethodTranslator implements ITranslationConstants {
     private int callStatements = 0;
 
 	private TypeLoader typeLoader;
+
+	private ArrayList<String> blockComments;
     
     public void setTranslationController(TranslationController controller){
         this.tc = controller;
@@ -1143,6 +1146,9 @@ public class MethodTranslator implements ITranslationConstants {
         if (method.isConstructor()) addAlias(RESULT_PARAM + typeAbbrev(type(method.getReturnType())), thisVar());
 
         startBlock(INIT_BLOCK_LABEL);
+        
+        blockComments.add(Traces.makeComment("call to " + method.getQualifiedName()));
+        
 
         callStatements = 0; // count the number of call statements used so far
 
@@ -1392,6 +1398,7 @@ public class MethodTranslator implements ITranslationConstants {
         endBlock(boundaryReturnLabel, internReturnLabel);
         
         startBlock(boundaryReturnLabel);
+        blockComments.add(Traces.makeComment("boundary return"));
         addAssume(logicalAnd(isEqual(spmap(), intLiteral(0)), isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
 
         if(method.isConstructor()){
@@ -1402,6 +1409,7 @@ public class MethodTranslator implements ITranslationConstants {
         
         String retTableLabel = tc.prefix("rettable");
         startBlock(internReturnLabel);
+        blockComments.add(Traces.makeComment("internal return"));
         addAssume(logicalAnd(greater(spmap(), intLiteral(0)), isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
         rawEndBlock(retTableLabel);
     }
@@ -1441,6 +1449,8 @@ public class MethodTranslator implements ITranslationConstants {
                         if(localPlaces != null){
                             insnTranslator.translateLocalPlaces(localPlaces);
                         }
+                        
+                        addCommand(new BPLRawCommand("// " + Traces.makeComment(method.getOwner().getName(), insn.getSourceLine(), "(trace position)")));
                     }
                     insnTranslator.handle = insn;
                     insn.accept(insnTranslator);
@@ -2047,6 +2057,7 @@ public class MethodTranslator implements ITranslationConstants {
      */
     private void startBlock(String label) {
         blockLabel = label;
+        blockComments = new ArrayList<String>();
         commands = new ArrayList<BPLCommand>();
     }
 
@@ -2142,9 +2153,9 @@ public class MethodTranslator implements ITranslationConstants {
      * @param expression The assertion's expression.
      * @requires expression != null;
      */
-    private void addAssert(BPLExpression expression) {
-        addCommand(new BPLAssertCommand(expression));
-    }
+//    private void addAssert(BPLExpression expression) {
+//        addCommand(new BPLAssertCommand(expression));
+//    }
     
     /**
      * Adds an assertion for the given {@code expression} to the currently active
@@ -2210,6 +2221,9 @@ public class MethodTranslator implements ITranslationConstants {
                 commands.toArray(new BPLCommand[commands.size()]),
                 transCmd
                 );
+        for (String comment : blockComments) {
+        	block.addComment(comment);
+        }
         blocks.add(block);
         blockLabel = null;
     }
@@ -2221,6 +2235,9 @@ public class MethodTranslator implements ITranslationConstants {
                 commands.toArray(new BPLCommand[commands.size()]),
                 transCmd
                 );
+        for (String comment : blockComments) {
+        	block.addComment(comment);
+        }
         blocks.add(block);
         blockLabel = null;
     }
@@ -2738,7 +2755,7 @@ public class MethodTranslator implements ITranslationConstants {
             // occurs do not hold.
             if (!project.isModelRuntimeExceptions()) {
                 for (BPLExpression normalCondition : normalConditions) {
-                    addAssert(normalCondition);
+                    addAssert(normalCondition, "!Runtime exception");
                 }
                 return;
             }
@@ -2824,6 +2841,8 @@ public class MethodTranslator implements ITranslationConstants {
                 
             	// create the check-block for localPlace
                 startBlock(localPlace.getName() + CHECK_POSTFIX);
+                blockComments.add(Traces.makeComment("check at local place " + localPlace.getName()));
+                
                 Logger.getLogger(InstructionTranslator.class).debug("adding local place "+localPlace.getName());
                 
                 // assign place variable
@@ -2844,6 +2863,8 @@ public class MethodTranslator implements ITranslationConstants {
                 	rawEndBlock(tc.getCheckLabel());
 
                 	startBlock(localPlace.getName());
+                	blockComments.add(Traces.makeComment("continue from local place " + localPlace.getName()));
+                	
                 	addAssume(localPlace.getCondition().getExpr()); //TODO raw expression here
                 	
                 	SpecExpr oldStallCondition = localPlace.getOldStallCondition();
@@ -2896,6 +2917,8 @@ public class MethodTranslator implements ITranslationConstants {
                 	endBlock(placeNotStallLabel, placeStallLabel);
 
                 	startBlock(placeStallLabel);
+                	blockComments.add(Traces.makeComment("stalling at local place " + localPlace.getName()));
+                	
                 	addAssume(var(tc.getStallMap()));
                 	rawEndBlock(tc.getCheckLabel());
                 	
@@ -3003,7 +3026,8 @@ public class MethodTranslator implements ITranslationConstants {
             BCField field = insn.getField();
 
             if(tc.getConfig().isNullChecks()){
-                addAssert(nonNull(stack(var(refStackVar(stack)))));
+                addAssert(nonNull(stack(var(refStackVar(stack)))), 
+                		"Receiver must not be null when accessing field " + field.getName());
             } else {
                 addAssume(nonNull(stack(var(refStackVar(stack)))));
             }
@@ -3020,7 +3044,8 @@ public class MethodTranslator implements ITranslationConstants {
             BCField field = insn.getField();
 
             if(tc.getConfig().isNullChecks()){
-                addAssert(nonNull(stack(var(refStackVar(stackLhs)))));
+                addAssert(nonNull(stack(var(refStackVar(stackLhs)))),
+                		"Receiver must not be null when accessing field " + field.getName());
             } else {
                 addAssume(nonNull(stack(var(refStackVar(stackLhs)))));
             }
@@ -3238,7 +3263,8 @@ public class MethodTranslator implements ITranslationConstants {
             // Non-static method calls may throw a NullPointerException.
                     
             if (tc.getConfig().isNullChecks() && !invokedMethod.isStatic() && !invokedMethod.isConstructor()) {
-                addAssert(nonNull(stack(var(refStackVar(first)))));
+                addAssert(nonNull(stack(var(refStackVar(first)))),
+                		"Receiver must not be null when invoking " + invokedMethod.getName());
             } else {
                 addAssume(nonNull(stack(var(refStackVar(first)))));
             }
@@ -3268,6 +3294,7 @@ public class MethodTranslator implements ITranslationConstants {
                     ///////////////////////////////////////////////////////////////////////
                     
                     startBlock(internLabel);
+                    blockComments.add(Traces.makeComment("internal call to " + invokedMethod.getQualifiedName()));
                     addAssignment(spmap(), add(spmap(), new BPLIntLiteral(1)), "create new stack frame");
                     
                     // Pass all other method arguments (the first of which refers to the "this" object
@@ -3277,9 +3304,11 @@ public class MethodTranslator implements ITranslationConstants {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
                         methodParams.add(new BPLVariableExpression(args[i]));
                         if(invokedMethodParams[i].isBaseType()){
-                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])),
+                            		"Argument " + i + " must be in range for " + invokedMethodParams[i].getName());
                         } else if(invokedMethodParams[i].isClassType()){
-                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])),
+                            		"Argument " + i + " must be of type " + invokedMethodParams[i].getName());
                         } else {
                             //TODO array type
                         }
@@ -3304,6 +3333,7 @@ public class MethodTranslator implements ITranslationConstants {
                     ////////////////////////////////////////////////////////////////////
                     
                     startBlock(boundaryLabel);
+                    blockComments.add(Traces.makeComment("boundary call to " + invokedMethod.getQualifiedName()));
                     
                     addCommentedCommand(new BPLHavocCommand(var(INTERACTION_FRAME_TEMP)), "this empties the frame we will use for the boundary call");
                     addAssume(emptyInteractionFrame(var(INTERACTION_FRAME_TEMP)));
@@ -3321,9 +3351,11 @@ public class MethodTranslator implements ITranslationConstants {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
                         methodParams.add(new BPLVariableExpression(args[i]));
                         if(invokedMethodParams[i].isBaseType()){
-                            addAssert(isInRange(stack(ipMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                            addAssert(isInRange(stack(ipMinus1, var(args[i])), typeRef(invokedMethodParams[i])),
+                            		"Argument " + i + " must be in range for " + invokedMethodParams[i].getName());
                         } else if(invokedMethodParams[i].isClassType()){
-                            addAssert(isOfType(stack(ipMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+                            addAssert(isOfType(stack(ipMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])),
+                            		"Argument " + i + " must be of type " + invokedMethodParams[i].getName());
                         } else {
                             //TODO array type
                         }
@@ -3356,9 +3388,11 @@ public class MethodTranslator implements ITranslationConstants {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
                         methodParams.add(new BPLVariableExpression(args[i]));
                         if(invokedMethodParams[i].isBaseType()){
-                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])),
+                            		"Argument " + i + " must be in range of " + invokedMethodParams[i].getName());
                         } else if(invokedMethodParams[i].isClassType()){
-                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])),
+                            		"Argument " + i + " must be of type " + invokedMethodParams[i].getName());
                         } else {
                             //TODO array type
                         }
@@ -3375,8 +3409,12 @@ public class MethodTranslator implements ITranslationConstants {
                     
                     if(!isSuperConstructor){
                         // we created the object, so it is not createdByCtxt and not exposed
-                        addAssert(logicalNot(heap(stack(var(LOCAL_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD)))); //we have constructed the object on our own
-                        addAssert(logicalNot(heap(stack(var(LOCAL_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(EXPOSED_FIELD)))); //the object did not yet cross the boundary
+                    	//we have constructed the object on our own
+                        addAssert(logicalNot(heap(stack(var(LOCAL_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(CREATED_BY_CTXT_FIELD))),
+                        		"Newly created object is created by library");
+                      //the object did not yet cross the boundary
+                        addAssert(logicalNot(heap(stack(var(LOCAL_VAR_PREFIX+0+typeAbbrev(type(retType)))), var(EXPOSED_FIELD))),
+                        		"Newly created object is not exposed to context"); 
                     }
                     
                     BPLBasicBlock block = new BPLBasicBlock(
@@ -3397,9 +3435,11 @@ public class MethodTranslator implements ITranslationConstants {
                         args[i] = stackVar(first + i, invokedMethodParams[i]);
                         methodParams.add(new BPLVariableExpression(args[i]));
                         if(invokedMethodParams[i].isBaseType()){
-                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])));
+                            addAssert(isInRange(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), typeRef(invokedMethodParams[i])),
+                            		"Argument " + i + " must be in range of " + invokedMethodParams[i].getName());
                         } else if(invokedMethodParams[i].isClassType()){
-                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])));
+                            addAssert(isOfType(stack(var(tc.getInteractionFramePointer()), spmapMinus1, var(args[i])), var(tc.getHeap()), typeRef(invokedMethodParams[i])),
+                    				"Argument " + i + " must be of type " + invokedMethodParams[i].getName());
                         } else {
                             //TODO array type
                         }
@@ -3582,6 +3622,7 @@ public class MethodTranslator implements ITranslationConstants {
               // internal return: read result from other stack frame and remove it
               ////////////////////////////////////////////////////////////////////
               startBlock(internalReturnLabel);
+              blockComments.add(Traces.makeComment("internal return to " + method.getQualifiedName()));
               
               addAssume(isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1)));
               if(hasReturnValue){
@@ -3599,6 +3640,7 @@ public class MethodTranslator implements ITranslationConstants {
               // boundary return: read result from other interaction frame and remove it
               ///////////////////////////////////////////////////////////////////////////
               startBlock(boundaryReturnLabel);
+              blockComments.add(Traces.makeComment("boundary return to " + method.getQualifiedName()));
               
               addAssume(isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(0)));
               if(hasReturnValue){
@@ -3778,7 +3820,8 @@ public class MethodTranslator implements ITranslationConstants {
             case IOpCodes.IDIV:
             case IOpCodes.LDIV:
                 if(tc.getConfig().isNullChecks()){
-                    addAssert(notEqual(stack(var(right)), intLiteral(0)));
+                    addAssert(notEqual(stack(var(right)), intLiteral(0)),
+                    		"!division by 0");
                 } else {
                     addAssume(notEqual(stack(var(right)), intLiteral(0)));
                 }
@@ -3788,7 +3831,8 @@ public class MethodTranslator implements ITranslationConstants {
             case IOpCodes.LREM:
             default:
                 if(tc.getConfig().isNullChecks()){
-                    addAssert(notEqual(stack(var(right)), intLiteral(0)));
+                    addAssert(notEqual(stack(var(right)), intLiteral(0)),
+                    		"!modulo by 0");
                 } else {
                     addAssume(notEqual(stack(var(right)), intLiteral(0)));
                 }

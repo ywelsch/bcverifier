@@ -7,6 +7,8 @@ import java.io.File;
 
 import org.testng.annotations.Test;
 
+import b2bpl.bpl.ast.BPLProgram;
+
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 import de.unikl.bcverifier.exceptionhandling.ErrorTrace;
@@ -19,7 +21,7 @@ import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
 public class LibraryTestsNG extends AbstractLibraryTestsNG {
 	
 	@Test(dataProvider = "boogieFiles")
-	public void verifyBoogieFiles(BCCheckDefinition test, File boogieFile) throws BoogieRunException{
+	public void verifyBoogieFiles(BCCheckDefinition test, File boogieFile, BPLProgram prog) throws BoogieRunException{
 	    if (test.getException() != null) {
 	    	// handle exceptions which occured in the data provider
 	    	CheckRunException e = test.getException();
@@ -39,7 +41,7 @@ public class LibraryTestsNG extends AbstractLibraryTestsNG {
 	    runner.runBoogie(boogieFile);
 	    if(test.getExpectedErrors()>0){
 	        if(runner.getLastReturn() || runner.getLastErrorCount() != test.getExpectedErrors()){ //not expected
-	            ErrorTraceParser parser = new ErrorTraceParser();
+	            ErrorTraceParser parser = new ErrorTraceParser(prog);
 	            try{
 	                ErrorTrace errorTrace = parser.parse(runner.getLastMessage());
 	                ErrorTracePrinter printer = new ErrorTracePrinter();
@@ -52,7 +54,7 @@ public class LibraryTestsNG extends AbstractLibraryTestsNG {
 	        assertTrue(!runner.getLastReturn() && runner.getLastErrorCount() == test.getExpectedErrors(), runner.getLastMessage());
 	    } else {
 	        if(!runner.getLastReturn()){
-	            ErrorTraceParser parser = new ErrorTraceParser();
+	            ErrorTraceParser parser = new ErrorTraceParser(prog);
                 try{
                     ErrorTrace errorTrace = parser.parse(runner.getLastMessage());
                     ErrorTracePrinter printer = new ErrorTracePrinter();

@@ -75,8 +75,8 @@ public class CheckRunner {
 		}
     }
     
-    public static void generate(BCCheckDefinition def, File outputDir) throws CheckRunException {
-        run(def, outputDir, false, false);
+    public static VerificationResult generate(BCCheckDefinition def, File outputDir) throws CheckRunException {
+        return run(def, outputDir, false, false);
     }
     
     public static VerificationResult runCheck(BCCheckDefinition def) throws CheckRunException {

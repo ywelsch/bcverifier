@@ -4,8 +4,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.unikl.bcverifier.exceptionhandling.SimulationStep.Action;
-import de.unikl.bcverifier.exceptionhandling.SimulationStep.Direction;
+import com.google.common.collect.Lists;
+
+import de.unikl.bcverifier.exceptionhandling.Traces.TraceComment;
+import de.unikl.bcverifier.isl.ast.Version;
 
 public class ErrorTracePrinter {
     List<String> lines = new ArrayList<String>();
@@ -21,86 +23,75 @@ public class ErrorTracePrinter {
         println();
         
         for(AssertionException ex : trace.getExceptions()){
-            print("Assertion("+ex.getFailedAssertionLine()+"): ");
-            println(ex.getFailedAssertion());
+        	if (ex.getFailedAssertion().startsWith("!")) {
+        		println(ex.getFailedAssertion().substring(1));
+        	} else {
+        		println("The following assertion might not hold: ");
+        		println(ex.getFailedAssertion());
+        	}
             
-            println("Steps in implementation 1:");
-            List<SimulationStep> stepsInImpl1 = ex.getStepsInImpl1();
-            for(int i=0; i<stepsInImpl1.size(); i++){
-                print(stepsInImpl1.get(i));
-                if(i<stepsInImpl1.size() - 1) {
-                    print(" -> ");
-                }
-            }
-            println();
+            println("Execution Trace:");
+            int indent = 0;
+            Version lastLib = null;
             
-            println("Steps in implementation 2:");
-            List<SimulationStep> stepsInImpl2 = ex.getStepsInImpl2();
-            for(int i=0; i<stepsInImpl2.size(); i++){
-                print(stepsInImpl2.get(i));
-                if(i<stepsInImpl2.size() - 1) {
-                    print(" -> ");
-                }
+            List<String> column1 = Lists.newArrayList();
+            List<String> column2 = Lists.newArrayList(); 
+            
+            for (SimulationStep step : ex.getTrace()) {
+            	Version lib = step.getLib();
+            	if (lastLib != lib) {
+            		column1.add("Steps in " + lib.toString().toLowerCase() + " library:");
+            		column2.add("");
+            		indent = 0;
+            		lastLib = lib;
+            	}
+            	
+            	TraceComment tc = step.getTraceComment();
+            	if (tc.getFile().isEmpty()) {
+            		column1.add("");
+            	} else if (tc.getFile().equals("%")) {
+            		column1.add(tc.getMessage());
+            		column2.add("");
+            		continue;
+            	} else {
+            		column1.add("(" + tc.getFile() + ".java:" + tc.getLine() + ")");
+            	}
+            	String msg = tc.getMessage();
+				column2.add(msg);
+            	
             }
+            
+            int column1Size = 0;
+            for (int i=0; i<column1.size(); i++) {
+            	if (!column2.get(i).isEmpty()) {
+            		column1Size = Math.max(column1Size, column1.get(i).length());
+            	}
+            }
+            for (int i=0; i<column1.size(); i++) {
+            	print("  ");
+            	print(column1.get(i));
+            	for (int j=column1.get(i).length(); j<column1Size+2; j++) {
+            		print(" ");
+            	}
+            	println(column2.get(i));
+            }
+            
+            
             println();
             if(printBoogieTrace){
                 for(String line : ex.getBoogieTrace()){
                     println(line);
                 }
-                println();
             }
-        }
-    }
-    
-    private void print(SimulationStep simulationStep) {
-        Action action = simulationStep.getAction();
-        switch(action) {
-        case CONSTRUCTOR_CALL:
-            print("call constructor");
-            print(simulationStep.getDirection());
-            print(" ");
-            print(simulationStep.getCalledMethod());
-            break;
-        case LOCAL_CHECK:
-            print("check at ");
-            print(simulationStep.getLocalPlace());
-            break;
-        case LOCAL_CONTINUE:
-            print("continue at ");
-            print(simulationStep.getLocalPlace());
-            break;
-        case METHOD_CALL:
-            print("call");
-            print(simulationStep.getDirection());
-            print(" ");
-            print(simulationStep.getCalledMethod());
-            break;
-        case METHOD_RETURN:
-            print("return");
-            print(simulationStep.getDirection());
-            print(" from ");
-            print(simulationStep.getInMethod());
-        }
-    }
-    
-    private void print(Direction dir) {
-        switch(dir) {
-        case IN:
-            print("[<]");
-            break;
-        case OUT:
-            print("[>]");
-            break;
-        case INTERN:
-            print("[-]");
-            break;
+            println();
+            println();
         }
     }
     
     // Uttility methods
     /////////////////////
     
-    private void print(String s) {
+	private void print(String s) {
         currentLine.append(s);
     }
     

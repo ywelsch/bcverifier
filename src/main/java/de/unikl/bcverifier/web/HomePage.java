@@ -314,7 +314,10 @@ public class HomePage extends WebPage {
 				Library library = new Library(config);
 				VerificationResult verificationResult = library.runLifecycle();
 				HomePage.this.setBoogieinput(FileUtils.readFileToString(output));
-				HomePage.this.setOutput(linkify(verificationResult.getLastMessage()));
+				HomePage.this.setOutput(
+						linkify2(verificationResult.getErrorTrace(false))
+						+ "\n\n" + 
+						linkify(verificationResult.getLastMessage()));
 			} catch (IOException e) {
 				HomePage.this.setOutput(filterPath(dir, e.getMessage()));
 				e.printStackTrace();
@@ -339,6 +342,12 @@ public class HomePage extends WebPage {
 		}
 
 		private String linkify(String lastMessage) {
+			StringBuilder result = new StringBuilder(Strings.escapeMarkup(lastMessage));
+			Matcher m = BPL_FILE_DEBUG_PATTERN.matcher(result.toString());
+    		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$1,$2);\">($1,$2):</a>");
+		}
+		
+		private String linkify2(String lastMessage) {
 			StringBuilder result = new StringBuilder(Strings.escapeMarkup(lastMessage));
 			Matcher m = BPL_FILE_DEBUG_PATTERN.matcher(result.toString());
     		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$1,$2);\">($1,$2):</a>");

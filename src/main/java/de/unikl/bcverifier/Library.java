@@ -133,6 +133,8 @@ import de.unikl.bcverifier.TranslationController.BoogiePlace;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.boogie.BoogieRunner.BoogieRunException;
 import de.unikl.bcverifier.bpl.UsedVariableFinder;
+import de.unikl.bcverifier.exceptionhandling.Traces;
+import de.unikl.bcverifier.exceptionhandling.Traces.TraceComment;
 import de.unikl.bcverifier.helpers.VerificationResult;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 import de.unikl.bcverifier.sourcecomp.SourceCompChecker;
@@ -166,6 +168,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 	private TranslationController tc;
 
+	private BPLProgram program;
+
 	public Library(Configuration config) {
 		this.config = config;
 	}
@@ -185,9 +189,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		}
 		translate();
 		if (config.isCheck()) {
-			return VerificationResult.fromBoogie(check());
+			return VerificationResult.fromBoogie(check(), program);
 		} else {
-			return new VerificationResult();
+			return new VerificationResult(program);
 		}
 	}
 
@@ -309,8 +313,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			buildBoogieProcedure(programDecls, methodBlocks, localVariables,
 					inParams, outParams);
 
-			BPLProgram program = new BPLProgram(
-					programDecls.toArray(new BPLDeclaration[programDecls.size()]));
+			this.program = new BPLProgram(
+			programDecls.toArray(new BPLDeclaration[programDecls.size()]));
 
 			log.debug("Writing specification to file " + config.output());
 			// create output dir
@@ -321,7 +325,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				writer.print(s + " ");
 			}
 			writer.println();
-			program.accept(new BPLPrinter(writer));
+			getProgram().accept(new BPLPrinter(writer));
 			writer.close();
 		} catch (FileNotFoundException e) {
 			throw new TranslationException(
@@ -1117,8 +1121,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		for (int vari = 0; vari < tc.maxParams; vari++) {
 			BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari
 					+ REF_TYPE_ABBREV);
-			checkingCommand
-					.add(new BPLAssertCommand(implies(
+			addAssertion(checkingCommand, "argument " + vari + " must be related", 
+					implies(
 							greaterEqual(numParams(stack1(var(METH_FIELD))),
 									var("" + vari)),
 							logicalOr(
@@ -1136,7 +1140,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 															new BPLTypeName(
 																	REF_TYPE)),
 													related(var("r"),
-															stack2(var)))))))));
+															stack2(var))))))));
 			// if var != null ...
 			checkingCommand.add(new BPLAssignmentCommand(heap1(stack1(var),
 					var(EXPOSED_FIELD)), ifThenElse(
@@ -1164,9 +1168,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		for (int vari = 0; vari < tc.maxParams; vari++) {
 			BPLVariableExpression var = var(LOCAL_VAR_PREFIX + vari
 					+ INT_TYPE_ABBREV);
-			checkingCommand.add(new BPLAssertCommand(implies(
+			addAssertion(checkingCommand, "Parameter " + vari + " must be equal",
+					implies(
 					greaterEqual(numParams(stack1(var(METH_FIELD))), var(""
-							+ vari)), isEqual(stack1(var), stack2(var)))));
+							+ vari)), isEqual(stack1(var), stack2(var))));
 		}
 	}
 
@@ -1261,7 +1266,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		// checking blocks (boundary return, boundary call and local places)
 		// ///////////////////////////////////
 		List<BPLCommand> checkingCommand = new ArrayList<BPLCommand>();
-		checkingCommand.add(new BPLAssertCommand(logicalOr(
+		addAssertion(checkingCommand, "execution must be in sync", // TODO FIXME XXX split up
+			logicalOr(
 				logicalAnd(
 						isEqual(modulo_int(var(IP1_VAR), new BPLIntLiteral(2)),
 								new BPLIntLiteral(1)),
@@ -1282,7 +1288,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 						isEqual(modulo_int(var(IP2_VAR), new BPLIntLiteral(2)),
 								new BPLIntLiteral(1)),
 						isLocalPlace(stack1(var(PLACE_VARIABLE))),
-						isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
+						isLocalPlace(stack2(var(PLACE_VARIABLE))))));
 		for (String globalAssign : globalAssignments) {
 			checkingCommand.add(new BPLRawCommand(globalAssign));
 		}
@@ -1306,8 +1312,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE)))),
 				logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE)))))));
 
-		checkingCommand.add(new BPLAssertCommand(isEqual(
-				stack1(var(METH_FIELD)), stack2(var(METH_FIELD)))));
+		addAssertion(checkingCommand, "Both implementations must be in the same method.",
+				isEqual(stack1(var(METH_FIELD)), stack2(var(METH_FIELD))));
 
 		checkingCommand.add(new BPLAssignmentCommand(
 				heap1(stack1(var(RESULT_PARAM + REF_TYPE_ABBREV)),
@@ -1352,14 +1358,18 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 					.add(new BPLAssumeCommand(wellformedHeap(var(HEAP2))));
 		}
 
-		checkingCommand.add(new BPLAssertCommand(implies(
+		addAssertion(checkingCommand, "Returned objects must be related", implies(
 				hasReturnValue(var(IMPL1), stack1(var(METH_FIELD))),
-				logicalAnd(
 						relNull(stack1(var(RESULT_VAR + REF_TYPE_ABBREV)),
 								stack2(var(RESULT_VAR + REF_TYPE_ABBREV)),
-								var(RELATED_RELATION)),
+								var(RELATED_RELATION))
+						));
+		
+		addAssertion(checkingCommand, "Returned values must be equal", implies(
+				hasReturnValue(var(IMPL1), stack1(var(METH_FIELD))),
 						isEqual(stack1(var(RESULT_VAR + INT_TYPE_ABBREV)),
-								stack2(var(RESULT_VAR + INT_TYPE_ABBREV)))))));
+								stack2(var(RESULT_VAR + INT_TYPE_ABBREV)))));
+		
 
 		// reduce the interaction frame pointer so we have the same situation
 		// (being in the context) as at the begin
@@ -1384,11 +1394,14 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		// invariant
 		checkingCommand.addAll(invAssertions);
 
+		BPLBasicBlock block;
 		methodBlocks
-				.add(new BPLBasicBlock(CHECK_BOUNDARY_RETURN_LABEL,
+				.add(block = new BPLBasicBlock(CHECK_BOUNDARY_RETURN_LABEL,
 						checkingCommand.toArray(new BPLCommand[checkingCommand
 								.size()]), new BPLReturnCommand()));
-
+		block.addComment(Traces.makeComment("%", 0, "Check invariants at boundary return"));
+		
+		
 		// ////////////////////////////////
 		// assertions of the check call block
 		// ////////////////////////////////
@@ -1411,8 +1424,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 				var(IMPL2), placeDefinedInType(stack2(var(PLACE_VARIABLE))),
 				stack2(var(METH_FIELD))))));
 
-		checkingCommand.add(new BPLAssertCommand(isEqual(
-				stack1(var(METH_FIELD)), stack2(var(METH_FIELD)))));
+		addAssertion(checkingCommand, "Both libraries must be in the same method",isEqual(
+				stack1(var(METH_FIELD)), stack2(var(METH_FIELD))));
 
 		checkRelateParams(checkingCommand);
 
@@ -1436,9 +1449,16 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		// ///////////////////////////////////////////////////////
 		BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
 		BPLExpression ip2MinusOne = sub(var(IP2_VAR), new BPLIntLiteral(1));
-		checkingCommand.add(new BPLAssertCommand(isEquiv(
+		addAssertion(checkingCommand, "!The old library uses havoc, but the new library does not",
+				implies(
 				useHavoc(stack1(ip1MinusOne, var(PLACE_VARIABLE))),
-				useHavoc(stack2(ip2MinusOne, var(PLACE_VARIABLE))))));
+				useHavoc(stack2(ip2MinusOne, var(PLACE_VARIABLE)))));
+		addAssertion(checkingCommand, "!The new library uses havoc, but the old library does not",
+				implies(
+				logicalNot(useHavoc(stack1(ip1MinusOne, var(PLACE_VARIABLE)))),
+				logicalNot(useHavoc(stack2(ip2MinusOne, var(PLACE_VARIABLE))))));
+		
+		
 		checkingCommand.add(new BPLAssumeCommand(logicalAnd(
 				useHavoc(stack1(ip1MinusOne, var(PLACE_VARIABLE))),
 				useHavoc(stack2(ip2MinusOne, var(PLACE_VARIABLE))))));
@@ -1517,11 +1537,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		checkingCommand.addAll(invAssumes);
 
 		methodBlocks
-				.add(new BPLBasicBlock(CHECK_BOUNDARY_CALL_LABEL,
+				.add(block = new BPLBasicBlock(CHECK_BOUNDARY_CALL_LABEL,
 						checkingCommand.toArray(new BPLCommand[checkingCommand
 								.size()]), new BPLGotoCommand(
 								TranslationController.LABEL_PREFIX1
 										+ RETTABLE_LABEL)));
+		block.addComment(Traces.makeComment("%", 0, "Check invariants at boundary call"));
 
 		// ////////////////////////////////
 		// assertions of the check local block
@@ -1539,27 +1560,25 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		for (Place place : tc.getLocalPlaceDefinitions().oldPlaces()) {
 			SpecExpr newMeasure = place.getNewMeasure();
 			if (!place.isNosync() && newMeasure != null) { 
-				BPLCommand cmd = new BPLAssertCommand(
+				addAssertion(checkingCommand, "Check progress for measure: " + newMeasure.getComment(), 
 						implies(logicalAnd(var(STALL1), isEqual(var(OLD_PLACE1), var(place.getName()))), 
 								newMeasure.getWelldefinednessExpr()
-								)
-						);
-				cmd.addComment("Check progress for measure: " + newMeasure.getComment());
-				checkingCommand.add(cmd);
+								));
 				checkingCommand.add(new BPLAssumeCommand(ifThenElse(
 						logicalAnd(var(STALL1), isEqual(var(OLD_PLACE1), var(place.getName()))),
 						isEqual(var(MEASURE), newMeasure.getExpr()),
 						BPLBoolLiteral.TRUE
 						)));
-				checkingCommand.add(new BPLAssertCommand(ifThenElse(
+				addAssertion(checkingCommand, "The termination measure must decrease",
+						ifThenElse(
 						logicalAnd(var(STALL1), isEqual(var(OLD_PLACE1), var(place.getName()))),
 						logicalAnd(
 								less(var(MEASURE), var(OLD_MEASURE)),
 								lessEqual(new BPLIntLiteral(0), var(MEASURE)),
 								lessEqual(new BPLIntLiteral(0),
 										var(OLD_MEASURE))),
-										BPLBoolLiteral.TRUE
-						)));
+						BPLBoolLiteral.TRUE
+						));
 			}
 		}
 
@@ -1571,31 +1590,30 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			if (!place.isNosync()) {
 				
 				SpecExpr newStallCondition = place.getNewStallCondition();
-				checkingCommand.add(new BPLAssertCommand(
+				addAssertion(checkingCommand, "!Stall condition for " + place.getName() + " is not welldefined.", 
 						implies(
 								logicalAnd(
 										isEqual(stack1(var(PLACE_VARIABLE)), var(place.getName())),
 										place.getCondition().getExpr()),
-										newStallCondition.getWelldefinednessExpr())
-								));				
-				checkingCommand.add(new BPLAssumeCommand(implies(
+										newStallCondition.getWelldefinednessExpr()));
+				addAssumption(checkingCommand, implies(
 						logicalAnd(
 								isEqual(stack1(var(PLACE_VARIABLE)), var(place.getName())),
 								place.getCondition().getExpr()),
-								isEqual(var(STALL1), newStallCondition.getExpr()))
-						));
+								isEqual(var(STALL1), newStallCondition.getExpr())));
 			}
 		}
 		for (Place place : tc.getLocalPlaceDefinitions().newPlaces()) {
 			if (!place.isNosync()) {
 				SpecExpr newStallCondition = place.getNewStallCondition();
-				checkingCommand.add(new BPLAssertCommand(
+				addAssertion(checkingCommand, "!Stall condition for " + place.getName() + " is not welldefined.", 
 						implies(
 								logicalAnd(
 										isEqual(stack2(var(PLACE_VARIABLE)), var(place.getName())),
 										place.getCondition().getExpr()),
-										newStallCondition.getWelldefinednessExpr())
-								));
+								newStallCondition.getWelldefinednessExpr())
+								);
+				
 				checkingCommand.add(new BPLAssumeCommand(implies(
 						logicalAnd(
 								isEqual(stack2(var(PLACE_VARIABLE)), var(place.getName())),
@@ -1605,12 +1623,14 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			}
 		}
 		
-		checkingCommand.add(new BPLAssertCommand(logicalNot(logicalAnd(var(STALL1), var(STALL2)))));
+		addAssertion(checkingCommand, "!Both libraries are stalling at the same time.", 
+				logicalNot(logicalAnd(var(STALL1), var(STALL2))));
 		
-
-		methodBlocks.add(new BPLBasicBlock(CHECK_LOCAL_LABEL, checkingCommand
+		
+		methodBlocks.add(block = new BPLBasicBlock(CHECK_LOCAL_LABEL, checkingCommand
 				.toArray(new BPLCommand[checkingCommand.size()]),
 				new BPLReturnCommand()));
+		block.addComment(Traces.makeComment("%", 0, "Check invariants at local place"));
 
 		// //////////////////////////////////
 		// check invariant for initial heap
@@ -1680,9 +1700,10 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		checkingCommand.addAll(invAssertions);
 
 		methodBlocks
-				.add(new BPLBasicBlock(INITIAL_CONFIGS_INV_LABEL,
+				.add(block = new BPLBasicBlock(INITIAL_CONFIGS_INV_LABEL,
 						checkingCommand.toArray(new BPLCommand[checkingCommand
 								.size()]), new BPLReturnCommand()));
+		block.addComment(Traces.makeComment("%", 0, "Check if initial configs are coupled"));
 
 		// //////////////////////////////////
 		// steps in context preserve invariant
@@ -1759,27 +1780,41 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		checkingCommand.addAll(invAssertions);
 
 		methodBlocks
-				.add(new BPLBasicBlock(STEPS_IN_CONTEXT_PRESERVED_LABEL,
+				.add(block = new BPLBasicBlock(STEPS_IN_CONTEXT_PRESERVED_LABEL,
 						checkingCommand.toArray(new BPLCommand[checkingCommand
 								.size()]), new BPLReturnCommand()));
+		block.addComment(Traces.makeComment("%", 0, "Check if steps in the context preserve the coupling"));
 
+	}
+
+	private boolean addAssumption(List<BPLCommand> checkingCommand,
+			BPLExpression assumption) {
+		return checkingCommand.add(new BPLAssumeCommand(assumption));
+	}
+
+	private void addAssertion(List<BPLCommand> checkingCommand, String comment,
+			BPLExpression assertion) {
+		BPLAssertCommand cmd = new BPLAssertCommand(assertion);
+		checkingCommand.add(cmd);
+		cmd.addComment(comment);
 	}
 
 	private void assertWellformedness(List<BPLCommand> checkingCommand) {
 		// check that the relation is still wellformed
-		checkingCommand.add(new BPLAssertCommand(wellformedCoupling(var(HEAP1),
-				var(HEAP2), var(RELATED_RELATION))));
+		addAssertion(checkingCommand, "The coupling must be wellformed",
+				wellformedCoupling(var(HEAP1),
+				var(HEAP2), var(RELATED_RELATION)));
 		if (config.isWellformednessChecks()) {
 			checkingCommand
 					.add(new BPLAssertCommand(wellformedHeap(var(HEAP1))));
 			checkingCommand
 					.add(new BPLAssertCommand(wellformedHeap(var(HEAP2))));
-			checkingCommand.add(new BPLAssertCommand(CodeGenerator
-					.wellformedStack(var(STACK1), var(IP1_VAR),
-							var(SP_MAP1_VAR), var(HEAP1))));
-			checkingCommand.add(new BPLAssertCommand(CodeGenerator
-					.wellformedStack(var(STACK2), var(IP2_VAR),
-							var(SP_MAP2_VAR), var(HEAP2))));
+			addAssertion(checkingCommand, "The stack of the old library must be wellformed" 
+					,CodeGenerator.wellformedStack(var(STACK1), var(IP1_VAR),
+							var(SP_MAP1_VAR), var(HEAP1)));
+			addAssertion(checkingCommand, "The stack of the new library mus be wellformed",
+					CodeGenerator.wellformedStack(var(STACK2), var(IP2_VAR),
+							var(SP_MAP2_VAR), var(HEAP2)));
 		}
 	}
 
@@ -2202,5 +2237,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 			projectTypes[i] = typeLoader.getClassType(projectTypeNames[i]);
 		}
 		return projectTypes;
+	}
+
+	public BPLProgram getProgram() {
+		return program;
 	}
 }

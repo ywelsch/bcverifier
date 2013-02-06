@@ -52,16 +52,7 @@ public class SingleTestRunner {
                     Logger.getLogger(SingleTestRunner.class).info("Test completed successfully.");
                 } else {
                     Logger.getLogger(SingleTestRunner.class).error("Check did not succeed!");
-//                    Logger.getLogger(SingleTestRunner.class).error(result.getLastMessage());
-                    ErrorTraceParser parser = new ErrorTraceParser();
-                    try {
-                        ErrorTrace errorTrace = parser.parse(result.getLastMessage());
-                        ErrorTracePrinter printer = new ErrorTracePrinter();
-                        printer.print(errorTrace, true);
-                        printer.output(System.out);
-                    } catch (TraceParseException e) {
-                        e.printStackTrace();
-                    }
+                    System.out.println(result.getErrorTrace(true));
                 }
             } else {
                 CheckRunner.generate(test, new File(test.getLibDir(), "bpl"));

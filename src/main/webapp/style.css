@@ -228,3 +228,9 @@ h3 {
 .ace-cobalt .ace_builtinfunction {
   font-style: italic;
 }
+
+#outputpanele p {
+	font-family: monospace, Courier New, Courier;
+	white-space: pre-wrap;
+	font-size: 12px; 
+}

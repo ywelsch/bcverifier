@@ -18,6 +18,7 @@ import static org.testng.Assert.assertFalse;
 import de.unikl.bcverifier.helpers.BCCheckDefinition;
 import de.unikl.bcverifier.helpers.CheckRunner;
 import de.unikl.bcverifier.helpers.CheckRunner.CheckRunException;
+import de.unikl.bcverifier.helpers.VerificationResult;
 
 public class AbstractLibraryTestsNG {
 	File libpath = new File("examples");
@@ -46,6 +47,7 @@ public class AbstractLibraryTestsNG {
 	@DataProvider(name = "boogieFiles", parallel = true)
 	Object[][] boogieFilesToCheck() {
 	    String libraryToCheck = System.getProperty("library");
+	    VerificationResult res = null;
 	    if(libraryToCheck!=null){
 	        Logger.getLogger(AbstractLibraryTestsNG.class).info("Generating Boogie files for library "+libraryToCheck+".");
 	        List<BCCheckDefinition> libTestCases = buildTestCase(new File(libraryToCheck));
@@ -53,12 +55,12 @@ public class AbstractLibraryTestsNG {
 	        File bplDir;
 	        for(BCCheckDefinition test : libTestCases){
 	            bplDir = new File(test.getLibDir(), "bpl");
-	            try {
-                	CheckRunner.generate(test, bplDir);
+				try {
+                	res = CheckRunner.generate(test, bplDir);
                 } catch (CheckRunException e) {
                 	assertFalse(true, e.getMessage());
                 }
-	            testSets.add(new Object[]{test, new File(bplDir, "output"+test.getCheckIndex()+".bpl")});
+	            testSets.add(new Object[]{test, new File(bplDir, "output"+test.getCheckIndex()+".bpl"), res.getProgram()});
 	        }
 	        Logger.getLogger(AbstractLibraryTestsNG.class).info("Finished generating Boogie files.");
 	        return testSets.toArray(new Object[testSets.size()][2]);
@@ -76,11 +78,11 @@ public class AbstractLibraryTestsNG {
                     tmpLibPath = new File(outputdir, path);
                     tmpLibPath.mkdirs();
                     try {
-                    	CheckRunner.generate(test, tmpLibPath);
+                    	res = CheckRunner.generate(test, tmpLibPath);
                     } catch (CheckRunException e) {
                     	test.setException(e);
                     }
-                    testSets.add(new Object[]{test, new File(tmpLibPath, "output"+test.getCheckIndex()+".bpl")});
+                    testSets.add(new Object[]{test, new File(tmpLibPath, "output"+test.getCheckIndex()+".bpl"), res.getProgram()});
                 }
             }
             Logger.getLogger(AbstractLibraryTestsNG.class).info("Finished generating Boogie files.");
