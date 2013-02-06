@@ -1,2 +1,2 @@
 "specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
-"bpl/spec.isl" ,""     ,0                ,8                 ,2
+"bpl/spec.isl" ,""     ,1                ,8                 ,2

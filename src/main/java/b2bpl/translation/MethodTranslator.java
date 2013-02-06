@@ -3371,7 +3371,6 @@ public class MethodTranslator implements ITranslationConstants {
                                     )
                             ));
                     addAssume(isCallable(var(tc.getImpl()), typeRef(method.getOwner()), var(GLOBAL_VAR_PREFIX+invokedMethodName)), "rule out private methods");
-                    addAssume(logicalNot(CodeGenerator.isFinalMethod(var(tc.getImpl()), typeRef(method.getOwner()), var(GLOBAL_VAR_PREFIX+invokedMethodName))), "rule out final methods");
                     addAssume(heap(stack(receiver()), var(CREATED_BY_CTXT_FIELD)));
                     rawEndBlock(tc.getCheckLabel());
                 } else if(invokedMethod.isConstructor()) {
