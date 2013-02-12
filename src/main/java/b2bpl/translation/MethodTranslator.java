@@ -301,6 +301,8 @@ public class MethodTranslator implements ITranslationConstants {
 	private TypeLoader typeLoader;
 
 	private ArrayList<String> blockComments;
+
+	private int lastSeenSourceLine = -1;
     
     public void setTranslationController(TranslationController controller){
         this.tc = controller;
@@ -1398,7 +1400,7 @@ public class MethodTranslator implements ITranslationConstants {
         endBlock(boundaryReturnLabel, internReturnLabel);
         
         startBlock(boundaryReturnLabel);
-        blockComments.add(Traces.makeComment("boundary return"));
+        blockComments.add(Traces.makeComment(getEnclosingClassName(), lastSeenSourceLine, "boundary return"));
         addAssume(logicalAnd(isEqual(spmap(), intLiteral(0)), isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
 
         if(method.isConstructor()){
@@ -1409,7 +1411,7 @@ public class MethodTranslator implements ITranslationConstants {
         
         String retTableLabel = tc.prefix("rettable");
         startBlock(internReturnLabel);
-        blockComments.add(Traces.makeComment("internal return"));
+        blockComments.add(Traces.makeComment(getEnclosingClassName(), lastSeenSourceLine, "internal return"));
         addAssume(logicalAnd(greater(spmap(), intLiteral(0)), isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1))));
         rawEndBlock(retTableLabel);
     }
@@ -1445,12 +1447,12 @@ public class MethodTranslator implements ITranslationConstants {
                     // Let the instruction translator know which is the current
                     // instruction handle before doing the actual translation.
                     if(insn.getSourceLine() != -1){
-                        List<Place> localPlaces = tc.getLocalPlacesBetween(insn.getSourceLine()-1, insn.getSourceLine(), method.getOwner().getName());
+                        List<Place> localPlaces = tc.getLocalPlacesBetween(insn.getSourceLine()-1, insn.getSourceLine(), getEnclosingClassName());
                         if(localPlaces != null){
                             insnTranslator.translateLocalPlaces(localPlaces);
                         }
-                        
-                        addCommand(new BPLRawCommand("// " + Traces.makeComment(method.getOwner().getName(), insn.getSourceLine(), "(trace position)")));
+                        lastSeenSourceLine = insn.getSourceLine();
+                        addCommand(new BPLRawCommand("// " + Traces.makeComment(getEnclosingClassName(), insn.getSourceLine(), "(trace position)")));
                     }
                     insnTranslator.handle = insn;
                     insn.accept(insnTranslator);
@@ -1469,6 +1471,10 @@ public class MethodTranslator implements ITranslationConstants {
             }
         }
     }
+
+	protected String getEnclosingClassName() {
+		return method.getOwner().getName();
+	}
 
     /**
      * Assumes all invariants of all objects, eventually excluding the
@@ -2841,7 +2847,7 @@ public class MethodTranslator implements ITranslationConstants {
                 
             	// create the check-block for localPlace
                 startBlock(localPlace.getName() + CHECK_POSTFIX);
-                blockComments.add(Traces.makeComment("check at local place " + localPlace.getName()));
+                blockComments.add(Traces.makeComment(getEnclosingClassName(), lastSeenSourceLine, "check at local place " + localPlace.getName()));
                 
                 Logger.getLogger(InstructionTranslator.class).debug("adding local place "+localPlace.getName());
                 
@@ -2863,7 +2869,7 @@ public class MethodTranslator implements ITranslationConstants {
                 	rawEndBlock(tc.getCheckLabel());
 
                 	startBlock(localPlace.getName());
-                	blockComments.add(Traces.makeComment("continue from local place " + localPlace.getName()));
+                	blockComments.add(Traces.makeComment(getEnclosingClassName(), lastSeenSourceLine, "continue from local place " + localPlace.getName()));
                 	
                 	addAssume(localPlace.getCondition().getExpr()); //TODO raw expression here
                 	
@@ -2917,7 +2923,7 @@ public class MethodTranslator implements ITranslationConstants {
                 	endBlock(placeNotStallLabel, placeStallLabel);
 
                 	startBlock(placeStallLabel);
-                	blockComments.add(Traces.makeComment("stalling at local place " + localPlace.getName()));
+                	blockComments.add(Traces.makeComment(getEnclosingClassName(), lastSeenSourceLine, "stalling at local place " + localPlace.getName()));
                 	
                 	addAssume(var(tc.getStallMap()));
                 	rawEndBlock(tc.getCheckLabel());
@@ -3294,7 +3300,7 @@ public class MethodTranslator implements ITranslationConstants {
                     ///////////////////////////////////////////////////////////////////////
                     
                     startBlock(internLabel);
-                    blockComments.add(Traces.makeComment("internal call to " + invokedMethod.getQualifiedName()));
+                    blockComments.add(Traces.makeComment(method.getOwner().getName(), lastSeenSourceLine, "internal call to " + invokedMethod.getQualifiedName()));
                     addAssignment(spmap(), add(spmap(), new BPLIntLiteral(1)), "create new stack frame");
                     
                     // Pass all other method arguments (the first of which refers to the "this" object
@@ -3333,7 +3339,7 @@ public class MethodTranslator implements ITranslationConstants {
                     ////////////////////////////////////////////////////////////////////
                     
                     startBlock(boundaryLabel);
-                    blockComments.add(Traces.makeComment("boundary call to " + invokedMethod.getQualifiedName()));
+                    blockComments.add(Traces.makeComment(getEnclosingClassName(), lastSeenSourceLine, "boundary call to " + invokedMethod.getQualifiedName()));
                     
                     addCommentedCommand(new BPLHavocCommand(var(INTERACTION_FRAME_TEMP)), "this empties the frame we will use for the boundary call");
                     addAssume(emptyInteractionFrame(var(INTERACTION_FRAME_TEMP)));
@@ -3621,7 +3627,7 @@ public class MethodTranslator implements ITranslationConstants {
               // internal return: read result from other stack frame and remove it
               ////////////////////////////////////////////////////////////////////
               startBlock(internalReturnLabel);
-              blockComments.add(Traces.makeComment("internal return to " + method.getQualifiedName()));
+              blockComments.add(Traces.makeComment(getEnclosingClassName(), lastSeenSourceLine, "internal return to " + method.getQualifiedName()));
               
               addAssume(isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(1)));
               if(hasReturnValue){
@@ -3639,7 +3645,7 @@ public class MethodTranslator implements ITranslationConstants {
               // boundary return: read result from other interaction frame and remove it
               ///////////////////////////////////////////////////////////////////////////
               startBlock(boundaryReturnLabel);
-              blockComments.add(Traces.makeComment("boundary return to " + method.getQualifiedName()));
+              blockComments.add(Traces.makeComment(getEnclosingClassName(), lastSeenSourceLine, "boundary return to " + method.getQualifiedName()));
               
               addAssume(isEqual(modulo_int(var(tc.getInteractionFramePointer()), new BPLIntLiteral(2)), new BPLIntLiteral(0)));
               if(hasReturnValue){

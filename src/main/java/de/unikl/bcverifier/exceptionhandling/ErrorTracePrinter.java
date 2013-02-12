@@ -10,10 +10,11 @@ import de.unikl.bcverifier.exceptionhandling.Traces.TraceComment;
 import de.unikl.bcverifier.isl.ast.Version;
 
 public class ErrorTracePrinter {
-    List<String> lines = new ArrayList<String>();
+    protected List<String> lines = new ArrayList<String>();
     StringBuffer currentLine = new StringBuffer();
 
-    public void reset() {
+    
+	public void reset() {
         lines = new ArrayList<String>();
         currentLine = new StringBuffer();
     }
@@ -24,14 +25,13 @@ public class ErrorTracePrinter {
         
         for(AssertionException ex : trace.getExceptions()){
         	if (ex.getFailedAssertion().startsWith("!")) {
-        		println(ex.getFailedAssertion().substring(1));
+        		println(esc(ex.getFailedAssertion().substring(1)));
         	} else {
         		println("The following assertion might not hold: ");
-        		println(ex.getFailedAssertion());
+        		println(esc(ex.getFailedAssertion()));
         	}
             
             println("Execution Trace:");
-            int indent = 0;
             Version lastLib = null;
             
             List<String> column1 = Lists.newArrayList();
@@ -42,7 +42,6 @@ public class ErrorTracePrinter {
             	if (lastLib != lib) {
             		column1.add("Steps in " + lib.toString().toLowerCase() + " library:");
             		column2.add("");
-            		indent = 0;
             		lastLib = lib;
             	}
             	
@@ -50,32 +49,24 @@ public class ErrorTracePrinter {
             	if (tc.getFile().isEmpty()) {
             		column1.add("");
             	} else if (tc.getFile().equals("%")) {
-            		column1.add(tc.getMessage());
+            		column1.add(esc(tc.getMessage()));
             		column2.add("");
             		continue;
             	} else {
-            		column1.add("(" + tc.getFile() + ".java:" + tc.getLine() + ")");
+            		column1.add(makeLink(lastLib, tc.getFile(), tc.getLine()));
             	}
-            	String msg = tc.getMessage();
-				column2.add(msg);
+				column2.add(esc(tc.getMessage()));
             	
             }
             
-            int column1Size = 0;
-            for (int i=0; i<column1.size(); i++) {
-            	if (!column2.get(i).isEmpty()) {
-            		column1Size = Math.max(column1Size, column1.get(i).length());
-            	}
-            }
-            for (int i=0; i<column1.size(); i++) {
-            	print("  ");
-            	print(column1.get(i));
-            	for (int j=column1.get(i).length(); j<column1Size+2; j++) {
-            		print(" ");
-            	}
-            	println(column2.get(i));
-            }
-            
+            if (ex.getFailedAssertion().startsWith("!")) {
+            	column1.add(esc("--> " + ex.getFailedAssertion().substring(1)));
+            	column2.add("");
+        	} else {
+        		column1.add(esc("--> Violation: " + ex.getFailedAssertion()));
+        		column2.add("");
+        	}
+            printTable(column1, column2);
             
             println();
             if(printBoogieTrace){
@@ -87,25 +78,50 @@ public class ErrorTracePrinter {
             println();
         }
     }
+
+	protected String esc(String s) {
+		return s;
+	}
+
+	protected String makeLink(Version lastLib, String file, int line) {
+		return "(" + file + ".java:" + line + ")";
+	}
+
+	protected void printTable(List<String> column1, List<String> column2) {
+		int column1Size = 0;
+		for (int i=0; i<column1.size(); i++) {
+			if (!column2.get(i).isEmpty()) {
+				column1Size = Math.max(column1Size, column1.get(i).length());
+			}
+		}
+		for (int i=0; i<column1.size(); i++) {
+			print("  ");
+			print(column1.get(i));
+			for (int j=column1.get(i).length(); j<column1Size+2; j++) {
+				print(" ");
+			}
+			println(column2.get(i));
+		}
+	}
     
     // Uttility methods
     /////////////////////
     
-	private void print(String s) {
+    protected void print(String s) {
         currentLine.append(s);
     }
     
-    private void println(String s) {
+	protected void println(String s) {
         print(s);
         println();
     }
     
-    private void println() {
+    protected void println() {
         lines.add(currentLine.toString());
         currentLine = new StringBuffer();
     }
     
-    private void flush() {
+    protected void flush() {
         if(currentLine.length()>0){
             println();
         }

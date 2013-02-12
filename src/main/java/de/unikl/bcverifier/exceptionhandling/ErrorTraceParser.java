@@ -144,7 +144,6 @@ public class ErrorTraceParser {
 	}
 
 	private void findSourceLinesForLabel(List<SimulationStep> steps, String label) {
-    	System.out.println("label: " + label);
 		BPLBasicBlock block = getBlockWithLabel(label);
 		for (String comment : block.getComments()) {
 			interpretTraceComment(steps, comment);

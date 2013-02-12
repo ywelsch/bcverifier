@@ -16,10 +16,8 @@ import org.apache.wicket.ajax.attributes.AjaxCallListener;
 import org.apache.wicket.ajax.attributes.AjaxRequestAttributes;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.ajax.markup.html.form.AjaxButton;
-import org.apache.wicket.ajax.markup.html.form.AjaxFallbackButton;
 import org.apache.wicket.ajax.markup.html.form.AjaxSubmitLink;
 import org.apache.wicket.behavior.AttributeAppender;
-import org.apache.wicket.extensions.ajax.markup.html.IndicatingAjaxButton;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
@@ -53,9 +51,12 @@ public class HomePage extends WebPage {
 	private String boogieinput;
 	private List<String> lib1contents = new ArrayList<String>();
 	private List<String> lib2contents = new ArrayList<String>();
+	private List<AcePanel> lib1panels = new ArrayList<AcePanel>();
+	private List<AcePanel> lib2panels = new ArrayList<AcePanel>();
 	private static List<Example> examples = new ExampleLoader().loadExamples();
 	
 	public static Pattern BPL_FILE_DEBUG_PATTERN = Pattern.compile(/*"\\s*" +*/ ".*\\.bpl\\((\\d+)\\,(\\d+)\\)\\:" /*+ ".*"*/);
+	public static Pattern ERRORTRACE_DEBUG_PATTERN = Pattern.compile("\\[(.*)\\]\\((\\w+),(\\d+)\\)");
 	
 	final AcePanel bipanel = new AcePanel("boogieinput", "connectBoogieInput", new PropertyModel<String>(HomePage.this, "boogieinput"));
 	final LibForm form = new LibForm("libForm");
@@ -197,8 +198,8 @@ public class HomePage extends WebPage {
 			super(id);
 			this.setOutputMarkupId(true);
 			add(new AttributeAppender("action", new Model<String>("#outputlink"), "")); 
-			pan1 = createLibPanel("lib1panel", "lib1contents", "add1Row", "remove1Row", lib1contents);
-			pan2 = createLibPanel("lib2panel", "lib2contents", "add2Row", "remove2Row", lib2contents);
+			pan1 = createLibPanel("lib1panel", "lib1contents", "add1Row", "remove1Row", lib1contents, lib1panels);
+			pan2 = createLibPanel("lib2panel", "lib2contents", "add2Row", "remove2Row", lib2contents, lib2panels);
 			pan3 = createInvPanel();
 			opanel = createOptionPanel();
 			add(new IndicatingAjaxButtonExtension("checkButton", this));
@@ -242,7 +243,7 @@ public class HomePage extends WebPage {
 			return invpanel;
 		}
 
-		private MarkupContainer createLibPanel(String panel, String contentsId, String addRow, String removeRow, final List<String> contents) {
+		private MarkupContainer createLibPanel(String panel, String contentsId, String addRow, String removeRow, final List<String> contents, final List<AcePanel> createdPanels) {
 			final MarkupContainer libpanel = new WebMarkupContainer(panel);
 			libpanel.setOutputMarkupId(true);
 			add(libpanel);
@@ -251,7 +252,9 @@ public class HomePage extends WebPage {
 				protected void populateItem(ListItem<String> item) {
 					//createAcePanel("lib1", "connectLib", 1);
 					int index = item.getIndex();
-					item.add(new AcePanel("libclass", "connectLib", item.getModel()));
+					AcePanel acePanel = new AcePanel("libclass", "connectLib", item.getModel());
+					createdPanels.add(acePanel);
+					item.add(acePanel);
 				}
 			};
 			liblv.setReuseItems(true);
@@ -315,8 +318,9 @@ public class HomePage extends WebPage {
 				VerificationResult verificationResult = library.runLifecycle();
 				HomePage.this.setBoogieinput(FileUtils.readFileToString(output));
 				HomePage.this.setOutput(
-						linkify2(verificationResult.getErrorTrace(false))
-						+ "\n\n" + 
+						verificationResult.getErrorTrace(false, new HtmlErrorTracePrinter(lib1contents, lib1panels, lib2contents, lib2panels)) 
+						+ "\n\nBoogie output:\n" +
+						      "--------------\n\n" + 
 						linkify(verificationResult.getLastMessage()));
 			} catch (IOException e) {
 				HomePage.this.setOutput(filterPath(dir, e.getMessage()));
@@ -347,10 +351,5 @@ public class HomePage extends WebPage {
     		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$1,$2);\">($1,$2):</a>");
 		}
 		
-		private String linkify2(String lastMessage) {
-			StringBuilder result = new StringBuilder(Strings.escapeMarkup(lastMessage));
-			Matcher m = BPL_FILE_DEBUG_PATTERN.matcher(result.toString());
-    		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$1,$2);\">($1,$2):</a>");
-		}
     }
 }

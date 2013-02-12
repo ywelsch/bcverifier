@@ -5,6 +5,10 @@ function updateEditorSize(editor,editorwrap,textarea) {
     textarea.style.height = newHeight + "px";
     editor.resize();
 }
+function registerAceEditor(editor) {
+	if (!window.aceEditors) { window.aceEditors = {}; }
+	window.aceEditors[editor.container.id] = editor;
+}
 function connectLib(libname,talibname,container) {
 	var editor = ace.edit(libname);
 	var editorwrap = document.getElementById(libname);
@@ -24,6 +28,7 @@ function connectLib(libname,talibname,container) {
 	    editor.getSession().on('change', function(){
 	      updateEditorSize(editor,editorwrap,textarea);
 	    });
+	    registerAceEditor(editor);
 }
 function connectInv(libname,talibname,container) {
 	var editor = ace.edit(libname);
@@ -44,6 +49,7 @@ function connectInv(libname,talibname,container) {
 	      updateEditorSize(editor,editorwrap,textarea);
 	    });
 	    editor.getSession().setValue(textarea.value);
+    registerAceEditor(editor);
 }
 function connectBoogieInput(libname,talibname,container) {
 	var editor = ace.edit(libname);
@@ -64,10 +70,18 @@ function connectBoogieInput(libname,talibname,container) {
 	      textarea.value = editor.getSession().getValue();
 	    });
 	 window.boogieinput = editor;
+	 registerAceEditor(editor);
 }
-function acegoto(editor,line,column) {
-	window.boogieinput.gotoLine(line,column-1);
+function acegoto(editorId,line,column) {
+	var editor = window.aceEditors[editorId];
+	if (!editor) alert("editor " + editorId + " does not exist");
+	editor.gotoLine(line,column-1);
 	var Range = require('ace/range').Range;
 	var range = new Range(line-1, column-1, 0, 0);
-	window.boogieinput.getSession().addMarker(range,"ace_selection","line");
+	var session = editor.getSession();
+	var markers = session.getMarkers();
+	for (var marker in markers) {
+		session.removeMarker(marker);
+	}
+	editor.getSession().addMarker(range,"ace_selection","line");
 }

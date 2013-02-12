@@ -4,8 +4,8 @@ import b2bpl.bpl.ast.BPLProgram;
 import de.unikl.bcverifier.boogie.BoogieRunner;
 import de.unikl.bcverifier.exceptionhandling.ErrorTrace;
 import de.unikl.bcverifier.exceptionhandling.ErrorTraceParser;
-import de.unikl.bcverifier.exceptionhandling.ErrorTracePrinter;
 import de.unikl.bcverifier.exceptionhandling.ErrorTraceParser.TraceParseException;
+import de.unikl.bcverifier.exceptionhandling.ErrorTracePrinter;
 
 public class VerificationResult {
     private boolean lastRunSuccess;
@@ -71,7 +71,11 @@ public class VerificationResult {
         this.lastVerified = lastVerified;
     }
 
-	public String getErrorTrace(boolean printBoogieTrace) {
+    public String getErrorTrace(boolean printBoogieTrace) {
+    	return getErrorTrace(printBoogieTrace, new ErrorTracePrinter());
+    }
+    
+	public String getErrorTrace(boolean printBoogieTrace, ErrorTracePrinter printer) {
 		if (trace == null) {
 			// parse the error trace
 	        ErrorTraceParser etp = new ErrorTraceParser(program);
@@ -81,7 +85,6 @@ public class VerificationResult {
 				e.printStackTrace();
 			}
 		}
-	    ErrorTracePrinter printer = new ErrorTracePrinter();
         printer.print(trace, printBoogieTrace);
         return printer.getOutput();
 	}
