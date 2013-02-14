@@ -10,6 +10,12 @@ aspect addError {
 	}
 	
 	public void CompilationUnit.addError(ASTNode position, String msg) {
+		for (TypeError err : getErrors()) {
+	  		if (err.getStart() >= position.getStart() && err.getEnd() <= position.getEnd()) {
+	  			// there already is a more precise error
+	  			return;
+	  		}
+	  	}
 		getErrors().add(new TypeError(position, msg));
 	}
 	

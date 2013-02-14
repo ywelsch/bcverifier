@@ -14,7 +14,7 @@ import de.unikl.bcverifier.isl.ast.CompilationUnit;
 public class ISLCompiler {
 	
 	private Reader in;
-	private List<ParserError> errors = new ArrayList<ParserError>();
+	private List<IslError> errors = new ArrayList<IslError>();
 
 	public ISLCompiler(String input) {
 		in = new StringReader(input);
@@ -33,7 +33,7 @@ public class ISLCompiler {
 			errors = parser.getErrors();
 		} catch (Parser.Exception e) {
 			errors.addAll(parser.getErrors());
-			errors.add(new SyntaxError(e.getMessage(), 0, 0, new Symbol("")));
+			errors.add(new SyntaxError(e.getMessage(), 0, 0, 0, 0, new Symbol("")));
 		}
 		
 		if (r instanceof CompilationUnit) {
@@ -43,7 +43,7 @@ public class ISLCompiler {
 		}
 	}
 
-	public List<ParserError> getErrors() {
+	public List<IslError> getErrors() {
 		return errors;
 	}
 	

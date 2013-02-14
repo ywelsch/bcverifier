@@ -8,6 +8,7 @@ import org.apache.wicket.util.string.Strings;
 
 import de.unikl.bcverifier.exceptionhandling.ErrorTracePrinter;
 import de.unikl.bcverifier.isl.ast.Version;
+import de.unikl.bcverifier.isl.parser.IslError;
 
 public class HtmlErrorTracePrinter extends ErrorTracePrinter {
 
@@ -15,14 +16,16 @@ public class HtmlErrorTracePrinter extends ErrorTracePrinter {
 	private final List<AcePanel> lib1panels;
 	private final List<String> lib2contents;
 	private final List<AcePanel> lib2panels;
+	private final AcePanel islAcePanel;
 	public HtmlErrorTracePrinter(List<String> lib1contents,
 			List<AcePanel> lib1panels, List<String> lib2contents,
-			List<AcePanel> lib2panels) {
+			List<AcePanel> lib2panels, AcePanel islAcePanel) {
 		super();
 		this.lib1contents = lib1contents;
 		this.lib1panels = lib1panels;
 		this.lib2contents = lib2contents;
 		this.lib2panels = lib2panels;
+		this.islAcePanel = islAcePanel;
 	}
 
 
@@ -78,6 +81,22 @@ public class HtmlErrorTracePrinter extends ErrorTracePrinter {
 	}
 
 
+	@Override
+	protected void printHeading(String s) {
+		println("<h3>" + s + "</h3>");
+	}
+	
+	@Override
+	protected void printFailedAssertion(String msg) {
+		IslError err = IslError.findInString(msg);
+		if (err == null) {
+			println(msg);
+			return;
+		}
+		println("<a href=\"#\" onclick=\"acegoto('" +  islAcePanel.getAceId() + "',"+err.getLine()+","+err.getColumn()+","+err.getEndLine()+","+err.getEndColumn()+"); return false;\">invariant line "+err.getLine()+":</a> " + err.getMessage() + "\n");
+		println(msg.replaceAll("\\[[^\\]]*\\]", ""));
+	}
+	
 	@Override
 	public String getOutput() {
 		flush();

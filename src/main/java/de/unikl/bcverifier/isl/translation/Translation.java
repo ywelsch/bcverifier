@@ -11,16 +11,11 @@ import java.util.Map;
 import b2bpl.bpl.BPLPrinter;
 import b2bpl.bpl.ast.BPLArrayExpression;
 import b2bpl.bpl.ast.BPLAssignmentCommand;
-import b2bpl.bpl.ast.BPLBinaryArithmeticExpression;
 import b2bpl.bpl.ast.BPLBinaryLogicalExpression;
 import b2bpl.bpl.ast.BPLBoolLiteral;
 import b2bpl.bpl.ast.BPLBuiltInType;
-import b2bpl.bpl.ast.BPLEqualityExpression;
 import b2bpl.bpl.ast.BPLExpression;
-import b2bpl.bpl.ast.BPLIntLiteral;
 import b2bpl.bpl.ast.BPLNode;
-import b2bpl.bpl.ast.BPLQuantifierExpression;
-import b2bpl.bpl.ast.BPLRelationalExpression;
 import b2bpl.bpl.ast.BPLType;
 import b2bpl.bpl.ast.BPLTypeName;
 import b2bpl.bpl.ast.BPLVariable;
@@ -29,9 +24,7 @@ import b2bpl.bpl.ast.BPLVariableExpression;
 import b2bpl.translation.ITranslationConstants;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
-import de.unikl.bcverifier.bpl.UsedVariableFinder;
 import de.unikl.bcverifier.isl.ast.Assign;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.ast.Expr;
@@ -52,7 +45,7 @@ import de.unikl.bcverifier.isl.checking.types.ExprTypeBool;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeInt;
 import de.unikl.bcverifier.isl.checking.types.ExprTypeJavaType;
 import de.unikl.bcverifier.isl.checking.types.ExprTypePlace;
-import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFuncLibrarySlice1;
+import de.unikl.bcverifier.isl.parser.IslError;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFuncLibrarySlice2;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFuncTopSlice2;
 import de.unikl.bcverifier.specification.LocalPlaceDefinitions;
@@ -73,7 +66,8 @@ public class Translation {
 				Invariant inv = (Invariant) s;
 				BPLExpression welldefinedness = inv.getExpr().translateExprWellDefinedness();
 				BPLExpression invExpr = inv.getExpr().translateExpr();
-				String comment = inv.getExpr().print();
+				String comment = inv.getExpr().print() 
+						+ " " + IslError.create(inv, "This invariant might not hold.");
 				
 				if (isLocalInvariant(inv)) {
 					// for local invariants, add a guard which checks if 

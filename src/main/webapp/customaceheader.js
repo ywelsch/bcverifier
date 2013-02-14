@@ -72,16 +72,43 @@ function connectBoogieInput(libname,talibname,container) {
 	 window.boogieinput = editor;
 	 registerAceEditor(editor);
 }
-function acegoto(editorId,line,column) {
+
+function scrollIntoViewIfOutOfView(el) {
+	// souce: http://www.performantdesign.com/2009/08/26/scrollintoview-but-only-if-out-of-view/
+	var topOfPage = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+	var heightOfPage = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+	var elY = 0;
+	var elH = 0;
+	if (document.layers) { // NS4
+		elY = el.y;
+		elH = el.height;
+	}
+	else {
+		for(var p=el; p&&p.tagName!='BODY'; p=p.offsetParent){
+			elY += p.offsetTop;
+		}
+		elH = el.offsetHeight;
+	}
+	if ((topOfPage + heightOfPage) < (elY + elH)) {
+		el.scrollIntoView(false);
+	}
+	else if (elY < topOfPage) {
+		el.scrollIntoView(true);
+	}
+}
+
+
+function acegoto(editorId,line,column,endLine,endColumn) {
 	var editor = window.aceEditors[editorId];
 	if (!editor) alert("editor " + editorId + " does not exist");
 	editor.gotoLine(line,column-1);
 	var Range = require('ace/range').Range;
-	var range = new Range(line-1, column-1, 0, 0);
+	var range = new Range(line-1, column-1, endLine-1, endColumn-0);
 	var session = editor.getSession();
 	var markers = session.getMarkers();
 	for (var marker in markers) {
 		session.removeMarker(marker);
 	}
 	editor.getSession().addMarker(range,"ace_selection","line");
+	scrollIntoViewIfOutOfView(editor.container);
 }

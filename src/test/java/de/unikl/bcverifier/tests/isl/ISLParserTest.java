@@ -15,6 +15,17 @@ import de.unikl.bcverifier.isl.ast.CompilationUnit;
 
 public class ISLParserTest extends ISLTest {
 
+	
+	@Test
+	public void nullExpr() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+				"invariant null.f == null;"
+				);
+		testTypeCheckError("Field f could not be found",
+				new File("./examples/iframeDestroy/old"), 
+				new File("./examples/iframeDestroy/new"), cu);
+	}
+	
 	@Test
 	public void localPlaceAtCall1() throws IOException, Exception, CompileException {
 		CompilationUnit cu = testParseOk(

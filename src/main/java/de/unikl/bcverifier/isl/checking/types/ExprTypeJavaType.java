@@ -9,6 +9,8 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.internal.corext.dom.Bindings;
 
+import com.google.common.base.Preconditions;
+
 import de.unikl.bcverifier.isl.ast.ASTNode;
 import de.unikl.bcverifier.isl.ast.Version;
 import de.unikl.bcverifier.isl.checking.TypeHelper;
@@ -125,6 +127,9 @@ public class ExprTypeJavaType extends ExprType implements ExprTypeHasMembers {
 
 	@Override
 	public IBinding findMember(String name) {
+		if (typeBinding == null) {
+			return null;
+		}
 		return Bindings.findFieldInType(typeBinding, name);
 	}
 

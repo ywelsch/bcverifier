@@ -1,20 +1,15 @@
 package de.unikl.bcverifier.isl.parser;
 
-public class LexicalError implements ParserError {
+public class LexicalError extends IslError {
 
-	private String msg;
-	private int line;
-	private int column;
 
 	public LexicalError(String msg, int line, int column) {
-		this.msg = msg;
-		this.line = line;
-		this.column = column;
+		super(line, column, line, column, msg);
 	}
 	
 	@Override
 	public String toString() {
-		return "Lexical error in line " + line +":" + column + " : " + msg;
+		return "Lexical error in line " + getLine() +":" + getColumn() + " : " + getMessage();
 	}
 
 }

@@ -229,7 +229,9 @@ h3 {
   font-style: italic;
 }
 
+#outputpanele span,
 #outputpanele p,
+#outputpanele a,
 #outputpanele td {
 	font-family: monospace, Courier New, Courier;
 	white-space: pre-wrap;

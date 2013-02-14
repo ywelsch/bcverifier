@@ -22,7 +22,7 @@ import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
 import de.unikl.bcverifier.isl.checking.TypeError;
 import de.unikl.bcverifier.isl.parser.ISLCompiler;
-import de.unikl.bcverifier.isl.parser.ParserError;
+import de.unikl.bcverifier.isl.parser.IslError;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 
 public class ISLGenerator extends AbstractGenerator {
@@ -50,24 +50,14 @@ public class ISLGenerator extends AbstractGenerator {
 		try {
 			ISLCompiler compiler = new ISLCompiler(getReader());
 			cu = compiler.parse();
-			StringBuilder errors = new StringBuilder();
-			for (ParserError err : compiler.getErrors()) {
-				errors.append(err);
-				errors.append("\n");
-			}
-			if (errors.length() > 0) {
-				throw new GenerationException(errors.toString());
+			if (!compiler.getErrors().isEmpty()) {
+				throw new GenerationException(compiler.getErrors());
 			}
 			cu.setTwoLibraryModel(twoLibraryModel);
 			cu.setBuiltinFunctions(new BuiltinFunctions(twoLibraryModel));
 			cu.typecheck();
-			errors = new StringBuilder();
-			for (TypeError err : cu.getErrors()) {
-				errors.append(err);
-				errors.append("\n");
-			}
-			if (errors.length() > 0) {
-				throw new GenerationException(errors.toString());
+			if (!cu.getErrors().isEmpty()) {
+				throw new GenerationException(cu.getErrors());
 			}
 		} catch (IOException e) {
 			throw new GenerationException("", e);

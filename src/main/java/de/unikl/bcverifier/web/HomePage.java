@@ -39,6 +39,7 @@ import de.unikl.bcverifier.Library;
 import de.unikl.bcverifier.Library.TranslationException;
 import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.helpers.VerificationResult;
+import de.unikl.bcverifier.isl.parser.IslError;
 import de.unikl.bcverifier.sourcecomp.SourceInCompatibilityException;
 import de.unikl.bcverifier.specification.GenerationException;
 import de.unikl.bcverifier.web.backend.Example;
@@ -62,6 +63,7 @@ public class HomePage extends WebPage {
 	final LibForm form = new LibForm("libForm");
 	final MarkupContainer outputpanel = new WebMarkupContainer("outputpanel");
 	final MultiLineLabel olabel = new MultiLineLabel("output", new PropertyModel(this, "output"));
+	public AcePanel islAcePanel;
 	
     public HomePage(final PageParameters parameters) {
     	super(parameters);
@@ -239,7 +241,8 @@ public class HomePage extends WebPage {
 			final MarkupContainer invpanel = new WebMarkupContainer("invpanel");
 			invpanel.setOutputMarkupId(true);
 			add(invpanel);
-			invpanel.add(new AcePanel("inv", "connectInv", new PropertyModel<String>(HomePage.this, "inv")));
+			islAcePanel = new AcePanel("inv", "connectInv", new PropertyModel<String>(HomePage.this, "inv"));
+			invpanel.add(islAcePanel);
 			return invpanel;
 		}
 
@@ -318,9 +321,8 @@ public class HomePage extends WebPage {
 				VerificationResult verificationResult = library.runLifecycle();
 				HomePage.this.setBoogieinput(FileUtils.readFileToString(output));
 				HomePage.this.setOutput(
-						verificationResult.getErrorTrace(false, new HtmlErrorTracePrinter(lib1contents, lib1panels, lib2contents, lib2panels)) 
-						+ "\n\nBoogie output:\n" +
-						      "--------------\n\n" + 
+						verificationResult.getErrorTrace(false, new HtmlErrorTracePrinter(lib1contents, lib1panels, lib2contents, lib2panels, islAcePanel)) 
+						+ "<h3>Boogie output:</h3>" +
 						linkify(verificationResult.getLastMessage()));
 			} catch (IOException e) {
 				HomePage.this.setOutput(filterPath(dir, e.getMessage()));
@@ -332,8 +334,12 @@ public class HomePage extends WebPage {
 				HomePage.this.setOutput(filterPath(dir, e.getMessage()));
 				e.printStackTrace();
 			} catch (GenerationException e) {
-				HomePage.this.setOutput(filterPath(dir, e.getMessage()));
-                e.printStackTrace();
+				if (e.getIslErrors().isEmpty()) {
+					HomePage.this.setOutput(filterPath(dir, e.getMessage()));
+					e.printStackTrace();
+				} else {
+					HomePage.this.setOutputErrs(e.getIslErrors());
+				}
             } catch (SourceInCompatibilityException e) {
             	HomePage.this.setOutput(filterPath(dir, e.getMessage()));
                 e.printStackTrace();
@@ -348,8 +354,16 @@ public class HomePage extends WebPage {
 		private String linkify(String lastMessage) {
 			StringBuilder result = new StringBuilder(Strings.escapeMarkup(lastMessage));
 			Matcher m = BPL_FILE_DEBUG_PATTERN.matcher(result.toString());
-    		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$1,$2);\">($1,$2):</a>");
+    		return m.replaceAll("<a href=\"#boogieinputbegin\" onclick=\"acegoto('" +  bipanel.getAceId() + "',$1,$2); return false;\">($1,$2):</a>");
 		}
 		
     }
+
+	public void setOutputErrs(List<IslError> islErrors) {
+		StringBuilder sb = new StringBuilder();
+		for (IslError err : islErrors) { 
+			sb.append("<a href=\"#\" onclick=\"acegoto('" +  islAcePanel.getAceId() + "',"+err.getLine()+","+err.getColumn()+","+err.getEndLine()+","+err.getEndColumn()+"); return false;\">invariant line "+err.getLine()+":</a> " + err.getMessage() + "\n");
+		}
+		setOutput(sb.toString());
+	}
 }

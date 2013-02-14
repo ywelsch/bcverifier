@@ -23,14 +23,26 @@ public class ErrorTracePrinter {
         println(String.format("%d assertions failed:", trace.getNumberOfExceptions()));
         println();
         
+        int i=0;
+        
         for(AssertionException ex : trace.getExceptions()){
+        	i++;
+        	if (trace.getNumberOfExceptions() > 1) {
+        		printHeading(i + ". problem:");
+        	}
+        	
         	if (ex.getFailedAssertion().startsWith("!")) {
         		println(esc(ex.getFailedAssertion().substring(1)));
         	} else {
         		println("The following assertion might not hold: ");
-        		println(esc(ex.getFailedAssertion()));
+        		printFailedAssertion(esc(ex.getFailedAssertion()));
         	}
             
+        	if (ex.getTrace().isEmpty()) {
+        		// do not print empty traces
+        		continue;
+        	}
+        	
             println("Execution Trace:");
             Version lastLib = null;
             
@@ -59,14 +71,12 @@ public class ErrorTracePrinter {
             	
             }
             
-            if (ex.getFailedAssertion().startsWith("!")) {
-            	column1.add(esc("--> " + ex.getFailedAssertion().substring(1)));
-            	column2.add("");
-        	} else {
-        		column1.add(esc("--> Violation: " + ex.getFailedAssertion()));
-        		column2.add("");
-        	}
             printTable(column1, column2);
+            if (ex.getFailedAssertion().startsWith("!")) {
+            	println(esc("--> " + ex.getFailedAssertion().substring(1)));
+        	} else {
+        		printFailedAssertion(esc("--> Violation: " + ex.getFailedAssertion()));
+        	}
             
             println();
             if(printBoogieTrace){
@@ -78,6 +88,17 @@ public class ErrorTracePrinter {
             println();
         }
     }
+
+	protected void printFailedAssertion(String msg) {
+		println(msg);
+	}
+
+	protected void printHeading(String s) {
+		println();
+		println();
+		println(s);
+		println();
+	}
 
 	protected String esc(String s) {
 		return s;

@@ -8,9 +8,9 @@ import de.unikl.bcverifier.isl.ast.*;
 
 
 %embed {:
-	private ArrayList<ParserError> errors = new ArrayList<ParserError>();
+	private ArrayList<IslError> errors = new ArrayList<IslError>();
 
-	public ArrayList<ParserError> getErrors() {
+	public ArrayList<IslError> getErrors() {
 		return errors;
 	}
 	
@@ -21,7 +21,7 @@ import de.unikl.bcverifier.isl.ast.*;
 	
 	class Events extends Parser.Events {
 		public void syntaxError(Symbol token) {
-			SyntaxError e = new SyntaxError("Syntactic error: unexpected token " + Terminals.NAMES[token.getId()], Symbol.getLine(token.getStart()), Symbol.getColumn(token.getStart()), token);
+			SyntaxError e = new SyntaxError("Syntactic error: unexpected token " + Terminals.NAMES[token.getId()], Symbol.getLine(token.getStart()), Symbol.getColumn(token.getStart()), Symbol.getLine(token.getEnd()), Symbol.getColumn(token.getEnd()), token);
             errors.add(e);
 		}
 

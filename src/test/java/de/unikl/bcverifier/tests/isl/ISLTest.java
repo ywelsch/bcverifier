@@ -14,7 +14,7 @@ import de.unikl.bcverifier.LibraryCompiler.CompileException;
 import de.unikl.bcverifier.isl.ast.CompilationUnit;
 import de.unikl.bcverifier.isl.checking.TypeError;
 import de.unikl.bcverifier.isl.parser.ISLCompiler;
-import de.unikl.bcverifier.isl.parser.ParserError;
+import de.unikl.bcverifier.isl.parser.IslError;
 import de.unikl.bcverifier.isl.translation.builtinfuncs.BuiltinFunctions;
 import de.unikl.bcverifier.librarymodel.TwoLibraryModel;
 import de.unikl.bcverifier.specification.SpecExpr;
@@ -28,7 +28,7 @@ public class ISLTest {
 	protected CompilationUnit testParseOk(String ... lines) throws IOException, Exception {
 		ISLCompiler parser = new ISLCompiler(Strings.join("\n", lines));
 		Object res = parser.parse();
-		for (ParserError err : parser.getErrors()) {
+		for (IslError err : parser.getErrors()) {
 			System.err.println(err);
 			Assert.fail(err.toString());
 		}
