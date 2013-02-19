@@ -99,6 +99,8 @@ function scrollIntoViewIfOutOfView(el) {
 
 
 function acegoto(editorId,line,column,endLine,endColumn) {
+	if (!endLine) endLine = 0;
+	if (!endColumn) endColumn = 0;
 	var editor = window.aceEditors[editorId];
 	if (!editor) alert("editor " + editorId + " does not exist");
 	editor.gotoLine(line,column-1);
