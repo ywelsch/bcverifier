@@ -4,6 +4,6 @@ public class FruitFactory {
     if (b)
       return new Apple();
     else
-      return new ChiquitaBanana();
+      return new BabyBanana();
   }
 }

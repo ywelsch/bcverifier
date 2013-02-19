@@ -97,6 +97,14 @@ public class HtmlErrorTracePrinter extends ErrorTracePrinter {
 		println(msg.replaceAll("\\[[^\\]]*\\]", ""));
 	}
 	
+	
+	@Override
+	protected void printSuccessMessage() {
+		println("<div class=\"successMessage\"><span>&#10003;</span>");
+		super.printSuccessMessage();
+		println("</div>");
+	}
+	
 	@Override
 	public String getOutput() {
 		flush();

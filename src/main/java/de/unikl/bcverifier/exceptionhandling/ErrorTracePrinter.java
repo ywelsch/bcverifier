@@ -20,15 +20,20 @@ public class ErrorTracePrinter {
     }
     
     public void print(ErrorTrace trace, boolean printBoogieTrace){
-        println(String.format("%d assertions failed:", trace.getNumberOfExceptions()));
+        int numberOfExceptions = trace.getNumberOfExceptions();
+        if (numberOfExceptions == 0) {
+        	printSuccessMessage();
+        } else {
+        	println(String.format("%d assertions failed:", numberOfExceptions));
+        }
         println();
         
         int i=0;
         
         for(AssertionException ex : trace.getExceptions()){
         	i++;
-        	if (trace.getNumberOfExceptions() > 1) {
-        		printHeading(i + ". problem:");
+        	if (numberOfExceptions > 1) {
+        		printHeading("Assertion "+i+":");
         	}
         	
         	if (ex.getFailedAssertion().startsWith("!")) {
@@ -52,7 +57,7 @@ public class ErrorTracePrinter {
             for (SimulationStep step : ex.getTrace()) {
             	Version lib = step.getLib();
             	if (lastLib != lib) {
-            		column1.add("Steps in " + lib.toString().toLowerCase() + " library:");
+            		column1.add("Steps in " + lib.toString().toLowerCase() + " library implementation:");
             		column2.add("");
             		lastLib = lib;
             	}
@@ -88,6 +93,11 @@ public class ErrorTracePrinter {
             println();
         }
     }
+
+	protected void printSuccessMessage() {
+		println("Verification successful! The new library implementation is " +
+				"backward compatible to the old library implementation.");
+	}
 
 	protected void printFailedAssertion(String msg) {
 		println(msg);

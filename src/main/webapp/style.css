@@ -237,3 +237,15 @@ h3 {
 	white-space: pre-wrap;
 	font-size: 12px; 
 }
+
+#outputpanele .successMessage {
+	font-size: 14px;
+	font-family: sans;
+}
+
+#outputpanele .successMessage span {
+	float: left;
+	font-size: 80px;
+	line-height: 60px;
+	color: #161;
+}
