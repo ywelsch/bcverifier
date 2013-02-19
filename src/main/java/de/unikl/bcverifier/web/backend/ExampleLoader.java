@@ -73,6 +73,7 @@ public class ExampleLoader {
 				new String[]{ "cb", "Callback example", "3", "spec.isl" },
 				new String[]{ "cbalt", "Callback example (alt.1)", "3", "spec.isl" },
 				new String[]{ "cbalt", "Callback example (alt.2)", "3", "spec2.isl" },
+				new String[]{ "cblock", "CallbackLock example", "3", "spec.isl" },
 				new String[]{ "awk", "Awkward example (static)", "5", "spec.isl" },
 				new String[]{ "awk2", "Awkward example", "5", "spec.isl" },
 				new String[]{ "obool", "OBool example", "7", "spec.isl" },
