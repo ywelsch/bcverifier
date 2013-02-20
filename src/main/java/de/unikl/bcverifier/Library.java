@@ -616,19 +616,37 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		relateParams(procAssumes, false);
 
 		// first method call static iff second method call static
+		BPLExpression isStatic1 = isStaticMethod(var(IMPL1),
+				placeDefinedInType(stack1(var(PLACE_VARIABLE))),
+				stack1(var(METH_FIELD)));
+		BPLExpression isStatic2 = isStaticMethod(var(IMPL2),
+				placeDefinedInType(stack2(var(PLACE_VARIABLE))),
+				stack2(var(METH_FIELD)));
 		procAssumes.add(new BPLAssumeCommand(isEqual(
-				isStaticMethod(var(IMPL1),
-						placeDefinedInType(stack1(var(PLACE_VARIABLE))),
-						stack1(var(METH_FIELD))),
-				isStaticMethod(var(IMPL2),
-						placeDefinedInType(stack2(var(PLACE_VARIABLE))),
-						stack2(var(METH_FIELD))))));
+				isStatic1,
+				isStatic2)));
 
 		procAssumes.add(new BPLAssumeCommand(
 				logicalNot(isLocalPlace(stack1(var(PLACE_VARIABLE))))));
 		procAssumes.add(new BPLAssumeCommand(
 				logicalNot(isLocalPlace(stack2(var(PLACE_VARIABLE))))));
 
+		String t = "t";
+		BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+		procAssumes.add(new BPLAssumeCommand(
+				forall(tVar, 
+						implies(logicalAnd(
+								logicalNot(isStatic1),
+								memberOf(var(IMPL1), stack1(var(METH_FIELD)), var(t), typ(stack1(receiver()), var(HEAP1))) 
+							),
+							CodeGenerator.isCallable(var(IMPL1), var(t), stack1(var(METH_FIELD)))))
+		));
+		
+		procAssumes.add(new BPLAssumeCommand(
+						implies(isStatic1, 
+							CodeGenerator.isCallable(var(IMPL1), placeDefinedInType(stack1(var(PLACE_VARIABLE))), stack1(var(METH_FIELD)))))
+		);
+		
 		methodBlocks.add(1, new BPLBasicBlock(PRECONDITIONS_CALL_LABEL,
 				procAssumes.toArray(new BPLCommand[procAssumes.size()]),
 				new BPLGotoCommand(TranslationController.DISPATCH_LABEL1)));
@@ -759,8 +777,6 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 		// constructor that is called is defined in t implies that the type of
 		// the receiver is not a library subtype of t
-		String t = "t";
-		BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
 		String t2 = "t2";
 		BPLVariable t2Var = new BPLVariable(t2, new BPLTypeName(NAME_TYPE));
 		procAssumes.add(new BPLAssumeCommand(forall(
@@ -787,7 +803,12 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 												var(HEAP2), var(t2))),
 										logicalNot(subtype(var(IMPL2), var(t2),
 												var(t)))))))));
-
+		procAssumes.add(new BPLAssumeCommand(
+				forall(tVar, 
+						implies(
+							memberOf(var(IMPL1), stack1(var(METH_FIELD)), var(t), typ(stack1(receiver()), var(HEAP1))), 
+							CodeGenerator.isCallable(var(IMPL1), var(t), stack1(var(METH_FIELD)))))
+		));
 		methodBlocks.add(2, new BPLBasicBlock(PRECONDITIONS_CONSTRUCTOR_LABEL,
 				procAssumes.toArray(new BPLCommand[procAssumes.size()]),
 				new BPLGotoCommand(TranslationController.LABEL_PREFIX1
@@ -846,12 +867,8 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 
 		// can not return to a static method call site
 		// ////////////////////////////////////////////
-		procAssumes.add(new BPLAssumeCommand(logicalNot(isStaticMethod(
-				var(IMPL1), placeDefinedInType(stack1(var(PLACE_VARIABLE))),
-				stack1(var(METH_FIELD))))));
-		procAssumes.add(new BPLAssumeCommand(logicalNot(isStaticMethod(
-				var(IMPL2), placeDefinedInType(stack2(var(PLACE_VARIABLE))),
-				stack2(var(METH_FIELD))))));
+		procAssumes.add(new BPLAssumeCommand(logicalNot(isStatic1)));
+		procAssumes.add(new BPLAssumeCommand(logicalNot(isStatic2)));
 
 		BPLExpression zero = new BPLIntLiteral(0);
 		BPLExpression ip1MinusOne = sub(var(IP1_VAR), new BPLIntLiteral(1));
@@ -2131,6 +2148,7 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		// typ(stack(receiver()), var(tc.getHeap())),
 		// stack(var(METH_FIELD)))));
 		
+		
 		constructorLabels.add("noop");
 		dispatchTransferCmd = new BPLGotoCommand(
 				constructorLabels.toArray(new String[constructorLabels.size()]));
@@ -2154,6 +2172,9 @@ public class Library implements ITroubleReporter, ITranslationConstants {
 		// dispatchCommands.add(new BPLAssumeCommand(isCallable(
 		// typ(stack(receiver()), var(tc.getHeap())),
 		// stack(var(METH_FIELD)))));
+		
+		
+		
 		methodBlocks.add(
 				0,
 				new BPLBasicBlock(tc.getDispatchLabel(), dispatchCommands
