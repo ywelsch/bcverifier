@@ -48,11 +48,11 @@ public class SingleTestRunner {
             BCCheckDefinition test = tests.get(index);
             if(doCheck){
                 VerificationResult result = CheckRunner.runCheck(test);
+                System.out.println(result.getErrorTrace(true));
                 if(result.isLastRunSuccess()){
                     Logger.getLogger(SingleTestRunner.class).info("Test completed successfully.");
                 } else {
                     Logger.getLogger(SingleTestRunner.class).error("Check did not succeed!");
-                    System.out.println(result.getErrorTrace(true));
                 }
             } else {
                 CheckRunner.generate(test, new File(test.getLibDir(), "bpl"));
