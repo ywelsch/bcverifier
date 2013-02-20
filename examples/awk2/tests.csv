@@ -1,2 +1,3 @@
 "specification","flags","expected_errors","dead_code_points","loop_unroll_cap"
 "bpl/spec.isl","--iframes 0"    ,0                ,2                 ,5
+"bpl/spec2.isl","--iframes 0"    ,0                ,2                 ,5
