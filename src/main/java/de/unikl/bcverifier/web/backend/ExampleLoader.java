@@ -89,7 +89,8 @@ public class ExampleLoader {
 				new String[]{ "diverge2", "Divergence example (alt)", "2", "spec.isl" },
 				new String[]{ "measure", "Termination example", "2", "spec.isl" },
 				new String[]{ "predefinedplaces", "ComplexPlaces example", "2", "spec.isl" },
-				new String[]{ "list", "ObservableList example", "6", "spec.isl" }
+				new String[]{ "list", "ObservableList example", "6", "spec.isl" },
+				new String[]{ "listiter", "ObservableList example (with iterator)", "6", "spec.isl" }
 		};
 		for (String[] entry : TO_LOAD) {
 			Example ex = loadExample(entry[0], entry[1], entry[2], entry[3]);
