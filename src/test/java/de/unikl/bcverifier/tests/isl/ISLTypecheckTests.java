@@ -293,4 +293,27 @@ public class ISLTypecheckTests extends ISLTest {
 				new File("./examples/list/old"), 
 				new File("./examples/list/new"), cu);
 	}
+	
+	@Test
+	public void nonexistentLocalInEval() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+				"local place p = line 6 of old Cell;",
+				"local invariant at(p) ==> eval(p, blub) != null;"
+				);
+		testTypeCheckError("Could not find variable blub",
+				new File("./examples/cell/old"), 
+				new File("./examples/cell/new"), cu);
+	}
+	
+
+	@Test
+	public void nonexistentLocalInEval2() throws IOException, Exception, CompileException {
+		CompilationUnit cu = testParseOk(
+				"local place p = line 6 of old Cell;",
+				"local invariant at(p) ==> eval(p, c) != null;" // variable c is a field
+				);
+		testTypeCheckError("Could not find variable blub",
+				new File("./examples/cell/old"), 
+				new File("./examples/cell/new"), cu);
+	}
 }

@@ -19,7 +19,7 @@ public class AttrDef {
 		String varName = varAccess.getName().getName();
 		Collection<Def> defs = varAccess.lookup(varName);
 		if (defs.isEmpty()) {
-			varAccess.addError("Could not find variable " + varName + ".");
+			varAccess.addError("Could not find variable " + varName + " (use 'this."+varName+"' to access a field).");
 		} else if (defs.size() > 1) {
 			varAccess.addError("Access to variable " + varName + " is ambiguous.");
 		}

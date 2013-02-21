@@ -129,6 +129,9 @@ public class Lookup {
 		if (binding == null) {
 			return null;
 		}
+		if (binding.isField()) {
+			return null;
+		}
 		return new JavaVariableDef(model, placeType, stackSliceExpr, stackFrameExpr, binding);
 	}
 	
