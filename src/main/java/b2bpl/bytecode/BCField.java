@@ -112,6 +112,9 @@ public boolean equals(Object obj) {
     } else if (!type.equals(other.type)) {
         return false;
     }
+    if (!owner.equals(other.owner)) {
+    	return false;
+    }
     return true;
 }
 }

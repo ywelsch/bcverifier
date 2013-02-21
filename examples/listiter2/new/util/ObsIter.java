@@ -3,22 +3,22 @@ package util;
 class ObsIter implements Iterator {
 	private Node n;
 	private Observable o;
-	private int expModCount;
+	private int expectedModCount;
 	
 	ObsIter(Observable o) {
 		this.o = o;
 		this.n = o.snt;
-		this.expModCount = o.modCount;
+		this.expectedModCount = o.modCount;
 	}
 	
 	public boolean hasNext() {
-		if (o.modCount != expModCount)
+		if (o.modCount != expectedModCount)
 			return false;
 		return n.getNext() != null;
 	}
 	
 	public Observer next() {
-		if (o.modCount != expModCount)
+		if (o.modCount != expectedModCount)
 			return null;
 		if (n.getNext() == null) 
 			return null;

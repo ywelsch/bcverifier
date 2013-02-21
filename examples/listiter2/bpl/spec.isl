@@ -9,7 +9,7 @@ invariant forall new Observable l1, new Observable l2 :: l1 != l2 ==>
   l1.snt != l2.snt;
 invariant forall new Node n :: createdByLibrary(n);
 invariant forall new ObsIter i :: i.n != null && i.o != null; 
-invariant forall new ObsIter i :: i.expModCount <= i.o.modCount;
+invariant forall new ObsIter i :: i.expectedModCount <= i.o.modCount;
 
 // Data relation between libraries
 var binrelation bij = add(empty(), null, null);
@@ -32,7 +32,7 @@ invariant forall old Node n1, new Node n2 :: related(bij, n1, n2) ==>
   n1.ob != null && n2.ob != null && n1.ob ~ n2.ob;
 
 invariant forall old MyIter i1, new ObsIter i2 :: i1 ~ i2 ==>
-     i1.expectedModCount == i2.expModCount;
+     i1.expectedModCount == i2.expectedModCount;
 invariant forall old MyIter i1, new ObsIter i2 :: i1 ~ i2 ==>
      i1.o ~ i2.o;
 //invariant forall old MyIter i1, new ObsIter i2 :: i1 ~ i2 ==>
