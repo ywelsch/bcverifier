@@ -312,7 +312,7 @@ public class ISLTypecheckTests extends ISLTest {
 				"local place p = line 6 of old Cell;",
 				"local invariant at(p) ==> eval(p, c) != null;" // variable c is a field
 				);
-		testTypeCheckError("Could not find variable blub",
+		testTypeCheckError("Could not find variable c",
 				new File("./examples/cell/old"), 
 				new File("./examples/cell/new"), cu);
 	}
