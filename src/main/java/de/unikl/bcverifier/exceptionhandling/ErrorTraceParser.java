@@ -114,23 +114,90 @@ public class ErrorTraceParser {
 		}
     }
 
-	private void interpretTrace(String failedAssertion, List<String> trace) {
-		List<SimulationStep> steps = Lists.newArrayList();
+	private List<String> extractLabels(List<String> trace) {
+		List<String> result = Lists.newArrayListWithCapacity(trace.size());
 		for (String line : trace) {
 			Matcher matcher = labelLine.matcher(line);
             if(!matcher.matches()) {
             	continue;
             }
             String label = matcher.group(4);
+            result.add(label);
+		}
+		return result;
+	}
+
+	private void interpretTrace(String failedAssertion, List<String> trace) {
+		List<String> labels = extractLabels(trace);
+		List<SimulationStep> steps = Lists.newArrayList();
+		for (int i=0; i<labels.size(); i++) {
+			String label = labels.get(i);
             if (label.startsWith("lib1_")) {
             	currentLib = Version.OLD;
             } else if (label.startsWith("lib2_")) {
             	currentLib = Version.NEW;
             }
             sawTracePosition = false;
-            findSourceLinesForLabel(steps, label);
+            String nextLabel;
+            if (i+1 < labels.size()) {
+            	nextLabel = labels.get(i+1);
+            } else {
+            	nextLabel = "";
+            }
+            findSourceLinesForLabel(steps, label, nextLabel);
 		}
+		postProcess(steps);
 		exceptions.add(new AssertionException(trace, steps, failedAssertion));
+	}
+
+	/**
+	 * postprocessing for the steps.
+	 * for example merge steps with meaningful names with simple trace-positions 
+	 */
+	private void postProcess(List<SimulationStep> steps) {
+		for (int i=0; i<steps.size(); i++) {
+			SimulationStep step = steps.get(i);
+			if (step.getTraceComment().usesNextPos()) {
+				// use source from next step
+				for (int j=i+1; j<steps.size(); j++) {
+					SimulationStep nextStep = steps.get(j);
+					if (nextStep.getTraceComment().hasSourceInfo()) {
+						steps.set(i, nextStep.withMessage(step.getMessage()));
+						break;
+					}
+				}
+			} else if (step.getTraceComment().usesLastPos()) {
+				// use source from previous step
+				for (int j=i-1; j>=0; j--) {
+					SimulationStep prevStep = steps.get(j);
+					if (prevStep.getTraceComment().hasSourceInfo()) {
+						steps.set(i, prevStep.withMessage(step.getMessage()));
+						break;
+					}
+				}
+			}
+		}
+		
+		for (int i=0; i<steps.size()-1; i++) {
+			// merge with nextStep if next step is just a trace position without message
+			SimulationStep step = steps.get(i);
+			SimulationStep nextStep = steps.get(i+1);
+			if (nextStep.isTracePosition() && step.hasSameSourcePosAs(nextStep)) {
+				steps.remove(i+1);
+				i--;
+			}
+		}
+		
+		for (int i=1; i<steps.size(); i++) {
+			// merge with previous step if previous step is just a trace position without message
+			SimulationStep step = steps.get(i);
+			SimulationStep prevStep = steps.get(i-1);
+			if (prevStep.isTracePosition() && step.hasSameSourcePosAs(prevStep)) {
+				steps.remove(i-1);
+				i--;
+			}
+		}
+		
 	}
 
 	private List<String> getLines(String input) {
@@ -143,7 +210,7 @@ public class ErrorTraceParser {
         return result;
 	}
 
-	private void findSourceLinesForLabel(List<SimulationStep> steps, String label) {
+	private void findSourceLinesForLabel(List<SimulationStep> steps, String label, String nextLabel) {
 		BPLBasicBlock block = getBlockWithLabel(label);
 		for (String comment : block.getComments()) {
 			interpretTraceComment(steps, comment);
@@ -161,8 +228,13 @@ public class ErrorTraceParser {
 		if (block.getTransferCommand() instanceof BPLGotoCommand) {
 			BPLGotoCommand gotoCmd = (BPLGotoCommand) block.getTransferCommand();
 			if (gotoCmd.getTargetLabels().length == 1) {
-				// if we have only one goto label, follow it
-				findSourceLinesForLabel(steps, gotoCmd.getTargetLabels()[0]);
+				// there is only one goto label
+				String gotoLabel = gotoCmd.getTargetLabels()[0];
+				if (!gotoLabel.equals(nextLabel)) {
+					// follow the gotoLabel
+					// (sometimes boogie omits labels in the trace if there is only one goto target)
+					findSourceLinesForLabel(steps, gotoLabel, nextLabel);	
+				}
 			}
 		}
 	}
@@ -170,19 +242,20 @@ public class ErrorTraceParser {
 	private void interpretTraceComment(List<SimulationStep> steps, String comment) {
 		if (Traces.isTraceComment(comment)) {
 			TraceComment c = Traces.parseComment(comment);
-			if (c.getMessage().equals("(trace position)")) {
-				if (sawTracePosition ) {
-					return;
-				}
-				sawTracePosition = true;
-			} else {
-				sawTracePosition = false;
-			}
 			if (c.equals(lastTraceComment)) {
 				// only use each position once
 				return;
 			}
 			lastTraceComment = c;
+			if (c.getMessage().equals(Traces.TRACE_POSITION_MESSAGE)) {
+				if (sawTracePosition ) {
+					// use dots to indicate that there was no branch inbetween
+					c = c.withMessage(Traces.TRACE_POSITION_MESSAGE_CONT);
+				}
+				sawTracePosition = true;
+			} else {
+				sawTracePosition = false;
+			}
 			steps.add(new SimulationStep(currentLib, c));
 		}
 	}

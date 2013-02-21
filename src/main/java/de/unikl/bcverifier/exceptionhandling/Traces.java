@@ -1,9 +1,23 @@
 package de.unikl.bcverifier.exceptionhandling;
 
+
 public class Traces {
+
+	private static final int USE_NEXT_POS = -1;
+	private static final int USE_LAST_POS = -2;
+	public static final String TRACE_POSITION_MESSAGE = "(trace position)";
+	public static final String TRACE_POSITION_MESSAGE_CONT = "...";
 
 	public static String makeComment(String message) {
 		return makeComment("",0,message);
+	}
+	
+	public static String makeCommentUseLast(String message) {
+		return makeComment("", USE_LAST_POS, message);
+	}
+	
+	public static String makeCommentUseNext(String message) {
+		return makeComment("", USE_NEXT_POS, message);
 	}
 
 	public static String makeComment(String file, int line, String message) {
@@ -31,7 +45,14 @@ public class Traces {
 		public String getMessage() {
 			return message;
 		}
+		
+		public boolean usesLastPos() {
+			return line == USE_LAST_POS;
+		}
 
+		public boolean usesNextPos() {
+			return line == USE_NEXT_POS;
+		}
 
 
 		@Override
@@ -74,6 +95,16 @@ public class Traces {
 				return false;
 			return true;
 		}
+
+
+
+		public TraceComment withMessage(String m) {
+			return new TraceComment(file, line, m);
+		}
+
+		public boolean hasSourceInfo() {
+			return line >= 0 && !file.isEmpty();
+		}
 		
 		
 	}
@@ -86,6 +117,8 @@ public class Traces {
 	public static boolean isTraceComment(String comment) {
 		return comment.startsWith("#Trace");
 	}
+
+	
 
 	
 	

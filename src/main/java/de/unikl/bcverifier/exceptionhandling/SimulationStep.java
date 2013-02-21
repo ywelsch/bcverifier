@@ -24,5 +24,26 @@ public class SimulationStep {
 	public TraceComment getTraceComment() {
 		return traceComment;
 	}
+
+	public String getMessage() {
+		return traceComment.getMessage();
+	}
+
+	public SimulationStep withMessage(String message) {
+		return new SimulationStep(currentLib, traceComment.withMessage(message));
+	}
+
+	public boolean isTracePosition() {
+		return getMessage().equals(Traces.TRACE_POSITION_MESSAGE)
+				|| getMessage().equals(Traces.TRACE_POSITION_MESSAGE_CONT);
+	}
+
+	public boolean hasSameSourcePosAs(SimulationStep nextStep) {
+		
+		return currentLib == nextStep.currentLib
+				&& traceComment.getLine() == nextStep.getTraceComment().getLine()
+				&& traceComment.getFile().equals(nextStep.getTraceComment().getFile());
+	}
    
+	
 }
