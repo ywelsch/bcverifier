@@ -1,0 +1,2 @@
+package namegen;
+class C {}

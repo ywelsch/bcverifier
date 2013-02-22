@@ -1,0 +1,1 @@
+invariant forall old C c :: c.z <= old Fact.x;
