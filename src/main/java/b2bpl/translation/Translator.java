@@ -1699,6 +1699,23 @@ public class Translator implements ITranslationConstants {
                         ));
             }
             
+            {
+                // A helper function for converting bool values to int values.
+                addFunction(BOOL2INT_FUNC, BPLBuiltInType.BOOL, BPLBuiltInType.INT);
+
+                addAxiom(forall(
+                        iVar,
+                                isEqual(new BPLFunctionApplication(BOOL2INT_FUNC, BPLBoolLiteral.FALSE), intLiteral(0)),
+                                trigger(new BPLFunctionApplication(BOOL2INT_FUNC, BPLBoolLiteral.FALSE))
+                        ));
+
+                addAxiom(forall(
+                        iVar,
+                                isEqual(new BPLFunctionApplication(BOOL2INT_FUNC, BPLBoolLiteral.TRUE), intLiteral(1)),
+                                trigger(new BPLFunctionApplication(BOOL2INT_FUNC, BPLBoolLiteral.TRUE))
+                        ));
+            }
+            
             addDeclaration(new BPLVariableDeclaration(new BPLVariable(ITranslationConstants.USE_HAVOC, new BPLArrayType(new BPLTypeName(ADDRESS_TYPE), BPLBuiltInType.BOOL))));
             
             addFunction(IS_STATIC_METHOD_FUNC, new BPLTypeName(LIBRARY_IMPL_TYPE), new BPLTypeName(NAME_TYPE), new BPLTypeName(METHOD_TYPE), BPLBuiltInType.BOOL);
