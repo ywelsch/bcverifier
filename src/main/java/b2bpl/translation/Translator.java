@@ -368,6 +368,7 @@ public class Translator implements ITranslationConstants {
             }
         }
         if(libTypeExpressions.size() > 0){
+        	addComment("available library types:");
             addAxiom(forall(tVar, isEquiv(libType(var(tc.getImpl()), var(t)), logicalOr(libTypeExpressions.toArray(new BPLExpression[libTypeExpressions.size()])))));
         }
 
@@ -3612,19 +3613,25 @@ public class Translator implements ITranslationConstants {
             String t = quantVarName("t");
             BPLExpression axiom = isEqual(var(t), translateTypeReference(type));
             JClassType supertype = type.getSupertype();
-            if (supertype != null) {
-                addAxiom(subtype(var(tc.getImpl()), typeRef(type), typeRef(supertype)));
+            BPLExpression typeRef = typeRef(type);
+			if (supertype != null) {
+				BPLExpression supertypeRef = typeRef(supertype);
+            	addComment(type + " is a subclass of " + supertype);
+				addAxiom(subtype(var(tc.getImpl()), typeRef, supertypeRef));
                 axiom = logicalOr(
                         axiom,
                         subtype(var(tc.getImpl()), translateTypeReference(supertype), var(t)));
             }
             for (JClassType iface : type.getInterfaces()) {
-                addAxiom(subtype(var(tc.getImpl()), typeRef(type), typeRef(supertype)));
+            	BPLExpression implementedInterfaceRef = typeRef(iface);
+            	addComment(type + " implements interface " + iface);
+				addAxiom(subtype(var(tc.getImpl()), typeRef, implementedInterfaceRef));
                 axiom = logicalOr(
                         axiom,
                         subtype(var(tc.getImpl()), translateTypeReference(iface), var(t)));
             }
             BPLVariable tVar = new BPLVariable(t, new BPLTypeName(NAME_TYPE));
+            addComment("possible supertypes of " + type);
             addAxiom(forall(
                     tVar,
                     implies(subtype(var(tc.getImpl()), translateTypeReference(type), var(t)), axiom),
