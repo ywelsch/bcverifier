@@ -1,10 +1,10 @@
 package namegen;
 public class Fact {
   private static int x;
-  public C fresh() {
+  public static C fresh() {
     return new C(++x);
   }
-  public boolean check(C o) {
+  public static boolean check(C o) {
     return true;
   }
 }
