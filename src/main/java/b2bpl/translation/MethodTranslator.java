@@ -3267,12 +3267,13 @@ public class MethodTranslator implements ITranslationConstants {
             
 
             // Non-static method calls may throw a NullPointerException.
-                    
-            if (tc.getConfig().isNullChecks() && !invokedMethod.isStatic() && !invokedMethod.isConstructor()) {
-                addAssert(nonNull(stack(var(refStackVar(first)))),
-                		"Receiver must not be null when invoking " + invokedMethod.getName());
-            } else {
-                addAssume(nonNull(stack(var(refStackVar(first)))));
+            if (!invokedMethod.isStatic()&& !invokedMethod.isConstructor()) {
+	            if (tc.getConfig().isNullChecks()) {
+	                addAssert(nonNull(stack(var(refStackVar(first)))),
+	                		"Receiver must not be null when invoking " + invokedMethod.getName());
+	            } else {
+	                addAssume(nonNull(stack(var(refStackVar(first)))));
+	            }
             }
             
             if(true){ //TODO remove if, if handling is working
