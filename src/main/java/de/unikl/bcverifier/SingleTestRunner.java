@@ -34,7 +34,11 @@ public class SingleTestRunner {
         File libDir = csvFile.getParentFile();
         List<BCCheckDefinition> tests = BCCheckDefinition.parseDefinitions(libDir, csvFile);
         List<String> choiceStrings = buildTestcaseEntries(tests);
-        String s = (String)JOptionPane.showInputDialog(
+        String s;
+        if (choiceStrings.size() == 1) {
+        	s = choiceStrings.get(0);
+        } else {
+        	s = (String)JOptionPane.showInputDialog(
                 null,
                 "Choose test to run:",
                 "Choose test",
@@ -42,6 +46,7 @@ public class SingleTestRunner {
                 null,
                 choiceStrings.toArray(),
                 choiceStrings.get(0));
+        }
 
         if ((s != null) && (s.length() > 0)) {
             int index = Integer.parseInt(s.substring(0, s.indexOf(':')));
