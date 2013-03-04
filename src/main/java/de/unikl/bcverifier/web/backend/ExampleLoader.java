@@ -76,6 +76,8 @@ public class ExampleLoader {
 				new String[]{ "cblock", "CallbackLock example", "3", "spec.isl" },
 				new String[]{ "awk", "Awkward example (static)", "5", "spec.isl" },
 				new String[]{ "awk2", "Awkward example", "5", "spec.isl" },
+				new String[]{ "namegen", "NameGen example", "3", "spec.isl" },
+				new String[]{ "namegen2", "NameGen example (alt.1)", "3", "spec.isl" },
 				new String[]{ "obool", "OBool example", "7", "spec.isl" },
 				new String[]{ "obool", "OBool example (alt.1)", "7", "spec2.isl" },
 				new String[]{ "obool", "OBool example (alt.2)", "7", "spec4.isl" },
@@ -90,7 +92,7 @@ public class ExampleLoader {
 				new String[]{ "measure", "Termination example", "2", "spec.isl" },
 				new String[]{ "predefinedplaces", "ComplexPlaces example", "2", "spec.isl" },
 				new String[]{ "list", "ObservableList example", "6", "spec.isl" },
-				new String[]{ "listiter", "ObservableList example (with iterator)", "6", "spec.isl" }
+				new String[]{ "listiter", "ObservableList (iterators)", "6", "spec.isl" }
 		};
 		for (String[] entry : TO_LOAD) {
 			Example ex = loadExample(entry[0], entry[1], entry[2], entry[3]);
